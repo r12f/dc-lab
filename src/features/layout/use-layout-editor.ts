@@ -1,6 +1,7 @@
 import type { Library } from '../../domain/library/library';
 import type { Aisle, CableTray, DcLayout, Door, Facility, FacilityKind, Rect, Row, Wall } from '../../domain/layout/types';
 import { addDoor, clampDoor } from '../../domain/layout/doors';
+import { rotateBy } from '../../domain/layout/view-rotation';
 import { addAisleAfter, addFacilityNear, addRowAfter, addTrayOver, type InsertAnchor } from '../../domain/layout/insert';
 import { assignmentProblem, type DesignLookup } from '../../domain/layout/tiles';
 import { clampToRoom, snap } from '../../domain/layout/geometry';
@@ -92,10 +93,12 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
   const setRoom = (room: DcLayout['room']) => mutate((l) => ({ ...l, room }));
   const setWhitespace = (whitespace: Rect) => mutate((l) => ({ ...l, whitespace }));
   const rename = (name: string) => mutate((l) => ({ ...l, name }));
+  /** Turns the view 90° clockwise (+90) or counter-clockwise (-90); the plan data is unchanged. */
+  const rotateView = (step: 90 | -90) => mutate((l) => ({ ...l, viewRotation: rotateBy(l.viewRotation, step) }));
 
   return {
     addRow, addAisle, addTray, addFacility, updateElement, updateElements, duplicate, removeElement, removeElements, reorder, moveTray, moveFacility,
-    assign, unassign, relabel, setRoom, setWhitespace, rename, setPowerFeed, addDoor: addDoorTo, moveDoor,
+    assign, unassign, relabel, setRoom, setWhitespace, rename, setPowerFeed, rotateView, addDoor: addDoorTo, moveDoor,
   };
 }
 

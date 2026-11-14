@@ -1,6 +1,7 @@
 import type { PointerEvent } from 'react';
 import type { Rect } from '../../domain/layout/types';
 import { paint } from '../../theme/paint';
+import { useLabels } from './view-context';
 
 interface Props {
   rect: Rect;
@@ -23,6 +24,7 @@ interface Props {
 
 /** Labelled rectangle for aisles, trays and facilities; label runs along the long side. */
 export function AreaDrawing({ rect, fill, label, dashed, opacity = 0.25, selected, cursor = 'move', labelAt = 0.5, overhead, onPointerDown }: Props) {
+  const { along } = useLabels();
   const vertical = rect.depthMm > rect.widthMm;
   const short = Math.min(rect.widthMm, rect.depthMm);
   const cx = rect.x + rect.widthMm * (vertical ? 0.5 : labelAt);
@@ -36,7 +38,7 @@ export function AreaDrawing({ rect, fill, label, dashed, opacity = 0.25, selecte
       {overhead && <rect x={rect.x} y={rect.y} width={rect.widthMm} height={rect.depthMm} fill="none" stroke="transparent"
         strokeWidth={160} pointerEvents="stroke" />}
       <text x={cx} y={cy} fontSize={Math.min(220, short * 0.45)} textAnchor="middle" dominantBaseline="middle"
-        fill={paint.ink} pointerEvents={overhead ? 'visiblePainted' : 'none'} transform={vertical ? `rotate(-90 ${cx} ${cy})` : undefined}>{label}</text>
+        fill={paint.ink} pointerEvents={overhead ? 'visiblePainted' : 'none'} transform={along(cx, cy, vertical ? -90 : 0)}>{label}</text>
     </g>
   );
 }

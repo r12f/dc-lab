@@ -1,6 +1,7 @@
 import type { DcLayout } from '../../domain/layout/types';
 import type { FloorPlan } from '../../domain/layout/floor-plan';
 import { paint } from '../../theme/paint';
+import { useLabels } from './view-context';
 
 /** Height of the row header box above the tiles (must match row-drawing). */
 const HEADER_H = 1040;
@@ -10,6 +11,7 @@ const HEADER_H = 1040;
  * Several feeds into one row land side by side on the header so they don't overlap.
  */
 export function FeedLines({ layout, plan, highlight }: { layout: DcLayout; plan: FloorPlan; highlight?: (facilityId: string, rowId: string) => boolean }) {
+  const { rotation } = useLabels();
   return (
     <g pointerEvents="none">
       {layout.feeds.map((f) => {
@@ -26,13 +28,14 @@ export function FeedLines({ layout, plan, highlight }: { layout: DcLayout; plan:
         const hot = highlight?.(f.facilityId, f.rowId);
         const my = (sy + ty) / 2;
         // kW label sits on the line just above the row header; feeds into one row stack upward so labels never collide.
-        const ly = ty - 260 - k * 280;
+        // Clear of the header in every view rotation (the label box is ≤ 660 mm wide on screen).
+        const ly = ty - 420 - k * 300;
         return (
           <g key={f.id}>
             <path d={`M${sx},${sy} C${sx},${my} ${tx},${my} ${tx},${ty}`} fill="none" stroke={paint.ink} strokeWidth={hot ? 70 : 40}
               strokeOpacity={hot ? 0.9 : 0.55} strokeDasharray="160 90" />
             <circle cx={tx} cy={ty} r={70} fill={paint.ink} />
-            <g transform={`translate(${tx} ${ly})`}>
+            <g transform={`translate(${tx} ${ly})${rotation ? ` rotate(${-rotation})` : ''}`}>
               <rect x={-330} y={-125} width={660} height={210} rx={60} fill={paint.paper} stroke={paint.ink} strokeWidth={hot ? 40 : 20} />
               <text y={30} fontSize={150} fontWeight={700} textAnchor="middle" fill={paint.ink}>{`${f.kw} kW`}</text>
             </g>

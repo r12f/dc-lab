@@ -11,6 +11,7 @@ south (down), units are millimetres.
 - `facilities[]`: support equipment around the rack area — `kind` (`pdu` | `cooling` | `other`), `name`,
   rectangle `x, y, widthMm, depthMm`, optional `capacityKw`. Placed freely in the room (typically along
   the walls, outside the rack area).
+- `viewRotation`: `0 | 90 | 180 | 270` — display rotation, clockwise (optional, default 0).
 - `doors[]`: `{ id, name, wall (north|south|east|west), offsetMm, widthMm, kind (entry|exit) }` — doors in the
   room walls; offset from the west end (north/south walls) or north end (east/west walls).
 - `feeds[]`: `{ id, facilityId, rowId, kw }` — PDU-to-row power feeds (older layouts load with none).
@@ -76,6 +77,11 @@ south (down), units are millimetres.
     re-packs live while dragging. **Drag** a tray onto another aisle to move it there. **Drag** a
     facility to move it freely (snapped to 100 mm, kept inside the room). A click without movement
     just selects.
+  - **View rotation**: ⟲ / ⟳ 90° in the title bar turn the drawing by 90° (saved with the layout), e.g.
+    to show rows running east–west. Only the view turns — rows, aisles, sequence, doors and walls keep their
+    north-up data, and dragging works in the rotated view. A north arrow shows where north is. Labels stay
+    readable: row headers and rack tiles stay upright, aisle / tray / door labels keep following their
+    element but never read upside down. SVG export uses the current view.
   - **Doors**: **+ Door** adds the entry (1.2 m, centred on the south wall), or with a door selected a
     door next to it on the same wall. Drawn as an architectural door: gap in the wall, open leaf, swing arc,
     an inward arrow and the name outside the wall (the entry is bold and reads ENTRY; labels on east/west

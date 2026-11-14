@@ -27,6 +27,9 @@ export function LayoutToolbar({ layout, editor, selection, onSelect }: Props) {
       <Button title="Next to the selected facility" onClick={() => added('facility', editor.addFacility('cooling', anchor))}>+ Cooling</Button>
       <Button title="Entry on the south wall, or next to the selected door; drag along the walls" onClick={() => added('door', editor.addDoor(anchor))}>+ Door</Button>
       <span className="toolbar-sep" />
+      <Button title="Rotate view 90° counter-clockwise" onClick={() => editor.rotateView(-90)}>⟲</Button>
+      <Button title="Rotate view 90° clockwise (e.g. to show rows running east–west)" onClick={() => editor.rotateView(90)}>⟳ 90°</Button>
+      <span className="toolbar-sep" />
       <Button disabled={!elements} title="Ctrl+D"
         onClick={() => elements && onSelect({ kind: elements.kind, ids: editor.duplicate(elements.kind, elements.ids) })}>
         {`Duplicate${elements && elements.ids.length > 1 ? ` (${elements.ids.length})` : ''}`}

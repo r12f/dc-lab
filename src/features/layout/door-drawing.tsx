@@ -2,6 +2,7 @@ import type { PointerEvent } from 'react';
 import type { DcLayout, Door } from '../../domain/layout/types';
 import { doorSegment } from '../../domain/layout/doors';
 import { paint } from '../../theme/paint';
+import { useLabels } from './view-context';
 
 interface Props {
   layout: DcLayout;
@@ -27,6 +28,7 @@ export function DoorDrawing({ layout, door, selected, onPointerDown }: Props) {
   // Outside of the wall: label and an arrow pointing in.
   const ox = cx - s.nx * 700, oy = cy - s.ny * 700;
   const vertical = s.nx !== 0;
+  const { along } = useLabels();
   const lx = ox - s.nx * 230;
   const ly = oy - s.ny * 230;
   const label = entry ? (/^entry$/i.test(door.name) ? 'ENTRY' : `ENTRY · ${door.name}`) : door.name;
@@ -42,7 +44,7 @@ export function DoorDrawing({ layout, door, selected, onPointerDown }: Props) {
       <line x1={ox} y1={oy} x2={cx - s.nx * 150} y2={cy - s.ny * 150} stroke={ink} strokeWidth={entry ? 60 : 35} markerEnd="url(#door-arrow)" />
       {/* Label outside the wall, beyond the arrow; along the wall on east/west walls so it stays within the margin. */}
       <text x={lx} y={ly} fontSize={entry ? 220 : 170} fontWeight={entry ? 800 : 600} textAnchor="middle" dominantBaseline="middle" fill={ink}
-        transform={vertical ? `rotate(${s.nx > 0 ? -90 : 90} ${lx} ${ly})` : undefined}>
+        transform={along(lx, ly, vertical ? (s.nx > 0 ? -90 : 90) : 0)}>
         {label}
       </text>
     </g>

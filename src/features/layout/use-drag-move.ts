@@ -19,6 +19,11 @@ interface Drag {
   moved: boolean;
 }
 
+/** The rotated plan group: pointer positions are converted into plan (north-up mm) coordinates. */
+function planSpace(svg: SVGSVGElement): SVGGraphicsElement {
+  return (svg.querySelector('[data-plan]') as SVGGraphicsElement | null) ?? svg;
+}
+
 /** Threshold (mm) before a press becomes a drag, so a click still just selects. */
 const DRAG_START_MM = 150;
 
@@ -35,14 +40,14 @@ export function useDragMove(layout: DcLayout, editor: LayoutEditor) {
   const start = (kind: DragKind, id: string) => (e: PointerEvent<SVGElement>) => {
     if (e.button !== 0) return;
     const svg = e.currentTarget.closest('svg') as SVGSVGElement;
-    const pt = toSvgPoint(svg, e.clientX, e.clientY);
+    const pt = toSvgPoint(planSpace(svg), e.clientX, e.clientY);
     svg.setPointerCapture(e.pointerId);
     setDrag({ kind, id, x0: pt.x, y0: pt.y, x: pt.x, y: pt.y, moved: false });
   };
 
   const move = (e: PointerEvent<SVGSVGElement>) => {
     if (!drag) return;
-    const pt = toSvgPoint(e.currentTarget, e.clientX, e.clientY);
+    const pt = toSvgPoint(planSpace(e.currentTarget), e.clientX, e.clientY);
     const moved = drag.moved || Math.hypot(pt.x - drag.x0, pt.y - drag.y0) > DRAG_START_MM;
     setDrag({ ...drag, x: pt.x, y: pt.y, moved });
   };

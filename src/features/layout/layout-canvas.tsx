@@ -15,6 +15,8 @@ import { rackSummary } from './rack-summary';
 import { useDragMove } from './use-drag-move';
 import { AISLE_COLORS, FACILITY_COLORS, TRAY_COLORS } from './layout-colors';
 import { paint } from '../../theme/paint';
+import { labelTransform, planTransform, viewSize } from '../../domain/layout/view-rotation';
+import { ViewRotationContext } from './view-context';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -39,8 +41,10 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
   const [hover, setHover] = useState<{ id: string; x: number; y: number }>();
   const { widthMm, depthMm } = layout.room;
   const ws = layout.whitespace;
-  // Fit the room width to the pane; taller rooms scroll vertically.
-  const pxPerMm = Math.min(1100 / widthMm, 0.1);
+  const rotation = layout.viewRotation ?? 0;
+  const view = viewSize(rotation, widthMm, depthMm);
+  // Fit the (rotated) room width to the pane; taller rooms scroll vertically.
+  const pxPerMm = Math.min(1100 / view.w, 0.1);
   const rowPower = new Map(computeDcMetrics(lib, designs, layout).rows.map((r) => [r.rowId, r.typicalW]));
   const isSel = (kind: ElementKind, id: string) => isSelected(selection, kind, id);
   // Selection happens on pointer-down: the SVG captures the pointer for dragging, so element clicks never fire.
@@ -57,17 +61,24 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
 
   return (
     <>
-      <svg ref={ref} viewBox={`${-PAD} ${-PAD} ${widthMm + PAD * 2} ${depthMm + PAD * 2}`}
-        width={(widthMm + PAD * 2) * pxPerMm} className="drawing"
+      <svg ref={ref} viewBox={`${-PAD} ${-PAD} ${view.w + PAD * 2} ${view.h + PAD * 2}`}
+        width={(view.w + PAD * 2) * pxPerMm} className="drawing"
         onPointerMove={drag.move} onPointerUp={drag.end}>
-        <rect x={-PAD} y={-PAD} width={widthMm + PAD * 2} height={depthMm + PAD * 2} fill={paint.paper} onClick={() => onSelect(undefined)} />
+        <rect x={-PAD} y={-PAD} width={view.w + PAD * 2} height={view.h + PAD * 2} fill={paint.paper} onClick={() => onSelect(undefined)} />
         <text x={0} y={-PAD / 2} fontSize={300} fontWeight={700} fill={paint.ink}>{layout.name}</text>
-        <text x={widthMm} y={-PAD / 2} fontSize={200} textAnchor="end" fill={paint.inkMuted}>N ↑</text>
+        {/* North arrow points to where north is in the rotated view. */}
+        <g transform={`translate(${view.w - 250} ${-PAD / 2 - 80}) rotate(${-rotation})`}>
+          <path d="M0,-200 L90,60 L0,10 L-90,60 Z" fill={paint.ink} />
+          <text y={230} fontSize={200} textAnchor="middle" fill={paint.inkMuted} transform={rotation ? `rotate(${rotation} 0 160)` : undefined}>N</text>
+        </g>
+        <ViewRotationContext.Provider value={rotation}>
+        <g data-plan="" transform={planTransform(rotation, widthMm, depthMm) || undefined}>
         <rect x={0} y={0} width={widthMm} height={depthMm} fill={paint.slot} stroke={paint.ink} strokeWidth={40}
           onClick={() => onSelect(undefined)} />
         <rect x={ws.x} y={ws.y} width={ws.widthMm} height={ws.depthMm} fill="none" stroke={paint.inkMuted}
           strokeWidth={30} strokeDasharray="200 120" pointerEvents="none" />
-        <text x={ws.x + 80} y={ws.y + ws.depthMm + 260} fontSize={200} fill={paint.inkMuted} pointerEvents="none">
+        <text x={ws.x + 80} y={ws.y + ws.depthMm + 260} fontSize={200} fill={paint.inkMuted} pointerEvents="none"
+          transform={labelTransform(rotation, ws.x + 80, ws.y + ws.depthMm + 260, 'along', 0)}>
           {`Rack area ${ws.widthMm / 1000} × ${ws.depthMm / 1000} m · used ${plan.usedWidthMm / 1000} m`}
         </text>
         <DoorArrowDefs />
@@ -116,6 +127,8 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
             </g>
           );
         })}
+        </g>
+        </ViewRotationContext.Provider>
       </svg>
       {hovered && <RackTooltip lines={rackSummary(lib, designs, hovered)} x={hover.x} y={hover.y} />}
     </>

@@ -50,6 +50,8 @@ export interface Facility extends Rect {
 
 export type Wall = 'north' | 'south' | 'east' | 'west';
 
+export type ViewRotation = 0 | 90 | 180 | 270;
+
 /** A door in a room wall: `offsetMm` from the wall's west (north/south walls) or north (east/west walls) end. */
 export interface Door {
   id: string;
@@ -95,4 +97,6 @@ export interface DcLayout {
   feeds: PowerFeed[];
   /** Doors in the room walls. */
   doors: Door[];
+  /** View rotation, clockwise degrees (display only; the plan itself stays north-up). Default 0. */
+  viewRotation?: ViewRotation;
 }

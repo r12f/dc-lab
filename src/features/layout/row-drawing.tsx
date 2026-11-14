@@ -7,6 +7,7 @@ import { computeRackMetrics } from '../../domain/design/metrics';
 import { formatPower } from '../../domain/units';
 import { isSelected, type LayoutSelection } from './selection';
 import { paint } from '../../theme/paint';
+import { useLabels } from './view-context';
 
 interface Props {
   lib: Library;
@@ -39,6 +40,10 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
   const budgetW = row.powerBudgetKw * 1000;
   const over = powerW > budgetW;
   const cx = rect.x + rect.widthMm / 2;
+  // Header text must fit the box's on-screen width, which is its height when the view is turned 90°/270°.
+  const headW = Math.min(row.tileDepthMm, HEADER_H - 40) - 80;
+  const headCy = rect.y - HEADER_H + (HEADER_H - 40) / 2;
+  const { upright, screen } = useLabels();
 
   return (
     <g>
@@ -46,15 +51,18 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
         <title>{`${row.name} · ${used}/${row.tileCount} rack tiles — drag sideways to reorder, Ctrl-click to multi-select`}</title>
         <rect x={rect.x} y={rect.y - HEADER_H} width={row.tileDepthMm} height={HEADER_H - 40} rx={60}
           fill={rowSelected ? paint.selection : paint.frame} fillOpacity={rowSelected ? 0.35 : 1} />
-        <text x={cx} y={rect.y - HEADER_H + 250} fontSize={Math.min(230, row.tileDepthMm / 4.5)} textAnchor="middle" fontWeight={700}
-          fill={rowSelected ? paint.ink : paint.frameText}>{row.name}</text>
-        {/* Power and budget on separate lines so both stay legible at full-room zoom. */}
-        <text x={cx} y={rect.y - HEADER_H + 490} fontSize={Math.min(210, row.tileDepthMm / 5.5)} textAnchor="middle" fontWeight={700}
-          fill={over ? '#EF4444' : rowSelected ? paint.ink : paint.frameText}>{formatPower(powerW)}</text>
-        <text x={cx} y={rect.y - HEADER_H + 700} fontSize={Math.min(170, row.tileDepthMm / 7)} textAnchor="middle"
-          fill={over ? '#EF4444' : rowSelected ? paint.ink : paint.frameText}>{`of ${formatPower(budgetW)}`}</text>
-        <text x={cx} y={rect.y - HEADER_H + 920} fontSize={Math.min(170, row.tileDepthMm / 7)} textAnchor="middle"
-          fill={rowSelected ? paint.ink : paint.frameText}>{`${used}/${row.tileCount} tiles`}</text>
+        {/* Header lines stay upright on screen when the view is rotated (box is about square). */}
+        <g transform={upright(cx, headCy)}>
+          <text x={cx} y={headCy - 330} fontSize={Math.min(230, headW / 4.5)} textAnchor="middle" fontWeight={700}
+            fill={rowSelected ? paint.ink : paint.frameText}>{row.name}</text>
+          {/* Power and budget on separate lines so both stay legible at full-room zoom. */}
+          <text x={cx} y={headCy - 90} fontSize={Math.min(210, headW / 5.5)} textAnchor="middle" fontWeight={700}
+            fill={over ? '#EF4444' : rowSelected ? paint.ink : paint.frameText}>{formatPower(powerW)}</text>
+          <text x={cx} y={headCy + 120} fontSize={Math.min(170, headW / 7)} textAnchor="middle"
+            fill={over ? '#EF4444' : rowSelected ? paint.ink : paint.frameText}>{`of ${formatPower(budgetW)}`}</text>
+          <text x={cx} y={headCy + 340} fontSize={Math.min(170, headW / 7)} textAnchor="middle"
+            fill={rowSelected ? paint.ink : paint.frameText}>{`${used}/${row.tileCount} tiles`}</text>
+        </g>
       </g>
       {tiles.map((t) => {
         const r = tileRect(rect, row, t);
@@ -73,8 +81,9 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
         const r = tileRect(rect, row, a.startTile, tileWidthOf(lib, design));
         const power = design ? computeRackMetrics(lib, design).typicalW : 0;
         const sel = selection?.kind === 'assignment' && selection.id === a.id;
-        // Three lines — design abbreviation (large), rack label, power — fit the rack's extent and width.
-        const font = Math.min(150, (r.depthMm - 60) / 4.2, (r.widthMm - 60) / 6);
+        // Three lines — design abbreviation (large), rack label, power — fit the rack as seen on screen.
+        const sb = screen(r.widthMm, r.depthMm);
+        const font = Math.min(150, (sb.h - 60) / 4.2, (sb.w - 60) / 6);
         const abbr = design?.abbr ?? '?';
         const mx = r.x + r.widthMm / 2;
         const my = r.y + r.depthMm / 2;
@@ -85,10 +94,12 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
             onPointerLeave={() => onRackHover(undefined)}>
             <rect x={r.x + 30} y={r.y + 30} width={r.widthMm - 60} height={r.depthMm - 60} rx={40}
               fill={paint.accent} stroke={sel ? paint.selection : paint.ink} strokeWidth={sel ? 60 : 20} />
-            <text x={mx} y={my - font * 0.55} fontSize={Math.min(font * 1.5, (r.widthMm - 80) / (abbr.length * 0.72))} textAnchor="middle"
+            <g transform={upright(mx, my)} pointerEvents="none">
+            <text x={mx} y={my - font * 0.55} fontSize={Math.min(font * 1.5, (sb.w - 80) / (abbr.length * 0.72))} textAnchor="middle"
               fill={paint.onAccent} fontWeight={800} pointerEvents="none">{abbr}</text>
             <text x={mx} y={my + font * 0.75} fontSize={font * 0.8} textAnchor="middle" fill={paint.onAccent} fontWeight={600} pointerEvents="none">{a.label}</text>
             <text x={mx} y={my + font * 1.7} fontSize={font * 0.75} textAnchor="middle" fill={paint.onAccent} opacity={0.85} pointerEvents="none">{formatPower(power)}</text>
+            </g>
           </g>
         );
       })}
