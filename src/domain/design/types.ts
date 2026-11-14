@@ -51,6 +51,8 @@ export interface RackDesign {
   schema?: typeof DESIGN_SCHEMA;
   id: string;
   name: string;
+  /** Short code (1-4 letters/digits, upper case) shown on DC Layout rack tiles, e.g. "GPU", "T0", "CDU". */
+  abbr: string;
   templateId: string;
   placements: Placement[];
   cables: CableRun[];

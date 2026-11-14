@@ -64,6 +64,10 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 
 ## UI
 
+- Every design has an **abbreviation**: 1–4 upper-case letters/digits (e.g. `GPU`, `T0`, `CDU`),
+  suggested from the name (word initials, or the first 4 letters of a single word) and editable in the
+  New form and the inspector; shown on DC Layout rack tiles and as the sidebar badge. Older projects get
+  one derived from the design name.
 - Sidebar: rack designs grouped by template, with a text filter (name, template, device labels and
   names); New (pick template), Duplicate, Delete.
 - Device palette: the Devices tree — Type → Item type → Items (vendor products); drag or double-click an

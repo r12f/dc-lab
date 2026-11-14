@@ -35,7 +35,7 @@ export function TilePanel({ lib, designs, layout, editor, selection, onSelect }:
     return (
       <div className="card">
         <TextField label="Rack label" value={assignment.label} onChange={(v) => editor.relabel(assignment.id, v)} />
-        <p className="muted">{`${d?.name ?? assignment.designId} · tiles ${formatTiles(assignment.startTile + 1)}–${formatTiles(assignment.startTile + tileWidthOf(lib, d))} · ${m ? formatPower(m.typicalW) : ''}`}</p>
+        <p className="muted">{`${d ? `${d.abbr} · ${d.name}` : assignment.designId} · tiles ${formatTiles(assignment.startTile + 1)}–${formatTiles(assignment.startTile + tileWidthOf(lib, d))} · ${m ? formatPower(m.typicalW) : ''}`}</p>
         <Button variant="danger" onClick={() => { editor.unassign(assignment.id); onSelect(undefined); }}>Remove rack</Button>
       </div>
     );
@@ -51,7 +51,7 @@ export function TilePanel({ lib, designs, layout, editor, selection, onSelect }:
     <div className="card">
       <strong>{`${row.name} · tile ${selection.tile + 1}${start !== selection.tile ? ` (free from ${formatTiles(start + 1)})` : ''}`}</strong>
       <SelectField label="Rack design" value={designId}
-        options={allDesigns.map((d) => ({ value: d.id, label: `${d.name} (${formatTiles(tileWidthOf(lib, d))} tiles)` }))}
+        options={allDesigns.map((d) => ({ value: d.id, label: `${d.abbr} · ${d.name} (${formatTiles(tileWidthOf(lib, d))} tiles)` }))}
         onChange={setDesignId} />
       {(error || problem) && <p className="error">{error ?? problem}</p>}
       <Button variant="primary" disabled={!!problem} onClick={() => setError(editor.assign(row.id, start, designId))}>

@@ -1,3 +1,4 @@
+import { abbrFromName, cleanAbbr } from '../design/abbr';
 import type { PortRole } from '../device/types';
 
 /**
@@ -238,6 +239,8 @@ export function migrateProjectJson(raw: Json): Json {
     racks: ((p.racks as Json[]) ?? []).map(migrateRack),
     rackDesigns: ((p.rackDesigns as Json[]) ?? []).map((d) => ({
       ...d,
+      // Designs from before abbreviations get one derived from their name.
+      abbr: cleanAbbr(String(d.abbr ?? '')) || abbrFromName(String(d.name ?? '')),
       placements: ((d.placements as Json[]) ?? []).map(migratePlacement).map(migrateSideMount),
       cables: ((d.cables as Json[]) ?? []).map((c) => ({
         route: 'left', ...c,

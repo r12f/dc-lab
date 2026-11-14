@@ -2,6 +2,7 @@ import type { Library } from '../../domain/library/library';
 import type { RackDesign } from '../../domain/design/types';
 import { Tabs } from '../../ui/tabs';
 import { TextField } from '../../ui/fields';
+import { ABBR_MAX, abbrProblem } from '../../domain/design/abbr';
 import type { DesignEditor } from './use-design-editor';
 import { PlacementPanel } from './placement-panel';
 import { CablesPanel } from './cables-panel';
@@ -25,7 +26,11 @@ export function DesignInspector({ lib, design, editor, placementId, onSelectPlac
   const placement = design.placements.find((p) => p.id === placementId);
   return (
     <div className="inspector-inner">
-      <TextField label="Design name" value={design.name} onChange={editor.rename} />
+      <div className="row2">
+        <TextField label="Design name" value={design.name} onChange={editor.rename} />
+        <TextField label={`Abbreviation (≤ ${ABBR_MAX})`} value={design.abbr} onChange={editor.setAbbr} />
+      </div>
+      {abbrProblem(design.abbr) && <p className="error">{abbrProblem(design.abbr)}</p>}
       <Tabs<InspectorTab>
         tabs={[{ id: 'summary', label: 'BOM & metrics' }, { id: 'placement', label: 'Device' }, { id: 'cables', label: `Cables (${design.cables.length})` }]}
         value={tab}

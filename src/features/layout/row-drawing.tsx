@@ -73,8 +73,9 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
         const r = tileRect(rect, row, a.startTile, tileWidthOf(lib, design));
         const power = design ? computeRackMetrics(lib, design).typicalW : 0;
         const sel = selection?.kind === 'assignment' && selection.id === a.id;
-        // Two lines (label + power) must fit the rack's north–south extent and its width.
-        const font = Math.min(170, (r.depthMm - 60) / 2.6, (r.widthMm - 60) / 6);
+        // Three lines — design abbreviation (large), rack label, power — fit the rack's extent and width.
+        const font = Math.min(150, (r.depthMm - 60) / 4.2, (r.widthMm - 60) / 6);
+        const abbr = design?.abbr ?? '?';
         const mx = r.x + r.widthMm / 2;
         const my = r.y + r.depthMm / 2;
         return (
@@ -84,8 +85,10 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
             onPointerLeave={() => onRackHover(undefined)}>
             <rect x={r.x + 30} y={r.y + 30} width={r.widthMm - 60} height={r.depthMm - 60} rx={40}
               fill={paint.accent} stroke={sel ? paint.selection : paint.ink} strokeWidth={sel ? 60 : 20} />
-            <text x={mx} y={my - font * 0.2} fontSize={font} textAnchor="middle" fill={paint.onAccent} fontWeight={700} pointerEvents="none">{a.label}</text>
-            <text x={mx} y={my + font * 0.9} fontSize={font * 0.8} textAnchor="middle" fill={paint.onAccent} opacity={0.85} pointerEvents="none">{formatPower(power)}</text>
+            <text x={mx} y={my - font * 0.55} fontSize={Math.min(font * 1.5, (r.widthMm - 80) / (abbr.length * 0.72))} textAnchor="middle"
+              fill={paint.onAccent} fontWeight={800} pointerEvents="none">{abbr}</text>
+            <text x={mx} y={my + font * 0.75} fontSize={font * 0.8} textAnchor="middle" fill={paint.onAccent} fontWeight={600} pointerEvents="none">{a.label}</text>
+            <text x={mx} y={my + font * 1.7} fontSize={font * 0.75} textAnchor="middle" fill={paint.onAccent} opacity={0.85} pointerEvents="none">{formatPower(power)}</text>
           </g>
         );
       })}

@@ -73,6 +73,7 @@ south (down), units are millimetres.
     re-packs live while dragging. **Drag** a tray onto another aisle to move it there. **Drag** a
     facility to move it freely (snapped to 100 mm, kept inside the room). A click without movement
     just selects.
+  - Each rack tile shows the design **abbreviation** (large), the rack label and its typical power.
   - Each row header shows `name`, `power / budget` (red when over budget) and `used/total tiles`.
   - **Hover** a rack: tooltip with label, design, rack template, tiles, units used, devices, typical and
     max power, weight, warnings.

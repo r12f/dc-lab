@@ -17,7 +17,7 @@ export function rackSummary(lib: Library, designs: DesignLookup, a: RackAssignme
     counts.set(name, (counts.get(name) ?? 0) + 1);
   }
   return [
-    `${a.label} — ${design.name}`,
+    `${a.label} — ${design.abbr} · ${design.name}`,
     `${rack?.name ?? design.templateId} · ${formatTiles(tiles)} tile(s) from #${formatTiles(a.startTile + 1)}`,
     `Units ${m.usedUnits}/${m.totalUnits} · ${m.deviceCount} device(s)`,
     `Power ${formatPower(m.typicalW)} typ / ${formatPower(m.maxW)} max`,

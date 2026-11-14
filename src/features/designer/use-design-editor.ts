@@ -3,6 +3,7 @@ import type { Library } from '../../domain/library/library';
 import type { CableRun, Mount, Placement, RackDesign } from '../../domain/design/types';
 import { defaultMount, nextLabel, newPlacement, placementProblem } from '../../domain/design/placement';
 import { uniqueId } from '../../domain/ids';
+import { cleanAbbr } from '../../domain/design/abbr';
 import { useAppStore } from '../../state/store';
 
 /** Commands on one rack design (command-style API over the store). */
@@ -55,8 +56,9 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
   const removeCable = (id: string) => mutate((d) => ({ ...d, cables: d.cables.filter((c) => c.id !== id) }));
 
   const rename = (name: string) => mutate((d) => ({ ...d, name }));
+  const setAbbr = (text: string) => mutate((d) => ({ ...d, abbr: cleanAbbr(text) }));
 
-  return { addDevice, moveTo, updatePlacement, removePlacement, addCable, updateCable, removeCable, rename };
+  return { addDevice, moveTo, updatePlacement, removePlacement, addCable, updateCable, removeCable, rename, setAbbr };
 }
 
 export type DesignEditor = ReturnType<typeof useDesignEditor>;
