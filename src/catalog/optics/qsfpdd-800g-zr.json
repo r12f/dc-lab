@@ -3,7 +3,6 @@
   "id": "qsfpdd-800g-zr",
   "name": "800G QSFP-DD ZR",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "QSFP-DD",
   "speedGbps": 800,
   "reach": "ZR",

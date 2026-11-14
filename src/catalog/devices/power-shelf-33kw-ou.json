@@ -2,8 +2,6 @@
   "schema": "dc-lab/device@1",
   "id": "power-shelf-33kw-ou",
   "name": "33kW Power Shelf",
-  "vendor": "Generic",
-  "model": "33kW Power Shelf",
   "category": "power-shelf",
   "height": {
     "units": 1,

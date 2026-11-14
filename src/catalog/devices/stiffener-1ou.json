@@ -2,8 +2,6 @@
   "schema": "dc-lab/device@1",
   "id": "stiffener-1ou",
   "name": "1OU Rack Stiffener",
-  "vendor": "Generic",
-  "model": "1OU Rack Stiffener",
   "category": "stiffener",
   "height": {
     "units": 1,

@@ -3,6 +3,7 @@ import { RACK_SCHEMA } from '../rack/types';
 import { CABLE_SCHEMA, OPTIC_SCHEMA } from '../optics/types';
 import { DESIGN_SCHEMA } from '../design/types';
 import { LAYOUT_SCHEMA } from '../layout/types';
+import { ITEM_SCHEMA } from '../items/types';
 import { migrateProjectJson } from './migrate';
 import { emptyProject, PROJECT_SCHEMA, type Project } from './types';
 
@@ -10,8 +11,8 @@ export function serializeProject(project: Project): string {
   return JSON.stringify(project, null, 2);
 }
 
-type ListKey = 'devices' | 'racks' | 'optics' | 'cableMedia' | 'rackDesigns' | 'layouts';
-const LIST_KEYS: ListKey[] = ['devices', 'racks', 'optics', 'cableMedia', 'rackDesigns', 'layouts'];
+type ListKey = 'devices' | 'racks' | 'optics' | 'cableMedia' | 'variants' | 'rackDesigns' | 'layouts';
+const LIST_KEYS: ListKey[] = ['devices', 'racks', 'optics', 'cableMedia', 'variants', 'rackDesigns', 'layouts'];
 
 /** Single-item file schema -> project list it belongs to. */
 const ITEM_SCHEMAS: Record<string, ListKey> = {
@@ -19,6 +20,7 @@ const ITEM_SCHEMAS: Record<string, ListKey> = {
   [RACK_SCHEMA]: 'racks',
   [OPTIC_SCHEMA]: 'optics',
   [CABLE_SCHEMA]: 'cableMedia',
+  [ITEM_SCHEMA]: 'variants',
   [DESIGN_SCHEMA]: 'rackDesigns',
   [LAYOUT_SCHEMA]: 'layouts',
 };

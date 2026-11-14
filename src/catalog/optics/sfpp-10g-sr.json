@@ -3,7 +3,6 @@
   "id": "sfpp-10g-sr",
   "name": "10G SFP+ SR",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "SFP+",
   "speedGbps": 10,
   "reach": "SR",

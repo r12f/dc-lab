@@ -14,6 +14,11 @@ import { OpticDrawing } from './optic-drawing';
 import { CableDrawing } from './cable-drawing';
 import { OpticInspector } from './optic-inspector';
 import { CableInspector } from './cable-inspector';
+import { useItemVariants } from '../items/use-item-variants';
+import { fromItemKey, toItemKey } from '../items/item-key';
+import { variantChildren, variantKeywords } from '../items/variant-children';
+import { ItemVariantEditor } from '../items/item-variant-editor';
+import { ItemsSection } from '../items/items-section';
 
 export function OpticsModule() {
   const lib = useLibrary();
@@ -23,34 +28,51 @@ export function OpticsModule() {
   const [menuOpen, setMenuOpen] = useState(false);
   const mark = (src: string) => (src === 'project' ? ' *' : '');
 
+  const variants = useItemVariants(lib);
+  // Type (optic family / cable type) -> item type -> items.
   const items: SidebarItem[] = [
-    ...lib.optics.all().map(({ item, source }) => ({
-      id: toKey({ catalog: 'optic', id: item.id }), name: item.name,
-      ...opticTreePlacement(item),
-      keywords: `${item.vendor} ${item.model ?? ''} ${item.reach} ${item.packaging} ${item.fiberConnector}`,
-      badge: `${item.formFactor}${item.packaging === 'pigtail' ? ' pigtail' : ''}${mark(source)}`,
-    })),
-    ...lib.cableMedia.all().map(({ item, source }) => ({
-      id: toKey({ catalog: 'cable', id: item.id }), name: item.name,
-      path: ['Cables', CABLE_TYPES[item.type] ?? item.type],
-      pathOrder: [1],
-      keywords: `${item.vendor ?? ''} ${item.model ?? ''} ${item.ends.a.connector} ${item.ends.b.connector} ${item.type} ${item.mapping}`,
-      badge: `${cableSummary(item)}${mark(source)}`,
-    })),
+    ...lib.optics.all().map(({ item, source }) => {
+      const place = opticTreePlacement(item);
+      return {
+        id: toKey({ catalog: 'optic', id: item.id }), name: item.name, ...place,
+        keywords: `${item.reach} ${item.packaging} ${item.fiberConnector} ${variantKeywords(lib, item.id)}`,
+        badge: `${item.formFactor}${item.packaging === 'pigtail' ? ' pigtail' : ''}${mark(source)}`,
+        children: variantChildren(lib, item.id, place.path),
+      };
+    }),
+    ...lib.cableMedia.all().map(({ item, source }) => {
+      const path = ['Cables', CABLE_TYPES[item.type] ?? item.type];
+      return {
+        id: toKey({ catalog: 'cable', id: item.id }), name: item.name, path, pathOrder: [1],
+        keywords: `${item.ends.a.connector} ${item.ends.b.connector} ${item.type} ${item.mapping} ${variantKeywords(lib, item.id)}`,
+        badge: `${cableSummary(item)}${mark(source)}`,
+        children: variantChildren(lib, item.id, path),
+      };
+    }),
   ];
-  const ref = cat.ref;
+  // Selection is an item type key or an item key; an item shows its item type below the item editor.
+  const selKey = useAppStore((s) => s.selected.optics);
+  const variant = lib.variants.get(fromItemKey(selKey));
+  const ref = variant ? { catalog: variant.target === 'cable' ? 'cable' as const : 'optic' as const, id: variant.itemId } : cat.ref;
   const optic = ref?.catalog === 'optic' ? lib.optics.get(ref.id) : undefined;
   const cable = ref?.catalog === 'cable' ? lib.cableMedia.get(ref.id) : undefined;
+  const typeReadOnly = !!ref && (ref.catalog === 'optic' ? lib.optics : lib.cableMedia).sourceOf(ref.id) === 'builtin';
+  const selectKey = useAppStore((s) => s.select);
+  const chooseItem = (id: string) => selectKey('optics', toItemKey(id));
   const withRef = (key: string, f: (r: NonNullable<typeof ref>) => void) => { const r = fromKey(key); if (r) f(r); };
+  const header = ref && (variant
+    ? <ItemVariantEditor lib={lib} variant={variant} itemTypeName={(optic ?? cable)?.name ?? ''} commands={variants}
+        readOnly={variants.isReadOnly(variant, typeReadOnly)} />
+    : <ItemsSection lib={lib} target={ref.catalog} itemId={ref.id} commands={variants} onSelect={chooseItem} />);
 
   return (
     <ModuleLayout
       sidebar={
-        <Sidebar title="Optics & Cables" items={items} filterable selectedId={ref && toKey(ref)}
-          onSelect={(k) => cat.choose(fromKey(k))}
+        <Sidebar title="Optics & Cables" items={items} filterable selectedId={selKey}
+          onSelect={(k) => (fromItemKey(k) ? selectKey('optics', k) : cat.choose(fromKey(k)))}
           onNew={() => setMenuOpen((o) => !o)}
-          onDuplicate={(k) => withRef(k, cat.duplicate)}
-          onDelete={(k) => withRef(k, cat.del)}
+          onDuplicate={(k) => (variant ? chooseItem(variants.duplicate(variant)) : withRef(k, cat.duplicate))}
+          onDelete={(k) => { if (variant) { variants.del(variant); cat.choose(ref); } else withRef(k, cat.del); }}
           header={menuOpen && <NewOpticsMenu onClose={() => setMenuOpen(false)} onPick={(c) => cat.create(c.catalog, c.baseId, c.build)} />}
           footer={hiddenCount > 0 && (
             <button type="button" className="link" onClick={restoreBuiltins}>{`Show ${hiddenCount} hidden built-in item(s)`}</button>
@@ -66,10 +88,10 @@ export function OpticsModule() {
       }
       inspector={
         optic ? (
-          <OpticInspector optic={optic} readOnly={cat.readOnly} onChange={(o) => cat.save('optic', o)}
+          <OpticInspector optic={optic} header={header} readOnly={typeReadOnly} onChange={(o) => cat.save('optic', o)}
             onDuplicate={() => cat.duplicate({ catalog: 'optic', id: optic.id })} />
         ) : cable ? (
-          <CableInspector cable={cable} readOnly={cat.readOnly} onChange={(c) => cat.save('cable', c)}
+          <CableInspector cable={cable} header={header} readOnly={typeReadOnly} onChange={(c) => cat.save('cable', c)}
             onDuplicate={() => cat.duplicate({ catalog: 'cable', id: cable.id })} />
         ) : undefined
       }

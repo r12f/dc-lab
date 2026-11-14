@@ -3,7 +3,6 @@
   "id": "qsfp112-400g-dr4",
   "name": "400G QSFP112 DR4",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "QSFP112",
   "speedGbps": 400,
   "reach": "DR4",

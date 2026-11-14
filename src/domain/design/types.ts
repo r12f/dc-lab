@@ -11,6 +11,8 @@ export type Mount =
 export interface Placement {
   id: string;
   deviceId: string;
+  /** Chosen item (vendor product) of the device item type; empty = the item type's default item. */
+  variantId?: string;
   label: string;
   mount: Mount;
   breakoutProfileId?: string;

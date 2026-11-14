@@ -21,7 +21,7 @@ export function withPackaging(o: OpticDefinition, packaging: OpticPackaging): Op
 
 export function newOptic(id: string, packaging: OpticPackaging): OpticDefinition {
   const base: OpticDefinition = {
-    id, name: packaging === 'pigtail' ? 'New pigtail optic' : 'New optic module', packaging, vendor: 'Generic',
+    id, name: packaging === 'pigtail' ? 'New pigtail optic' : 'New optic module', packaging,
     formFactor: 'OSFP', speedGbps: 800, reach: 'DR8', fiberConnector: 'MPO-16', reachM: 500, powerW: 15,
   };
   return packaging === 'pigtail' ? withPackaging(base, 'pigtail') : base;

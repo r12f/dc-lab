@@ -2,8 +2,6 @@
   "schema": "dc-lab/device@1",
   "id": "switch-48x1g-mgmt",
   "name": "48x1GbE Management Switch",
-  "vendor": "Generic",
-  "model": "48x1GbE Management Switch",
   "category": "switch",
   "height": {
     "units": 1,

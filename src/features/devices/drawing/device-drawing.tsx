@@ -30,7 +30,7 @@ export function DeviceDrawing({ ref, device, ctx, compact }: Props) {
         <>
           <text x={0} y={10} fontSize={20} fontWeight={700} fill={paint.ink}>{device.name}</text>
           <text x={0} y={32} fontSize={13} fill={paint.inkMuted}>
-            {`${device.vendor} ${device.model} · ${traitsOf(device.category).label} · ${formatHeight(device.height)} · ` +
+            {`${traitsOf(device.category).label} · ${formatHeight(device.height)} · ` +
               `${formatPower(device.power.typicalW)} typ / ${formatPower(device.power.maxW)} max · ${device.weightKg} kg${psu}`}
           </text>
         </>

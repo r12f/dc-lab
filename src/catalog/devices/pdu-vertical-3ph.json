@@ -2,8 +2,6 @@
   "schema": "dc-lab/device@1",
   "id": "pdu-vertical-3ph",
   "name": "Vertical PDU 3-phase 0U",
-  "vendor": "Generic",
-  "model": "Vertical PDU 3-phase 0U",
   "category": "pdu",
   "height": {
     "units": 0,

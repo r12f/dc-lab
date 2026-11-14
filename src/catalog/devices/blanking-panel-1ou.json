@@ -2,8 +2,6 @@
   "schema": "dc-lab/device@1",
   "id": "blanking-panel-1ou",
   "name": "1OU Blanking Panel",
-  "vendor": "Generic",
-  "model": "1OU Blanking Panel",
   "category": "blanking-panel",
   "height": {
     "units": 1,

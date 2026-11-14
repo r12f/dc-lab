@@ -13,6 +13,11 @@ import { DeviceDrawing } from './drawing/device-drawing';
 import { DeviceInspector } from './device-inspector';
 import { NewDeviceMenu } from './new-device-menu';
 import { usePortSelection } from './use-port-selection';
+import { useItemVariants } from '../items/use-item-variants';
+import { fromItemKey, toItemKey } from '../items/item-key';
+import { variantChildren, variantKeywords } from '../items/variant-children';
+import { ItemVariantEditor } from '../items/item-variant-editor';
+import { ItemsSection } from '../items/items-section';
 
 export function DevicesModule() {
   const lib = useLibrary();
@@ -22,16 +27,34 @@ export function DevicesModule() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileId, setProfileId] = useState<string>();
   const ports = usePortSelection();
-  const device = ed.selected;
+  const variants = useItemVariants(lib);
+  // Selection is an item type id or an item key; an item selects its item type for drawing/editing.
+  const variantId = fromItemKey(ed.selectedId);
+  const variant = lib.variants.get(variantId);
+  const device = variant ? lib.devices.get(variant.itemId) : ed.selected;
+  const typeReadOnly = !!device && lib.devices.sourceOf(device.id) === 'builtin';
   const profile = device && findProfile(device, profileId);
 
-  const items = lib.devices.all().map(({ item, source }) => ({
-    id: item.id,
-    name: item.name,
-    path: [item.vendor || 'Unknown vendor', traitsOf(item.category).label],
-    keywords: `${item.model} ${item.category}`,
-    badge: `${formatHeight(item.height)}${source === 'project' ? ' *' : ''}`,
-  }));
+  // Type (category) -> item type -> items.
+  const items = lib.devices.all().map(({ item, source }) => {
+    const path = [traitsOf(item.category).label];
+    return {
+      id: item.id,
+      name: item.name,
+      path,
+      keywords: `${item.category} ${variantKeywords(lib, item.id)}`,
+      badge: `${formatHeight(item.height)}${source === 'project' ? ' *' : ''}`,
+      children: variantChildren(lib, item.id, path),
+    };
+  });
+  const select = (key: string | undefined) => { ed.select(key); ports.clear(); setProfileId(undefined); };
+  const duplicateSel = (key: string) => {
+    if (variant) select(toItemKey(variants.duplicate(variant)));
+    else ed.duplicate(key);
+  };
+  const deleteSel = (key: string) => {
+    if (variant) { variants.del(variant); select(device?.id); } else ed.del(key);
+  };
 
   return (
     <ModuleLayout
@@ -41,10 +64,10 @@ export function DevicesModule() {
           items={items}
           filterable
           selectedId={ed.selectedId}
-          onSelect={(id) => { ed.select(id); ports.clear(); setProfileId(undefined); }}
+          onSelect={select}
           onNew={() => setMenuOpen((o) => !o)}
-          onDuplicate={ed.duplicate}
-          onDelete={ed.del}
+          onDuplicate={duplicateSel}
+          onDelete={deleteSel}
           header={menuOpen && (
             <NewDeviceMenu onClose={() => setMenuOpen(false)} onPick={(t) => ed.create(`new-${t.id}`, t.build)} />
           )}
@@ -75,7 +98,12 @@ export function DevicesModule() {
           <DeviceInspector
             lib={lib}
             device={device}
-            readOnly={ed.readOnly}
+            header={variant
+              ? <ItemVariantEditor lib={lib} variant={variant} itemTypeName={device.name} commands={variants}
+                  readOnly={variants.isReadOnly(variant, typeReadOnly)} />
+              : <ItemsSection lib={lib} target="device" itemId={device.id} commands={variants}
+                  onSelect={(id) => select(toItemKey(id))} />}
+            readOnly={typeReadOnly}
             onChange={ed.save}
             onDuplicate={() => ed.duplicate(device.id)}
             profileId={profileId}

@@ -1,10 +1,10 @@
+import type { ReactNode } from 'react';
 import type { OpticDefinition, OpticPackaging, Pigtail } from '../../domain/optics/types';
 import { OPTIC_SCHEMA } from '../../domain/optics/types';
 import { withPackaging, withPigtail } from '../../domain/optics/factory';
 import { FORM_FACTORS } from '../../domain/ports/form-factors';
 import { NumberField, Section, SelectField, TextField } from '../../ui/fields';
 import { ReadOnlyNotice } from '../../ui/read-only-notice';
-import { CustomPropertiesSection } from '../properties/custom-properties-section';
 import { ExportJsonButton } from './export-json-button';
 
 interface Props {
@@ -12,6 +12,8 @@ interface Props {
   readOnly: boolean;
   onChange(o: OpticDefinition): void;
   onDuplicate(): void;
+  /** Item editor or item list, shown above the item type editor. */
+  header?: ReactNode;
 }
 
 const packagingOptions: { value: OpticPackaging; label: string }[] = [
@@ -41,11 +43,13 @@ function PigtailSection({ p, onChange }: { p: Pigtail; onChange(p: Pigtail): voi
   );
 }
 
-export function OpticInspector({ optic: o, readOnly, onChange, onDuplicate }: Props) {
+export function OpticInspector({ optic: o, header, readOnly, onChange, onDuplicate }: Props) {
   const set = (patch: Partial<OpticDefinition>) => onChange({ ...o, ...patch });
   const pigtail = o.packaging === 'pigtail';
   return (
     <div className="inspector-inner">
+      {header}
+      <h3 className="inspector-subtitle">Item type</h3>
       {readOnly && <ReadOnlyNotice onDuplicate={onDuplicate} />}
       <fieldset disabled={readOnly} className="plain">
         <Section title="General">
@@ -53,10 +57,6 @@ export function OpticInspector({ optic: o, readOnly, onChange, onDuplicate }: Pr
           <TextField label="Name" value={o.name} onChange={(name) => set({ name })} />
           <SelectField<OpticPackaging> label="Packaging" value={o.packaging} options={packagingOptions}
             onChange={(p) => onChange(withPackaging(o, p))} />
-          <div className="row2">
-            <TextField label="Vendor" value={o.vendor} onChange={(vendor) => set({ vendor })} />
-            <TextField label="Model / Vendor PN" value={o.model ?? ''} onChange={(model) => set({ model: model || undefined })} />
-          </div>
         </Section>
         <Section title="Interface">
           <div className="row2">
@@ -78,7 +78,6 @@ export function OpticInspector({ optic: o, readOnly, onChange, onDuplicate }: Pr
           </div>
         </Section>
       </fieldset>
-      <CustomPropertiesSection target="optic" item={o} builtin={readOnly} onChange={(properties) => onChange({ ...o, properties })} />
       <ExportJsonButton schema={OPTIC_SCHEMA} item={o} label="Export optic JSON" />
     </div>
   );

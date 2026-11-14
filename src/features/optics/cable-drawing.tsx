@@ -35,7 +35,6 @@ export function CableDrawing({ ref, cable: c }: Props) {
     `A ${describeEnd(c.ends.a)} → B ${describeEnd(c.ends.b)}`,
     c.mapping,
     c.polarity ? `polarity ${c.polarity}` : '',
-    [c.vendor, c.model].filter(Boolean).join(' '),
   ].filter(Boolean).join(' · ');
   const lines = fm.pairs.flatMap((row, i) => row.map((n, j) => ({ i, j, n }))).filter((p) => p.n > 0 && p.i < na && p.j < nb);
   // When every A-B pair carries the same fibers, one note replaces per-line labels (shuffles stay legible).

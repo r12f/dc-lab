@@ -3,7 +3,6 @@
   "id": "elsfp-laser",
   "name": "ELSFP external laser source",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "ELSFP",
   "speedGbps": 0,
   "reach": "ELS",

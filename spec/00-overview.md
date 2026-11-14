@@ -13,7 +13,7 @@ It is organized as five modules that build on each other:
 
 Cross-cutting concerns: [05-project-file.md](05-project-file.md) (single-file JSON project,
 built-in catalog), [06-architecture.md](06-architecture.md) (code structure) and
-[07-themes.md](07-themes.md) (color themes).
+[07-themes.md](07-themes.md) (color themes), [09-item-variants.md](09-item-variants.md) (Type → Item type → Item).
 
 ## UI shell
 

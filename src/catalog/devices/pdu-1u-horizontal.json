@@ -2,8 +2,6 @@
   "schema": "dc-lab/device@1",
   "id": "pdu-1u-horizontal",
   "name": "1U Horizontal PDU",
-  "vendor": "Generic",
-  "model": "1U Horizontal PDU",
   "category": "pdu",
   "height": {
     "units": 1,

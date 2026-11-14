@@ -3,7 +3,6 @@
   "id": "qsfpdd-400g-zr",
   "name": "400G QSFP-DD ZR",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "QSFP-DD",
   "speedGbps": 400,
   "reach": "ZR",

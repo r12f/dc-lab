@@ -3,7 +3,6 @@
   "id": "osfp-400g-lr4",
   "name": "400G OSFP LR4",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "OSFP",
   "speedGbps": 400,
   "reach": "LR4",

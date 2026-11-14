@@ -3,7 +3,6 @@
   "id": "qsfp28-100g-zr",
   "name": "100G QSFP28 ZR",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "QSFP28",
   "speedGbps": 100,
   "reach": "ZR",

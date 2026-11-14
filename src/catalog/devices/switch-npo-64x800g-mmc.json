@@ -2,8 +2,6 @@
   "schema": "dc-lab/device@1",
   "id": "switch-npo-64x800g-mmc",
   "name": "64x800G NPO Switch (MMC)",
-  "vendor": "Generic",
-  "model": "64x800G NPO Switch (MMC)",
   "category": "switch",
   "height": {
     "units": 2,

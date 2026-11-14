@@ -2,8 +2,6 @@
   "schema": "dc-lab/device@1",
   "id": "blanking-panel-1ru",
   "name": "1RU Blanking Panel",
-  "vendor": "Generic",
-  "model": "1RU Blanking Panel",
   "category": "blanking-panel",
   "height": {
     "units": 1,

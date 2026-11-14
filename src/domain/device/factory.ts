@@ -6,8 +6,6 @@ export function newDevice(id: string): DeviceDefinition {
     schema: DEVICE_SCHEMA,
     id,
     name: 'New device',
-    vendor: 'Generic',
-    model: '',
     category: 'switch',
     height: { units: 1, system: 'RU' },
     depthMm: 600,

@@ -3,7 +3,6 @@
   "id": "qsfp56-200g-sr4",
   "name": "200G QSFP56 SR4",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "QSFP56",
   "speedGbps": 200,
   "reach": "SR4",

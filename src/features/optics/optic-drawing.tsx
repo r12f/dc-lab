@@ -30,7 +30,7 @@ export function OpticDrawing({ ref, optic: o }: Props) {
       <rect width={width} height={height} fill={paint.paper} />
       <text x={20} y={30} fontSize={20} fontWeight={700} fill={paint.ink}>{o.name}</text>
       <text x={20} y={52} fontSize={14} fill={paint.inkMuted}>
-        {`${o.packaging === 'pigtail' ? 'Pigtail optic' : 'Pluggable module'} · ${o.vendor}${o.model ? ` ${o.model}` : ''} · ${o.powerW} W · ${o.reachM} m`}
+        {`${o.packaging === 'pigtail' ? 'Pigtail optic' : 'Pluggable module'} · ${o.powerW} W · ${o.reachM} m`}
       </text>
       {/* Host edge connector */}
       <rect x={20} y={cy - 22} width={22} height={44} fill={paint.frame} />

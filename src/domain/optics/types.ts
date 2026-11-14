@@ -1,5 +1,4 @@
 import type { CatalogItem } from '../catalog-item';
-import type { HasProperties } from '../properties/types';
 
 export const OPTIC_SCHEMA = 'dc-lab/optic@1';
 export const CABLE_SCHEMA = 'dc-lab/cable@1';
@@ -17,12 +16,10 @@ export interface Pigtail {
 }
 
 /** An optic: pluggable module (transceiver, AOC/DAC end, laser source) or pigtail optic. */
-export interface OpticDefinition extends CatalogItem, HasProperties {
+/** An optic item type; vendor products are ItemVariants of it. */
+export interface OpticDefinition extends CatalogItem {
   schema?: typeof OPTIC_SCHEMA;
   packaging: OpticPackaging;
-  vendor: string;
-  /** Model / vendor PN. */
-  model?: string;
   /** Module form factor, e.g. "OSFP", "QSFP28". */
   formFactor: string;
   /** Total module speed (Gbps). */
@@ -59,12 +56,10 @@ export type FiberMapping = 'straight' | 'shuffle';
 /** MPO polarity: A = key-up to key-down straight-through, B = reversed, C = pair-flipped. */
 export type Polarity = 'A' | 'B' | 'C';
 
-export interface CableMedia extends CatalogItem, HasProperties {
+/** A cable item type; vendor products are ItemVariants of it. */
+export interface CableMedia extends CatalogItem {
   schema?: typeof CABLE_SCHEMA;
   type: CableType;
-  vendor?: string;
-  /** Model / vendor PN. */
-  model?: string;
   ends: { a: CableEnd; b: CableEnd };
   /** Fibers in the cable body (e.g. 160 for a 160F trunk). */
   fiberCount?: number;

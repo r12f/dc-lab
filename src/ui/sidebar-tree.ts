@@ -10,6 +10,8 @@ export interface SidebarItem {
   pathOrder?: (number | string)[];
   /** Sort key among siblings; defaults to the name. */
   order?: number | string;
+  /** Selectable sub-items shown under this item when it is expanded (e.g. vendor items of an item type). */
+  children?: SidebarItem[];
 }
 
 type SortKey = number | string;
@@ -63,5 +65,6 @@ export function matchesFilter(item: SidebarItem, filter: string): boolean {
   const terms = filter.toLowerCase().split(/\s+/).filter(Boolean);
   if (terms.length === 0) return true;
   const hay = [item.name, ...item.path, item.keywords ?? '', item.id].join(' ').toLowerCase();
-  return terms.every((t) => hay.includes(t));
+  return terms.every((t) => hay.includes(t)) || (item.children ?? []).some((c) => matchesFilter({ ...c, path: item.path }, filter));
 }
+

@@ -2,8 +2,6 @@
   "schema": "dc-lab/device@1",
   "id": "patch-panel-1u-144f",
   "name": "1U 144F Patch Panel",
-  "vendor": "Generic",
-  "model": "1U 144F Patch Panel",
   "category": "patch-panel",
   "height": {
     "units": 1,

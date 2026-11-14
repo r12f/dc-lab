@@ -2,8 +2,6 @@
   "schema": "dc-lab/device@1",
   "id": "switch-cpo-128x800g-mpo",
   "name": "128x800G CPO Switch (MPO-16)",
-  "vendor": "Generic",
-  "model": "128x800G CPO Switch (MPO-16)",
   "category": "switch",
   "height": {
     "units": 4,

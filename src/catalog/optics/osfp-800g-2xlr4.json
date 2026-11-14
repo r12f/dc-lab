@@ -3,7 +3,6 @@
   "id": "osfp-800g-2xlr4",
   "name": "800G OSFP 2xLR4",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "OSFP",
   "speedGbps": 800,
   "reach": "2xLR4",

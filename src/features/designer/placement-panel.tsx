@@ -7,6 +7,7 @@ import { Button } from '../../ui/button';
 import { NumberField, Section, SelectField, TextField } from '../../ui/fields';
 import { DeviceDrawing } from '../devices/drawing/device-drawing';
 import { resolvePlacedPort } from '../../domain/design/optics';
+import { variantLabel } from '../../domain/items/variants';
 import type { DesignEditor } from './use-design-editor';
 import { GroupOpticsEditor } from './group-optics-editor';
 import { PortConfigEditor } from './port-config-editor';
@@ -43,6 +44,14 @@ export function PlacementPanel({ lib, placement: p, templateId, editor, onRemove
         ) : (
           <p className="muted">{`${lib.racks.get(templateId)?.sideElements.find((e) => e.id === mount.elementId)?.name ?? mount.elementId}, slot ${mount.slot}`}</p>
         )}
+        <SelectField
+          label="Item (vendor / model)"
+          value={lib.variants.resolve(device.id, p.variantId)?.id ?? ''}
+          options={lib.variants.of(device.id).map((v) => ({
+            value: v.id, label: `${variantLabel(v) || v.id}${v.id === lib.variants.defaultOf(device.id)?.id ? ' (default)' : ''}`,
+          }))}
+          onChange={(v) => update((x) => ({ ...x, variantId: v === lib.variants.defaultOf(device.id)?.id ? undefined : v }))}
+        />
         <SelectField
           label="Breakout profile"
           value={p.breakoutProfileId ?? ''}

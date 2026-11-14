@@ -2,8 +2,6 @@
   "schema": "dc-lab/device@1",
   "id": "ocs-300x300",
   "name": "300x300 Optical Circuit Switch",
-  "vendor": "Generic",
-  "model": "300x300 Optical Circuit Switch",
   "category": "ocs",
   "height": {
     "units": 7,

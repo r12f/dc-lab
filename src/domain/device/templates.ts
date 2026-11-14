@@ -21,7 +21,7 @@ const mgmtAndConsole = (face: PortGroup['face'] = 'front'): PortGroup[] => [
 
 function base(id: string, patch: Partial<DeviceDefinition>): DeviceDefinition {
   return {
-    schema: DEVICE_SCHEMA, id, name: 'New device', vendor: 'Generic', model: '', category: 'other',
+    schema: DEVICE_SCHEMA, id, name: 'New device', category: 'other',
     height: { units: 1, system: 'RU' }, depthMm: 600, weightKg: 10, power: { typicalW: 300, maxW: 500 },
     ports: [], breakoutProfiles: [], ...patch,
   };

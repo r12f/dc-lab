@@ -3,7 +3,6 @@
   "id": "qsfpp-40g-er4",
   "name": "40G QSFP+ ER4",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "QSFP+",
   "speedGbps": 40,
   "reach": "ER4",

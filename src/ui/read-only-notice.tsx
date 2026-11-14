@@ -4,7 +4,7 @@ import { Button } from './button';
 export function ReadOnlyNotice({ onDuplicate }: { onDuplicate(): void }) {
   return (
     <div className="notice">
-      Built-in item (read-only).
+      Built-in (read-only).
       <Button variant="primary" onClick={onDuplicate}>Duplicate to edit</Button>
     </div>
   );

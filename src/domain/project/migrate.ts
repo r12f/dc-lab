@@ -182,8 +182,34 @@ export function migrateCable(c: Json): Json {
   return { ...rest, ends: { a, b }, mapping: 'straight' };
 }
 
+/**
+ * Vendor, model and custom property values moved from item types to items: each project device /
+ * optic / cable that carried them gets its generic item `<id>--generic` with those values.
+ */
+function migrateVariants(p: Json): Json {
+  const variants = [...((p.variants as Json[]) ?? [])];
+  const have = new Set(variants.map((v) => v.id));
+  const strip = (list: Json[] | undefined, target: string) => (list ?? []).map((item) => {
+    const { vendor, model, properties, ...rest } = item;
+    const gid = `${String(item.id)}--generic`;
+    if ((vendor || model || properties) && !have.has(gid)) {
+      variants.push({ id: gid, name: String(model || item.name || item.id), target, itemId: item.id,
+        vendor: String(vendor ?? ''), model: String(model ?? ''), ...(properties ? { properties } : {}) });
+      have.add(gid);
+    }
+    return rest;
+  });
+  return {
+    ...p,
+    devices: strip(p.devices as Json[], 'device'),
+    optics: strip(p.optics as Json[], 'optic'),
+    cableMedia: strip(p.cableMedia as Json[], 'cable'),
+    variants,
+  };
+}
+
 export function migrateProjectJson(raw: Json): Json {
-  const p = migrateRenames(raw);
+  const p = migrateVariants(migrateRenames(raw));
   return {
     ...p,
     cableMedia: ((p.cableMedia as Json[]) ?? []).map(migrateCable),

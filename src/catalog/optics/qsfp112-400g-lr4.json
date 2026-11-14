@@ -3,7 +3,6 @@
   "id": "qsfp112-400g-lr4",
   "name": "400G QSFP112 LR4",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "QSFP112",
   "speedGbps": 400,
   "reach": "LR4",

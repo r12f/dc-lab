@@ -3,7 +3,6 @@
   "id": "qsfpp-40g-lr4",
   "name": "40G QSFP+ LR4",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "QSFP+",
   "speedGbps": 40,
   "reach": "LR4",

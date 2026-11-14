@@ -3,6 +3,8 @@ import type { DeviceDefinition } from '../device/types';
 import type { RackTemplate } from '../rack/types';
 import type { CableMedia, OpticDefinition } from '../optics/types';
 import type { HasProperties, PropertyValue } from '../properties/types';
+import type { ItemVariant } from '../items/types';
+import { VariantIndex } from '../items/variants';
 
 /** One collection of a kind: built-in items shadowed by project items with the same id. */
 export class ItemCollection<T extends CatalogItem> {
@@ -39,6 +41,8 @@ export interface CatalogSet {
   racks: RackTemplate[];
   optics: OpticDefinition[];
   cableMedia: CableMedia[];
+  /** Vendor items of device/optic/cable item types (project only). */
+  variants?: ItemVariant[];
 }
 
 /** Resolves library ids over the built-in catalog and the project. */
@@ -47,6 +51,7 @@ export class Library {
   readonly racks: ItemCollection<RackTemplate>;
   readonly optics: ItemCollection<OpticDefinition>;
   readonly cableMedia: ItemCollection<CableMedia>;
+  readonly variants: VariantIndex;
 
   constructor(
     builtin: CatalogSet,
@@ -58,9 +63,15 @@ export class Library {
     /** Built-in items with the project's custom property values merged in. */
     const withProps = <T extends HasProperties & CatalogItem>(items: readonly T[]): T[] =>
       items.map((i) => (builtinProperties[i.id] ? { ...i, properties: { ...i.properties, ...builtinProperties[i.id] } } : i));
-    this.devices = new ItemCollection(withProps(builtin.devices), project.devices, hidden);
+    this.devices = new ItemCollection(builtin.devices, project.devices, hidden);
     this.racks = new ItemCollection(withProps(builtin.racks), project.racks, hidden);
-    this.optics = new ItemCollection(withProps(builtin.optics), project.optics, hidden);
-    this.cableMedia = new ItemCollection(withProps(builtin.cableMedia), project.cableMedia, hidden);
+    this.optics = new ItemCollection(builtin.optics, project.optics, hidden);
+    this.cableMedia = new ItemCollection(builtin.cableMedia, project.cableMedia, hidden);
+    const types = [
+      ...this.devices.items().map((i) => ({ target: 'device' as const, id: i.id, name: i.name })),
+      ...this.optics.items().map((i) => ({ target: 'optic' as const, id: i.id, name: i.name })),
+      ...this.cableMedia.items().map((i) => ({ target: 'cable' as const, id: i.id, name: i.name })),
+    ];
+    this.variants = new VariantIndex(types, project.variants ?? [], hidden, builtinProperties);
   }
 }

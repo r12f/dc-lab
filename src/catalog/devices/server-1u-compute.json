@@ -2,8 +2,6 @@
   "schema": "dc-lab/device@1",
   "id": "server-1u-compute",
   "name": "1U Compute Server",
-  "vendor": "Generic",
-  "model": "1U Compute Server",
   "category": "server",
   "height": {
     "units": 1,

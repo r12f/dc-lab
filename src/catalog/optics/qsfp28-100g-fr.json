@@ -3,7 +3,6 @@
   "id": "qsfp28-100g-fr",
   "name": "100G QSFP28 FR",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "QSFP28",
   "speedGbps": 100,
   "reach": "FR",

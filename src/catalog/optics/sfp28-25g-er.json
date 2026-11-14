@@ -3,7 +3,6 @@
   "id": "sfp28-25g-er",
   "name": "25G SFP28 ER",
   "packaging": "module",
-  "vendor": "Generic",
   "formFactor": "SFP28",
   "speedGbps": 25,
   "reach": "ER",

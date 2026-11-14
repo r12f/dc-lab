@@ -2,8 +2,6 @@
   "schema": "dc-lab/device@1",
   "id": "server-gpu-8u",
   "name": "8U GPU Server",
-  "vendor": "Generic",
-  "model": "8U GPU Server",
   "category": "server",
   "height": {
     "units": 8,

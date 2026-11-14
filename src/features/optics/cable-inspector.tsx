@@ -1,9 +1,9 @@
+import type { ReactNode } from 'react';
 import type { CableMedia, CableType, FiberMapping, Polarity } from '../../domain/optics/types';
 import { CABLE_SCHEMA } from '../../domain/optics/types';
 import { CABLE_TYPES, isFiber } from '../../domain/optics/cable-types';
 import { Field, NumberField, Section, SelectField, TextField } from '../../ui/fields';
 import { ReadOnlyNotice } from '../../ui/read-only-notice';
-import { CustomPropertiesSection } from '../properties/custom-properties-section';
 import { ExportJsonButton } from './export-json-button';
 import { CableEndFields } from './cable-end-fields';
 import { cableSummary, fiberMap } from '../../domain/optics/fiber-map';
@@ -14,6 +14,8 @@ interface Props {
   readOnly: boolean;
   onChange(c: CableMedia): void;
   onDuplicate(): void;
+  /** Item editor or item list, shown above the item type editor. */
+  header?: ReactNode;
 }
 
 const typeOptions = (Object.keys(CABLE_TYPES) as CableType[]).map((t) => ({ value: t, label: CABLE_TYPES[t] }));
@@ -24,22 +26,20 @@ const polarityOptions: { value: '' | Polarity; label: string }[] = [
   { value: '', label: '—' }, { value: 'A', label: 'Type A (key-up/key-down)' }, { value: 'B', label: 'Type B (key-up/key-up)' }, { value: 'C', label: 'Type C (pair flip)' },
 ];
 
-export function CableInspector({ cable: c, readOnly, onChange, onDuplicate }: Props) {
+export function CableInspector({ cable: c, header, readOnly, onChange, onDuplicate }: Props) {
   const set = (patch: Partial<CableMedia>) => onChange({ ...c, ...patch });
   const fiber = isFiber(c.type);
   const fm = fiberMap(c);
   const multi = isMultiFiber(c.ends.a.connector) || isMultiFiber(c.ends.b.connector);
   return (
     <div className="inspector-inner">
+      {header}
+      <h3 className="inspector-subtitle">Item type</h3>
       {readOnly && <ReadOnlyNotice onDuplicate={onDuplicate} />}
       <fieldset disabled={readOnly} className="plain">
         <Section title="General">
           <TextField label="Id" value={c.id} onChange={() => undefined} disabled />
           <TextField label="Name" value={c.name} onChange={(name) => set({ name })} />
-          <div className="row2">
-            <TextField label="Vendor" value={c.vendor ?? ''} onChange={(vendor) => set({ vendor: vendor || undefined })} />
-            <TextField label="Model / Vendor PN" value={c.model ?? ''} onChange={(model) => set({ model: model || undefined })} />
-          </div>
         </Section>
         <Section title="Media">
           <div className="row3">
@@ -63,7 +63,6 @@ export function CableInspector({ cable: c, readOnly, onChange, onDuplicate }: Pr
             + `${fm.unusedA ? ` · ${fm.unusedA}F unused on A` : ''}${fm.unusedB ? ` · ${fm.unusedB}F unused on B` : ''}`}</p>
         </Section>
       </fieldset>
-      <CustomPropertiesSection target="cable" item={c} builtin={readOnly} onChange={(properties) => onChange({ ...c, properties })} />
       <ExportJsonButton schema={CABLE_SCHEMA} item={c} label="Export cable JSON" />
     </div>
   );

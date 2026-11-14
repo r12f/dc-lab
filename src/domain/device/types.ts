@@ -88,12 +88,9 @@ export interface PduInput {
   inputPlug: string;
 }
 
-import type { HasProperties } from '../properties/types';
-
-export interface DeviceDefinition extends CatalogItem, HasProperties {
+/** An item type: the technical definition. Vendor products are ItemVariants of it. */
+export interface DeviceDefinition extends CatalogItem {
   schema?: typeof DEVICE_SCHEMA;
-  vendor: string;
-  model: string;
   category: DeviceCategory;
   height: Height;
   depthMm: number;
