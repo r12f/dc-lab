@@ -13,3 +13,12 @@ describe('100G QSFP28 breakout', () => {
     expect([g.role, g.count, g.speedGbps]).toEqual(['service', 2, 25]);
   });
 });
+
+describe('64x800G OSFP switch: 2-PSU and 4-PSU item types', () => {
+  it('same switch, differing only in PSU count', () => {
+    const two = SHIPPED_CATALOG.devices.find((d) => d.id === 'switch-64x800g-osfp')!;
+    const four = SHIPPED_CATALOG.devices.find((d) => d.id === 'switch-64x800g-osfp-4psu')!;
+    expect([two.name, two.psus?.count, four.name, four.psus?.count]).toEqual(['64x800G OSFP Switch (2PSU)', 2, '64x800G OSFP Switch (4PSU)', 4]);
+    expect({ ...four, id: two.id, name: two.name, psus: two.psus }).toEqual(two);
+  });
+});

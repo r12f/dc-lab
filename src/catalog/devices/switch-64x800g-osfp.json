@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/device@1",
   "id": "switch-64x800g-osfp",
-  "name": "64x800G OSFP Switch",
+  "name": "64x800G OSFP Switch (2PSU)",
   "category": "switch",
   "height": {
     "units": 2,

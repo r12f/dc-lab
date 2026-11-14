@@ -1,0 +1,113 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "switch-64x800g-osfp-4psu",
+  "name": "64x800G OSFP Switch (4PSU)",
+  "category": "switch",
+  "height": {
+    "units": 2,
+    "system": "RU"
+  },
+  "depthMm": 627,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "psus": {
+    "count": 4,
+    "inlet": "C20",
+    "ratedW": 0
+  },
+  "ports": [
+    {
+      "id": "osfp",
+      "label": "OSFP",
+      "role": "data",
+      "formFactor": "OSFP",
+      "heatSink": "IHS",
+      "count": 64,
+      "speedGbps": 800,
+      "lanes": 8,
+      "face": "front",
+      "rows": 4,
+      "breakoutModes": [
+        "2x400G",
+        "4x200G",
+        "8x100G"
+      ]
+    },
+    {
+      "id": "service",
+      "label": "SERVICE",
+      "role": "service",
+      "formFactor": "SFP28",
+      "count": 2,
+      "speedGbps": 25,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default (max speed, no module)",
+      "groupDefaults": {},
+      "overrides": {}
+    },
+    {
+      "id": "all-2x400g",
+      "name": "All 2x400G, 2xDR4",
+      "groupDefaults": {
+        "osfp": {
+          "mode": "2x400G",
+          "reach": "2xDR4"
+        }
+      },
+      "overrides": {}
+    },
+    {
+      "id": "mixed",
+      "name": "Port 1 8x100G, port 2 4x200G",
+      "groupDefaults": {
+        "osfp": {
+          "reach": "2xDR4"
+        }
+      },
+      "overrides": {
+        "osfp/1": {
+          "mode": "8x100G"
+        },
+        "osfp/2": {
+          "mode": "4x200G"
+        }
+      }
+    }
+  ],
+  "defaultProfileId": "default"
+}

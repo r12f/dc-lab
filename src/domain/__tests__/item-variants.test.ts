@@ -30,7 +30,7 @@ describe('items of item types', () => {
     d.placements.push({ ...newPlacement('p2', 'switch-64x800g-osfp', 'SW2', { kind: 'rack', position: 3, face: 'front' }), variantId: 'a1' });
     const lines = buildRackBom(lib, d).filter((l) => l.kind === 'device');
     expect(lines.map((l) => [l.vendorModel, l.qty, l.properties?.lead])).toEqual([
-      ['Generic 64x800G OSFP Switch', 1, 3], ['Acme SW-6400', 1, 12],
+      ['Generic 64x800G OSFP Switch (2PSU)', 1, 3], ['Acme SW-6400', 1, 12],
     ]);
   });
   it('migrates vendor/model/properties from item types to generic items', () => {

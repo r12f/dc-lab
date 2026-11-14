@@ -50,7 +50,7 @@ describe('rack BOM tree', () => {
       'Rack frame (42RU)', 'PDU bay L (PDU bay)', 'Sidepod L (Sidepod)', 'PDU bay R (PDU bay)', 'Sidepod R (Sidepod)',
     ]);
     const frame = t.children[0];
-    expect(frame.children.map((c) => [c.label, c.line?.qty, c.line?.notes])).toEqual([['64x800G OSFP Switch', 2, ['SW1', 'SW2']]]);
+    expect(frame.children.map((c) => [c.label, c.line?.qty, c.line?.notes])).toEqual([['64x800G OSFP Switch (2PSU)', 2, ['SW1', 'SW2']]]);
     expect(t.children[1].children.map((c) => c.label)).toEqual([lib.devices.get('pdu-vertical-3ph')!.name]);
     // Same totals as the flat BOM.
     const sum = (ls: { kind: string; qty: number }[], k: string) => ls.filter((l) => l.kind === k).reduce((n, l) => n + l.qty, 0);
