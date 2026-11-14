@@ -1,6 +1,6 @@
 # DC Lab
 
-Data center prototyping in the browser: devices (L10), rack templates, rack designer (L11), DC layout.
+Data center prototyping in the browser: devices (L10), rack templates, rack designer (L11), DC layout (L12).
 See [spec/00-overview.md](spec/00-overview.md).
 
 ```sh

@@ -16,5 +16,5 @@ export const MODULES: ModuleDef[] = [
   { id: 'devices', label: 'Devices (L10)', component: DevicesModule },
   { id: 'racks', label: 'Racks', component: RacksModule },
   { id: 'designer', label: 'Rack Designer (L11)', component: DesignerModule },
-  { id: 'layout', label: 'DC Layout', component: LayoutModule },
+  { id: 'layout', label: 'DC Layout (L12)', component: LayoutModule },
 ];
