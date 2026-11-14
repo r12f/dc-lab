@@ -10,18 +10,22 @@ describe('default profile: native (max) speed, DR optics', () => {
   it('every shipped device defaults to "default"', () => {
     for (const d of SHIPPED_CATALOG.devices) expect(d.defaultProfileId, d.id).toBe('default');
   });
-  it('resolves to the native mode with a DR module', () => {
+  it('switches: max speed, no module (empty cage, connector = form factor)', () => {
     const lib = new Library(SHIPPED_CATALOG, emptyProject());
-    const cases: [string, string, string, string][] = [
-      ['switch-64x800g-osfp', 'osfp/1', '1x800G', '2xDR4'],
-      ['switch-64x1600g-osfp', 'osfp/1', '1x1600G', '2xDR4'],
-      ['switch-32x400g-qsfpdd', 'qsfpdd/1', '1x400G', 'DR4'],
-      ['switch-64x100g-qsfp28', 'qsfp28/1', '1x100G', 'PSM4'],
+    const cases: [string, string, string][] = [
+      ['switch-64x800g-osfp', 'osfp/1', '1x800G'],
+      ['switch-64x1600g-osfp', 'osfp/1', '1x1600G'],
+      ['switch-32x400g-qsfpdd', 'qsfpdd/1', '1x400G'],
+      ['switch-64x100g-qsfp28', 'qsfp28/1', '1x100G'],
     ];
-    for (const [id, ref, mode, reach] of cases) {
+    for (const [id, ref, mode] of cases) {
       const d = lib.devices.get(id)!;
       const r = resolvePort(lib, d, ref, findProfile(d))!;
-      expect([r.mode, r.reach, r.optic?.reach.replace(/\+$/, '')], id).toEqual([mode, reach, reach]);
+      expect([r.mode, r.reach, r.optic], id).toEqual([mode, undefined, undefined]);
+    }
+    for (const d of SHIPPED_CATALOG.devices.filter((x) => x.category === 'switch')) {
+      const p = findProfile(d)!;
+      expect([p.groupDefaults, p.overrides], d.id).toEqual([{}, {}]);
     }
   });
 });

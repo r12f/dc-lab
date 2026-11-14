@@ -131,11 +131,11 @@ Drawing strategy is selected by device shape:
 - **DC PDU** (`dc-pdu`): room-level PDU item, picked by PDU facilities in DC Layout (supply capacity = their
   default max power); hidden from the Rack Designer palette.
 - **In-Row Chiller** (`chiller`): full-height device with cooling capacity / pump power; fills a chiller rack.
-- **Default breakout profile** (`defaultProfileId`): every device has one. Built-ins ship "Default (native speed,
-  DR)": every data / service cage at its native (maximum) speed with the DR-class module of that speed —
-  2xDR4 on 800G / 1.6T OSFP, DR4 on 400G QSFP, PSM4 on 100G QSFP — all parallel SMF on MPO-12. 100G QSFP28
-  has **PSM4** (4x25G parallel, MPO-12, the default) and **DR1** (single lane, LC); there is no 100G DR4.
-  Old project settings load as DR -> DR1. No default reach where no DR module exists. Placements
+- **Default breakout profile** (`defaultProfileId`): every device has one. Built-in switches ship "Default (max
+  speed, no module)": every cage at its native (maximum) speed with no module (empty cage; the connector is the
+  cage form factor, so DAC / AEC / AOC fit in Rack Designer). Other built-ins (servers, testers) keep their DR
+  module default. 100G QSFP28 has **PSM4** (4x25G parallel, MPO-12) and **DR1** (single lane, LC); there is no
+  100G DR4. Old project settings load as DR -> DR1. Placements
   that pick no profile and the Devices canvas use it; "Make default" in the profile editor; the default cannot
   be deleted. Projects get a "Default" profile on load.
 - **Profiles on built-in devices**: a built-in device stays read-only, but its breakout profiles are editable

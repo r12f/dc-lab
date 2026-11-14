@@ -82,15 +82,8 @@
   "breakoutProfiles": [
     {
       "id": "default",
-      "name": "Default (native speed, DR)",
-      "groupDefaults": {
-        "osfp": {
-          "reach": "2xDR4"
-        },
-        "service": {
-          "reach": "PSM4"
-        }
-      },
+      "name": "Default (max speed, no module)",
+      "groupDefaults": {},
       "overrides": {}
     }
   ],

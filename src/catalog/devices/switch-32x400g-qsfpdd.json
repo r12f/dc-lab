@@ -63,12 +63,8 @@
   "breakoutProfiles": [
     {
       "id": "default",
-      "name": "Default (native speed, DR)",
-      "groupDefaults": {
-        "qsfpdd": {
-          "reach": "DR4"
-        }
-      },
+      "name": "Default (max speed, no module)",
+      "groupDefaults": {},
       "overrides": {}
     }
   ],

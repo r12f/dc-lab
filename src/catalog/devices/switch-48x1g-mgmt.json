@@ -71,7 +71,7 @@
   "breakoutProfiles": [
     {
       "id": "default",
-      "name": "Default",
+      "name": "Default (max speed, no module)",
       "groupDefaults": {},
       "overrides": {}
     }
