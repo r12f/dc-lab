@@ -106,8 +106,12 @@ profile = { id, name, groupDefaults: { [groupId]: PortSetting }, overrides: { [p
 Each field resolves independently: instance override (Rack Designer) > profile port override >
 profile group default > native mode / no optic / no cable. An optic is valid only if its form factor
 fits the cage and its speed matches the mode.
-The effective breakout and optic/cable are drawn on every port. Each data/service port shows, along
-its bottom edge, one sub-box per **cable connector** on the port face: the module's fiber connectors
+The effective breakout and optic/cable are drawn on every port. **Every port of every device** shows
+its interface type and mode as one label, e.g. `OSFP 800G`, `OSFP 2x400G`, `RJ45 1G`, `LC`, `C13`,
+`C19`: the form factor, plus the effective speed when the port is rated (`speedGbps > 0`).
+
+Each data/service port also shows, along its bottom edge, one sub-box per **cable connector** (leg) on
+the port face: the module's fiber connectors
 (`2xDR4` module with `2x MPO-12` → two MPO-12 boxes, `2xFR4` → two LC boxes, pigtail → one per leg) or,
 for CPO/NPO fiber ports, the port connector times the reach multiplier. Boxes are filled with the
 attached cable's color (dark when no cable); DAC/AOC and empty cages show none.

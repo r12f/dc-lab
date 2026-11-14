@@ -20,17 +20,23 @@ export interface Placement {
   groupSettings: Record<string, PortSetting>;
 }
 
+/** One end of a cable: a connector (leg) on a port of a placed device. */
 export interface CableEndpoint {
   placementId: string;
+  /** Empty = any port. */
   portRef: string;
+  /** 1-based leg of the port's connectors (e.g. 2 = second MPO-12 of a 2xDR4 module); undefined = any. */
+  connector?: number;
 }
 
 export type CableRoute = 'left' | 'right';
 
 export interface CableRun {
   id: string;
+  /** A end. */
   from: CableEndpoint;
-  to: CableEndpoint;
+  /** B end(s): one for a straight cable, up to the breakout leg count for a breakout cable. */
+  to: CableEndpoint[];
   /** Side cable channel the run uses. */
   route: CableRoute;
   mediaId: string;

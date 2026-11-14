@@ -1,0 +1,13 @@
+{
+  "id": "mpo12-4xlc-smf-breakout",
+  "name": "MPO-12 to 4x LC SMF breakout",
+  "type": "fiber-sm",
+  "connector": "MPO-12",
+  "fiberCount": 8,
+  "breakout": {
+    "count": 4,
+    "connector": "LC"
+  },
+  "color": "#facc15",
+  "schema": "dc-lab/cable@1"
+}

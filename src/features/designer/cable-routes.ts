@@ -6,7 +6,8 @@ import { placementRect } from './placed-device';
 
 export interface RoutedCable {
   run: CableRun;
-  points: [number, number][];
+  /** One polyline per B end; all share the A end and the lane. */
+  paths: [number, number][][];
 }
 
 /** Where a cable leaves a device toward the channel on `route`: the device edge on that side, at its centre height. */
@@ -32,10 +33,10 @@ export function routeCables(lib: Library, design: RackDesign, rack: RackTemplate
   const find = (id: string) => design.placements.find((p) => p.id === id);
   const ends = design.cables.map((run) => {
     const a = find(run.from.placementId);
-    const b = find(run.to.placementId);
     const s = a && exitPoint(lib, rack, geo, a, run.route);
-    const e = b && exitPoint(lib, rack, geo, b, run.route);
-    return s && e ? { run, s, e, span: Math.abs(s[1] - e[1]) } : undefined;
+    const es = run.to.map((t) => { const b = find(t.placementId); return b && exitPoint(lib, rack, geo, b, run.route); })
+      .filter((e): e is [number, number] => !!e);
+    return s && es.length ? { run, s, es, span: Math.max(...es.map((e) => Math.abs(s[1] - e[1]))) } : undefined;
   }).filter((x): x is NonNullable<typeof x> => !!x);
 
   const out: RoutedCable[] = [];
@@ -43,10 +44,10 @@ export function routeCables(lib: Library, design: RackDesign, rack: RackTemplate
     const runs = ends.filter((x) => x.run.route === side).sort((a, b) => a.span - b.span); // shortest = innermost
     const step = Math.min(6, (geo.railW - 8) / Math.max(1, runs.length));
     const bodyEdge = side === 'left' ? geo.originX + geo.railW : geo.originX + geo.railW + geo.bodyW;
-    runs.forEach(({ run, s, e }, i) => {
+    runs.forEach(({ run, s, es }, i) => {
       const off = 4 + i * step;
       const lane = side === 'left' ? bodyEdge - off : bodyEdge + off;
-      out.push({ run, points: [s, [lane, s[1]], [lane, e[1]], e] });
+      out.push({ run, paths: es.map((e) => [s, [lane, s[1]], [lane, e[1]], e]) });
     });
   }
   return out;

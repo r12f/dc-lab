@@ -37,11 +37,12 @@ the pigtail end connector, and a 2-leg pigtail needs two cables per port.
 | Field | Meaning |
 |---|---|
 | `type` | `fiber-sm`, `fiber-mm`, `copper-dac`, `aoc`, `power`, `other` |
-| `connector` | Connector at both ends (`LC`, `MPO-12`, `MPO-16`, `MMC`, `OSFP` for DAC…) |
+| `connector` | Connector at the A end, and at both ends of a straight cable (`LC`, `MPO-12`, `MPO-16`, `MMC`, `OSFP` for DAC…) |
 | `vendor`, `model` | Optional vendor and model / vendor PN |
 | `fiberCount` | Fibers per cable (fiber types) |
 | `maxLengthM` | Longest supported length (optional) |
 | `color` | Drawing color (rack cable runs, port glyphs) |
+| `breakout` | Breakout cables only: `{ count, connector }` — the B end fans out into `count` legs, each ending in `connector` (e.g. MPO-12 with 8 fibers → 4x LC duplex). The A end uses `connector`. |
 
 Lengths are per use (rack cable runs choose or estimate them), not per cable media.
 

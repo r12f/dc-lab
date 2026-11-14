@@ -40,6 +40,12 @@ export interface OpticDefinition extends CatalogItem, HasProperties {
 
 export type CableType = 'fiber-sm' | 'fiber-mm' | 'copper-dac' | 'aoc' | 'power' | 'other';
 
+/** B end of a breakout cable, e.g. 4 legs of LC on an MPO-12 trunk. */
+export interface CableBreakout {
+  count: number;
+  connector: string;
+}
+
 export interface CableMedia extends CatalogItem, HasProperties {
   schema?: typeof CABLE_SCHEMA;
   type: CableType;
@@ -49,6 +55,8 @@ export interface CableMedia extends CatalogItem, HasProperties {
   /** Fibers per cable (fiber types). */
   fiberCount?: number;
   maxLengthM?: number;
+  /** Breakout cables only: the B end fans out into `count` legs ending in `connector`. */
+  breakout?: CableBreakout;
   /** Connector at the cable ends, e.g. "MPO-12", "LC", "MMC", "OSFP" (DAC). */
   connector: string;
   color: string;

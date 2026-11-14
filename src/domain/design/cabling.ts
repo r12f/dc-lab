@@ -38,14 +38,15 @@ function endpointPos(lib: Library, design: RackDesign, rack: RackTemplate, ep: C
   return { heightMm, toChannelMm };
 }
 
-/** Estimated length of one cable of a run (m), rounded up to 0.5 m; undefined if an endpoint is missing. */
+/** Estimated length of one cable of a run (m), to its farthest B end, rounded up to 0.5 m; undefined if an endpoint is missing. */
 export function estimateLengthM(lib: Library, design: RackDesign, run: Pick<CableRun, 'from' | 'to' | 'route'>): number | undefined {
   const rack = lib.racks.get(design.templateId);
   if (!rack) return undefined;
   const a = endpointPos(lib, design, rack, run.from);
-  const b = endpointPos(lib, design, rack, run.to);
-  if (!a || !b) return undefined;
-  const mm = a.toChannelMm[run.route] + b.toChannelMm[run.route] + Math.abs(a.heightMm - b.heightMm);
+  const bs = run.to.map((ep) => endpointPos(lib, design, rack, ep));
+  if (!a || bs.length === 0 || bs.some((b) => !b)) return undefined;
+  // A breakout cable is as long as its farthest leg.
+  const mm = Math.max(...bs.map((b) => a.toChannelMm[run.route] + b!.toChannelMm[run.route] + Math.abs(a.heightMm - b!.heightMm)));
   return Math.ceil((mm / 1000 + SLACK_M) / ROUND_M) * ROUND_M;
 }
 

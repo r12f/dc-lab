@@ -18,7 +18,7 @@ d.placements.push(
   newPlacement('s', 'switch-48x1g-mgmt', 'S', { kind: 'side', elementId: 'sidepod-l', slot: 1 }),
 );
 const run = (from: string, to: string, route: 'left' | 'right'): CableRun =>
-  ({ id: 'c', from: { placementId: from, portRef: '' }, to: { placementId: to, portRef: '' }, route, mediaId: 'lc-smf', quantity: 2 });
+  ({ id: 'c', from: { placementId: from, portRef: '' }, to: [{ placementId: to, portRef: '' }], route, mediaId: 'lc-smf', quantity: 2 });
 
 describe('in-rack cabling', () => {
   it('rack to rack: half body each end + 20 RU vertical + slack, rounded up', () => {

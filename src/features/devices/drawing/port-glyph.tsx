@@ -5,13 +5,19 @@ import { ROLE_TRAITS } from '../../../domain/device/roles';
 import { formFactorSpec } from '../../../domain/ports/form-factors';
 import { portConnectors } from '../../../domain/ports/optic-match';
 import { ConnectorBoxes } from './connector-boxes';
+import { portLabel } from '../../../domain/device/port-label';
 import { paint } from '../../../theme/paint';
 
 /**
- * One port. Data/service ports show index, speed ("400G" / "2x400G") and reach; a top strip marks the
- * module/reach, and one sub-box per cable connector (e.g. 2xDR4 -> two MPO-12) sits at the bottom,
- * filled with the attached cable's color. Other roles show their label or index.
+ * One port of any device. Every port shows its index and interface + mode ("OSFP 2x400G", "RJ45 1G",
+ * "C13"). Data/service ports add the reach, a top strip for the module/reach, and one sub-box per cable
+ * connector (e.g. 2xDR4 -> two MPO-12) at the bottom, filled with the attached cable's color.
  */
+/** Largest font (down to 6) at which `text` fits the port width. */
+function fitFont(text: string, width: number, max: number): number {
+  return Math.max(6, Math.min(max, (width - 4) / (text.length * 0.58)));
+}
+
 export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
   const r = ctx.resolve(box.ref);
   const pluggable = ROLE_TRAITS[box.group.role].pluggable;
@@ -22,6 +28,7 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
   const fiberPort = formFactorSpec(box.group.formFactor).kind === 'fiber';
   const cx = box.x + box.w / 2;
   const speed = r ? speedLabel(r.mode) : '';
+  const iface = portLabel(box.group, r?.mode);
   const conns = pluggable && r ? portConnectors(box.group, optic, r.reach) : undefined;
   const engine = box.group.opticalEngine ? ` · ${box.group.opticalEngine.toUpperCase()}` : '';
   const tip = [
@@ -47,11 +54,14 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
       {pluggable ? (
         <>
           {t(19, 12, '#fff', String(box.index), true)}
-          {t(31, 10, '#f1f5f9', speed, true)}
+          {t(31, fitFont(iface, box.w, 10), '#f1f5f9', iface, true)}
           {r?.reach && t(42, 9, '#fde68a', r.reach)}
         </>
       ) : (
-        t(box.h / 2 + 4, 10, '#fff', box.group.count > 1 ? String(box.index) : box.group.label, true)
+        <>
+          {t(box.h / 2 - 2, 10, '#fff', box.group.count > 1 ? String(box.index) : box.group.label, true)}
+          {t(box.h / 2 + 10, fitFont(iface, box.w, 9), '#e2e8f0', iface)}
+        </>
       )}
     </g>
   );

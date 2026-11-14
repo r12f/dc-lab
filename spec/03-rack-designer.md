@@ -12,7 +12,11 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   - `breakoutProfileId` — one of the device's profiles (optional); supplies default mode/optic/cable per port
   - `portSettings[portRef]` / `groupSettings[groupId]` — instance `{ mode, opticId, cableId }` overriding the profile
 - `cables[]` — in-rack cable runs:
-  - `from` / `to` — start and end endpoint: `placementId` + optional `portRef` (empty = any port)
+  - `from` — A end; `to[]` — B end(s): one for a straight cable, up to the cable's breakout leg count
+    for a breakout cable (e.g. MPO-12 → 4x LC)
+  - endpoint = `placementId` + `portRef` (empty = any port) + `connector` (1-based **leg** of the port:
+    a `2xDR4` module has legs 1 and 2, each an MPO-12). Runs connect **connector to connector**, not
+    port to port: one physical port may terminate several runs, one per leg.
   - `route` — `left` | `right`: which side cable channel the run uses
   - `mediaId`, `quantity`
   - `lengthM` — manual length; omitted = **auto** (estimated, see below)
@@ -38,7 +42,11 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   its lane in the chosen side's rail channel, along the channel, into the end device. Each side's runs get
   separate nested lanes (longest run outermost) so runs on one side never cross. Lines use the cable media
   color; the selected run is highlighted; clicking a run selects it.
-- Endpoints are drawn at the device's vertical centre; port-level position is not drawn.
+- Endpoints are drawn at the device's vertical centre; port-level position is not drawn. A breakout
+  run is drawn as one trunk from the A end with one branch per B leg in the same lane.
+- **Checks** (shown on the run): the A end must mate with the cable's A connector, each B end with the
+  cable's B connector (the breakout leg connector, or the A connector for a straight cable); a leg may
+  not be used by two runs; a breakout cable may not have more B ends than legs.
 
 ## Derived data (recomputed on every change)
 
