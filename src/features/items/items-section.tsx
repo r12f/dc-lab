@@ -25,7 +25,7 @@ export function ItemsSection({ lib, target, itemId, commands, onSelect }: Props)
           <span className="sidebar-item-name">{variantLabel(v) || '(no vendor / model)'}</span>
           {v.specs && <span className="badge" title="Overrides power / weight">{[v.specs.typicalW !== undefined && `${v.specs.typicalW} W`, v.specs.weightKg !== undefined && `${v.specs.weightKg} kg`].filter(Boolean).join(' · ') || 'specs'}</span>}
           {v.id === def?.id && <span className="badge">default</span>}
-          <Button variant="ghost" title={`Delete ${variantLabel(v) || 'item'}`}
+          <Button className="btn-icon" variant="danger" title={`Delete ${variantLabel(v) || 'item'}`}
             onClick={(e) => { e.stopPropagation(); if (confirm(`Delete item "${variantLabel(v) || v.id}"?`)) commands.del(v); }}>✕</Button>
         </div>
       ))}
