@@ -33,7 +33,7 @@ Defaults by rack kind (built-in templates follow these):
 
 | Rack kind | Side elements |
 |---|---|
-| `network` | each side: PDU bay (100 mm, 1 slot, next to the body) + sidepod (300 mm, 1 slot, outside) |
+| `network` | each side: PDU bay (100 mm, 1 slot, inside the enclosure); the **(w/ Sidepods)** templates add a sidepod (300 mm, 1 slot, outside) each side |
 | `server`, `mgx`, `orv3`, `orw` | none |
 | `power`, `cdu`, `chiller` | none |
 
@@ -51,7 +51,9 @@ the hot aisle its row exhausts into, and its power counts in the row's demand.
 
 Network racks are 600 mm wide. **PDU bays sit inside the rack enclosure** (between the rails and the side
 panel), so they add no width: the footprint is the body plus the side elements outside it (sidepods, cable
-managers, other). Built-in network racks: 600 + 2×300 mm sidepods = 1200 mm (fits the 3-tile pitch); the
+managers, other). Built-in network racks: **Network Rack 42RU / 48RU** (PDU bays only, 600 mm, 1 tile) and **Network Rack 42RU /
+48RU (w/ Sidepods)** (`…-sidepods`; 600 + 2×300 mm sidepods = 1200 mm, 3 tiles). Designs on a plain network
+rack that mount devices in a sidepod move to the (w/ Sidepods) template on load; the
 footprint view draws PDU bays over the body edges. In-rack cable length counts no distance through a PDU bay
 for a sidepod outside it. The former built-in `network-48ru-800` is now `network-48ru-600`; projects are migrated.
 

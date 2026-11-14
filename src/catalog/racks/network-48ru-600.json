@@ -8,7 +8,7 @@
   "depthMm": 1200,
   "heightMm": 2260,
   "footprintTiles": {
-    "wide": 3,
+    "wide": 1,
     "deep": 2
   },
   "emptyWeightKg": 180,
@@ -27,16 +27,6 @@
       "weightKg": 5
     },
     {
-      "id": "sidepod-l",
-      "name": "Sidepod L",
-      "kind": "sidepod",
-      "side": "left",
-      "widthMm": 300,
-      "depthMm": 1200,
-      "slots": 1,
-      "weightKg": 40
-    },
-    {
       "id": "pdu-bay-r",
       "name": "PDU bay R",
       "kind": "pdu-bay",
@@ -45,16 +35,6 @@
       "depthMm": 1200,
       "slots": 1,
       "weightKg": 5
-    },
-    {
-      "id": "sidepod-r",
-      "name": "Sidepod R",
-      "kind": "sidepod",
-      "side": "right",
-      "widthMm": 300,
-      "depthMm": 1200,
-      "slots": 1,
-      "weightKg": 40
     }
   ]
 }

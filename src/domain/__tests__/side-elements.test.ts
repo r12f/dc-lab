@@ -27,17 +27,19 @@ const lib = new Library(
 );
 
 describe('default side elements', () => {
-  it('network racks: PDU bay + sidepod on each side; server racks: none', () => {
-    const els = defaultSideElements('network', 1200);
+  it('network racks: a PDU bay on each side (+ a sidepod each with sidepods); server racks: none', () => {
+    expect(defaultSideElements('network', 1200).map((e) => `${e.side}:${e.kind}`)).toEqual(['left:pdu-bay', 'right:pdu-bay']);
+    const els = defaultSideElements('network', 1200, true);
     expect(els.map((e) => `${e.side}:${e.kind}`)).toEqual(['left:pdu-bay', 'left:sidepod', 'right:pdu-bay', 'right:sidepod']);
     for (const k of ['server', 'mgx', 'orv3', 'orw']) expect(defaultSideElements(k, 1200)).toEqual([]);
   });
   it('built-in templates follow the defaults', () => {
     const sides = (els: { side: string; kind: string }[]) => els.map((e) => `${e.side}:${e.kind}`);
-    // "(PDU+SidePods)" variants carry the network-rack side elements on another kind (e.g. MGX).
+    // "(PDU+SidePods)" / "(w/ Sidepods)" variants carry network-rack side elements with sidepods (MGX too).
     for (const r of BUILTIN_CATALOG_FOR_TESTS.racks) {
-      const kind = r.name.includes('(PDU+SidePods)') ? 'network' : r.kind;
-      expect(sides(r.sideElements), r.id).toEqual(sides(defaultSideElements(kind, r.depthMm)));
+      const pods = /\(PDU\+SidePods\)|\(w\/ Sidepods\)/.test(r.name);
+      const kind = pods ? 'network' : r.kind;
+      expect(sides(r.sideElements), r.id).toEqual(sides(defaultSideElements(kind, r.depthMm, pods)));
     }
   });
   const sides = (els: { side: string; kind: string }[]) => els.map((e) => `${e.side}:${e.kind}`);

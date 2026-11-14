@@ -47,7 +47,7 @@ describe('rack BOM tree', () => {
     const t = buildRackBomTree(lib, d)!;
     expect(t.label).toBe('Network Rack 42RU');
     expect(t.children.map((c) => c.label)).toEqual([
-      'Rack frame (42RU)', 'PDU bay L (PDU bay)', 'Sidepod L (Sidepod)', 'PDU bay R (PDU bay)', 'Sidepod R (Sidepod)',
+      'Rack frame (42RU)', 'PDU bay L (PDU bay)', 'PDU bay R (PDU bay)',
     ]);
     const frame = t.children[0];
     expect(frame.children.map((c) => [c.label, c.line?.qty, c.line?.notes])).toEqual([['64x800G OSFP Switch (2PSU)', 2, ['SW1', 'SW2']]]);

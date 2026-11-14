@@ -9,9 +9,9 @@ import { buildRackBom } from '../bom/rack-bom';
 import { normalizeProject } from '../project/serializer';
 import type { CableRun } from '../design/types';
 
-// Network 42RU 600 mm: PDU bay (100) + sidepod (300) on each side.
+// Network 42RU 600 mm (w/ Sidepods): PDU bay (100) + sidepod (300) on each side.
 const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
-const d = newDesign('d', 'D', 'network-42ru-600');
+const d = newDesign('d', 'D', 'network-42ru-600-sidepods');
 d.placements.push(
   newPlacement('a', 'switch-32x400g-qsfpdd', 'A', { kind: 'rack', position: 1, face: 'front' }),
   newPlacement('b', 'switch-32x400g-qsfpdd', 'B', { kind: 'rack', position: 21, face: 'front' }),

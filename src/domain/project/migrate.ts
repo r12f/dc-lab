@@ -259,6 +259,19 @@ const SIZED_FILLERS: Record<string, [string, number]> = {
   'reserved-1ru': ['reserved', 1], 'reserved-2ru': ['reserved', 2], 'reserved-4ru': ['reserved', 4], 'reserved-1ou': ['reserved', 1],
   'stiffener-1ou': ['stiffener', 1],
 };
+/** Network racks lost their sidepods; designs using a sidepod move to the "(w/ Sidepods)" template. */
+const NETWORK_WITH_SIDEPODS: Record<string, string> = {
+  'network-42ru-600': 'network-42ru-600-sidepods', 'network-48ru-600': 'network-48ru-600-sidepods',
+};
+function sidepodTemplate(d: Json): Json {
+  const to = NETWORK_WITH_SIDEPODS[String(d.templateId)];
+  const usesPod = ((d.placements as Json[]) ?? []).some((p) => {
+    const m = p.mount as Json | undefined;
+    // Pre-element side mounts ({ side }) were sidepods.
+    return m?.kind === 'side' && (!m.elementId || /^sidepod/.test(String(m.elementId)));
+  });
+  return to && usesPod ? { ...d, templateId: to } : d;
+}
 const renameId = (id: unknown) => RENAMED_IDS[String(id)] ?? SIZED_FILLERS[String(id)]?.[0] ?? id;
 /** Placement of a removed fixed-size filler -> the size-adjustable item with that height. */
 const renamePlacement = (x: Json): Json => {
@@ -331,7 +344,7 @@ export function migrateProjectJson(raw: Json): Json {
     optics: ((p.optics as Json[]) ?? []).map(migrateOptic),
     devices: ((p.devices as Json[]) ?? []).map(migrateDevice),
     racks: ((p.racks as Json[]) ?? []).map(migrateRack),
-    rackDesigns: ((p.rackDesigns as Json[]) ?? []).map((d) => ({
+    rackDesigns: ((p.rackDesigns as Json[]) ?? []).map(sidepodTemplate).map((d) => ({
       ...d,
       // Designs from before abbreviations get one derived from their name.
       abbr: cleanAbbr(String(d.abbr ?? '')) || abbrFromName(String(d.name ?? '')),

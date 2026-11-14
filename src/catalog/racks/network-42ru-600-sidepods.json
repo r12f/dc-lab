@@ -1,0 +1,60 @@
+{
+  "id": "network-42ru-600-sidepods",
+  "name": "Network Rack 42RU (w/ Sidepods)",
+  "kind": "network",
+  "units": 42,
+  "unitSystem": "RU",
+  "widthMm": 600,
+  "depthMm": 1200,
+  "heightMm": 2000,
+  "footprintTiles": {
+    "wide": 3,
+    "deep": 2
+  },
+  "emptyWeightKg": 150,
+  "maxLoadKg": 1360,
+  "maxPowerW": 17300,
+  "schema": "dc-lab/rack@1",
+  "sideElements": [
+    {
+      "id": "pdu-bay-l",
+      "name": "PDU bay L",
+      "kind": "pdu-bay",
+      "side": "left",
+      "widthMm": 100,
+      "depthMm": 1200,
+      "slots": 1,
+      "weightKg": 5
+    },
+    {
+      "id": "sidepod-l",
+      "name": "Sidepod L",
+      "kind": "sidepod",
+      "side": "left",
+      "widthMm": 300,
+      "depthMm": 1200,
+      "slots": 1,
+      "weightKg": 40
+    },
+    {
+      "id": "pdu-bay-r",
+      "name": "PDU bay R",
+      "kind": "pdu-bay",
+      "side": "right",
+      "widthMm": 100,
+      "depthMm": 1200,
+      "slots": 1,
+      "weightKg": 5
+    },
+    {
+      "id": "sidepod-r",
+      "name": "Sidepod R",
+      "kind": "sidepod",
+      "side": "right",
+      "widthMm": 300,
+      "depthMm": 1200,
+      "slots": 1,
+      "weightKg": 40
+    }
+  ]
+}
