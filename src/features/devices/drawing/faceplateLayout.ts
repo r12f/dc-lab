@@ -29,7 +29,7 @@ export interface FaceLayout {
   psus: Box[];
 }
 
-export const PORT = { w: 34, h: 26, gap: 4, groupGap: 18, pad: 10, label: 12 };
+export const PORT = { w: 34, h: 30, gap: 4, groupGap: 18, pad: 10, label: 12 };
 export const PSU = { w: 46, h: 34, gap: 6 };
 const MIN_WIDTH = 160;
 

@@ -1,0 +1,12 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "qsfpdd-400g-fr4",
+  "name": "400G QSFP-DD FR4",
+  "vendor": "Generic",
+  "formFactor": "QSFP-DD",
+  "speedGbps": 400,
+  "reach": "FR4",
+  "fiberConnector": "LC",
+  "reachM": 2000,
+  "powerW": 0
+}

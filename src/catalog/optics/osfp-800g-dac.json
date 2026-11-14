@@ -1,0 +1,12 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "osfp-800g-dac",
+  "name": "800G OSFP DAC",
+  "vendor": "Generic",
+  "formFactor": "OSFP",
+  "speedGbps": 800,
+  "reach": "DAC",
+  "fiberConnector": "",
+  "reachM": 3,
+  "powerW": 0
+}

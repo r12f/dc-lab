@@ -1,0 +1,111 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "switch-cpo-128x800g-mpo",
+  "name": "128x800G CPO Switch (MPO-16)",
+  "vendor": "Generic",
+  "model": "128x800G CPO Switch (MPO-16)",
+  "category": "switch",
+  "height": {
+    "units": 4,
+    "system": "RU"
+  },
+  "depthMm": 800,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "psus": {
+    "count": 4,
+    "inlet": "C20",
+    "ratedW": 0
+  },
+  "ports": [
+    {
+      "id": "mpo",
+      "label": "MPO-16",
+      "role": "data",
+      "formFactor": "MPO-16",
+      "count": 128,
+      "speedGbps": 800,
+      "lanes": 8,
+      "face": "front",
+      "rows": 4,
+      "breakoutModes": [
+        "2x400G",
+        "4x200G",
+        "8x100G"
+      ],
+      "opticalEngine": "cpo",
+      "reaches": [
+        "DR8",
+        "2xDR4"
+      ]
+    },
+    {
+      "id": "els",
+      "label": "ELSFP",
+      "role": "laser",
+      "formFactor": "ELSFP",
+      "count": 16,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 2,
+      "breakoutModes": []
+    },
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "service",
+      "label": "SERVICE",
+      "role": "service",
+      "formFactor": "SFP+",
+      "count": 2,
+      "speedGbps": 10,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": [
+    {
+      "id": "all-2x400g-dr4",
+      "name": "All 2x400G 2xDR4",
+      "groupDefaults": {
+        "mpo": {
+          "mode": "2x400G",
+          "reach": "2xDR4",
+          "cableId": "mpo16-smf"
+        },
+        "els": {
+          "opticId": "elsfp-laser"
+        }
+      },
+      "overrides": {}
+    }
+  ]
+}

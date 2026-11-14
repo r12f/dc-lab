@@ -1,0 +1,12 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "qsfp56-200g-fr4",
+  "name": "200G QSFP56 FR4",
+  "vendor": "Generic",
+  "formFactor": "QSFP56",
+  "speedGbps": 200,
+  "reach": "FR4",
+  "fiberConnector": "LC",
+  "reachM": 2000,
+  "powerW": 0
+}

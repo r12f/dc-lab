@@ -15,7 +15,9 @@ export type DeviceCategory =
 
 export type PortFace = 'front' | 'rear';
 
-export type PortRole = 'data' | 'mgmt' | 'console' | 'service' | 'outlet';
+export type PortRole = 'data' | 'mgmt' | 'console' | 'service' | 'laser' | 'outlet';
+
+export type OpticalEngine = 'cpo' | 'npo';
 
 export type Phase = 'L1' | 'L2' | 'L3' | 'L1-L2' | 'L2-L3' | 'L3-L1';
 
@@ -24,7 +26,8 @@ export interface PortGroup {
   id: string;
   label: string;
   role: PortRole;
-  connector: string;
+  /** Physical port type, fixed by hardware: cage (OSFP, QSFP112…), fiber connector (MPO-16, MMC, LC), RJ45, C13. */
+  formFactor: string;
   count: number;
   speedGbps: number;
   lanes: number;
@@ -32,6 +35,10 @@ export interface PortGroup {
   rows: number;
   /** Allowed breakout modes, e.g. "4x200G". Native "1x<speed>G" is implicit. */
   breakoutModes: string[];
+  /** Fiber ports driven by co-packaged / near-packaged optics. */
+  opticalEngine?: OpticalEngine;
+  /** Reach classes a CPO/NPO engine supports, e.g. ["DR4", "2xDR4"]. */
+  reaches?: string[];
   /** PDU outlet groups: breaker bank and phase. */
   bank?: string;
   phase?: Phase;
@@ -39,9 +46,10 @@ export interface PortGroup {
   breakerA?: number;
 }
 
-/** Configuration of one port: breakout mode, pluggable optic, attached cable. */
+/** Configuration of one port: speed/breakout, reach, optional pinned module, attached cable. */
 export interface PortSetting {
   mode?: string;
+  reach?: string;
   opticId?: string;
   cableId?: string;
 }

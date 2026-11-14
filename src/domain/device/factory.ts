@@ -23,7 +23,7 @@ export function newPortGroup(id: string): PortGroup {
     id,
     label: id.toUpperCase(),
     role: 'data',
-    connector: 'QSFP28',
+    formFactor: 'QSFP28',
     count: 32,
     speedGbps: 100,
     lanes: 4,

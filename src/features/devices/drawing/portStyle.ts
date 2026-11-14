@@ -14,6 +14,7 @@ export const ROLE_COLORS: Record<PortRole, string> = {
   service: '#0891b2',
   mgmt: '#65a30d',
   console: '#a16207',
+  laser: '#be123c',
   outlet: '#1f2937',
 };
 

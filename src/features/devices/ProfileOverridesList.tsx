@@ -14,6 +14,7 @@ export function ProfileOverridesList({ lib, profile, onSelect }: { lib: Library;
             <tr key={ref} onClick={() => onSelect(ref)} style={{ cursor: 'pointer' }}>
               <td>{ref}</td>
               <td>{s.mode ?? ''}</td>
+              <td>{s.reach ?? ''}</td>
               <td>{s.opticId === '' ? 'no optic' : lib.optics.get(s.opticId)?.name ?? ''}</td>
               <td>{s.cableId === '' ? 'no cable' : lib.cableMedia.get(s.cableId)?.name ?? ''}</td>
             </tr>

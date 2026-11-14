@@ -1,11 +1,12 @@
 {
+  "schema": "dc-lab/optic@1",
   "id": "osfp-800g-2xdr4",
   "name": "800G OSFP 2xDR4",
   "vendor": "Generic",
-  "connector": "OSFP",
+  "formFactor": "OSFP",
   "speedGbps": 800,
-  "media": "2xDR4",
+  "reach": "2xDR4",
+  "fiberConnector": "2x MPO-12",
   "reachM": 500,
-  "powerW": 0,
-  "schema": "dc-lab/optic@1"
+  "powerW": 0
 }

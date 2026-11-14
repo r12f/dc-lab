@@ -60,7 +60,7 @@ export function DevicesModule() {
             {(ref) => (
               <DeviceDrawing ref={ref} device={device} ctx={{
                 lib,
-                resolve: (r) => resolvePort(device, r, profile),
+                resolve: (r) => resolvePort(lib, device, r, profile),
                 selectedPorts: ports.selected,
                 onPortClick: ports.click,
               }} />

@@ -1,5 +1,6 @@
 import type { BreakoutProfile, DeviceDefinition, PortGroup } from './types';
 import { findGroup, parsePortRef } from './ports';
+import { acceptedModules, formFactorSpec } from '../ports/formFactors';
 
 export interface BreakoutMode {
   fanout: number;
@@ -19,9 +20,18 @@ export function nativeMode(group: PortGroup): string {
   return formatMode({ fanout: 1, speedGbps: group.speedGbps });
 }
 
-/** Native mode first, then the group's declared modes (deduplicated). */
+/** Native speed of each backward-compatible module form factor below the cage's own speed. */
+function compatModes(group: PortGroup): string[] {
+  return acceptedModules(group.formFactor)
+    .slice(1)
+    .map((f) => formFactorSpec(f).nativeGbps)
+    .filter((g): g is number => !!g && g < group.speedGbps)
+    .map((g) => formatMode({ fanout: 1, speedGbps: g }));
+}
+
+/** Native mode first, then declared breakout modes, then speeds of compatible older modules. */
 export function modesOf(group: PortGroup): string[] {
-  return [...new Set([nativeMode(group), ...group.breakoutModes])];
+  return [...new Set([nativeMode(group), ...group.breakoutModes, ...compatModes(group)])];
 }
 
 /** True when the mode is syntactically valid and fits the port's native bandwidth. */

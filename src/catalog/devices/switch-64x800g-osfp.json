@@ -25,7 +25,7 @@
       "id": "osfp",
       "label": "OSFP",
       "role": "data",
-      "connector": "OSFP",
+      "formFactor": "OSFP",
       "count": 64,
       "speedGbps": 800,
       "lanes": 8,
@@ -41,7 +41,7 @@
       "id": "mgmt",
       "label": "MGMT",
       "role": "mgmt",
-      "connector": "RJ45",
+      "formFactor": "RJ45",
       "count": 1,
       "speedGbps": 1,
       "lanes": 1,
@@ -53,7 +53,7 @@
       "id": "console",
       "label": "CONSOLE",
       "role": "console",
-      "connector": "RJ45",
+      "formFactor": "RJ45",
       "count": 1,
       "speedGbps": 0,
       "lanes": 1,
@@ -65,7 +65,7 @@
       "id": "service",
       "label": "SERVICE",
       "role": "service",
-      "connector": "SFP+",
+      "formFactor": "SFP+",
       "count": 2,
       "speedGbps": 10,
       "lanes": 1,
@@ -80,7 +80,7 @@
       "name": "Port 1 8x100G, port 2 4x200G",
       "groupDefaults": {
         "osfp": {
-          "opticId": "osfp-800g-2xdr4"
+          "reach": "2xDR4"
         }
       },
       "overrides": {
@@ -98,8 +98,8 @@
       "groupDefaults": {
         "osfp": {
           "mode": "2x400G",
-          "opticId": "osfp-800g-2xdr4",
-          "cableId": "mpo12-smf"
+          "cableId": "mpo12-smf",
+          "reach": "2xDR4"
         }
       },
       "overrides": {}

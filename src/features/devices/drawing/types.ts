@@ -3,7 +3,7 @@ import type { Library } from '../../../domain/library/Library';
 
 /** Inputs shared by every device drawing strategy. */
 export interface DrawingContext {
-  /** Effective setting of a port (mode, optic, cable). */
+  /** Effective setting of a port (mode, reach, module, cable). */
   resolve(portRef: string): ResolvedPort | undefined;
   lib: Library;
   selectedPorts: ReadonlySet<string>;

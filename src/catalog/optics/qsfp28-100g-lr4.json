@@ -1,0 +1,12 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "qsfp28-100g-lr4",
+  "name": "100G QSFP28 LR4",
+  "vendor": "Generic",
+  "formFactor": "QSFP28",
+  "speedGbps": 100,
+  "reach": "LR4",
+  "fiberConnector": "LC",
+  "reachM": 10000,
+  "powerW": 0
+}

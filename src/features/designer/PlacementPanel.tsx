@@ -55,7 +55,7 @@ export function PlacementPanel({ lib, placement: p, templateId, editor, onRemove
         <div className="mini-faceplate">
           <DeviceDrawing device={device} compact ctx={{
             lib,
-            resolve: (r) => resolvePlacedPort(device, p, r),
+            resolve: (r) => resolvePlacedPort(lib, device, p, r),
             selectedPorts: new Set(port ? [port] : []),
             onPortClick: (r) => setPort(r),
           }} />

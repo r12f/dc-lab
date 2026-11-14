@@ -19,15 +19,14 @@ export function PortConfigEditor({ lib, device, placement, portRef, onChange }: 
   const ref = parsePortRef(portRef);
   const group = ref && findGroup(device, ref.groupId);
   if (!group) return null;
-  const inh = resolvePlacedPort(device, { ...placement, portSettings: {} }, portRef);
-  const eff = resolvePlacedPort(device, placement, portRef);
+  const inh = resolvePlacedPort(lib, device, { ...placement, portSettings: {} }, portRef);
+  const eff = resolvePlacedPort(lib, device, placement, portRef);
   return (
     <div className="card">
-      <strong>{`Port ${portRef} (${group.connector})`}</strong>
-      <PortSettingFields lib={lib} group={group} value={placement.portSettings[portRef] ?? {}}
-        inherited={{ mode: inh?.mode, optic: lib.optics.get(inh?.opticId)?.name, cable: lib.cableMedia.get(inh?.cableId)?.name }}
+      <strong>{`Port ${portRef} (${group.formFactor})`}</strong>
+      <PortSettingFields lib={lib} group={group} value={placement.portSettings[portRef] ?? {}} inherited={inh} effective={eff}
         onChange={(s) => onChange((p) => ({ ...p, portSettings: withSetting(p.portSettings, portRef, s) }))} />
-      <p className="muted">{`Effective: ${eff?.mode ?? ''} · ${lib.optics.get(eff?.opticId)?.name ?? 'no optic'} · ${lib.cableMedia.get(eff?.cableId)?.name ?? 'no cable'}`}</p>
+      <p className="muted">{`Effective: ${eff?.mode ?? ''} · ${eff?.reach ?? 'no reach'} · ${eff?.optic?.name ?? 'no module'} · ${lib.cableMedia.get(eff?.cableId)?.name ?? 'no cable'}`}</p>
     </div>
   );
 }

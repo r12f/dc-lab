@@ -1,0 +1,86 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "switch-32x800g-qsfpdd800",
+  "name": "32x800G QSFP-DD800 Switch",
+  "vendor": "Generic",
+  "model": "32x800G QSFP-DD800 Switch",
+  "category": "switch",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 600,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "psus": {
+    "count": 2,
+    "inlet": "C14",
+    "ratedW": 0
+  },
+  "ports": [
+    {
+      "id": "qdd",
+      "label": "QSFP-DD800",
+      "role": "data",
+      "formFactor": "QSFP-DD800",
+      "count": 32,
+      "speedGbps": 800,
+      "lanes": 8,
+      "face": "front",
+      "rows": 2,
+      "breakoutModes": [
+        "2x400G",
+        "4x200G",
+        "8x100G"
+      ]
+    },
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": [
+    {
+      "id": "mixed-compat",
+      "name": "Ports 1-2 100G QSFP28 LR4, rest 2xFR4",
+      "groupDefaults": {
+        "qdd": {
+          "reach": "2xFR4"
+        }
+      },
+      "overrides": {
+        "qdd/1": {
+          "mode": "1x100G",
+          "reach": "LR4"
+        },
+        "qdd/2": {
+          "mode": "1x100G",
+          "reach": "LR4"
+        }
+      }
+    }
+  ]
+}

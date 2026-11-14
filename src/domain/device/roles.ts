@@ -11,6 +11,7 @@ export const ROLE_TRAITS: Record<PortRole, RoleTraits> = {
   service: { label: 'Service', pluggable: true },
   mgmt: { label: 'Mgmt', pluggable: false },
   console: { label: 'Console', pluggable: false },
+  laser: { label: 'Laser source', pluggable: false },
   outlet: { label: 'Power outlet', pluggable: false },
 };
 

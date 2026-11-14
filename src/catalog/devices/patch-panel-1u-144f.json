@@ -20,7 +20,7 @@
       "id": "mpo",
       "label": "MPO",
       "role": "data",
-      "connector": "MPO-12",
+      "formFactor": "MPO-12",
       "count": 12,
       "speedGbps": 0,
       "lanes": 12,

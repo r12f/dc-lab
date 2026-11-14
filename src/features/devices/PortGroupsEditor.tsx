@@ -1,4 +1,5 @@
-import type { DeviceDefinition, Phase, PortFace, PortGroup, PortRole } from '../../domain/device/types';
+import type { DeviceDefinition, OpticalEngine, Phase, PortFace, PortGroup, PortRole } from '../../domain/device/types';
+import { FORM_FACTORS, formFactorSpec } from '../../domain/ports/formFactors';
 import { newPortGroup } from '../../domain/device/factory';
 import { PORT_ROLES, ROLE_TRAITS } from '../../domain/device/roles';
 import { uniqueId } from '../../domain/ids';
@@ -14,6 +15,26 @@ const faceOptions = [{ value: 'front' as PortFace, label: 'Front' }, { value: 'r
 const roleOptions = PORT_ROLES.map((r) => ({ value: r, label: ROLE_TRAITS[r].label }));
 const PHASES: Phase[] = ['L1', 'L2', 'L3', 'L1-L2', 'L2-L3', 'L3-L1'];
 const phaseOptions = [{ value: '', label: '—' }, ...PHASES.map((p) => ({ value: p, label: p }))];
+
+/** Registry form factors grouped by kind; keeps an unknown current value selectable. */
+function formFactorOptions(current: string) {
+  const ids = FORM_FACTORS.map((f) => f.id);
+  const list = ids.includes(current) ? ids : [current, ...ids];
+  return list.map((id) => ({ value: id, label: `${id} (${formFactorSpec(id).kind})` }));
+}
+
+const engineOptions = [{ value: 'cpo' as OpticalEngine, label: 'CPO (co-packaged)' }, { value: 'npo' as OpticalEngine, label: 'NPO (near-packaged)' }];
+
+function EngineFields({ group, set }: { group: PortGroup; set(p: Partial<PortGroup>): void }) {
+  return (
+    <div className="row2">
+      <SelectField<OpticalEngine> label="Optical engine" value={group.opticalEngine ?? 'cpo'} options={engineOptions}
+        onChange={(opticalEngine) => set({ opticalEngine })} />
+      <TextField label="Supported reaches" value={(group.reaches ?? []).join(', ')}
+        onChange={(v) => set({ reaches: v.split(',').map((s) => s.trim()).filter(Boolean) })} />
+    </div>
+  );
+}
 
 function OutletFields({ group, set }: { group: PortGroup; set(p: Partial<PortGroup>): void }) {
   return (
@@ -31,13 +52,14 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
   const pluggable = ROLE_TRAITS[group.role].pluggable;
   return (
     <details className="card" open={false}>
-      <summary>{`${group.label} · ${group.count}x ${group.connector}${group.speedGbps ? ` ${group.speedGbps}G` : ''} · ${group.face}`}</summary>
+      <summary>{`${group.label} · ${group.count}x ${group.formFactor}${group.opticalEngine ? ` ${group.opticalEngine.toUpperCase()}` : ''}${group.speedGbps ? ` ${group.speedGbps}G` : ''} · ${group.face}`}</summary>
       <div className="row2">
         <TextField label="Label" value={group.label} onChange={(label) => set({ label })} />
         <SelectField<PortRole> label="Role" value={group.role} options={roleOptions} onChange={(role) => set({ role })} />
       </div>
       <div className="row3">
-        <TextField label="Connector" value={group.connector} onChange={(connector) => set({ connector })} />
+        <SelectField label="Form factor" value={group.formFactor} options={formFactorOptions(group.formFactor)}
+          onChange={(formFactor) => set({ formFactor, opticalEngine: formFactorSpec(formFactor).kind === 'fiber' ? group.opticalEngine ?? 'cpo' : undefined })} />
         <NumberField label="Count" value={group.count} min={0} onChange={(count) => set({ count })} />
         <NumberField label="Speed G" value={group.speedGbps} min={0} onChange={(speedGbps) => set({ speedGbps })} />
       </div>
@@ -50,6 +72,7 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
         <TextField label="Breakout modes (e.g. 2x400G, 4x200G)" value={group.breakoutModes.join(', ')}
           onChange={(v) => set({ breakoutModes: v.split(',').map((s) => s.trim()).filter(Boolean) })} />
       )}
+      {formFactorSpec(group.formFactor).kind === 'fiber' && <EngineFields group={group} set={set} />}
       {group.role === 'outlet' && <OutletFields group={group} set={set} />}
       <Button variant="danger" onClick={onRemove}>Remove group</Button>
     </details>

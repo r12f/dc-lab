@@ -1,8 +1,8 @@
 import type { Library } from '../../domain/library/Library';
 import type { DeviceDefinition } from '../../domain/device/types';
 import type { Placement } from '../../domain/design/types';
-import { findProfile } from '../../domain/device/breakout';
-import { resolvePort, withSetting } from '../../domain/device/portSettings';
+import { withSetting } from '../../domain/device/portSettings';
+import { resolvePlacedPort } from '../../domain/design/optics';
 import { ROLE_TRAITS } from '../../domain/device/roles';
 import { Section } from '../../ui/fields';
 import { PortSettingFields } from '../../ui/PortSettingFields';
@@ -16,22 +16,20 @@ interface Props {
 
 /** Instance-level setting per port group (overrides the profile for every port of the group). */
 export function GroupOpticsEditor({ lib, device, placement, onChange }: Props) {
-  const profile = findProfile(device, placement.breakoutProfileId);
-  const groups = device.ports.filter((g) => ROLE_TRAITS[g.role].pluggable);
+  const groups = device.ports.filter((g) => ROLE_TRAITS[g.role].pluggable || g.role === 'laser');
   if (groups.length === 0) return null;
+  const noPorts = { ...placement, portSettings: {} };
   return (
     <Section title="Port groups (this instance)">
-      {groups.map((g) => {
-        const inh = resolvePort(device, `${g.id}/1`, profile && { ...profile, overrides: {} });
-        return (
-          <details key={g.id} className="card">
-            <summary>{`${g.label} (${g.count}x ${g.connector})`}</summary>
-            <PortSettingFields lib={lib} group={g} value={placement.groupSettings[g.id] ?? {}}
-              inherited={{ mode: inh?.mode, optic: lib.optics.get(inh?.opticId)?.name, cable: lib.cableMedia.get(inh?.cableId)?.name }}
-              onChange={(s) => onChange((p) => ({ ...p, groupSettings: withSetting(p.groupSettings, g.id, s) }))} />
-          </details>
-        );
-      })}
+      {groups.map((g) => (
+        <details key={g.id} className="card">
+          <summary>{`${g.label} (${g.count}x ${g.formFactor}${g.opticalEngine ? ` ${g.opticalEngine.toUpperCase()}` : ''})`}</summary>
+          <PortSettingFields lib={lib} group={g} value={placement.groupSettings[g.id] ?? {}}
+            inherited={resolvePlacedPort(lib, device, { ...noPorts, groupSettings: {} }, `${g.id}/1`)}
+            effective={resolvePlacedPort(lib, device, noPorts, `${g.id}/1`)}
+            onChange={(s) => onChange((p) => ({ ...p, groupSettings: withSetting(p.groupSettings, g.id, s) }))} />
+        </details>
+      ))}
     </Section>
   );
 }

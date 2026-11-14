@@ -9,9 +9,9 @@ export interface DeviceTemplate {
   build(id: string): DeviceDefinition;
 }
 
-function group(id: string, label: string, role: PortRole, connector: string, count: number, speedGbps: number,
+function group(id: string, label: string, role: PortRole, formFactor: string, count: number, speedGbps: number,
   extra: Partial<PortGroup> = {}): PortGroup {
-  return { id, label, role, connector, count, speedGbps, lanes: 1, face: 'front', rows: 1, breakoutModes: [], ...extra };
+  return { id, label, role, formFactor, count, speedGbps, lanes: 1, face: 'front', rows: 1, breakoutModes: [], ...extra };
 }
 
 const mgmtAndConsole = (face: PortGroup['face'] = 'front'): PortGroup[] => [
@@ -38,6 +38,28 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
         group('data', 'OSFP', 'data', 'OSFP', 32, 800, { lanes: 8, rows: 2, breakoutModes: ['2x400G', '4x200G', '8x100G'] }),
         ...mgmtAndConsole(),
         group('service', 'SERVICE', 'service', 'SFP+', 2, 10),
+      ],
+    }),
+  },
+  {
+    id: 'switch-cpo', label: 'CPO switch', description: 'MPO-16 fiber ports on co-packaged optics + ELSFP laser cages',
+    build: (id) => base(id, {
+      name: 'New CPO switch', category: 'switch', height: { units: 4, system: 'RU' }, psus: { count: 4, inlet: 'C20', ratedW: 3000 },
+      power: { typicalW: 2600, maxW: 3200 },
+      ports: [
+        group('data', 'MPO-16', 'data', 'MPO-16', 128, 800, { lanes: 8, rows: 4, breakoutModes: ['2x400G', '8x100G'], opticalEngine: 'cpo', reaches: ['DR8', '2xDR4'] }),
+        group('els', 'ELSFP', 'laser', 'ELSFP', 16, 0, { rows: 2 }),
+        ...mgmtAndConsole(),
+      ],
+    }),
+  },
+  {
+    id: 'switch-npo', label: 'NPO switch', description: 'MMC fiber ports on near-packaged optics',
+    build: (id) => base(id, {
+      name: 'New NPO switch', category: 'switch', height: { units: 2, system: 'RU' }, psus: { count: 2, inlet: 'C20', ratedW: 3000 },
+      ports: [
+        group('data', 'MMC', 'data', 'MMC', 64, 800, { lanes: 8, rows: 2, breakoutModes: ['2x400G', '8x100G'], opticalEngine: 'npo', reaches: ['DR8', '2xFR4'] }),
+        ...mgmtAndConsole(),
       ],
     }),
   },

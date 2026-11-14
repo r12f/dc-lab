@@ -18,7 +18,7 @@ export function buildRackBom(lib: Library, design: RackDesign): BomLine[] {
     if (!d) continue;
     bom.add({ key: `device:${d.id}`, kind: 'device', item: d.name, category: traitsOf(d.category).label,
       vendorModel: [d.vendor, d.model].filter(Boolean).join(' '), qty: 1, unitW: d.power.typicalW, notes: [p.label] });
-    const counts = portItemCounts(d, p);
+    const counts = portItemCounts(lib, d, p);
     for (const [cableId, n] of counts.cables) {
       const media = lib.cableMedia.get(cableId);
       bom.add({ key: `portcable:${cableId}`, kind: 'cable', item: media?.name ?? cableId, category: 'Cable',
@@ -28,7 +28,7 @@ export function buildRackBom(lib: Library, design: RackDesign): BomLine[] {
       const o = lib.optics.get(opticId);
       if (!o) continue;
       bom.add({ key: `optic:${o.id}`, kind: 'optic', item: o.name, category: 'Optic',
-        vendorModel: [o.vendor, o.connector, o.media].filter(Boolean).join(' '), qty: n, unitW: o.powerW, notes: [] });
+        vendorModel: [o.vendor, o.formFactor, o.reach].filter(Boolean).join(' '), qty: n, unitW: o.powerW, notes: [] });
     }
   }
   for (const c of design.cables) {

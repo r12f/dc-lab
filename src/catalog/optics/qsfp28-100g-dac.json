@@ -1,0 +1,12 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "qsfp28-100g-dac",
+  "name": "100G QSFP28 DAC",
+  "vendor": "Generic",
+  "formFactor": "QSFP28",
+  "speedGbps": 100,
+  "reach": "DAC",
+  "fiberConnector": "",
+  "reachM": 3,
+  "powerW": 0
+}

@@ -49,7 +49,7 @@ export function layoutPdu(device: DeviceDefinition): PduLayout {
       for (let i = 0; i < g.count; i++) {
         const col = i % COLS;
         if (i > 0 && col === 0) row++;
-        const big = g.connector.toUpperCase() === 'C19';
+        const big = g.formFactor.toUpperCase() === 'C19';
         ports.push({
           ref: formatPortRef({ groupId: g.id, index: i + 1 }), group: g, index: i + 1,
           x: 22 + col * (OUT.w + OUT.gap + 10), y: y0 + row * (OUT.h + OUT.gap), w: big ? OUT.w + 6 : OUT.w, h: OUT.h,

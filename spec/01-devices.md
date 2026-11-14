@@ -24,9 +24,53 @@ rack supply capacity.
 
 ### Port groups
 
-A port group is a run of identical cages: `label`, `role`, `connector` (OSFP, QSFP-DD, RJ45, C13…),
-`count`, `speedGbps` (native), `lanes`, `face` (front/rear), `rows` (layout rows on the faceplate),
-`breakoutModes` (e.g. `["2x400G", "4x200G", "8x100G"]`; native `1x<speed>G` is implicit).
+A port group is a run of identical ports: `label`, `role`, `formFactor`, `count`, `speedGbps` (native),
+`lanes`, `face` (front/rear), `rows` (layout rows on the faceplate), `breakoutModes`
+(e.g. `["2x400G", "4x200G", "8x100G"]`; native `1x<speed>G` is implicit), and for fiber-connector
+ports `opticalEngine` (`cpo` | `npo`).
+
+### Form factors
+
+The **form factor** of a port is fixed by the hardware. It comes from a registry
+(`src/domain/ports/formFactors.ts`) with a `kind`:
+
+| Kind | Examples | Meaning |
+|---|---|---|
+| `cage` | SFP28, SFP112, QSFP28, QSFP56, QSFP112, QSFP-DD, QSFP-DD800, OSFP, OSFP-XD, ELSFP | Pluggable module cage |
+| `fiber` | LC, CS, SN, MPO-12, MPO-16, MMC | Fiber connector directly on the faceplate |
+| `copper` | RJ45 | Fixed copper port |
+| `power` | C13, C19 | Power outlet |
+
+Cage compatibility: each cage lists the module form factors it accepts. A cage always accepts its
+own form factor; backward-compatible cages accept older modules, e.g. QSFP-DD accepts QSFP56 /
+QSFP28 / QSFP+, QSFP112 accepts QSFP56 / QSFP28, SFP112 accepts SFP56 / SFP28 / SFP+.
+OSFP accepts OSFP only. A cage also offers the native speed of every accepted older form factor as an
+extra mode (QSFP-DD 400G also offers `1x200G`, `1x100G`).
+
+### Speed and reach are independent
+
+For a pluggable cage the user chooses, per port or group:
+
+1. **Speed / breakout** (`mode`, e.g. `2x400G`) — limited by the cage and its compatible form factors.
+2. **Reach** (`reach`, e.g. `DR4`, `2xDR4`, `FR4`, `SR4`, `LR4`, `DAC`, `AOC`) — offered from the optic
+   catalog for modules that fit the cage and run at the chosen total speed.
+3. **Module** (`opticId`, optional) — when unset, the first catalog module matching
+   cage + speed + reach is used automatically ("auto"). A specific module may be pinned.
+
+Optic modules have `formFactor`, `speedGbps`, `reach`, `fiberConnector` (e.g. DR4 → MPO-12,
+2xDR4 → 2x MPO-12, FR4 → LC), `reachM`, `powerW`. Cable choices are filtered to cables whose connector
+matches the module's fiber connector (or the port's own connector for fiber ports) and whose fiber type
+matches the reach (SR/VR = multimode, other optical reaches = single-mode). BOM cable quantity per port
+follows the connector multiplier: a `2xDR4` module (`2x MPO-12`) needs two trunks.
+
+### CPO and NPO ports
+
+Co-packaged (CPO) and near-packaged (NPO) optics switches expose **fiber connectors** (MPO-16, MMC,
+LC…) instead of cages. Such a group sets `opticalEngine: "cpo" | "npo"` and `reaches` (the optical
+interfaces the engine supports, e.g. `["DR4", "2xDR4"]`). There is no module to choose: reach is
+picked from `reaches`, the engine power is part of the device power, and cables must match the
+port connector. CPO switches typically add an `ELSFP` cage group of role `laser` for external laser
+source modules.
 
 `role` is one of:
 
@@ -36,6 +80,7 @@ A port group is a run of identical cages: `label`, `role`, `connector` (OSFP, QS
 | `mgmt` | Out-of-band management Ethernet (RJ45) |
 | `console` | Serial console (RJ45) |
 | `service` | Service/in-band ports, e.g. 2x 10G SFP+ on high-radix switches |
+| `laser` | External laser source cages for CPO/NPO (ELSFP) |
 | `outlet` | Power outlets (PDU, power shelf) |
 
 PDU outlet groups additionally carry `bank` (e.g. `"A"`) and `phase` (`L1`, `L2`, `L3`, or `L1-L2`…).
@@ -53,12 +98,13 @@ Ports are addressed as `<groupId>/<index>` (1-based), e.g. `osfp/17`.
 A profile stores a **port setting** per group (default) and per port (override):
 
 ```
-PortSetting = { mode?: "4x200G", opticId?: "osfp-800g-2xdr4", cableId?: "dac-800g" }
+PortSetting = { mode?: "4x200G", reach?: "2xDR4", opticId?: "osfp-800g-2xdr4", cableId?: "mpo12-smf" }
 profile = { id, name, groupDefaults: { [groupId]: PortSetting }, overrides: { [portRef]: PortSetting } }
 ```
 
 Each field resolves independently: instance override (Rack Designer) > profile port override >
-profile group default > native mode / no optic / no cable. Optics must match the port connector.
+profile group default > native mode / no optic / no cable. An optic is valid only if its form factor
+fits the cage and its speed matches the mode.
 The effective breakout and optic/cable are drawn on every port.
 
 ## Drawing

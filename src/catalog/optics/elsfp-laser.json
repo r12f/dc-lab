@@ -1,0 +1,12 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "elsfp-laser",
+  "name": "ELSFP external laser source",
+  "vendor": "Generic",
+  "formFactor": "ELSFP",
+  "speedGbps": 0,
+  "reach": "ELS",
+  "fiberConnector": "",
+  "reachM": 0,
+  "powerW": 0
+}

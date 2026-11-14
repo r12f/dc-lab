@@ -47,7 +47,7 @@ export function computeRackMetrics(lib: Library, design: RackDesign): RackMetric
     m.maxW += device.power.maxW;
     m.deviceWeightKg += device.weightKg;
     if (traitsOf(device.category).suppliesPower) m.supplyCapacityW += device.power.capacityW ?? 0;
-    for (const [opticId, n] of opticCounts(device, p)) {
+    for (const [opticId, n] of opticCounts(lib, device, p)) {
       const optic = lib.optics.get(opticId);
       if (!optic) continue;
       m.typicalW += optic.powerW * n;

@@ -1,0 +1,8 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "mpo12-mmf",
+  "name": "MPO-12 OM4 trunk",
+  "type": "fiber-mm",
+  "connector": "MPO-12",
+  "color": "#2dd4bf"
+}

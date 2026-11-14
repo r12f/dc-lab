@@ -1,11 +1,12 @@
 {
+  "schema": "dc-lab/optic@1",
   "id": "osfp-400g-dr4",
   "name": "400G OSFP DR4",
   "vendor": "Generic",
-  "connector": "OSFP",
+  "formFactor": "OSFP",
   "speedGbps": 400,
-  "media": "DR4",
+  "reach": "DR4",
+  "fiberConnector": "MPO-12",
   "reachM": 500,
-  "powerW": 0,
-  "schema": "dc-lab/optic@1"
+  "powerW": 0
 }

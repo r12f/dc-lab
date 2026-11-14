@@ -1,0 +1,12 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "osfp-800g-dr8",
+  "name": "800G OSFP DR8",
+  "vendor": "Generic",
+  "formFactor": "OSFP",
+  "speedGbps": 800,
+  "reach": "DR8",
+  "fiberConnector": "MPO-16",
+  "reachM": 500,
+  "powerW": 0
+}

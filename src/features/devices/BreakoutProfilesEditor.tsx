@@ -39,15 +39,16 @@ export function BreakoutProfilesEditor({ lib, device, readOnly, onChange, profil
   /** Shared value across selected ports for each field (undefined when they differ). */
   const shared: PortSetting = {};
   if (profile && refs.length) {
-    for (const key of ['mode', 'opticId', 'cableId'] as const) {
+    for (const key of ['mode', 'reach', 'opticId', 'cableId'] as const) {
       const vals = new Set(refs.map((r) => profile.overrides[r]?.[key]));
       if (vals.size === 1) shared[key] = [...vals][0];
     }
   }
-  const inheritedFor = (ref: string) => {
-    const r = resolvePort(device, ref, profile && { ...profile, overrides: {} });
-    return { mode: r?.mode, optic: lib.optics.get(r?.opticId)?.name, cable: lib.cableMedia.get(r?.cableId)?.name };
-  };
+  /** Resolution of a port without its profile override (what "inherit" means). */
+  const inheritedFor = (ref: string) => resolvePort(lib, device, ref, profile && { ...profile, overrides: {} });
+  /** Resolution with the shared override applied (drives option filtering). */
+  const effectiveFor = (ref: string, setting: PortSetting) =>
+    resolvePort(lib, device, ref, profile && { ...profile, overrides: withSetting(profile.overrides, ref, setting) });
   const applyToSelected = (setting: PortSetting) => {
     if (!profile) return;
     let overrides = profile.overrides;
@@ -67,6 +68,7 @@ export function BreakoutProfilesEditor({ lib, device, readOnly, onChange, profil
             <div className="card">
               <strong>{refs.length === 1 ? `Port ${refs[0]}` : `${refs.length} ports in ${selGroup.label}`}</strong>
               <PortSettingFields lib={lib} group={selGroup} value={shared} inherited={inheritedFor(refs[0])}
+                effective={effectiveFor(refs[0], shared)}
                 onChange={applyToSelected} />
               <div className="row2">
                 <Button onClick={() => onSelectPorts(Array.from({ length: selGroup.count }, (_, i) => `${selGroup.id}/${i + 1}`))}>
@@ -80,10 +82,11 @@ export function BreakoutProfilesEditor({ lib, device, readOnly, onChange, profil
           )}
           <details className="card">
             <summary>Group defaults</summary>
-            {device.ports.filter((g) => ROLE_TRAITS[g.role].pluggable).map((g) => (
+            {device.ports.filter((g) => ROLE_TRAITS[g.role].pluggable || g.role === 'laser').map((g) => (
               <div key={g.id} className="subcard">
                 <strong>{g.label}</strong>
                 <PortSettingFields lib={lib} group={g} value={profile.groupDefaults[g.id] ?? {}}
+                  effective={resolvePort(lib, device, `${g.id}/1`, { ...profile, overrides: {} })}
                   onChange={(s) => setProfile({ ...profile, groupDefaults: withSetting(profile.groupDefaults, g.id, s) })} />
               </div>
             ))}

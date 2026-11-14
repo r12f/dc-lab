@@ -1,0 +1,8 @@
+{
+  "id": "mmc-smf",
+  "name": "MMC SMF trunk",
+  "type": "fiber-sm",
+  "connector": "MMC",
+  "color": "#a3e635",
+  "schema": "dc-lab/cable@1"
+}
