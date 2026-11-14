@@ -4,6 +4,17 @@ import { CABLE_TYPES, isFiber } from '../../domain/optics/cable-types';
 import { describeEnd, fiberMap } from '../../domain/optics/fiber-map';
 import { paint } from '../../theme/paint';
 import { ConnectorGlyph, CONNECTOR_H, CONNECTOR_W } from './connector-glyph';
+import { connectorSlots, type ConnectorSlot } from '../../domain/optics/connector-slots';
+
+/** Elided middle of a long end: vertical dots and how many connectors they stand for. */
+function Gap({ x, y, n }: { x: number; y: number; n: number }) {
+  return (
+    <g>
+      <text x={x + CONNECTOR_W / 2} y={y - 2} fontSize={22} fontWeight={700} textAnchor="middle" fill={paint.inkMuted}>⋮</text>
+      <text x={x + CONNECTOR_W / 2} y={y + 16} fontSize={11} textAnchor="middle" fill={paint.inkMuted}>{`${n} more`}</text>
+    </g>
+  );
+}
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -16,13 +27,17 @@ const TOP = 90;
 
 /**
  * A cable: A connectors on the left, B connectors on the right, one line per connected A-B pair labelled
- * with its fiber count (shuffles cross). Long ends (trunks) are drawn compressed beyond 8 connectors.
+ * with its fiber count (shuffles cross). Long ends (trunks) show their first and last connectors with
+ * the middle elided ("⋮ 12 more"), so the last connector number is always visible.
  */
 export function CableDrawing({ ref, cable: c }: Props) {
   const fm = fiberMap(c);
-  const shown = (n: number) => Math.min(n, 8);
-  const na = shown(c.ends.a.count);
-  const nb = shown(c.ends.b.count);
+  const slotsA = connectorSlots(c.ends.a.count);
+  const slotsB = connectorSlots(c.ends.b.count);
+  const na = slotsA.length;
+  const nb = slotsB.length;
+  // Row of a connector index on its end (undefined when elided).
+  const rowOf = (slots: ConnectorSlot[], idx: number) => { const r = slots.indexOf(idx); return r < 0 ? undefined : r; };
   const rows = Math.max(na, nb);
   const height = TOP + rows * GAP + 70;
   const width = 40 + CONNECTOR_W * 2 + RUN;
@@ -36,12 +51,13 @@ export function CableDrawing({ ref, cable: c }: Props) {
     c.mapping,
     c.polarity ? `polarity ${c.polarity}` : '',
   ].filter(Boolean).join(' · ');
-  const lines = fm.pairs.flatMap((row, i) => row.map((n, j) => ({ i, j, n }))).filter((p) => p.n > 0 && p.i < na && p.j < nb);
+  const lines = fm.pairs
+    .flatMap((row, a) => row.map((n, b) => ({ i: rowOf(slotsA, a), j: rowOf(slotsB, b), n })))
+    .filter((p): p is { i: number; j: number; n: number } => p.n > 0 && p.i !== undefined && p.j !== undefined);
   // When every A-B pair carries the same fibers, one note replaces per-line labels (shuffles stay legible).
   const uniform = lines.every((l) => l.n === lines[0]?.n);
   const perPair = isFiber(c.type) && lines.length ? `${lines[0].n}F per A→B pair` : '';
   const unused = [fm.unusedA ? `${fm.unusedA}F unused on A` : '', fm.unusedB ? `${fm.unusedB}F unused on B` : ''].filter(Boolean).join(' · ');
-  const more = (n: number) => (n > 8 ? `… ${n - 8} more` : '');
   return (
     <svg ref={ref} viewBox={`0 0 ${width} ${height}`} width={width} className="drawing">
       <rect width={width} height={height} fill={paint.paper} />
@@ -62,13 +78,13 @@ export function CableDrawing({ ref, cable: c }: Props) {
           </g>
         );
       })}
-      {Array.from({ length: na }, (_, i) => (
-        <ConnectorGlyph key={`a${i}`} x={left} y={yOf(i, na) - CONNECTOR_H / 2} label={`A${i + 1} ${c.ends.a.connector}`} facing="right" />
-      ))}
-      {Array.from({ length: nb }, (_, j) => (
-        <ConnectorGlyph key={`b${j}`} x={right} y={yOf(j, nb) - CONNECTOR_H / 2} label={`B${j + 1} ${c.ends.b.connector}`} facing="left" />
-      ))}
-      <text x={left} y={height - 14} fontSize={12} fill={paint.inkMuted}>{[uniform ? perPair : '', more(c.ends.a.count) && `A ${more(c.ends.a.count)}`, more(c.ends.b.count) && `B ${more(c.ends.b.count)}`, unused].filter(Boolean).join(' · ')}</text>
+      {slotsA.map((s, r) => (typeof s === 'number'
+        ? <ConnectorGlyph key={`a${r}`} x={left} y={yOf(r, na) - CONNECTOR_H / 2} label={`A${s + 1} ${c.ends.a.connector}`} facing="right" />
+        : <Gap key={`a${r}`} x={left} y={yOf(r, na)} n={s.gap} />))}
+      {slotsB.map((s, r) => (typeof s === 'number'
+        ? <ConnectorGlyph key={`b${r}`} x={right} y={yOf(r, nb) - CONNECTOR_H / 2} label={`B${s + 1} ${c.ends.b.connector}`} facing="left" />
+        : <Gap key={`b${r}`} x={right} y={yOf(r, nb)} n={s.gap} />))}
+      <text x={left} y={height - 14} fontSize={12} fill={paint.inkMuted}>{[uniform ? perPair : '', unused].filter(Boolean).join(' · ')}</text>
     </svg>
   );
 }

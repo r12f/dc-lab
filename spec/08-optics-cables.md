@@ -86,6 +86,8 @@ Examples (all built-in):
   fiber summary.
 - Canvas: A connectors on the left, B connectors on the right, one line per connected A→B connector
   pair labelled with its fiber count; shuffle lines cross; unused fibers listed under the drawing.
+  Ends with more than 8 connectors show the first 4 and the last 3 with the middle elided
+  ("⋮ 13 more"), so the last connector number (e.g. A20 of a 160F MPO-8 trunk) stays visible.
 
 Lengths are per use (rack cable runs choose or estimate them), not per cable media.
 
