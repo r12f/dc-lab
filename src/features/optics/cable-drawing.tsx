@@ -2,6 +2,7 @@ import type { Ref } from 'react';
 import type { CableMedia } from '../../domain/optics/types';
 import { CABLE_TYPES, isFiber } from '../../domain/optics/cable-types';
 import { describeEnd, fiberMap } from '../../domain/optics/fiber-map';
+import { genderedConnector } from '../../domain/optics/connectors';
 import { paint } from '../../theme/paint';
 import { ConnectorGlyph, CONNECTOR_H, CONNECTOR_W } from './connector-glyph';
 import { connectorSlots, type ConnectorSlot } from '../../domain/optics/connector-slots';
@@ -79,10 +80,10 @@ export function CableDrawing({ ref, cable: c }: Props) {
         );
       })}
       {slotsA.map((s, r) => (typeof s === 'number'
-        ? <ConnectorGlyph key={`a${r}`} x={left} y={yOf(r, na) - CONNECTOR_H / 2} label={`A${s + 1} ${c.ends.a.connector}`} facing="right" />
+        ? <ConnectorGlyph key={`a${r}`} x={left} y={yOf(r, na) - CONNECTOR_H / 2} label={`A${s + 1} ${genderedConnector(c.ends.a.connector, c.ends.a.gender)}`} facing="right" />
         : <Gap key={`a${r}`} x={left} y={yOf(r, na)} n={s.gap} />))}
       {slotsB.map((s, r) => (typeof s === 'number'
-        ? <ConnectorGlyph key={`b${r}`} x={right} y={yOf(r, nb) - CONNECTOR_H / 2} label={`B${s + 1} ${c.ends.b.connector}`} facing="left" />
+        ? <ConnectorGlyph key={`b${r}`} x={right} y={yOf(r, nb) - CONNECTOR_H / 2} label={`B${s + 1} ${genderedConnector(c.ends.b.connector, c.ends.b.gender)}`} facing="left" />
         : <Gap key={`b${r}`} x={right} y={yOf(r, nb)} n={s.gap} />))}
       <text x={left} y={height - 14} fontSize={12} fill={paint.inkMuted}>{[uniform ? perPair : '', unused].filter(Boolean).join(' · ')}</text>
     </svg>

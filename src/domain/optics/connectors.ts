@@ -18,6 +18,18 @@ export function isMultiFiber(connector: string): boolean {
   return /^(MPO|MMC)/i.test(connector.trim());
 }
 
+/**
+ * Connector name with its gender for multi-fiber connectors: "MMC-16F" (female, unpinned) or
+ * "MMC-16M" (male, pinned). Duplex connectors (LC, SN, CS) and unknown gender stay as they are.
+ */
+export function genderedConnector(connector: string, gender?: 'male' | 'female'): string {
+  if (!gender || !isMultiFiber(connector)) return connector;
+  return `${connector}${gender === 'male' ? 'M' : 'F'}`;
+}
+
+/** Transceiver receptacles for multi-fiber connectors are pinned: a module face is male. */
+export const MODULE_FACE_GENDER = 'male' as const;
+
 /** Fibers a connector holds when not stated: MPO-8 -> 8, MPO-12 -> 12, MMC -> 16, LC/SN/CS -> 2. */
 export function defaultFibers(connector: string): number | undefined {
   const c = connector.trim().toUpperCase();

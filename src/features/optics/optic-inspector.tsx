@@ -1,3 +1,4 @@
+import { isMultiFiber } from '../../domain/optics/connectors';
 import type { ReactNode } from 'react';
 import type { OpticDefinition, OpticPackaging, Pigtail } from '../../domain/optics/types';
 import { OPTIC_SCHEMA } from '../../domain/optics/types';
@@ -38,6 +39,11 @@ function PigtailSection({ p, onChange }: { p: Pigtail; onChange(p: Pigtail): voi
         <TextField label="End connector" value={p.connector} onChange={(connector) => set({ connector })} />
         <SelectField<Pigtail['fiberType']> label="Fiber" value={p.fiberType} options={fiberOptions} onChange={(fiberType) => set({ fiberType })} />
       </div>
+      {isMultiFiber(p.connector) && (
+        <SelectField<'' | 'male' | 'female'> label="End connector gender" value={p.gender ?? ''}
+          options={[{ value: '', label: '—' }, { value: 'male', label: 'Male (pinned)' }, { value: 'female', label: 'Female (unpinned)' }]}
+          onChange={(g) => set({ gender: g || undefined })} />
+      )}
       <p className="muted">Patch cables must match the end connector; one cable per leg.</p>
     </Section>
   );

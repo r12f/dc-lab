@@ -1,3 +1,4 @@
+import { genderedConnector } from './connectors';
 import type { CableEnd, CableMedia } from './types';
 import { defaultFibers } from './connectors';
 
@@ -60,14 +61,16 @@ export function fiberMap(c: CableMedia): FiberSummary {
 
 /** Short description of an end, e.g. "4x MPO-8 (male)". */
 export function describeEnd(e: CableEnd): string {
-  return `${e.count}x ${e.connector}${e.gender ? ` (${e.gender})` : ''}`;
+  return `${e.count}x ${genderedConnector(e.connector, e.gender)}`;
 }
 
 /** "1x MMC-16 → 2x MPO-8 (Y)", "4x MPO-8 ⇄ 4x MPO-8 shuffle", "LC". */
 export function cableSummary(c: CableMedia): string {
   const { a, b } = c.ends;
-  const same = a.count === b.count && a.connector === b.connector;
-  if (same && a.count === 1 && c.mapping === 'straight') return a.connector;
-  const arrow = `${a.count}x ${a.connector} → ${b.count}x ${b.connector}`;
+  const ca = genderedConnector(a.connector, a.gender);
+  const cb = genderedConnector(b.connector, b.gender);
+  const same = a.count === b.count && ca === cb;
+  if (same && a.count === 1 && c.mapping === 'straight') return ca;
+  const arrow = `${a.count}x ${ca} → ${b.count}x ${cb}`;
   return c.mapping === 'shuffle' ? `${arrow} shuffle` : arrow;
 }

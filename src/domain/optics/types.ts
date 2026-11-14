@@ -13,6 +13,8 @@ export interface Pigtail {
   connector: string;
   fiberType: 'fiber-sm' | 'fiber-mm';
   lengthM: number;
+  /** Gender of the leg connectors (multi-fiber only): male = pinned, female = unpinned. */
+  gender?: 'male' | 'female';
 }
 
 /** An optic: pluggable module (transceiver, AOC/DAC end, laser source) or pigtail optic. */

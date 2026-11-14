@@ -86,6 +86,10 @@ Examples (all built-in):
   fiber summary.
 - Canvas: A connectors on the left, B connectors on the right, one line per connected A→B connector
   pair labelled with its fiber count; shuffle lines cross; unused fibers listed under the drawing.
+  Multi-fiber connectors are named with their gender everywhere they are shown (drawings, sidebar
+  badges, summaries, Rack Designer): `MMC-16F` = female (unpinned), `MMC-16M` = male (pinned); duplex
+  connectors (LC, SN, CS) and ends without a gender keep the plain name. Transceiver faces are pinned
+  (`2x MPO-12M`); pigtail legs carry their own gender (built-in pigtail legs are female).
   Ends with more than 8 connectors show the first 4 and the last 3 with the middle elided
   ("⋮ 13 more"), so the last connector number (e.g. A20 of a 160F MPO-8 trunk) stays visible.
 

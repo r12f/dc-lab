@@ -11,7 +11,8 @@
     "count": 2,
     "connector": "MPO-12",
     "fiberType": "fiber-sm",
-    "lengthM": 1
+    "lengthM": 1,
+    "gender": "female"
   },
   "reachM": 500,
   "powerW": 0

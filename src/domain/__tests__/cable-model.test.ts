@@ -18,7 +18,7 @@ describe('cable model', () => {
     const m = fiberMap(cable('mmc16-2xmpo8-y-smf'));
     expect(m.pairs).toEqual([[8, 8]]);
     expect([m.unusedA, m.unusedB]).toEqual([0, 0]);
-    expect(cableSummary(cable('mmc16-2xmpo8-y-smf'))).toBe('1x MMC-16 → 2x MPO-8');
+    expect(cableSummary(cable('mmc16-2xmpo8-y-smf'))).toBe('1x MMC-16F → 2x MPO-8F');
   });
   it('4x4 and 2x2 shuffles spread every A over every B', () => {
     expect(fiberMap(cable('mpo8-4x4-shuffle-smf')).pairs).toEqual([[2, 2, 2, 2], [2, 2, 2, 2], [2, 2, 2, 2], [2, 2, 2, 2]]);

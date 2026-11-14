@@ -1,3 +1,4 @@
+import { genderedConnector, MODULE_FACE_GENDER } from '../../domain/optics/connectors';
 import type { Ref } from 'react';
 import type { OpticDefinition } from '../../domain/optics/types';
 import { paint } from '../../theme/paint';
@@ -24,7 +25,10 @@ export function OpticDrawing({ ref, optic: o }: Props) {
   const width = 40 + BODY_W + (legs ? PIGTAIL_RUN + CONNECTOR_W + 40 : 150);
   const height = Math.max(bodyY + BODY_H, 70 + legsH) + 60;
   const cy = bodyY + BODY_H / 2;
-  const faceConnector = o.fiberConnector || (o.reach === 'DAC' ? 'Copper (DAC)' : '—');
+  // Module receptacles for multi-fiber connectors are pinned (male): "2x MPO-12" -> "2x MPO-12M".
+  const faceConnector = o.fiberConnector
+    ? o.fiberConnector.replace(/^(\d+x\s*)?(.+)$/i, (_, n = '', conn: string) => `${n}${genderedConnector(conn, MODULE_FACE_GENDER)}`)
+    : (o.reach === 'DAC' ? 'Copper (DAC)' : '—');
   return (
     <svg ref={ref} viewBox={`0 0 ${width} ${height}`} width={width} className="drawing">
       <rect width={width} height={height} fill={paint.paper} />
@@ -51,7 +55,7 @@ export function OpticDrawing({ ref, optic: o }: Props) {
           <g key={i}>
             <path d={`M${sx},${cy} C${sx + 120},${cy} ${ex - 120},${ly} ${ex},${ly}`} fill="none" stroke="#0f172a" strokeWidth={7} />
             <path d={`M${sx},${cy} C${sx + 120},${cy} ${ex - 120},${ly} ${ex},${ly}`} fill="none" stroke={color} strokeWidth={4} />
-            <ConnectorGlyph x={ex} y={ly - CONNECTOR_H / 2} label={o.pigtail!.connector} facing="left" />
+            <ConnectorGlyph x={ex} y={ly - CONNECTOR_H / 2} label={genderedConnector(o.pigtail!.connector, o.pigtail!.gender)} facing="left" />
           </g>
         );
       })}
