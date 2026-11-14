@@ -2,7 +2,7 @@ import type { Library } from '../library/library';
 import type { PortGroup } from '../device/types';
 import type { CableMedia, OpticDefinition } from '../optics/types';
 import { parseMode } from '../device/breakout';
-import { formFactorSpec, moduleFits } from './form-factors';
+import { formFactorSpec, heatSinkOf, moduleFits } from './form-factors';
 import { connectorsMate } from '../optics/connectors';
 import { isDirectAttach } from '../optics/cable-types';
 
@@ -17,13 +17,18 @@ export function isEnginePort(group: PortGroup): boolean {
   return !!group.opticalEngine || formFactorSpec(group.formFactor).kind === 'fiber';
 }
 
+/** A transceiver fits a cage: form factor accepted and the same heat sink (IHS / RHS never mix). */
+export function opticFitsCage(group: PortGroup, o: OpticDefinition): boolean {
+  return moduleFits(group.formFactor, o.formFactor) && heatSinkOf(group) === heatSinkOf(o);
+}
+
 /** Modules that fit the cage and run at the mode's total speed. */
 export function compatibleOptics(lib: Library, group: PortGroup, mode: string): OpticDefinition[] {
   if (isEnginePort(group)) return [];
   // Laser-source cages carry no data rate: any module of the cage form factor fits.
-  if (group.role === 'laser') return lib.optics.items().filter((o) => moduleFits(group.formFactor, o.formFactor));
+  if (group.role === 'laser') return lib.optics.items().filter((o) => opticFitsCage(group, o));
   const total = modeTotalGbps(mode);
-  return lib.optics.items().filter((o) => moduleFits(group.formFactor, o.formFactor) && o.speedGbps === total);
+  return lib.optics.items().filter((o) => opticFitsCage(group, o) && o.speedGbps === total);
 }
 
 /** Reach classes that are direct-attach cables, not transceivers. */
@@ -67,7 +72,7 @@ export function modulesOfType(lib: Library, group: PortGroup, type: string): Opt
   if (isEnginePort(group)) return [];
   const t = moduleType(type);
   return lib.optics.items()
-    .filter((o) => moduleFits(group.formFactor, o.formFactor) && o.speedGbps <= group.speedGbps && moduleType(o.reach) === t)
+    .filter((o) => opticFitsCage(group, o) && o.speedGbps <= group.speedGbps && moduleType(o.reach) === t)
     .sort((a, b) => b.speedGbps - a.speedGbps || a.name.localeCompare(b.name));
 }
 
@@ -79,7 +84,7 @@ export function reachOptions(lib: Library, group: PortGroup, mode: string): stri
   if (isEnginePort(group)) return group.reaches ?? [];
   const direct = Object.keys(DIRECT_REACH).filter((r) => directAttachCables(lib, group, mode, r).length);
   const types = lib.optics.items()
-    .filter((o) => o.reach && moduleFits(group.formFactor, o.formFactor) && o.speedGbps <= group.speedGbps)
+    .filter((o) => o.reach && opticFitsCage(group, o) && o.speedGbps <= group.speedGbps)
     .map((o) => moduleTypeLabel(moduleType(o.reach), group.speedGbps)!);
   return [...new Set([...direct, ...types])];
 }
@@ -92,7 +97,7 @@ export function pickOptic(lib: Library, group: PortGroup, mode: string, reach?: 
   if (opticId) {
     // A pinned module: of the chosen type when one is set, else any the cage takes at <= port speed.
     const pinned = lib.optics.get(opticId);
-    const ok = pinned && moduleFits(group.formFactor, pinned.formFactor) && pinned.speedGbps <= group.speedGbps
+    const ok = pinned && opticFitsCage(group, pinned) && pinned.speedGbps <= group.speedGbps
       && (!reach || moduleType(pinned.reach) === moduleType(reach));
     if (ok) return pinned;
   }

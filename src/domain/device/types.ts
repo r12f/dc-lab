@@ -1,3 +1,4 @@
+import type { HeatSink } from '../ports/form-factors';
 import type { CatalogItem } from '../catalog-item';
 import type { Height } from '../units';
 
@@ -44,6 +45,8 @@ export interface PortGroup {
   rows: number;
   /** Allowed breakout modes, e.g. "4x200G". Native "1x<speed>G" is implicit. */
   breakoutModes: string[];
+  /** Pluggable cages: module heat sink the cage takes (IHS or RHS, not interchangeable); unset = RHS. */
+  heatSink?: HeatSink;
   /** Fiber ports driven by co-packaged / near-packaged optics. */
   opticalEngine?: OpticalEngine;
   /** Reach classes a CPO/NPO engine supports, e.g. ["DR4", "2xDR4"]. */

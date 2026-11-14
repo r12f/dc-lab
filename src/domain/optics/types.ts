@@ -1,3 +1,4 @@
+import type { HeatSink } from '../ports/form-factors';
 import type { CatalogItem } from '../catalog-item';
 
 export const OPTIC_SCHEMA = 'dc-lab/optic@1';
@@ -23,6 +24,8 @@ export interface OpticDefinition extends CatalogItem {
   packaging: OpticPackaging;
   /** Module form factor, e.g. "OSFP", "QSFP28". */
   formFactor: string;
+  /** Heat sink (800G and up come as IHS or RHS); unset = RHS. Must match the cage. */
+  heatSink?: HeatSink;
   /** Total module speed (Gbps). */
   speedGbps: number;
   /** Optical interface / reach class, e.g. "2xDR4", "FR4", "SR4" (never DAC/AEC/AOC: those are cables). */

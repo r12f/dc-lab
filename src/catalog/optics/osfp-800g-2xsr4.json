@@ -1,9 +1,10 @@
 {
   "schema": "dc-lab/optic@1",
   "id": "osfp-800g-2xsr4",
-  "name": "800G OSFP 2xSR4",
+  "name": "800G OSFP 2xSR4 RHS",
   "packaging": "module",
   "formFactor": "OSFP",
+  "heatSink": "RHS",
   "speedGbps": 800,
   "reach": "2xSR4",
   "fiberConnector": "2x MPO-12",

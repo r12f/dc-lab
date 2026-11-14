@@ -1,0 +1,13 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "qsfpdd-800g-2xlr4-ihs",
+  "name": "800G QSFP-DD 2xLR4 IHS",
+  "packaging": "module",
+  "formFactor": "QSFP-DD",
+  "heatSink": "IHS",
+  "speedGbps": 800,
+  "reach": "2xLR4",
+  "fiberConnector": "2x LC",
+  "reachM": 10000,
+  "powerW": 0
+}

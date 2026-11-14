@@ -24,6 +24,7 @@
       "label": "OSFP",
       "role": "data",
       "formFactor": "OSFP",
+      "heatSink": "IHS",
       "count": 8,
       "speedGbps": 800,
       "lanes": 8,

@@ -11,7 +11,7 @@ import type { OpticDefinition } from '../optics/types';
 import sw from '../../catalog/devices/switch-64x800g-osfp.json';
 import pdu from '../../catalog/devices/pdu-vertical-3ph.json';
 import rack from '../../catalog/racks/network-42ru-600.json';
-import optic from '../../catalog/optics/osfp-800g-2xdr4.json';
+import optic from '../../catalog/optics/osfp-800g-2xdr4-ihs.json';
 
 const builtin = {
   devices: [sw as unknown as DeviceDefinition, pdu as unknown as DeviceDefinition],

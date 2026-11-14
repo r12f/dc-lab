@@ -1,9 +1,10 @@
 {
   "schema": "dc-lab/optic@1",
   "id": "osfp-800g-2xdr4-pigtail",
-  "name": "800G OSFP 2xDR4 pigtail",
+  "name": "800G OSFP 2xDR4 pigtail RHS",
   "packaging": "pigtail",
   "formFactor": "OSFP",
+  "heatSink": "RHS",
   "speedGbps": 800,
   "reach": "2xDR4",
   "fiberConnector": "2x MPO-12",

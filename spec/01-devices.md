@@ -206,3 +206,9 @@ load); a placement can still set one in Rack Designer.
   QSFP-DD takes QSFP56 / QSFP28 modules, QSFP28 does not take QSFP-DD. "auto" picks the module at the breakout's
   speed (else the fastest of the type); a pinned module is kept while it is of the chosen type.
 - Rack Designer port settings also offer DAC / AEC / AOC and the Cable; breakout profiles do not.
+
+**Heat sink (IHS / RHS)**: pluggable cages carry `heatSink` — **IHS** (module with an integrated, finned heat
+sink) or **RHS** (riding heat sink / cold plate on the host); unset = RHS. A cage takes only modules of the same
+heat sink; IHS and RHS never mix. Set per port group in the port group editor (cages only) and shown in the
+group summary and port tooltip. Built-ins: 64x800G OSFP switch and both OSFP testers are IHS; the liquid-cooled
+64x1.6T OSFP LC switch is RHS; all QSFP / SFP cages are RHS.

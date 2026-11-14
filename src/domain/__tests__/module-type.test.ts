@@ -44,7 +44,7 @@ describe('OSFP 2xDR4+ (500 m and 2 km in one module)', () => {
     const { normalizeProject } = await import('../project/serializer');
     for (const id of ['osfp-800g-2xdr4', 'osfp-1600g-2xdr4']) {
       const o = lib.optics.get(id)!;
-      expect([o.reach, o.reachM, o.name.endsWith('2xDR4+')], id).toEqual(['2xDR4+', 2000, true]);
+      expect([o.reach, o.reachM, o.name.includes('2xDR4+')], id).toEqual(['2xDR4+', 2000, true]);
     }
     expect(lib.optics.get('osfp-800g-2xdr4-2km')).toBeUndefined();
     const p = normalizeProject({ rackDesigns: [{ id: 'd', name: 'D', templateId: 'x', cables: [], placements: [
@@ -54,6 +54,6 @@ describe('OSFP 2xDR4+ (500 m and 2 km in one module)', () => {
   });
   it('2xDR4 picks the plain module, not the pigtail or LPO one', () => {
     const g = group('switch-64x800g-osfp', 'osfp');
-    expect(pickOptic(lib, g, '2x400G', '2xDR4')?.id).toBe('osfp-800g-2xdr4');
+    expect(pickOptic(lib, g, '2x400G', '2xDR4')?.id).toBe('osfp-800g-2xdr4-ihs');
   });
 });

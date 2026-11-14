@@ -1,0 +1,13 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "qsfpdd-800g-sr8-ihs",
+  "name": "800G QSFP-DD SR8 IHS",
+  "packaging": "module",
+  "formFactor": "QSFP-DD",
+  "heatSink": "IHS",
+  "speedGbps": 800,
+  "reach": "SR8",
+  "fiberConnector": "MPO-16",
+  "reachM": 100,
+  "powerW": 0
+}

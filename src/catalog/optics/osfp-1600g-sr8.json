@@ -1,9 +1,10 @@
 {
   "schema": "dc-lab/optic@1",
   "id": "osfp-1600g-sr8",
-  "name": "1.6T OSFP SR8",
+  "name": "1.6T OSFP SR8 RHS",
   "packaging": "module",
   "formFactor": "OSFP",
+  "heatSink": "RHS",
   "speedGbps": 1600,
   "reach": "SR8",
   "fiberConnector": "MPO-16",

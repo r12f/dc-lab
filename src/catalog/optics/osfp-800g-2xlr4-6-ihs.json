@@ -1,0 +1,13 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "osfp-800g-2xlr4-6-ihs",
+  "name": "800G OSFP 2xLR4-6 IHS",
+  "packaging": "module",
+  "formFactor": "OSFP",
+  "heatSink": "IHS",
+  "speedGbps": 800,
+  "reach": "2xLR4-6",
+  "fiberConnector": "2x LC",
+  "reachM": 6000,
+  "powerW": 0
+}

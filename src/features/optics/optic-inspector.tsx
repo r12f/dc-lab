@@ -2,7 +2,7 @@ import { isMultiFiber } from '../../domain/optics/connectors';
 import type { OpticDefinition, OpticPackaging, Pigtail } from '../../domain/optics/types';
 import { OPTIC_SCHEMA } from '../../domain/optics/types';
 import { withPackaging, withPigtail } from '../../domain/optics/factory';
-import { FORM_FACTORS } from '../../domain/ports/form-factors';
+import { FORM_FACTORS, HEAT_SINKS, heatSinkOf, type HeatSink } from '../../domain/ports/form-factors';
 import { NumberField, Section, SelectField, TextField } from '../../ui/fields';
 import { ReadOnlyNotice } from '../../ui/read-only-notice';
 import { ExportJsonButton } from './export-json-button';
@@ -86,6 +86,9 @@ export function OpticInspector({ optic: o, readOnly, onChange, onDuplicate }: Pr
             <SelectField label="Form factor" value={o.formFactor} options={formFactorOptions(o.formFactor)} onChange={(formFactor) => set({ formFactor })} />
             <NumberField label="Speed Gbps" value={o.speedGbps} min={0} onChange={(speedGbps) => set({ speedGbps })} />
           </div>
+          <SelectField<HeatSink> label="Heat sink (must match the cage)" value={heatSinkOf(o)}
+            options={HEAT_SINKS.map((h) => ({ value: h, label: h === 'IHS' ? 'IHS (integrated)' : 'RHS (riding / cold plate)' }))}
+            onChange={(heatSink) => set({ heatSink })} />
           <div className="row2">
             <TextField label="Reach" value={o.reach} onChange={(reach) => set({ reach, ...reachConnector(o, reach) })} />
             {directAttachType(o.reach) && <p className="error">DAC / AEC / AOC are cables, not optics — create a Cable instead.</p>}

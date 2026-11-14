@@ -27,12 +27,15 @@ describe('form factor compatibility', () => {
 describe('speed and reach are independent', () => {
   const osfp = dev('switch-64x800g-osfp');
   const g = osfp.ports[0];
-  it('module types: every module the cage takes at <= port speed (400G SR4 fits an 800G OSFP port)', () => {
-    expect(reachOptions(lib, g, '1x800G')).toEqual(expect.arrayContaining(['2xDR4', '2xFR4', 'DR8', 'DAC', 'SR4', 'DR4']));
+  it('module types: every module the cage takes at <= port speed and of its heat sink', () => {
+    // IHS 800G cage: IHS modules only (all 800G+); RHS 1.6T cage also takes the (RHS) 400G OSFP modules.
+    expect(reachOptions(lib, g, '1x800G')).toEqual(expect.arrayContaining(['2xDR4', '2xFR4', 'DR8', 'DAC']));
+    expect(reachOptions(lib, g, '1x800G')).not.toContain('SR4');
+    expect(reachOptions(lib, dev('switch-64x1600g-osfp').ports[0], '1x1600G')).toEqual(expect.arrayContaining(['2xDR4', 'SR4', 'DR4']));
   });
   it('module is auto-picked from cage + speed + reach', () => {
     const r = resolvePort(lib, osfp, 'osfp/5', { id: 'p', name: 'p', groupDefaults: { osfp: { reach: '2xFR4' } }, overrides: {} });
-    expect(r?.optic?.id).toBe('osfp-800g-2xfr4');
+    expect(r?.optic?.id).toBe('osfp-800g-2xfr4-ihs');
     expect(r?.autoOptic).toBe(true);
   });
   it('QSFP28 LR4 module goes into an 800G QSFP-DD cage at 100G', () => {
@@ -75,7 +78,7 @@ describe('cable count per port', () => {
     const placement = { id: 'p', deviceId: osfp.id, label: 'SW1', mount: { kind: 'rack' as const, position: 1, face: 'front' as const },
       breakoutProfileId: 'all-2x400g', portSettings: {}, groupSettings: { osfp: { cableId: 'mpo12-smf' } } };
     const counts = portItemCounts(lib, osfp, placement);
-    expect(counts.optics.get('osfp-800g-2xdr4')).toBe(64);
+    expect(counts.optics.get('osfp-800g-2xdr4-ihs')).toBe(64);
     expect(counts.cables.get('mpo12-smf')).toBe(128);
   });
 });

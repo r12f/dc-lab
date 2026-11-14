@@ -1,0 +1,13 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "osfp-1600g-2xsr4-ihs",
+  "name": "1.6T OSFP 2xSR4 IHS",
+  "packaging": "module",
+  "formFactor": "OSFP",
+  "heatSink": "IHS",
+  "speedGbps": 1600,
+  "reach": "2xSR4",
+  "fiberConnector": "2x MPO-12",
+  "reachM": 50,
+  "powerW": 0
+}

@@ -1,9 +1,10 @@
 {
   "schema": "dc-lab/optic@1",
   "id": "osfp-1600g-dr8",
-  "name": "1.6T OSFP DR8",
+  "name": "1.6T OSFP DR8 RHS",
   "packaging": "module",
   "formFactor": "OSFP",
+  "heatSink": "RHS",
   "speedGbps": 1600,
   "reach": "DR8",
   "fiberConnector": "MPO-16",

@@ -34,13 +34,13 @@ describe('optics catalog', () => {
   });
   it('optic and cable custom properties show on their BOM lines', () => {
     const def: PropertyDef = { id: 'mfg', name: 'MFG', appliesTo: ['optic', 'cable'], type: 'text', showInBom: true };
-    const l = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject(), [], { 'osfp-800g-2xdr4': { mfg: 'Acme' }, 'mpo12-smf': { mfg: 'FiberCo' } });
+    const l = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject(), [], { 'osfp-800g-2xdr4-ihs': { mfg: 'Acme' }, 'mpo12-smf': { mfg: 'FiberCo' } });
     const d = newDesign('d', 'D', 'network-42ru-600');
     const pl = newPlacement('p', 'switch-64x800g-osfp', 'SW1', { kind: 'rack', position: 1, face: 'front' });
-    pl.groupSettings = { osfp: { mode: '2x400G', reach: '2xDR4', opticId: 'osfp-800g-2xdr4', cableId: 'mpo12-smf' } };
+    pl.groupSettings = { osfp: { mode: '2x400G', reach: '2xDR4', opticId: 'osfp-800g-2xdr4-ihs', cableId: 'mpo12-smf' } };
     d.placements.push(pl);
     const csv = bomToCsv(buildRackBom(l, d), [def]);
-    expect(csv).toMatch(/800G OSFP 2xDR4\+,Optic,[^\n]*,Acme,64,/);
+    expect(csv).toMatch(/800G OSFP 2xDR4\+ IHS,Optic,[^\n]*,Acme,64,/);
     expect(csv).toMatch(/MPO-12[^\n]*,Cable,[^\n]*,FiberCo,128,/);
   });
 });

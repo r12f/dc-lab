@@ -1,6 +1,6 @@
 import { formatGbps } from '../../domain/units';
 import type { DeviceDefinition, OpticalEngine, Phase, PortFace, PortGroup, PortRole } from '../../domain/device/types';
-import { FORM_FACTORS, formFactorSpec } from '../../domain/ports/form-factors';
+import { FORM_FACTORS, formFactorSpec, HEAT_SINKS, heatSinkOf, type HeatSink } from '../../domain/ports/form-factors';
 import { newPortGroup } from '../../domain/device/factory';
 import { PORT_ROLES, ROLE_TRAITS } from '../../domain/device/roles';
 import { uniqueId } from '../../domain/ids';
@@ -53,7 +53,7 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
   const pluggable = ROLE_TRAITS[group.role].pluggable;
   return (
     <details className="card" open={false}>
-      <summary>{`${group.label} · ${group.count}x ${group.formFactor}${group.opticalEngine ? ` ${group.opticalEngine.toUpperCase()}` : ''}${group.speedGbps ? ` ${formatGbps(group.speedGbps)}` : ''} · ${group.face}`}</summary>
+      <summary>{`${group.label} · ${group.count}x ${group.formFactor}${group.heatSink ? ` ${group.heatSink}` : ''}${group.opticalEngine ? ` ${group.opticalEngine.toUpperCase()}` : ''}${group.speedGbps ? ` ${formatGbps(group.speedGbps)}` : ''} · ${group.face}`}</summary>
       <div className="row2">
         <TextField label="Label" value={group.label} onChange={(label) => set({ label })} />
         <SelectField<PortRole> label="Role" value={group.role} options={roleOptions} onChange={(role) => set({ role })} />
@@ -69,6 +69,11 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
         <NumberField label="Rows" value={group.rows} min={1} onChange={(rows) => set({ rows })} />
         <NumberField label="Lanes" value={group.lanes} min={1} onChange={(lanes) => set({ lanes })} />
       </div>
+      {pluggable && formFactorSpec(group.formFactor).kind === 'cage' && (
+        <SelectField<HeatSink> label="Heat sink (module must match)" value={heatSinkOf(group)}
+          options={HEAT_SINKS.map((h) => ({ value: h, label: h === 'IHS' ? 'IHS (integrated)' : 'RHS (riding / cold plate)' }))}
+          onChange={(heatSink) => set({ heatSink })} />
+      )}
       {pluggable && (
         <TextField label="Breakout modes (e.g. 2x400G, 4x200G)" value={group.breakoutModes.join(', ')}
           onChange={(v) => set({ breakoutModes: v.split(',').map((s) => s.trim()).filter(Boolean) })} />

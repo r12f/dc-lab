@@ -55,6 +55,17 @@ export function moduleFits(cage: string, module: string): boolean {
   return acceptedModules(cage).some((f) => f.toLowerCase() === module.toLowerCase());
 }
 
+/**
+ * Module heat sink: IHS (integrated, finned top) or RHS (riding heat sink on the host / cold plate). A cage
+ * takes only its own kind — IHS and RHS do not mix. Unset = RHS (all modules below 800G are RHS).
+ */
+export type HeatSink = 'IHS' | 'RHS';
+export const HEAT_SINKS: HeatSink[] = ['IHS', 'RHS'];
+
+export function heatSinkOf(x: { heatSink?: HeatSink }): HeatSink {
+  return x.heatSink ?? 'RHS';
+}
+
 export function isFiberConnector(id: string): boolean {
   return formFactorSpec(id).kind === 'fiber';
 }

@@ -1,9 +1,10 @@
 {
   "schema": "dc-lab/optic@1",
   "id": "osfp-800g-zr",
-  "name": "800G OSFP ZR",
+  "name": "800G OSFP ZR RHS",
   "packaging": "module",
   "formFactor": "OSFP",
+  "heatSink": "RHS",
   "speedGbps": 800,
   "reach": "ZR",
   "fiberConnector": "LC",

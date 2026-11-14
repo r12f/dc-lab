@@ -140,3 +140,7 @@ Auto-pick prefers the plain pluggable module over pigtail / LPO variants of the 
 **Items tab**: like Devices, the Optics and Cables inspector has **Item type** | **Items (n)** tabs (shared
 `ItemTabs`). The Items tab lists the item type's items; opening one (from the list or the sidebar) shows its
 editor there with "← All items"; switching back to Item type deselects the item.
+
+**Heat sink**: optics carry `heatSink` (IHS / RHS; unset = RHS) and fit only a cage of the same heat sink. All
+modules below 800G are RHS. Every 800G and 1.6T module ships in both: "<name> RHS" (the original id) and
+"<name> IHS" (id + `-ihs`). Edited in the optic inspector ("Heat sink (must match the cage)").

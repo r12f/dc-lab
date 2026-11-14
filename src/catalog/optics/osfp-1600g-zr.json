@@ -1,9 +1,10 @@
 {
   "schema": "dc-lab/optic@1",
   "id": "osfp-1600g-zr",
-  "name": "1.6T OSFP ZR",
+  "name": "1.6T OSFP ZR RHS",
   "packaging": "module",
   "formFactor": "OSFP",
+  "heatSink": "RHS",
   "speedGbps": 1600,
   "reach": "ZR",
   "fiberConnector": "LC",
