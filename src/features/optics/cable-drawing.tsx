@@ -18,6 +18,22 @@ function Gap({ x, y, n }: { x: number; y: number; n: number }) {
   );
 }
 
+/**
+ * A x B matrix of what each A connector reaches on the B side. Fiber cables: fibers per pair (fiber map).
+ * DAC / AEC / AOC / power / other cables have no fiber map: 1:1 straight, or each A splits evenly over the B
+ * connectors (1 -> 2 / 4 breakout), or several A join one B.
+ */
+export function conductorPairs(c: CableMedia, fiberPairs: number[][]): number[][] {
+  if (isFiber(c.type)) return fiberPairs;
+  const na = Math.max(1, c.ends.a.count);
+  const nb = Math.max(1, c.ends.b.count);
+  return Array.from({ length: na }, (_, a) => Array.from({ length: nb }, (_, b) => {
+    if (na === nb) return a === b ? 1 : 0;
+    if (nb > na) return Math.floor(b / (nb / na)) === a ? 1 : 0;
+    return Math.floor(a / (na / nb)) === b ? 1 : 0;
+  }));
+}
+
 interface Props {
   ref?: Ref<SVGSVGElement>;
   cable: CableMedia;
@@ -56,7 +72,7 @@ export function CableDrawing({ ref, cable: c }: Props) {
     c.mapping,
     c.polarity ? `polarity ${c.polarity}` : '',
   ].filter(Boolean).join(' · ');
-  const lines = fm.pairs
+  const lines = conductorPairs(c, fm.pairs)
     .flatMap((row, a) => row.map((n, b) => ({ i: rowOf(slotsA, a), j: rowOf(slotsB, b), n })))
     .filter((p): p is { i: number; j: number; n: number } => p.n > 0 && p.i !== undefined && p.j !== undefined);
   // When every A-B pair carries the same fibers, one note replaces per-line labels (shuffles stay legible).

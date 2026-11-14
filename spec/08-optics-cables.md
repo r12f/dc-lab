@@ -128,3 +128,6 @@ SR/LR/ER — use **LC**. In a breakout profile (and Rack Designer port settings)
 its cable connector and the Cable list offers only cables with that connector (and the right fiber type).
 In the Optics editor, typing a reach sets the module's fiber connector (2xDR4 -> "2x MPO-12"), and a connector
 that contradicts the reach is flagged. Every shipped optic follows the rule (tested).
+
+**Cable drawing lines**: fiber cables draw one line per A-B pair from the fiber map. DAC / AEC / AOC / power
+cables have no fibers: they draw 1:1 straight lines, or a breakout (1 -> 2 / 4) from the A connector to each B.
