@@ -44,13 +44,38 @@ export function directAttachCables(lib: Library, group: PortGroup, mode: string,
 }
 
 /**
- * Reach classes available for a port at a mode: engine reaches for CPO/NPO; otherwise module reaches
- * plus DAC / AEC / AOC when a direct-attach cable of that kind fits the cage at that speed.
+ * Module type of a reach class: variants of one optical interface share a type — "2xDR4 LPO" and "2xDR4-2"
+ * (2 km) are 2xDR4, "DR4-2" is DR4 — and PSM4 (the <=100G name) is DR4.
+ */
+export function moduleType(reach: string | undefined): string | undefined {
+  if (!reach) return undefined;
+  const t = reach.trim().replace(/[\s-].*$/, '');
+  return t.replace(/PSM4$/i, 'DR4');
+}
+
+/**
+ * Modules of one type for a cage: the cage takes the form factor (QSFP-DD takes QSFP56/28; QSFP28 does not
+ * take QSFP-DD), same module type, speed <= the physical port speed. Fastest first.
+ */
+export function modulesOfType(lib: Library, group: PortGroup, type: string): OpticDefinition[] {
+  if (isEnginePort(group)) return [];
+  const t = moduleType(type);
+  return lib.optics.items()
+    .filter((o) => moduleFits(group.formFactor, o.formFactor) && o.speedGbps <= group.speedGbps && moduleType(o.reach) === t)
+    .sort((a, b) => b.speedGbps - a.speedGbps || a.name.localeCompare(b.name));
+}
+
+/**
+ * Module types available for a port: engine reaches for CPO/NPO; otherwise the types of every module the cage
+ * takes at <= port speed, plus DAC / AEC / AOC when a direct-attach cable of that kind fits the cage at the mode.
  */
 export function reachOptions(lib: Library, group: PortGroup, mode: string): string[] {
   if (isEnginePort(group)) return group.reaches ?? [];
   const direct = Object.keys(DIRECT_REACH).filter((r) => directAttachCables(lib, group, mode, r).length);
-  return [...new Set([...direct, ...compatibleOptics(lib, group, mode).map((o) => o.reach)])];
+  const types = lib.optics.items()
+    .filter((o) => o.reach && moduleFits(group.formFactor, o.formFactor) && o.speedGbps <= group.speedGbps)
+    .map((o) => moduleType(o.reach)!);
+  return [...new Set([...direct, ...types])];
 }
 
 /**
@@ -58,12 +83,19 @@ export function reachOptions(lib: Library, group: PortGroup, mode: string): stri
  * otherwise the first catalog module matching cage + speed + reach.
  */
 export function pickOptic(lib: Library, group: PortGroup, mode: string, reach?: string, opticId?: string): OpticDefinition | undefined {
-  const options = compatibleOptics(lib, group, mode);
-  const pinned = opticId ? options.find((o) => o.id === opticId) : undefined;
-  if (pinned) return pinned;
+  if (opticId) {
+    // A pinned module: of the chosen type when one is set, else any the cage takes at <= port speed.
+    const pinned = lib.optics.get(opticId);
+    const ok = pinned && moduleFits(group.formFactor, pinned.formFactor) && pinned.speedGbps <= group.speedGbps
+      && (!reach || moduleType(pinned.reach) === moduleType(reach));
+    if (ok) return pinned;
+  }
   // DAC / AEC / AOC: the cable plugs into the cage itself, no transceiver.
   if (!reach || directAttachType(reach)) return undefined;
-  return options.find((o) => o.reach === reach);
+  // Auto: the module of that type running the mode's speed, else the fastest of that type the port takes.
+  const of = modulesOfType(lib, group, reach);
+  const total = modeTotalGbps(mode);
+  return of.find((o) => o.speedGbps === total && o.reach === reach) ?? of.find((o) => o.speedGbps === total) ?? of[0];
 }
 
 /**

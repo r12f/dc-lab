@@ -196,8 +196,12 @@ empty: its cable connector is then the cage form factor itself (e.g. OSFP), so t
 offers exactly the DAC / AEC / AOC that fit that cage and speed. Profiles no longer store `cableId` (dropped on
 load); a placement can still set one in Rack Designer.
 
-**Port settings = Speed, then Module**: the Module list is "none" plus the reach classes the cage
-takes at that speed, each shown with its connector ("2xDR4 — 2x MPO-12", "2xLR4 — 2x LC"). Speed + reach fix
-the module and so the cable connector, shown under the list; "none" leaves the cage empty and the connector is
-the cage form factor (e.g. OSFP). There is no separate module pick. Rack Designer port settings also list
-DAC / AEC / AOC and the Cable pick; breakout profiles do not.
+**Port settings = Speed → Module Type → Module**:
+- **Module Type**: None, or a reach class the cage takes at <= the physical port speed (2xDR4, 2xLR4, DR4…).
+  Variants fold into their type ("2xDR4 LPO" and 2 km "2xDR4-2" are 2xDR4; "DR4-2" is DR4) and **PSM4 is DR4**
+  (the <=100G name of the same parallel-SMF interface). The **Connector Type** follows from it and is shown;
+  None leaves the cage empty and the connector is the cage form factor (OSFP, QSFP-DD…).
+- **Module** (shown when a type is set): every module of that type the cage physically takes at <= port speed —
+  QSFP-DD takes QSFP56 / QSFP28 modules, QSFP28 does not take QSFP-DD. "auto" picks the module at the breakout's
+  speed (else the fastest of the type); a pinned module is kept while it is of the chosen type.
+- Rack Designer port settings also offer DAC / AEC / AOC and the Cable; breakout profiles do not.
