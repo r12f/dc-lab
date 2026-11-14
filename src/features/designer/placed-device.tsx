@@ -5,6 +5,10 @@ import type { RackTemplate } from '../../domain/rack/types';
 import { unitsIn } from '../../domain/units';
 import { bodyX, sideBox, sideSlotRect, unitTopY, type RackGeometry } from '../../drawing/rack-geometry';
 import { categoryPaint, paint } from '../../theme/paint';
+import { traitsOf } from '../../domain/device/categories';
+
+/** Blanking panels are dark, stiffeners steel grey; both visually recede behind active devices. */
+const FILLER_FILL = { blanking: '#1f2937', stiffener: '#64748b' } as const;
 
 interface Props {
   placement: Placement;
@@ -31,7 +35,8 @@ export function placementRect(p: Placement, device: DeviceDefinition, rack: Rack
 /** A device instance drawn in the elevation. */
 export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dragging, onPointerDown }: Props) {
   const r = placementRect(placement, device, rack, geo);
-  const color = categoryPaint(device.category);
+  const filler = traitsOf(device.category).filler;
+  const color = filler ? FILLER_FILL[filler] : categoryPaint(device.category);
   const vertical = placement.mount.kind === 'side';
   const cx = r.x + r.w / 2;
   const cy = r.y + r.h / 2;
@@ -42,7 +47,7 @@ export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dr
         fill={color} fillOpacity={ghost ? 0.25 : 0.9}
         stroke={selected ? paint.selection : paint.ink} strokeWidth={selected ? 3 : 1}
         strokeDasharray={ghost ? '4 2' : undefined} />
-      <text x={cx} y={cy + 4} fontSize={vertical ? 9 : 10} textAnchor="middle" fill={ghost ? paint.ink : paint.paper}
+      <text x={cx} y={cy + 4} fontSize={vertical ? 9 : 10} textAnchor="middle" fill={ghost ? paint.ink : filler ? '#e2e8f0' : paint.paper}
         fontWeight={600} transform={vertical ? `rotate(-90 ${cx} ${cy})` : undefined} pointerEvents="none">
         {vertical ? placement.label : `${placement.label} · ${device.name}`}
       </text>

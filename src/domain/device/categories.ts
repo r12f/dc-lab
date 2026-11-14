@@ -3,19 +3,26 @@ import type { DeviceCategory } from './types';
 /** Behaviour and presentation traits per device category (registry pattern). */
 export interface CategoryTraits {
   label: string;
+  /** Prefix for placement labels in Rack Designer (SW1, SRV2, BP1…). */
+  labelPrefix: string;
   suppliesPower: boolean;
   allowsZeroU: boolean;
+  /** Passive rack hardware with no ports or power (blanking panels, stiffeners). */
+  filler?: 'blanking' | 'stiffener';
 }
 
 export const CATEGORY_TRAITS: Record<DeviceCategory, CategoryTraits> = {
-  switch: { label: 'Switch', suppliesPower: false, allowsZeroU: false },
-  server: { label: 'Server', suppliesPower: false, allowsZeroU: false },
-  pdu: { label: 'PDU', suppliesPower: true, allowsZeroU: true },
-  'patch-panel': { label: 'Patch Panel', suppliesPower: false, allowsZeroU: true },
-  ocs: { label: 'OCS', suppliesPower: false, allowsZeroU: false },
-  'power-shelf': { label: 'Power Shelf', suppliesPower: true, allowsZeroU: false },
-  storage: { label: 'Storage', suppliesPower: false, allowsZeroU: false },
-  other: { label: 'Other', suppliesPower: false, allowsZeroU: true },
+  switch: { label: 'Switch', labelPrefix: 'SW', suppliesPower: false, allowsZeroU: false },
+  server: { label: 'Server', labelPrefix: 'SRV', suppliesPower: false, allowsZeroU: false },
+  pdu: { label: 'PDU', labelPrefix: 'PDU', suppliesPower: true, allowsZeroU: true },
+  'patch-panel': { label: 'Patch Panel', labelPrefix: 'PP', suppliesPower: false, allowsZeroU: true },
+  ocs: { label: 'OCS', labelPrefix: 'OCS', suppliesPower: false, allowsZeroU: false },
+  'power-shelf': { label: 'Power Shelf', labelPrefix: 'PS', suppliesPower: true, allowsZeroU: false },
+  storage: { label: 'Storage', labelPrefix: 'STG', suppliesPower: false, allowsZeroU: false },
+  other: { label: 'Other', labelPrefix: 'DEV', suppliesPower: false, allowsZeroU: true },
+  // Appended after 'other' so existing categories keep their palette colors.
+  'blanking-panel': { label: 'Blanking Panel', labelPrefix: 'BP', suppliesPower: false, allowsZeroU: false, filler: 'blanking' },
+  stiffener: { label: 'Stiffener', labelPrefix: 'STF', suppliesPower: false, allowsZeroU: false, filler: 'stiffener' },
 };
 
 export const DEVICE_CATEGORIES = Object.keys(CATEGORY_TRAITS) as DeviceCategory[];

@@ -1,12 +1,9 @@
+import { traitsOf } from '../../domain/device/categories';
 import type { Library } from '../../domain/library/library';
 import type { CableRun, Mount, Placement, RackDesign } from '../../domain/design/types';
 import { defaultMount, nextLabel, newPlacement, placementProblem } from '../../domain/design/placement';
 import { uniqueId } from '../../domain/ids';
 import { useAppStore } from '../../state/store';
-
-const LABEL_PREFIX: Record<string, string> = {
-  switch: 'SW', server: 'SRV', pdu: 'PDU', 'patch-panel': 'PP', ocs: 'OCS', 'power-shelf': 'PS', storage: 'STG', other: 'DEV',
-};
 
 /** Commands on one rack design (command-style API over the store). */
 export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
@@ -22,7 +19,7 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
     const problem = placementProblem(lib, design, device, target);
     if (problem) return { error: problem };
     const id = uniqueId('p', design.placements.map((p) => p.id));
-    const label = nextLabel(design, LABEL_PREFIX[device.category] ?? 'DEV');
+    const label = nextLabel(design, traitsOf(device.category).labelPrefix);
     mutate((d) => ({ ...d, placements: [...d.placements, newPlacement(id, deviceId, label, target)] }));
     return { id };
   };

@@ -8,7 +8,7 @@ Single-device definitions. One device = one JSON file (`schema: "dc-lab/device@1
 |---|---|
 | `id`, `name`, `vendor`, `model` | Identity. `id` is unique across built-in + project. `model` is shown as **Model / Vendor PN**. |
 | `properties` | Values of project-wide custom properties (see [05-project-file.md](05-project-file.md#custom-properties)) |
-| `category` | `switch`, `server`, `pdu`, `patch-panel`, `ocs`, `power-shelf`, `storage`, `other` |
+| `category` | `switch`, `server`, `pdu`, `patch-panel`, `ocs`, `power-shelf`, `storage`, `other`, `blanking-panel`, `stiffener` |
 | `height` | `{ units, system: "RU" \| "OU" }`; `0` units = zero-U (vertical PDU, side-pod device) |
 | `depthMm`, `weightKg` | Physical metrics |
 | `power` | `{ typicalW, maxW, capacityW? }`. `capacityW` is set for power *suppliers* (PDU, power shelf). |
@@ -124,6 +124,10 @@ Drawing strategy is selected by device shape:
   native speed and count (`QSFP-DD 400G ×32`); each data port shows its index, speed (`400G` unsplit,
   `2x400G` breakout — never `1x…`) and reach. Ports are ≥ 54x46 units, text ≥ 9 units, drawn 1:1. Width follows content — the
   widest face (ports + PSUs) sets the box width, so small devices draw narrow.
+- **Blanking panel / stiffener** (categories `blanking-panel`, `stiffener` — passive "filler" hardware with
+  no ports, PSUs or power): a single front panel at true scale (19" wide, height from RU/OU) with
+  mounting ears; blanking panels dark, stiffeners steel grey with a rib. They occupy units in Rack
+  Designer and count in the BOM and weight like any device.
 - **Vertical PDU** (category `pdu`, height 0): a tall strip with input cord at the top, outlets
   stacked by bank, each bank labelled with breaker/phase and colored by phase (L1/L2/L3).
 
@@ -131,7 +135,7 @@ Drawing strategy is selected by device shape:
 
 - Sidebar: tree **Vendor → Category → Device** with a text filter (name, vendor, model, id).
 - **+ New** opens a template picker (switch, server, vertical PDU, horizontal PDU, patch panel, OCS,
-  power shelf, storage, blank). Each template creates a device with realistic port roles
+  power shelf, storage, blanking panel, stiffener, blank). Each template creates a device with realistic port roles
   (data + mgmt + console, PSUs, PDU banks).
 - Delete works for project devices and built-in devices. Deleting a built-in hides it in this project
   (`hiddenBuiltins`); "Show hidden built-ins" restores them.

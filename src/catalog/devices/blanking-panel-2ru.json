@@ -1,0 +1,20 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "blanking-panel-2ru",
+  "name": "2RU Blanking Panel",
+  "vendor": "Generic",
+  "model": "2RU Blanking Panel",
+  "category": "blanking-panel",
+  "height": {
+    "units": 2,
+    "system": "RU"
+  },
+  "depthMm": 20,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [],
+  "breakoutProfiles": []
+}

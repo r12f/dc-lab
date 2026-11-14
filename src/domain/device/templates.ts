@@ -122,5 +122,13 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       ports: [group('nic', 'NIC', 'data', 'QSFP28', 2, 100, { lanes: 4 }), group('bmc', 'BMC', 'mgmt', 'RJ45', 1, 1)],
     }),
   },
+  {
+    id: 'blanking-panel', label: 'Blanking panel', description: '1RU filler panel, no ports or power',
+    build: (id) => base(id, { name: 'New blanking panel', category: 'blanking-panel', depthMm: 20, weightKg: 0.5, power: { typicalW: 0, maxW: 0 } }),
+  },
+  {
+    id: 'stiffener', label: 'Stiffener', description: 'Structural rack stiffener bar, no ports or power',
+    build: (id) => base(id, { name: 'New stiffener', category: 'stiffener', height: { units: 1, system: 'OU' }, depthMm: 50, weightKg: 2, power: { typicalW: 0, maxW: 0 } }),
+  },
   { id: 'blank', label: 'Blank', description: 'No ports', build: (id) => base(id, {}) },
 ];

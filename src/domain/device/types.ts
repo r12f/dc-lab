@@ -11,7 +11,9 @@ export type DeviceCategory =
   | 'ocs'
   | 'power-shelf'
   | 'storage'
-  | 'other';
+  | 'other'
+  | 'blanking-panel'
+  | 'stiffener';
 
 export type PortFace = 'front' | 'rear';
 
