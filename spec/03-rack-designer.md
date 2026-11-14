@@ -54,8 +54,11 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 
 - **Metrics**: used/total units, typical/max power (devices + optics), supply capacity (PDUs/shelves),
   total weight (rack + side elements + devices), warnings (over power, over load, supply < max draw, overlaps).
-- **BOM**: rack template x1, devices by id, optics by id (instance > profile), port-attached cables from
-  profiles (quantity), in-rack cable runs by media (quantity, total length).
+- **BOM**: shown as a tree — **Rack** → **Rack frame** (devices in rack units) and one node per side
+  element (Sidepod L, PDU bay R… with the devices mounted in it) → each device line with its optics and
+  port-attached cables as children; **In-rack cables** (runs by media and length) last. Same items in the
+  same container merge (qty, labels in notes). Empty (Reserved) space is left out. CSV export stays flat
+  (merged by item).
   Columns: Item, Category, Vendor / Model (PN), every custom property with `showInBom`, Qty, Unit W,
   Total W, Notes.
 
@@ -63,8 +66,12 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 
 - Sidebar: rack designs grouped by template, with a text filter (name, template, device labels and
   names); New (pick template), Duplicate, Delete.
+- Device palette: the Devices tree — Type → Item type → Items (vendor products); drag or double-click an
+  item type (default item) or a specific item. Only devices of the rack's unit system are listed (RU racks
+  take RU and 0U devices, OU racks OU and 0U); placing a device of the other system is rejected.
 - Canvas: elevation (front/rear toggle) with side pods. Drag a device from the palette onto a unit or
-  side slot; drag a placed device to move it; click to select.
+  side slot — the pointer marks the device's middle and a tall device dropped near the top or bottom slides
+  inside the rack; drag a placed device to move it; click to select.
 - Inspector tabs: **Placement** (label, position, face, profile, group optics, per-port overrides by
   clicking ports on a faceplate preview), **Cables** (start/end device + port, route left/right, media,
   auto/manual length, quantity; selecting a device pre-fills new runs' start), **BOM** (metrics + BOM

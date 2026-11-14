@@ -72,8 +72,8 @@ export function DesignerModule() {
           header={
             <>
               {creating && <NewDesignForm lib={lib} onCreate={create} onCancel={() => setCreating(false)} />}
-              {design && <DevicePalette lib={lib} onAdd={(id) => {
-                const r = editor.addDevice(id);
+              {design && <DevicePalette lib={lib} rack={lib.racks.get(design.templateId)} onAdd={(id, variantId) => {
+                const r = editor.addDevice(id, undefined, variantId);
                 report(r.error);
                 if (r.id) setPlacementId(r.id);
               }} />}
@@ -104,8 +104,8 @@ export function DesignerModule() {
                 onSelect={(id) => { setPlacementId(id); if (id) setCableId(undefined); }}
                 selectedCableId={cableId}
                 onSelectCable={(id) => { setCableId(id); if (id) { setPlacementId(undefined); setTab('cables'); } }}
-                onDropDevice={(deviceId, mount) => {
-                  const r = editor.addDevice(deviceId, mount);
+                onDropDevice={(deviceId, mount, variantId) => {
+                  const r = editor.addDevice(deviceId, mount, variantId);
                   report(r.error);
                   if (r.id) setPlacementId(r.id);
                 }}

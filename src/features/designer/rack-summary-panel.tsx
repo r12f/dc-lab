@@ -5,11 +5,14 @@ import { buildRackBom } from '../../domain/bom/rack-bom';
 import { formatPower, formatWeight } from '../../domain/units';
 import { StatGrid, WarningList } from '../../ui/stat-grid';
 import { BomTable } from '../../ui/bom-table';
+import { BomTreeTable } from '../../ui/bom-tree-table';
+import { buildRackBomTree } from '../../domain/bom/rack-bom-tree';
 import { Section } from '../../ui/fields';
 
 export function RackSummaryPanel({ lib, design }: { lib: Library; design: RackDesign }) {
   const m = computeRackMetrics(lib, design);
   const bom = buildRackBom(lib, design);
+  const tree = buildRackBomTree(lib, design);
   return (
     <>
       <StatGrid stats={[
@@ -24,7 +27,7 @@ export function RackSummaryPanel({ lib, design }: { lib: Library; design: RackDe
       ]} />
       <WarningList warnings={m.warnings} />
       <Section title="BOM">
-        <BomTable lines={bom} filename={design.id} />
+        {tree ? <BomTreeTable root={tree} csvLines={bom} filename={design.id} /> : <BomTable lines={bom} filename={design.id} />}
       </Section>
     </>
   );

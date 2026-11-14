@@ -24,6 +24,20 @@ export function spanOf(device: DeviceDefinition, rack: RackTemplate, mount: Moun
   return { bottom: mount.position, top: mount.position + units - 1, faces };
 }
 
+/**
+ * RU devices go into RU racks, OU devices into OU racks (19" vs 21" mounting); 0U devices (side-mounted
+ * PDUs, patch panels) fit either.
+ */
+export function unitSystemProblem(device: DeviceDefinition, rack: RackTemplate): string | undefined {
+  if (device.height.units === 0 || device.height.system === rack.unitSystem) return undefined;
+  return `${device.height.system} device does not fit a ${rack.unitSystem} rack`;
+}
+
+/** Devices that can go into `rack` (same unit system, or 0U). */
+export function fitsRackUnits(device: DeviceDefinition, rack: RackTemplate): boolean {
+  return !unitSystemProblem(device, rack);
+}
+
 function spansOverlap(a: UnitSpan, b: UnitSpan): boolean {
   return a.bottom <= b.top && b.bottom <= a.top && a.faces.some((f) => b.faces.includes(f));
 }
@@ -48,6 +62,8 @@ export function placementProblem(
     );
     return taken ? 'Side slot occupied' : undefined;
   }
+  const sys = unitSystemProblem(device, rack);
+  if (sys) return sys;
   const span = spanOf(device, rack, mount);
   if (!span) return undefined;
   if (span.bottom < 1 || span.top > rack.units) return `Does not fit (units ${span.bottom}-${span.top} of ${rack.units})`;

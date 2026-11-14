@@ -11,7 +11,7 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
   const mutate = (fn: (d: RackDesign) => RackDesign) => design && update('rackDesigns', design.id, fn);
 
   /** Places a device; returns an error message or the new placement id. */
-  const addDevice = (deviceId: string, mount?: Mount): { error?: string; id?: string } => {
+  const addDevice = (deviceId: string, mount?: Mount, variantId?: string): { error?: string; id?: string } => {
     const device = lib.devices.get(deviceId);
     if (!design || !device) return { error: 'Unknown device' };
     const target = mount ?? defaultMount(lib, design, device);
@@ -20,7 +20,8 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
     if (problem) return { error: problem };
     const id = uniqueId('p', design.placements.map((p) => p.id));
     const label = nextLabel(design, traitsOf(device.category).labelPrefix);
-    mutate((d) => ({ ...d, placements: [...d.placements, newPlacement(id, deviceId, label, target)] }));
+    const placement = { ...newPlacement(id, deviceId, label, target), ...(variantId ? { variantId } : {}) };
+    mutate((d) => ({ ...d, placements: [...d.placements, placement] }));
     return { id };
   };
 

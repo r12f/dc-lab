@@ -1,3 +1,4 @@
+import { unitsIn } from '../../domain/units';
 import { useState, type DragEvent, type PointerEvent, type Ref } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { Mount, RackDesign } from '../../domain/design/types';
@@ -24,7 +25,7 @@ interface Props {
   onSelect(id: string | undefined): void;
   selectedCableId?: string;
   onSelectCable(id: string | undefined): void;
-  onDropDevice(deviceId: string, mount: Mount): void;
+  onDropDevice(deviceId: string, mount: Mount, variantId?: string): void;
   onMove(placementId: string, mount: Mount): void;
 }
 
@@ -59,10 +60,18 @@ export function RackElevation({ ref, lib, design, face, selectedId, onSelect, se
 
   const onDrop = (e: DragEvent<SVGSVGElement>) => {
     e.preventDefault();
-    const deviceId = e.dataTransfer.getData(DEVICE_DRAG_TYPE);
+    const [deviceId, variantId] = e.dataTransfer.getData(DEVICE_DRAG_TYPE).split('|');
     if (!deviceId) return;
     const pt = svgPoint(e);
-    onDropDevice(deviceId, mountAt(geo, rack, face, pt.x, pt.y));
+    const mount = mountAt(geo, rack, face, pt.x, pt.y);
+    const device = lib.devices.get(deviceId);
+    // The pointer marks the device's middle; a tall device dropped near the top/bottom slides inside the rack.
+    if (mount.kind === 'rack' && device) {
+      const units = Math.max(1, unitsIn(device.height, rack.unitSystem));
+      const bottom = mount.position - Math.floor((units - 1) / 2);
+      mount.position = Math.max(1, Math.min(rack.units - units + 1, bottom));
+    }
+    onDropDevice(deviceId, mount, variantId || undefined);
   };
 
   const startDrag = (id: string) => (e: PointerEvent<SVGGElement>) => {

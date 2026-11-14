@@ -18,7 +18,8 @@ export interface PaneWidths {
 }
 
 export const DEFAULT_PANES: PaneWidths = { sidebar: 260, inspector: 360 };
-export const PANE_LIMITS = { min: 180, max: 720 };
+/** Inspector can grow to most of a wide screen so faceplates and port boxes stay legible. */
+export const PANE_LIMITS = { min: 180, max: 1600 };
 
 export function clampPane(px: number): number {
   return Math.round(Math.min(PANE_LIMITS.max, Math.max(PANE_LIMITS.min, px)));

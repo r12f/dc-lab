@@ -12,7 +12,8 @@ interface Props {
 export function ModuleLayout({ sidebar, canvas, inspector }: Props) {
   const panes = usePreferences((s) => s.panes);
   const setPaneWidth = usePreferences((s) => s.setPaneWidth);
-  const columns = `${panes.sidebar}px 0 minmax(0, 1fr)${inspector ? ` 0 ${panes.inspector}px` : ''}`;
+  // The canvas keeps at least 240px; side panes shrink to fit narrow windows instead of overflowing.
+  const columns = `minmax(0, ${panes.sidebar}px) 0 minmax(240px, 1fr)${inspector ? ` 0 minmax(0, ${panes.inspector}px)` : ''}`;
   return (
     <div className="module" style={{ gridTemplateColumns: columns }}>
       <aside className="sidebar">{sidebar}</aside>
