@@ -26,6 +26,7 @@ export function DesignerModule() {
   const remove = useAppStore((s) => s.remove);
   const [creating, setCreating] = useState(false);
   const [view, setView] = useState<'elevation' | 'cabling'>('elevation');
+  const [showCables, setShowCables] = useState(true);
   const [placementId, setPlacementId] = useState<string>();
   const [cableId, setCableId] = useState<string>();
   const [tab, setTab] = useState<InspectorTab>('summary');
@@ -110,6 +111,12 @@ export function DesignerModule() {
                 {issueCount > 0 && <span className="toolbar-msg error" title="Marked in red on the rack">{`⚠ ${issueCount} problem${issueCount > 1 ? 's' : ''}`}</span>}
                 <Button variant={view === 'elevation' ? 'primary' : 'default'} onClick={() => setView('elevation')}>Elevation</Button>
                 <Button variant={view === 'cabling' ? 'primary' : 'default'} onClick={() => setView('cabling')}>Cabling</Button>
+                {view === 'elevation' && (
+                  <label className="checkbox" title="Show cable runs on the elevation">
+                    <input type="checkbox" checked={showCables} onChange={(e) => setShowCables(e.target.checked)} />
+                    {' Cables'}
+                  </label>
+                )}
                 <span className="toolbar-sep" />
                 <Button variant="danger" disabled={!selectedPlacement} onClick={deleteSelected}
                   title={selectedPlacement ? `Delete ${selectedPlacement.label} (Del)` : 'Select a device to delete it'}>
@@ -136,6 +143,7 @@ export function DesignerModule() {
                   if (r.id) setPlacementId(r.id);
                 }}
                 onMove={(id, mount) => report(editor.moveTo(id, mount))}
+                showCables={showCables}
               />
             )}
           </CanvasFrame>

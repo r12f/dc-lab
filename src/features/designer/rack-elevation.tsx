@@ -29,6 +29,8 @@ interface Props {
   onSelectCable(id: string | undefined): void;
   onDropDevice(deviceId: string, mount: Mount, variantId?: string): void;
   onMove(placementId: string, mount: Mount): void;
+  /** Draw cable runs (default true). */
+  showCables?: boolean;
 }
 
 interface DragState {
@@ -44,17 +46,19 @@ interface DragState {
 }
 
 const FACES: PortFace[] = ['front', 'rear'];
+const CABLE_GUTTER = 34;
 
 /**
  * Rack elevation canvas. Palette devices are dropped via HTML drag-and-drop;
  * placed devices are moved with pointer events (SVG has no native drag).
  */
 /** Front and rear elevations side by side in one drawing; drops and drags go to the face under the pointer. */
-export function RackElevation({ ref, lib, design, selectedId, onSelect, selectedCableId, onSelectCable, onDropDevice, onMove }: Props) {
+export function RackElevation({ ref, lib, design, selectedId, onSelect, selectedCableId, onSelectCable, onDropDevice, onMove, showCables = true }: Props) {
   const [drag, setDrag] = useState<DragState>();
   const rack = lib.racks.get(design.templateId);
   if (!rack) return <p className="muted">Unknown rack template {design.templateId}</p>;
-  const geo = rackGeometry(rack);
+  // Cable channels outside the rails on both sides, so runs never cover the unit numbers.
+  const geo = rackGeometry(rack, CABLE_GUTTER);
   const metrics = computeRackMetrics(lib, design);
   const issues = designIssues(lib, design);
   const visibleOn = (face: PortFace) => design.placements.filter((p) => {
@@ -162,8 +166,10 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
                   selected={p.id === selectedId} issues={issues.placements.get(p.id)} onPointerDown={startDrag(p.id, face)} />
               ) : null;
             })}
-            <CableRoutesDrawing lib={lib} routes={routeCables(lib, design, rack, geo)} selectedId={selectedCableId}
-              errorIds={new Set(issues.cables.keys())} onSelect={onSelectCable} />
+            {showCables && (
+              <CableRoutesDrawing lib={lib} routes={routeCables(lib, design, rack, geo)} selectedId={selectedCableId}
+                errorIds={new Set(issues.cables.keys())} onSelect={onSelectCable} />
+            )}
             {/* Rack-wide problems: red frame around the rack body and the messages under the title. */}
             {issues.rack.length > 0 && (
               <g pointerEvents="none">

@@ -134,3 +134,7 @@ right side PDUs. Side-mounted devices stack top to bottom in their side's column
 each drawn vertically (groups stacked, 2 ports per line, front and rear groups together). Rack devices keep
 one row per device across front and rear; each device box shrinks to its own ports (a rear face with only
 PSU inlets is a small box).
+
+**Elevation cables**: a **Cables** checkbox in the toolbar (elevation only) shows / hides the cable runs.
+Runs use a cable channel (gutter) outside the rails on each side, between the frame and the side elements,
+so the unit numbers on the rails stay visible; stubs leave each device near its top edge.

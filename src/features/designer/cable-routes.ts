@@ -13,13 +13,16 @@ export interface RoutedCable {
   starts: number;
 }
 
-/** Where a cable leaves a device toward the channel on `route`: the device edge on that side, at its centre height. */
+/**
+ * Where a cable leaves a device toward the channel on `route`: the device edge on that side, near its top
+ * (unit numbers sit at the bottom of each unit, so the stub across the rail does not cover them).
+ */
 function exitPoint(lib: Library, rack: RackTemplate, geo: RackGeometry, p: Placement, route: CableRoute): [number, number] | undefined {
   const raw = lib.devices.get(p.deviceId);
   if (!raw) return undefined;
   const r = placementRect(p, sizedDevice(raw, rack, p.units), rack, geo);
   if (r.w === 0) return undefined;
-  const y = r.y + r.h / 2;
+  const y = r.y + Math.min(4, r.h / 2);
   if (p.mount.kind === 'side') {
     // Side devices exit toward the rack body.
     const leftOfBody = r.x + r.w / 2 < geo.originX;
@@ -29,7 +32,7 @@ function exitPoint(lib: Library, rack: RackTemplate, geo: RackGeometry, p: Place
 }
 
 /**
- * Polylines for every run: start -> lane in the chosen side's rail channel -> end.
+ * Polylines for every run: start -> lane in the cable channel outside the rails (unit numbers stay visible) -> end.
  * Per side, lanes are assigned by vertical span (longest run outermost) so nested runs never cross.
  */
 export function routeCables(lib: Library, design: RackDesign, rack: RackTemplate, geo: RackGeometry): RoutedCable[] {
@@ -46,11 +49,13 @@ export function routeCables(lib: Library, design: RackDesign, rack: RackTemplate
   const out: RoutedCable[] = [];
   for (const side of ['left', 'right'] as const) {
     const runs = ends.filter((x) => x.run.route === side).sort((a, b) => a.span - b.span); // shortest = innermost
-    const step = Math.min(6, (geo.railW - 8) / Math.max(1, runs.length));
-    const bodyEdge = side === 'left' ? geo.originX + geo.railW : geo.originX + geo.railW + geo.bodyW;
+    const room = Math.max(6, geo.gutter - 6);
+    const step = Math.min(6, room / Math.max(1, runs.length));
+    // Outer edge of the frame (outside the rails and their unit numbers).
+    const frameEdge = side === 'left' ? geo.originX : geo.originX + geo.railW * 2 + geo.bodyW;
     runs.forEach(({ run, ss, es }, i) => {
       const off = 4 + i * step;
-      const lane = side === 'left' ? bodyEdge - off : bodyEdge + off;
+      const lane = side === 'left' ? frameEdge - off : frameEdge + off;
       // One stub per endpoint into the lane, plus a spine joining them all.
       const ends = [...ss, ...es];
       const ys = ends.map((p) => p[1]);

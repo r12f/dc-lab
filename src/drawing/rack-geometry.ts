@@ -22,6 +22,8 @@ export interface RackGeometry {
   originY: number;
   bodyH: number;
   sideBoxes: SideElementBox[];
+  /** Cable channel width on each side, between the rack frame (rails with unit numbers) and the side elements. */
+  gutter: number;
   width: number;
   height: number;
 }
@@ -36,20 +38,21 @@ function sideWidth(elements: SideElement[]): number {
   return elements.reduce((n, e) => n + Math.max(12, e.widthMm * PX_PER_MM) + SIDE_GAP, 0);
 }
 
-export function rackGeometry(rack: RackTemplate): RackGeometry {
+/** `gutter`: room for cable lanes outside the rails on each side (Rack Designer); 0 = none. */
+export function rackGeometry(rack: RackTemplate, gutter = 0): RackGeometry {
   const unitPx = 18;
   const left = elementsOn(rack.sideElements, 'left');
   const right = elementsOn(rack.sideElements, 'right');
   const bodyOuter = Math.max(MIN_BODY_PX + RAIL_W * 2, rack.widthMm * PX_PER_MM);
   const bodyW = bodyOuter - RAIL_W * 2;
-  const originX = sideWidth(left);
+  const originX = sideWidth(left) + gutter;
   const originY = 48;
   const bodyH = rack.units * unitPx;
 
   const sideBoxes: SideElementBox[] = [];
   const place = (list: SideElement[], side: SideName) => {
     // Ordered from the body outward.
-    let edge = side === 'left' ? originX : originX + bodyOuter;
+    let edge = side === 'left' ? originX - gutter : originX + bodyOuter + gutter;
     for (const element of list) {
       const w = Math.max(12, element.widthMm * PX_PER_MM);
       const x = side === 'left' ? edge - SIDE_GAP - w : edge + SIDE_GAP;
@@ -61,8 +64,8 @@ export function rackGeometry(rack: RackTemplate): RackGeometry {
   place(right, 'right');
 
   return {
-    unitPx, railW: RAIL_W, bodyW, originX, originY, bodyH, sideBoxes,
-    width: originX + bodyOuter + sideWidth(right),
+    unitPx, railW: RAIL_W, bodyW, originX, originY, bodyH, sideBoxes, gutter,
+    width: originX + bodyOuter + gutter + sideWidth(right),
     height: originY + bodyH + 30,
   };
 }
