@@ -6,15 +6,18 @@ import { newDesign } from '../design/factory';
 import { assignmentAt, assignmentProblem, startInTile, tilesUsed, tileWidthOf } from '../layout/tiles';
 import type { DcLayout, Row } from '../layout/types';
 
-const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
-const orv3 = newDesign('o', 'ORv3', 'orv3-44ou');
+// Fractional widths are a template feature; a 1.5-tile project template exercises it.
+const wide15 = { ...BUILTIN_CATALOG_FOR_TESTS.racks.find((r) => r.id === 'orv3-44ou')!, id: 'rack-1-5', name: '1.5-tile rack', footprintTiles: { wide: 1.5, deep: 2 } };
+const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, { ...emptyProject(), racks: [wide15] });
+const orv3 = newDesign('o', '1.5-tile', 'rack-1-5');
 const net = newDesign('n', 'Net', 'network-42ru-600');
 const designs = (id: string) => [orv3, net].find((d) => d.id === id);
 const row = { id: 'r1', name: 'Row 1', tileCount: 6 } as Row;
 const layoutWith = (assignments: DcLayout['assignments']) => ({ rows: [row], assignments } as unknown as DcLayout);
 
 describe('fractional rack tile widths', () => {
-  it('ORv3 is 1.5 tiles wide', () => {
+  it('ORv3 is 1 tile wide; a 1.5-tile template keeps its fractional width', () => {
+    expect(tileWidthOf(lib, newDesign('x', 'ORv3', 'orv3-44ou'))).toBe(1);
     expect(tileWidthOf(lib, orv3)).toBe(1.5);
   });
   it('the next rack on a half-filled tile starts where the previous one ends', () => {
@@ -25,7 +28,7 @@ describe('fractional rack tile widths', () => {
     expect(assignmentProblem(lib, designs, l, row, 1.5, 'o')).toBeUndefined();
     expect(assignmentProblem(lib, designs, l, row, 1, 'o')).toBe('Overlaps A');
   });
-  it('two ORv3 fill 3 tiles; used tiles sum widths; end of row is checked', () => {
+  it('two 1.5-tile racks fill 3 tiles; used tiles sum widths; end of row is checked', () => {
     const a = [{ id: 'a', rowId: 'r1', startTile: 0, designId: 'o', label: 'A' }, { id: 'b', rowId: 'r1', startTile: 1.5, designId: 'o', label: 'B' }];
     const l = layoutWith(a);
     expect(tilesUsed(lib, designs, a)).toBe(3);
