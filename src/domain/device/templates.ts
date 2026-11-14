@@ -68,7 +68,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     build: (id) => base(id, {
       name: 'New server', category: 'server', depthMm: 800, power: { typicalW: 500, maxW: 800 },
       psus: { count: 2, inlet: 'C14', ratedW: 800 },
-      ports: [group('nic', 'NIC', 'data', 'QSFP28', 2, 100, { lanes: 4, breakoutModes: ['4x25G'] }), group('bmc', 'BMC', 'mgmt', 'RJ45', 1, 1)],
+      ports: [group('nic', 'NIC', 'data', 'QSFP28', 2, 100, { lanes: 4, breakoutModes: ['2x50G', '4x25G', '4x10G'] }), group('bmc', 'BMC', 'mgmt', 'RJ45', 1, 1)],
     }),
   },
   {
@@ -119,7 +119,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     id: 'storage', label: 'Storage', description: 'Storage enclosure, 2 PSUs',
     build: (id) => base(id, {
       name: 'New storage', category: 'storage', height: { units: 2, system: 'RU' }, psus: { count: 2, inlet: 'C14', ratedW: 1200 },
-      ports: [group('nic', 'NIC', 'data', 'QSFP28', 2, 100, { lanes: 4 }), group('bmc', 'BMC', 'mgmt', 'RJ45', 1, 1)],
+      ports: [group('nic', 'NIC', 'data', 'QSFP28', 2, 100, { lanes: 4, breakoutModes: ['2x50G', '4x25G', '4x10G'] }), group('bmc', 'BMC', 'mgmt', 'RJ45', 1, 1)],
     }),
   },
   {

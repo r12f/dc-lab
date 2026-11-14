@@ -42,8 +42,9 @@
       "face": "front",
       "rows": 2,
       "breakoutModes": [
+        "2x50G",
         "4x25G",
-        "2x50G"
+        "4x10G"
       ]
     },
     {

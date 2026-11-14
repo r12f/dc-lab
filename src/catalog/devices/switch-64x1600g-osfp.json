@@ -41,7 +41,11 @@
       "lanes": 4,
       "face": "front",
       "rows": 1,
-      "breakoutModes": []
+      "breakoutModes": [
+        "2x50G",
+        "4x25G",
+        "4x10G"
+      ]
     },
     {
       "id": "mgmt",
