@@ -31,7 +31,7 @@ const unfield = (v: string) => (v === INHERIT ? undefined : v);
 /**
  * Speed → module → (cable) for one port or group. The module list is "none" plus the reach classes the cage
  * takes at that speed (2xDR4, 2xLR4…): speed + reach fix the module and hence the cable connector, which is
- * shown below — "none" leaves the cage empty and its connector is the cage form factor (e.g. OSFP).
+ * shown below — "none" leaves the cage empty and its connector is the cage form factor (OSFP, QSFP-DD…).
  * Rack Designer (not `profile`) also lists DAC / AEC / AOC and picks the cable. CPO/NPO ports pick the engine reach.
  */
 export function PortSettingFields({ lib, group, value, onChange, effective, inherited, profile }: Props) {
@@ -61,7 +61,7 @@ export function PortSettingFields({ lib, group, value, onChange, effective, inhe
       <SelectField label={engine ? `Reach (${group.opticalEngine?.toUpperCase() ?? 'fiber'} engine)` : `Module (${group.formFactor} cage)`} value={field(value.reach)}
         options={[
           { value: INHERIT, label: inh(inherited?.reach ?? (inherited ? 'none' : undefined)) },
-          { value: NONE, label: engine ? 'unset' : `none — ${group.formFactor}` },
+          { value: NONE, label: engine ? 'unset' : 'none' },
           ...reaches.map((r) => ({ value: r, label: reachLabel(r) })),
         ]}
         onChange={(v) => set({ reach: unfield(v), opticId: undefined })} />

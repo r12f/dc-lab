@@ -46,3 +46,14 @@ describe('Rack Designer cabling view on empty cages', () => {
     expect(types.every((t) => ['copper-dac', 'aec', 'aoc'].includes(t))).toBe(true);
   });
 });
+
+describe('empty cage connector on the faceplate', () => {
+  it('module none: one leg whose connector is the cage form factor (OSFP, QSFP-DD)', async () => {
+    const { portLegs } = await import('../ports/legs');
+    const r = at('');
+    expect(portLegs(r.group, r).map((l) => l.connector)).toEqual(['OSFP']);
+    const qdd = lib.devices.get('switch-32x400g-qsfpdd')!;
+    const q = resolvePort(lib, qdd, 'qsfpdd/1', { id: 'x', name: 'x', groupDefaults: { qsfpdd: { reach: '' } }, overrides: {} })!;
+    expect(portLegs(q.group, q).map((l) => l.connector)).toEqual(['QSFP-DD']);
+  });
+});

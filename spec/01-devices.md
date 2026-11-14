@@ -188,7 +188,7 @@ Drawing strategy is selected by device shape:
 
 **Port glyph (Devices canvas)**: line 1 the port number; line 2 form factor + breakout ("OSFP 8x100G"); then one
 cell per cable connector side by side, each connector type over the leg's reach — a 2xDR4 module shows
-"MPO-12 | MPO-12" over "DR4 | DR4". Empty cages / DAC show the reach only.
+"MPO-12 | MPO-12" over "DR4 | DR4". An empty cage shows one cell with the cage form factor (OSFP, QSFP-DD…).
 
 **Breakout profiles set cage + connector only**: per port / group a profile picks the speed / breakout, the reach
 and module (the cage content) — no cable, and no DAC / AEC / AOC reach. Reach "none — no module" leaves the cage
@@ -196,7 +196,7 @@ empty: its cable connector is then the cage form factor itself (e.g. OSFP), so t
 offers exactly the DAC / AEC / AOC that fit that cage and speed. Profiles no longer store `cableId` (dropped on
 load); a placement can still set one in Rack Designer.
 
-**Port settings = Speed, then Module**: the Module list is "none — <cage>" plus the reach classes the cage
+**Port settings = Speed, then Module**: the Module list is "none" plus the reach classes the cage
 takes at that speed, each shown with its connector ("2xDR4 — 2x MPO-12", "2xLR4 — 2x LC"). Speed + reach fix
 the module and so the cable connector, shown under the list; "none" leaves the cage empty and the connector is
 the cage form factor (e.g. OSFP). There is no separate module pick. Rack Designer port settings also list

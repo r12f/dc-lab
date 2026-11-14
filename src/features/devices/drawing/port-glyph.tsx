@@ -24,28 +24,27 @@ const GAP = 2;
 
 /**
  * One cell per cable connector along the bottom of a port, side by side: connector type on top, reach below
- * ("MPO-12" / "DR4"). Filled with the attached cable's color; a port without a module connector (empty cage,
- * DAC) shows its reach only.
+ * ("MPO-12" / "DR4"). An empty cage is one cell with the cage itself as the connector ("OSFP": DAC / AEC / AOC
+ * plug in there). Filled with the attached cable's color.
  */
-function LegCells({ box, legs, cabled, color }: { box: PortBox; legs: PortLeg[]; cabled: boolean; color?: string }) {
+function LegCells({ box, legs, color }: { box: PortBox; legs: PortLeg[]; color?: string }) {
   const n = legs.length;
   const w = (box.w - INSET * 2 - GAP * (n - 1)) / n;
   const y = box.y + CELL_TOP;
   const h = box.h - CELL_TOP - INSET;
-  const fill = cabled ? color ?? '#1e293b' : 'transparent';
-  const ink = cabled && !color ? '#e2e8f0' : '#0f172a';
+  const fill = color ?? '#1e293b';
+  const ink = color ? '#0f172a' : '#e2e8f0';
   const fit = (s: string, max: number) => Math.max(5, Math.min(max, (w - 3) / Math.max(1, s.length * 0.6)));
   return (
     <g pointerEvents="none">
       {legs.map((l, i) => {
         const x = box.x + INSET + i * (w + GAP);
-        const conn = cabled ? l.connector : '';
         const reach = l.reach ?? '';
         return (
           <g key={i}>
-            {cabled && <rect x={x} y={y} width={w} height={h} rx={2} fill={fill} stroke="#334155" strokeWidth={0.8} />}
-            {conn && <text x={x + w / 2} y={y + h * 0.42} fontSize={fit(conn, 8)} textAnchor="middle" fill={ink} fontWeight={700}>{conn}</text>}
-            {reach && <text x={x + w / 2} y={y + h * (conn ? 0.85 : 0.6)} fontSize={fit(reach, 8)} textAnchor="middle" fill={cabled ? ink : '#1e3a8a'} fontWeight={500}>{reach}</text>}
+            <rect x={x} y={y} width={w} height={h} rx={2} fill={fill} stroke="#334155" strokeWidth={0.8} />
+            <text x={x + w / 2} y={y + h * (reach ? 0.42 : 0.62)} fontSize={fit(l.connector, 8)} textAnchor="middle" fill={ink} fontWeight={700}>{l.connector}</text>
+            {reach && <text x={x + w / 2} y={y + h * 0.85} fontSize={fit(reach, 8)} textAnchor="middle" fill={ink} fontWeight={500}>{reach}</text>}
           </g>
         );
       })}
@@ -95,7 +94,7 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
         <>
           {t(15, 12, '#0f172a', String(box.index), true)}
           {t(27, fitFont(iface, box.w, 10), '#1e293b', iface, true)}
-          {legs.length > 0 && <LegCells box={box} legs={legs} cabled={!!conns} color={cable?.color} />}
+          {legs.length > 0 && <LegCells box={box} legs={legs} color={cable?.color} />}
         </>
       ) : (
         <>
