@@ -133,7 +133,8 @@ Drawing strategy is selected by device shape:
 - **In-Row Chiller** (`chiller`): full-height device with cooling capacity / pump power; fills a chiller rack.
 - **Default breakout profile** (`defaultProfileId`): every device has one. Built-ins ship "Default (native speed,
   DR)": every data / service cage at its native (maximum) speed with the DR-class module of that speed —
-  2xDR4 on 800G / 1.6T OSFP, DR4 on 400G, DR on 100G (no default reach where no DR module exists). Placements
+  2xDR4 on 800G / 1.6T OSFP, DR4 on 400G, PSM4 on 100G — all parallel SMF on MPO-12 (100G DR1 is a
+  single-lane duplex-LC module, so it is not the default; no default reach where no such module exists). Placements
   that pick no profile and the Devices canvas use it; "Make default" in the profile editor; the default cannot
   be deleted. Projects get a "Default" profile on load.
 - **Profiles on built-in devices**: a built-in device stays read-only, but its breakout profiles are editable

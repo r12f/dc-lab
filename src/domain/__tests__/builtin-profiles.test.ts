@@ -16,7 +16,7 @@ describe('default profile: native (max) speed, DR optics', () => {
       ['switch-64x800g-osfp', 'osfp/1', '1x800G', '2xDR4'],
       ['switch-64x1600g-osfp', 'osfp/1', '1x1600G', '2xDR4'],
       ['switch-32x400g-qsfpdd', 'qsfpdd/1', '1x400G', 'DR4'],
-      ['switch-64x100g-qsfp28', 'qsfp28/1', '1x100G', 'DR'],
+      ['switch-64x100g-qsfp28', 'qsfp28/1', '1x100G', 'PSM4'],
     ];
     for (const [id, ref, mode, reach] of cases) {
       const d = lib.devices.get(id)!;
@@ -41,5 +41,19 @@ describe('breakout profiles of built-in devices', () => {
     const p = normalizeProject({ builtinProfiles: { x: { breakoutProfiles: [], defaultProfileId: 'a' } } });
     expect(p.builtinProfiles.x.defaultProfileId).toBe('a');
     expect(normalizeProject({}).builtinProfiles).toEqual({});
+  });
+});
+
+describe('default profiles never land on duplex LC', () => {
+  it('every DR-class default resolves to an MPO module', () => {
+    const lib = new Library(SHIPPED_CATALOG, emptyProject());
+    for (const d of lib.devices.items()) {
+      const p = findProfile(d);
+      for (const g of d.ports) {
+        if (!p?.groupDefaults[g.id]?.reach) continue;
+        const r = resolvePort(lib, d, `${g.id}/1`, p)!;
+        expect(r.optic?.fiberConnector, `${d.id} ${g.id}`).toMatch(/MPO/);
+      }
+    }
   });
 });

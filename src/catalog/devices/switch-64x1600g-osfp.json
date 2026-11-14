@@ -82,13 +82,13 @@
   "breakoutProfiles": [
     {
       "id": "default",
-      "name": "Default (native speed, DR)",
+      "name": "Default (native speed, DR4-class parallel SMF)",
       "groupDefaults": {
         "osfp": {
           "reach": "2xDR4"
         },
         "service": {
-          "reach": "DR"
+          "reach": "PSM4"
         }
       },
       "overrides": {}
