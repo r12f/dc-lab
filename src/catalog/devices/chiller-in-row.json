@@ -1,0 +1,31 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "chiller-in-row",
+  "name": "In-Row Chiller",
+  "category": "chiller",
+  "height": {
+    "units": 48,
+    "system": "RU"
+  },
+  "depthMm": 1200,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [],
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default",
+      "groupDefaults": {},
+      "overrides": {}
+    }
+  ],
+  "defaultProfileId": "default",
+  "cooling": {
+    "capacityKw": 0,
+    "pumpW": 0
+  },
+  "notes": "Full-height in-row cooler: draws air from the hot aisle, blows cooled air into the cold aisle. Fills a chiller rack. Cooling capacity, power, weight TBD."
+}

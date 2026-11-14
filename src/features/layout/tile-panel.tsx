@@ -17,7 +17,7 @@ function ServesEditor({ lib, designs, layout, editor, infra }: {
   lib: Library; designs: DesignLookup; layout: DcLayout; editor: LayoutEditor; infra: RackAssignment;
 }) {
   const role = assignmentRole(lib, designs, infra);
-  if (role === 'it') return null;
+  if (role === 'it' || role === 'chiller') return null;
   const served = new Set(servedRacks(lib, designs, layout, infra).map((a) => a.id));
   const it = layout.assignments.filter((a) => assignmentRole(lib, designs, a) === 'it');
   const g = infraGroups(lib, designs, layout, role).find((x) => x.infraIds.includes(infra.id));

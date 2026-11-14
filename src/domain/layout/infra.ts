@@ -7,7 +7,8 @@ import { spanOf, type DesignLookup } from './tiles';
 
 const EPS = 1e-9;
 
-export type InfraRole = Exclude<RackRole, 'it'>;
+/** Racks that serve adjacent IT racks (chillers serve the hot aisle instead). */
+export type InfraRole = Exclude<RackRole, 'it' | 'chiller'>;
 
 /** Role of an assigned rack: from its design's rack template kind. */
 export function assignmentRole(lib: Library, designs: DesignLookup, a: RackAssignment): RackRole {
@@ -23,7 +24,7 @@ export function assignmentRole(lib: Library, designs: DesignLookup, a: RackAssig
  */
 export function servedRacks(lib: Library, designs: DesignLookup, layout: DcLayout, infra: RackAssignment): RackAssignment[] {
   const role = assignmentRole(lib, designs, infra);
-  if (role === 'it') return [];
+  if (role === 'it' || role === 'chiller') return [];
   const isIt = (a: RackAssignment) => assignmentRole(lib, designs, a) === 'it';
   if (infra.serves) {
     return infra.serves.map((id) => layout.assignments.find((a) => a.id === id)).filter((a): a is RackAssignment => !!a && isIt(a));

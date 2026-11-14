@@ -4,7 +4,9 @@ import type { LayoutEditor } from './use-layout-editor';
 import type { ElementKind, ElementSelection, LayoutSelection } from './selection';
 import { RowForm } from './row-form';
 import { AisleForm, FacilityForm, TrayForm } from './area-forms';
-import { PduFeedsForm, RowFeedsSummary } from './feeds-form';
+import { AisleHeatSummary, FacilityLinksForm, RowFeedsSummary } from './feeds-form';
+import type { Library } from '../../domain/library/library';
+import type { DesignLookup } from '../../domain/layout/tiles';
 import { DoorForm } from './door-form';
 
 const NAMES: Record<ElementKind, [string, string]> = {
@@ -35,10 +37,8 @@ export function SelectGroups({ layout, onSelect }: { layout: DcLayout; onSelect(
 }
 
 /** Editor for one or more selected elements of one kind; edits apply to all of them. */
-export function ElementPanel({ layout, editor, selection, onSelect, rowDrawW }: {
-  layout: DcLayout; editor: LayoutEditor; selection: ElementSelection; onSelect(sel: LayoutSelection | undefined): void;
-  /** Typical draw of a row (W), for the feed summary. */
-  rowDrawW?: (rowId: string) => number;
+export function ElementPanel({ lib, designs, layout, editor, selection, onSelect }: {
+  lib: Library; designs: DesignLookup; layout: DcLayout; editor: LayoutEditor; selection: ElementSelection; onSelect(sel: LayoutSelection | undefined): void;
 }) {
   const { kind, ids } = selection;
   const pick = <T extends { id: string }>(xs: T[]) => xs.filter((x) => ids.includes(x.id));
@@ -50,12 +50,13 @@ export function ElementPanel({ layout, editor, selection, onSelect, rowDrawW }: 
       {kind === 'row' && <RowForm rows={pick(layout.rows)} editor={editor} />}
       {kind === 'aisle' && <AisleForm aisles={pick(layout.aisles)} editor={editor} />}
       {kind === 'tray' && <TrayForm trays={pick(layout.trays)} layout={layout} editor={editor} />}
-      {kind === 'facility' && <FacilityForm facilities={pick(layout.facilities)} editor={editor} />}
+      {kind === 'facility' && <FacilityForm lib={lib} facilities={pick(layout.facilities)} editor={editor} />}
       {kind === 'door' && <DoorForm doors={pick(layout.doors)} layout={layout} editor={editor} />}
-      {kind === 'facility' && n === 1 && pick(layout.facilities)[0].kind === 'pdu' && (
-        <PduFeedsForm layout={layout} pdu={pick(layout.facilities)[0]} editor={editor} />
+      {kind === 'facility' && n === 1 && (
+        <FacilityLinksForm lib={lib} designs={designs} layout={layout} facility={pick(layout.facilities)[0]} editor={editor} />
       )}
-      {kind === 'row' && n === 1 && rowDrawW && <RowFeedsSummary layout={layout} row={pick(layout.rows)[0]} drawW={rowDrawW(ids[0])} />}
+      {kind === 'row' && n === 1 && <RowFeedsSummary lib={lib} designs={designs} layout={layout} row={pick(layout.rows)[0]} />}
+      {kind === 'aisle' && n === 1 && <AisleHeatSummary lib={lib} designs={designs} layout={layout} aisleId={ids[0]} />}
       <div className="row2">
         <Button onClick={() => onSelect({ kind, ids: editor.duplicate(kind, ids) })}>Duplicate</Button>
         <Button variant="danger" onClick={() => { editor.removeElements(list, ids); onSelect(undefined); }}>Delete</Button>

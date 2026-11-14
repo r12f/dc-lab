@@ -5,6 +5,7 @@ import type { Library } from '../../domain/library/library';
 import type { DcLayout } from '../../domain/layout/types';
 import type { DesignLookup } from '../../domain/layout/tiles';
 import { computeDcMetrics } from '../../domain/layout/metrics';
+import { computeFacilityLoads, facilityCapacityKw } from '../../domain/layout/facility-load';
 import { computeFloorPlan, trayRect } from '../../domain/layout/floor-plan';
 import { clickSelect, isSelected, type DragKind, type ElementKind, type LayoutSelection } from './selection';
 import type { LayoutEditor } from './use-layout-editor';
@@ -90,7 +91,7 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
         {layout.facilities.map((f) => (
           <g key={f.id} opacity={ghost(f.id)}>
             <AreaDrawing rect={f} fill={FACILITY_COLORS[f.kind]} opacity={0.45}
-              label={`${f.name}${f.capacityKw ? ` ${f.capacityKw} kW` : ''}`}
+              label={`${f.name}${facilityCapacityKw(lib, f) ? ` ${facilityCapacityKw(lib, f)} kW` : ''}`}
               selected={isSel('facility', f.id)}
               onPointerDown={startDrag('facility', f.id)} />
           </g>
@@ -115,8 +116,8 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
             </g>
           );
         })}
-        <FeedLines layout={layout} plan={plan}
-          highlight={(fid, rid) => isSel('facility', fid) || isSel('row', rid)} />
+        <FeedLines layout={layout} plan={plan} loads={computeFacilityLoads(lib, designs, layout)}
+          highlight={(fid, tid) => isSel('facility', fid) || isSel('row', tid) || isSel('aisle', tid)} />
         {layout.trays.map((t) => {
           const rect = trayRect(plan, t);
           return rect && (

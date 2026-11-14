@@ -14,7 +14,9 @@ south (down), units are millimetres.
 - `viewRotation`: `0 | 90 | 180 | 270` — display rotation, clockwise (optional, default 0).
 - `doors[]`: `{ id, name, wall (north|south|east|west), offsetMm, widthMm, kind (entry|exit) }` — doors in the
   room walls; offset from the west end (north/south walls) or north end (east/west walls).
-- `feeds[]`: `{ id, facilityId, rowId, kw }` — PDU-to-row power feeds (older layouts load with none).
+- Facilities also carry `deviceId?` (DC PDU / cooling item), `capacityKw?` (max power; empty = the item's),
+  `rowIds?` (PDU: rows it feeds) and `aisleIds?` (cooling: hot aisles it serves). Old `feeds[]` load as the
+  PDU's `rowIds` (their kW is dropped: loads are computed).
 - `rows[]`: `name`, `tileCount`, `tileWidthMm` (pitch along the row), `tileDepthMm` (across the row),
   `powerBudgetKw`, `frontFacing` (`east`/`west` — the side facing the cold aisle). Rows run
   **vertically** (north–south). They have no stored position.
@@ -96,13 +98,20 @@ south (down), units are millimetres.
     door next to it on the same wall. Drawn as an architectural door: gap in the wall, open leaf, swing arc,
     an inward arrow and the name outside the wall (the entry is bold and reads ENTRY; labels on east/west
     walls run along the wall). Drag a door to slide it along the walls (it snaps to the nearest wall); the
-    inspector edits name, kind, wall, offset and width. Older layouts load with no doors.
-  - **Power feeds (PDU → row)**: select a PDU facility to set how many kW it feeds each row (0 = not
-    connected; one feed per PDU-row pair, a row may take feeds from several PDUs). Feeds are drawn as
-    dashed lines from the PDU to the row header, labelled with kW (labels of several feeds into one row
-    stack above its header); selecting the PDU or the row highlights its feeds. A selected row lists its
-    feeds and fed kW vs draw. Warnings: a PDU whose feeds exceed its capacity, a fed row drawing more than
-    it is fed. The DC totals table has a "PDU feed" column. Deleting a PDU or row removes its feeds.
+    inspector edits name, kind, how it opens (swing in / swing out / slide left / slide right — left/right as
+    seen from inside facing the door), wall, offset and width. Older layouts load with no doors.
+  - **PDU and cooling capacity (computed loads)**: a PDU sets its **max power** (or takes it from its
+    **DC PDU** item) and ticks the **rows it feeds**; a cooling facility sets its max and ticks the **hot
+    aisles it serves**. No kW is entered per link:
+    - row demand = max power of its racks, power racks excluded (they pass power on), chillers included;
+      a row fed by n PDUs takes 1/n of its demand from each;
+    - hot aisle heat = demand of the rows whose rear (exhaust) faces it, minus the cooling capacity of the
+      **in-row chiller** racks in those rows; an aisle served by n units puts 1/n on each;
+    - a PDU / cooling unit whose summed share exceeds its max power is a warning.
+    Links are drawn as dashed lines (PDU → row header, cooling → hot aisle) labelled with the computed kW;
+    a selected row / hot aisle shows its demand / heat and who serves it. Deleting rows / aisles drops links.
+  - **In-row chiller racks** (rack kind `chiller`, full-height In-Row Chiller device): draw air from the hot
+    aisle and blow it cooled into the cold aisle; drawn teal "CHILLER" in the row.
   - Each rack tile shows the design **abbreviation** (large), the rack label and its typical power.
   - Each row header shows `name`, `power / budget` (red when over budget) and `used/total tiles`.
   - **Hover** a rack: tooltip with label, design, rack template, tiles, units used, devices, typical and

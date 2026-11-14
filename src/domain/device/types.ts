@@ -14,6 +14,8 @@ export type DeviceCategory =
   | 'tester'
   | 'console-server'
   | 'cdu'
+  | 'chiller'
+  | 'dc-pdu'
   | 'other'
   | 'blanking-panel'
   | 'stiffener'
@@ -110,7 +112,7 @@ export interface DeviceDefinition extends CatalogItem {
   /** Profile used when a placement (or the Devices canvas) picks none; every device has one ("default"). */
   defaultProfileId?: string;
   notes?: string;
-  /** CDUs: cooling capacity (kW of heat removed) and pump draw (W, added to the device's power). */
+  /** CDUs / chillers: cooling capacity (kW of heat removed) and pump draw (W, added to the device's power). */
   cooling?: { capacityKw: number; pumpW: number };
   /** Height is chosen per placement (1..n units in the rack's unit system); `height` is the default size. Defaults per category (fillers). */
   resizable?: boolean;

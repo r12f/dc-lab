@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { DeviceDefinition } from '../../domain/device/types';
 import type { RackTemplate } from '../../domain/rack/types';
-import { categoryFolder, isResizable } from '../../domain/device/categories';
+import { categoryFolder, isResizable, traitsOf } from '../../domain/device/categories';
 import { deviceSortKey } from '../../domain/device/ports';
 import { fitsRackUnits } from '../../domain/design/placement';
 import { variantLabel } from '../../domain/items/variants';
@@ -28,13 +28,13 @@ export function DevicePalette({ lib, rack, onAdd }: Props) {
   const [q, setQ] = useState('');
   const [closed, setClosed] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<Set<string>>(new Set());
-  const devices = lib.devices.items().filter((d) => !rack || fitsRackUnits(d, rack));
+  const devices = lib.devices.items().filter((d) => !traitsOf(d.category).facility && (!rack || fitsRackUnits(d, rack)));
   const items: SidebarItem[] = devices.map((d) => ({
     id: d.id, name: d.name, path: [categoryFolder(d.category)], order: deviceSortKey(d),
     keywords: `${d.category} ${lib.variants.of(d.id).map((v) => variantLabel(v)).join(' ')}`,
     badge: isResizable(d) ? 'n U' : formatHeight(d.height),
   })).filter((i) => matchesFilter(i, q));
-  const hidden = lib.devices.items().length - devices.length;
+  const hidden = lib.devices.items().filter((d) => !traitsOf(d.category).facility).length - devices.length;
   const toggle = (set: Set<string>, key: string) => { const n = new Set(set); if (n.has(key)) n.delete(key); else n.add(key); return n; };
 
   const Row = ({ d, depth }: { d: DeviceDefinition; depth: number }) => {

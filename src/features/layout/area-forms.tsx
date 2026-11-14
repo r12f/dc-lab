@@ -1,6 +1,8 @@
 import type { Aisle, CableTray, DcLayout, Facility, FacilityKind, Rect } from '../../domain/layout/types';
 import { NumberField } from '../../ui/fields';
 import type { LayoutEditor } from './use-layout-editor';
+import type { Library } from '../../domain/library/library';
+import { facilityCapacityKw } from '../../domain/layout/facility-load';
 import { BatchNumber, BatchSelect, BatchText, common } from './batch-fields';
 
 export function RectFields({ rect, onChange }: { rect: Rect; onChange(patch: Partial<Rect>): void }) {
@@ -54,9 +56,16 @@ const facilityKinds: { value: FacilityKind; label: string }[] = [
   { value: 'pdu', label: 'PDU / power' }, { value: 'cooling', label: 'Cooling (CRAH/CDU)' }, { value: 'other', label: 'Other' },
 ];
 
-export function FacilityForm({ facilities, editor }: { facilities: Facility[]; editor: LayoutEditor }) {
+/** Device categories a facility kind can pick its item from. */
+const ITEM_CATEGORIES: Partial<Record<FacilityKind, string[]>> = { pdu: ['dc-pdu'], cooling: ['chiller', 'cdu'] };
+
+export function FacilityForm({ lib, facilities, editor }: { lib: Library; facilities: Facility[]; editor: LayoutEditor }) {
   const set = (patch: Partial<Facility>) => editor.updateElements<Facility>('facilities', ids(facilities), patch);
   const one = facilities.length === 1 ? facilities[0] : undefined;
+  const kind = common(facilities, 'kind');
+  const cats = kind ? ITEM_CATEGORIES[kind] : undefined;
+  const items = cats ? lib.devices.items().filter((d) => cats.includes(d.category)) : [];
+  const itemMax = one ? facilityCapacityKw(lib, { ...one, capacityKw: undefined }) : undefined;
   return (
     <>
       <div className="row2">
@@ -72,8 +81,15 @@ export function FacilityForm({ facilities, editor }: { facilities: Facility[]; e
       <div className="row3">
         <BatchNumber label="Width mm" value={common(facilities, 'widthMm')} onChange={(widthMm) => set({ widthMm })} />
         <BatchNumber label="Depth mm" value={common(facilities, 'depthMm')} onChange={(depthMm) => set({ depthMm })} />
-        <BatchNumber label="Capacity kW" value={common(facilities, 'capacityKw')} min={0} onChange={(capacityKw) => set({ capacityKw: capacityKw || undefined })} />
+        <BatchNumber label={`Max power kW${itemMax !== undefined && one?.capacityKw === undefined ? ` (item: ${itemMax})` : ''}`} value={common(facilities, 'capacityKw')} min={0}
+          onChange={(capacityKw) => set({ capacityKw: capacityKw || undefined })} />
       </div>
+      {cats && (
+        <BatchSelect label={kind === 'pdu' ? 'DC PDU item' : 'Cooling item'} value={common(facilities, 'deviceId') ?? ''}
+          options={[{ value: '', label: '(none)' }, ...items.map((d) => ({ value: d.id, label: d.name }))]}
+          onChange={(deviceId) => set({ deviceId: deviceId || undefined })} />
+      )}
+      {cats && <p className="muted">Max power empty = the item's capacity. Loads are computed from the linked rows / hot aisles.</p>}
     </>
   );
 }

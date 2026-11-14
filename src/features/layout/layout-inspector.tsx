@@ -9,7 +9,6 @@ import { ElementPanel, SelectGroups } from './element-panel';
 import { floorWarnings } from '../../domain/layout/floor-plan';
 import { TilePanel } from './tile-panel';
 import { DcSummaryPanel } from './dc-summary-panel';
-import { computeDcMetrics } from '../../domain/layout/metrics';
 
 interface Props {
   lib: Library;
@@ -23,8 +22,7 @@ interface Props {
 function SelectionEditor({ lib, designs, layout, editor, selection, onSelect }: Props) {
   if (!selection) return <p className="muted">Click a tile, rack, row header, aisle, tray or facility. Ctrl/Shift-click to select several of one kind.</p>;
   if (isElementSelection(selection)) {
-    const draw = new Map(computeDcMetrics(lib, designs, layout).rows.map((r) => [r.rowId, r.typicalW]));
-    return <ElementPanel layout={layout} editor={editor} selection={selection} onSelect={onSelect} rowDrawW={(id) => draw.get(id) ?? 0} />;
+    return <ElementPanel lib={lib} designs={designs} layout={layout} editor={editor} selection={selection} onSelect={onSelect} />;
   }
   return <TilePanel lib={lib} designs={designs} layout={layout} editor={editor} selection={selection} onSelect={onSelect} />;
 }

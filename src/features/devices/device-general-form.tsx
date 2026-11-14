@@ -39,7 +39,7 @@ export function DeviceGeneralForm({ device: d, onChange }: Props) {
         <NumberField label="Max W" value={d.power.maxW} min={0}
           onChange={(maxW) => set({ power: { ...d.power, maxW } })} />
       </div>
-      {d.category === 'cdu' && (
+      {(d.category === 'cdu' || d.category === 'chiller') && (
         <div className="row2">
           <NumberField label="Cooling capacity kW" value={d.cooling?.capacityKw ?? 0} min={0}
             onChange={(capacityKw) => set({ cooling: { pumpW: d.cooling?.pumpW ?? 0, capacityKw } })} />

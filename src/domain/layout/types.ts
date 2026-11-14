@@ -45,7 +45,14 @@ export interface Facility extends Rect {
   id: string;
   kind: FacilityKind;
   name: string;
+  /** Device item this facility is (DC PDU, cooling unit); supplies the default max power. */
+  deviceId?: string;
+  /** Max power (kW): PDU supply / cooling capacity. Unset = the device item's value. */
   capacityKw?: number;
+  /** PDU: rows it feeds. Each row's demand is computed and split evenly over the PDUs feeding it. */
+  rowIds?: string[];
+  /** Cooling: hot aisles it serves. Each aisle's heat is computed and split evenly over its units. */
+  aisleIds?: string[];
 }
 
 export type Wall = 'north' | 'south' | 'east' | 'west';
@@ -61,15 +68,11 @@ export interface Door {
   widthMm: number;
   /** Main entrance (drawn bolder) vs other doors (fire exit, loading). */
   kind: 'entry' | 'exit';
+  /** How it opens; default swing in. */
+  swing?: DoorSwing;
 }
 
-/** A power feed: a PDU facility supplying `kw` to a row. A row may have feeds from several PDUs. */
-export interface PowerFeed {
-  id: string;
-  facilityId: string;
-  rowId: string;
-  kw: number;
-}
+export type DoorSwing = 'in' | 'out' | 'slide-left' | 'slide-right';
 
 export interface RackAssignment {
   id: string;
@@ -95,8 +98,6 @@ export interface DcLayout {
   sequence: string[];
   trays: CableTray[];
   assignments: RackAssignment[];
-  /** PDU -> row power feeds. */
-  feeds: PowerFeed[];
   /** Doors in the room walls. */
   doors: Door[];
   /** View rotation, clockwise degrees (display only; the plan itself stays north-up). Default 0. */

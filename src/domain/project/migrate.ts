@@ -202,7 +202,15 @@ function sequenceLayout(l: Json): Json {
 
 export function migrateLayout(l: Json): Json {
   const out = sequenceLayout(rotateLayout(l));
-  return { ...out, feeds: (out.feeds as Json[] | undefined) ?? [], doors: (out.doors as Json[] | undefined) ?? [] };
+  // Old per-row kW feeds become the PDU's row list; the kW is now computed.
+  const feeds = (out.feeds as Json[] | undefined) ?? [];
+  const facilities = ((out.facilities as Json[] | undefined) ?? []).map((f) => {
+    const rows = feeds.filter((x) => x.facilityId === f.id).map((x) => x.rowId as string);
+    const rowIds = [...new Set([...((f.rowIds as string[] | undefined) ?? []), ...rows])];
+    return rowIds.length ? { ...f, rowIds } : f;
+  });
+  const { feeds: _feeds, ...rest } = out;
+  return { ...rest, facilities, doors: (out.doors as Json[] | undefined) ?? [] };
 }
 
 /** Removed form factor "QSFP-DD800" -> "QSFP-DD" (an 800G QSFP-DD cage); old built-in device id renamed. */

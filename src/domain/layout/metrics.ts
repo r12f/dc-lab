@@ -5,7 +5,7 @@ import { BomBuilder } from '../bom/bom-builder';
 import type { BomLine } from '../bom/types';
 import type { DcLayout } from './types';
 import { tileWidthOf, type DesignLookup } from './tiles';
-import { feedWarnings, rowSupplyKw } from './power-feeds';
+import { computeFacilityLoads } from './facility-load';
 import { infraWarnings } from './infra';
 
 export interface RowMetrics {
@@ -13,8 +13,10 @@ export interface RowMetrics {
   tilesUsed: number;
   typicalW: number;
   budgetW: number;
-  /** kW fed by PDUs (0 = no feeds). */
-  suppliedKw: number;
+  /** Max power the row draws from its PDUs (kW; power racks excluded, chillers included). */
+  demandKw: number;
+  /** Number of PDUs feeding the row. */
+  pduCount: number;
 }
 
 export interface DcMetrics {
@@ -34,9 +36,11 @@ export function computeDcMetrics(lib: Library, designs: DesignLookup, layout: Dc
     if (!cache.has(id)) cache.set(id, computeRackMetrics(lib, d));
     return cache.get(id);
   };
+  const loads = computeFacilityLoads(lib, designs, layout);
   const m: DcMetrics = { rackCount: 0, typicalW: 0, maxW: 0, weightKg: 0, rows: [], warnings: [] };
   for (const row of layout.rows) {
-    const r: RowMetrics = { rowId: row.id, tilesUsed: 0, typicalW: 0, budgetW: row.powerBudgetKw * 1000, suppliedKw: rowSupplyKw(layout, row.id) };
+    const r: RowMetrics = { rowId: row.id, tilesUsed: 0, typicalW: 0, budgetW: row.powerBudgetKw * 1000,
+      demandKw: loads.rowDemandKw.get(row.id) ?? 0, pduCount: layout.facilities.filter((f) => f.kind === 'pdu' && f.rowIds?.includes(row.id)).length };
     for (const a of layout.assignments.filter((x) => x.rowId === row.id)) {
       const rm = metricsOf(a.designId);
       if (!rm) {
@@ -53,7 +57,7 @@ export function computeDcMetrics(lib: Library, designs: DesignLookup, layout: Dc
     if (r.typicalW > r.budgetW) m.warnings.push(`${row.name}: ${(r.typicalW / 1000).toFixed(1)} kW exceeds ${row.powerBudgetKw} kW budget`);
     m.rows.push(r);
   }
-  m.warnings.push(...feedWarnings(layout, new Map(m.rows.map((r) => [r.rowId, r.typicalW]))));
+  m.warnings.push(...loads.warnings);
   m.warnings.push(...infraWarnings(lib, designs, layout));
   return m;
 }

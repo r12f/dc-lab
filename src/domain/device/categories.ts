@@ -16,6 +16,8 @@ export interface CategoryTraits {
   folder?: string;
   /** Height is chosen per placement (1..n units in the rack's unit system); one item covers every size. */
   resizable?: boolean;
+  /** Room-level equipment (DC Layout facility), not rack-mounted: hidden from the Device Palette. */
+  facility?: boolean;
 }
 
 const MISC = 'Misc';
@@ -35,6 +37,9 @@ export const CATEGORY_TRAITS: Record<DeviceCategory, CategoryTraits> = {
   // Appended after 'other' so existing categories keep their palette colors.
   'blanking-panel': { label: 'Blanking Panel', labelPrefix: 'BP', suppliesPower: false, allowsZeroU: false, filler: 'blanking', folder: MISC, resizable: true },
   stiffener: { label: 'Stiffener', labelPrefix: 'STF', suppliesPower: false, allowsZeroU: false, filler: 'stiffener', folder: MISC, resizable: true },
+  chiller: { label: 'In-Row Chiller', labelPrefix: 'CH', suppliesPower: false, allowsZeroU: false },
+  // Room-level equipment picked in DC Layout facilities, not placed in racks.
+  'dc-pdu': { label: 'DC PDU', labelPrefix: 'DPDU', suppliesPower: true, allowsZeroU: false, facility: true },
   'brush-panel': { label: 'Brush Panel', labelPrefix: 'BR', suppliesPower: false, allowsZeroU: false, filler: 'brush', folder: MISC, resizable: true },
   reserved: { label: 'Empty (Reserved)', labelPrefix: 'RSV', suppliesPower: false, allowsZeroU: false, filler: 'reserved', folder: MISC, resizable: true },
 };

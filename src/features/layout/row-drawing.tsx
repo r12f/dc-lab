@@ -11,7 +11,7 @@ import { useLabels } from './view-context';
 import { assignmentRole, servedRacks } from '../../domain/layout/infra';
 
 /** Fill of infrastructure racks: power amber, CDU cyan (as their facility colors); IT racks use the accent. */
-const INFRA_FILL = { power: '#D97706', cdu: '#06B6D4' } as const;
+const INFRA_FILL = { power: '#D97706', cdu: '#06B6D4', chiller: '#0E7490' } as const;
 
 interface Props {
   lib: Library;
@@ -113,7 +113,7 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
             <text x={mx} y={my - font * 0.55} fontSize={Math.min(font * 1.5, (sb.w - 80) / (abbr.length * 0.72))} textAnchor="middle"
               fill={paint.onAccent} fontWeight={800} pointerEvents="none">{abbr}</text>
             <text x={mx} y={my + font * 0.75} fontSize={font * 0.8} textAnchor="middle" fill={paint.onAccent} fontWeight={600} pointerEvents="none">{a.label}</text>
-            <text x={mx} y={my + font * 1.7} fontSize={font * 0.75} textAnchor="middle" fill={paint.onAccent} opacity={0.85} pointerEvents="none">{role === 'it' ? formatPower(power) : role === 'power' ? 'POWER' : 'CDU'}</text>
+            <text x={mx} y={my + font * 1.7} fontSize={font * 0.75} textAnchor="middle" fill={paint.onAccent} opacity={0.85} pointerEvents="none">{role === 'it' ? formatPower(power) : role === 'power' ? 'POWER' : role === 'cdu' ? 'CDU' : 'CHILLER'}</text>
             </g>
           </g>
         );

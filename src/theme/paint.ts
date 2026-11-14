@@ -42,6 +42,8 @@ const CATEGORY_COLORS: Record<DeviceCategory, string> = {
   stiffener: '#64748B',
   reserved: '#94A3B8',
   'brush-panel': '#374151',
+  chiller: '#0E7490',
+  'dc-pdu': '#B45309',
 };
 
 export function categoryPaint(category: DeviceCategory): string {

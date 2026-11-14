@@ -1,0 +1,20 @@
+{
+  "id": "chiller-rack-in-row",
+  "name": "In-Row Chiller Rack 48RU",
+  "kind": "chiller",
+  "units": 48,
+  "unitSystem": "RU",
+  "widthMm": 600,
+  "depthMm": 1200,
+  "heightMm": 2260,
+  "footprintTiles": {
+    "wide": 1,
+    "deep": 2
+  },
+  "emptyWeightKg": 0,
+  "maxLoadKg": 0,
+  "maxPowerW": 0,
+  "schema": "dc-lab/rack@1",
+  "sideElements": [],
+  "notes": "In-row chiller enclosure: frame weight 0 and no rating; the full-height chiller device carries weight and power. Takes heat out of the hot aisle it exhausts into."
+}
