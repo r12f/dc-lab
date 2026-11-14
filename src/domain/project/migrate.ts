@@ -88,7 +88,7 @@ export function migrateOptic(o: Json): Json {
  * Old layouts had horizontal rows (`frontFacing` north/south). Rotate the whole plan 90° so rows run
  * north–south: (x, y) -> (y, x), rectangles swap width/depth, room swaps dimensions.
  */
-export function migrateLayout(l: Json): Json {
+function rotateLayout(l: Json): Json {
   const rows = (l.rows as Json[]) ?? [];
   const horizontal = rows.some((r) => r.frontFacing === 'north' || r.frontFacing === 'south');
   if (!horizontal) return l;
@@ -101,6 +101,47 @@ export function migrateLayout(l: Json): Json {
     aisles: ((l.aisles as Json[]) ?? []).map(swapRect),
     trays: ((l.trays as Json[]) ?? []).map(swapRect),
   };
+}
+
+/**
+ * Free-positioned rows/aisles/trays -> rack area + west-to-east sequence; trays attach to the aisle
+ * nearest their centre. The rack area is the bounding box of the old rows and aisles.
+ */
+function sequenceLayout(l: Json): Json {
+  if (Array.isArray(l.sequence)) return l;
+  const num = (v: unknown) => Number(v ?? 0);
+  const rows = (l.rows as Json[]) ?? [];
+  const aisles = (l.aisles as Json[]) ?? [];
+  const rowRect = (r: Json) => ({ x: num(r.x), y: num(r.y), w: num(r.tileDepthMm ?? 1200), d: num(r.tileCount ?? 20) * num(r.tileWidthMm ?? 600) });
+  const aisleRect = (a: Json) => ({ x: num(a.x), y: num(a.y), w: num(a.widthMm ?? 1200), d: num(a.depthMm) });
+  const rects = [...rows.map(rowRect), ...aisles.map(aisleRect)];
+  const room = (l.room as Json | undefined) ?? { widthMm: 20000, depthMm: 16000 };
+  const whitespace = rects.length
+    ? (() => {
+      const x = Math.min(...rects.map((r) => r.x)), y = Math.min(...rects.map((r) => r.y));
+      return { x, y, widthMm: Math.max(...rects.map((r) => r.x + r.w)) - x, depthMm: Math.max(...rects.map((r) => r.y + r.d)) - y };
+    })()
+    : { x: 3000, y: 2000, widthMm: Math.max(1000, num(room.widthMm) - 6000), depthMm: Math.max(1000, num(room.depthMm) - 4000) };
+  const sequence = [...rows.map((r) => ({ id: r.id, x: num(r.x) })), ...aisles.map((a) => ({ id: a.id, x: num(a.x) }))]
+    .sort((a, b) => a.x - b.x).map((e) => e.id);
+  const aisleCenter = (a: Json) => num(a.x) + num(a.widthMm) / 2;
+  return {
+    ...l,
+    whitespace,
+    facilities: l.facilities ?? [],
+    sequence,
+    rows: rows.map(({ x: _x, y: _y, ...r }) => r),
+    aisles: aisles.map((a) => ({ id: a.id, kind: a.kind, widthMm: num(a.widthMm ?? 1200) })),
+    trays: ((l.trays as Json[]) ?? []).map((t) => {
+      const c = num(t.x) + num(t.widthMm) / 2;
+      const near = [...aisles].sort((a, b) => Math.abs(aisleCenter(a) - c) - Math.abs(aisleCenter(b) - c))[0];
+      return { id: t.id, kind: t.kind, aisleId: near?.id ?? '', widthMm: Math.min(num(t.widthMm ?? 600), num(near?.widthMm ?? 600)) };
+    }).filter((t) => t.aisleId),
+  };
+}
+
+export function migrateLayout(l: Json): Json {
+  return sequenceLayout(rotateLayout(l));
 }
 
 /** Removed form factor "QSFP-DD800" -> "QSFP-DD" (an 800G QSFP-DD cage); old built-in device id renamed. */

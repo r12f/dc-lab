@@ -10,10 +10,6 @@ export function RowForm({ row, editor, onRemoved }: { row: Row; editor: LayoutEd
   return (
     <div className="card">
       <TextField label="Row name" value={row.name} onChange={(name) => set({ name })} />
-      <div className="row2">
-        <NumberField label="X mm" value={row.x} onChange={(x) => set({ x })} />
-        <NumberField label="Y mm" value={row.y} onChange={(y) => set({ y })} />
-      </div>
       <div className="row3">
         <NumberField label="Tiles" value={row.tileCount} min={1} onChange={(tileCount) => set({ tileCount })} />
         <NumberField label="Tile pitch mm" value={row.tileWidthMm} onChange={(tileWidthMm) => set({ tileWidthMm })} />

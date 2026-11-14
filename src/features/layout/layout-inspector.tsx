@@ -6,7 +6,8 @@ import { NumberField, Section, TextField } from '../../ui/fields';
 import type { LayoutEditor } from './use-layout-editor';
 import type { LayoutSelection } from './selection';
 import { RowForm } from './row-form';
-import { AisleForm, TrayForm } from './area-forms';
+import { AisleForm, FacilityForm, RectFields, TrayForm } from './area-forms';
+import { floorWarnings } from '../../domain/layout/floor-plan';
 import { TilePanel } from './tile-panel';
 import { DcSummaryPanel } from './dc-summary-panel';
 
@@ -20,7 +21,7 @@ interface Props {
 }
 
 function SelectionEditor({ lib, designs, layout, editor, selection, onSelect }: Props) {
-  if (!selection) return <p className="muted">Click a tile, rack, row name, aisle or tray.</p>;
+  if (!selection) return <p className="muted">Click a tile, rack, row name, aisle, tray or facility.</p>;
   const clear = () => onSelect(undefined);
   switch (selection.kind) {
     case 'row': {
@@ -33,7 +34,11 @@ function SelectionEditor({ lib, designs, layout, editor, selection, onSelect }: 
     }
     case 'tray': {
       const t = layout.trays.find((x) => x.id === selection.id);
-      return t ? <TrayForm tray={t} editor={editor} onRemoved={clear} /> : null;
+      return t ? <TrayForm tray={t} layout={layout} editor={editor} onRemoved={clear} /> : null;
+    }
+    case 'facility': {
+      const f = layout.facilities.find((x) => x.id === selection.id);
+      return f ? <FacilityForm facility={f} editor={editor} onRemoved={clear} /> : null;
     }
     case 'tile':
     case 'assignment':
@@ -51,12 +56,24 @@ export function LayoutInspector(props: Props) {
           <NumberField label="Room width mm" value={layout.room.widthMm} onChange={(widthMm) => editor.setRoom({ ...layout.room, widthMm })} />
           <NumberField label="Room depth mm" value={layout.room.depthMm} onChange={(depthMm) => editor.setRoom({ ...layout.room, depthMm })} />
         </div>
+      </Section>
+      <Section title="Rack area">
+        <RectFields rect={layout.whitespace} onChange={(p) => editor.setWhitespace({ ...layout.whitespace, ...p })} />
+        <p className="muted">Rows and aisles pack west to east inside it; drag them sideways to reorder.</p>
         <div className="row3">
           <Button onClick={editor.addRow}>+ Row</Button>
           <Button onClick={editor.addAisle}>+ Aisle</Button>
-          <Button onClick={editor.addTray}>+ Tray</Button>
+          <Button onClick={() => editor.addTray(props.selection?.kind === 'aisle' ? props.selection.id : undefined)}>+ Tray</Button>
         </div>
       </Section>
+      <Section title="Facilities">
+        <div className="row3">
+          <Button onClick={() => editor.addFacility('pdu')}>+ PDU</Button>
+          <Button onClick={() => editor.addFacility('cooling')}>+ Cooling</Button>
+          <Button onClick={() => editor.addFacility('other')}>+ Other</Button>
+        </div>
+      </Section>
+      {floorWarnings(layout).map((w) => <p key={w} className="warn">{w}</p>)}
       <Section title="Selection">
         <SelectionEditor {...props} />
       </Section>

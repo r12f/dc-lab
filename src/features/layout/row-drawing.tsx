@@ -1,8 +1,8 @@
 import type { PointerEvent } from 'react';
 import type { Library } from '../../domain/library/library';
-import type { DcLayout, Row } from '../../domain/layout/types';
+import type { DcLayout, Rect, Row } from '../../domain/layout/types';
 import { tileWidthOf, type DesignLookup } from '../../domain/layout/tiles';
-import { tileRect } from '../../domain/layout/geometry';
+import { tileRect } from '../../domain/layout/floor-plan';
 import { computeRackMetrics } from '../../domain/design/metrics';
 import { formatPower } from '../../domain/units';
 import type { LayoutSelection } from './selection';
@@ -13,6 +13,8 @@ interface Props {
   designs: DesignLookup;
   layout: DcLayout;
   row: Row;
+  /** Where the floor plan put the row. */
+  rect: Rect;
   /** Live power of the row (typical W). */
   powerW: number;
   selection?: LayoutSelection;
@@ -27,33 +29,33 @@ const HEADER_H = 820;
  * One vertical row: header (name + power / budget, drag handle), tiles from north to south,
  * a front-side marker and assigned racks.
  */
-export function RowDrawing({ lib, designs, layout, row, powerW, selection, onSelect, onHeaderPointerDown, onRackHover }: Props) {
+export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection, onSelect, onHeaderPointerDown, onRackHover }: Props) {
   const tiles = Array.from({ length: row.tileCount }, (_, i) => i);
   const assignments = layout.assignments.filter((a) => a.rowId === row.id);
   const length = row.tileCount * row.tileWidthMm;
-  const frontX = row.frontFacing === 'east' ? row.x + row.tileDepthMm : row.x;
+  const frontX = row.frontFacing === 'east' ? rect.x + rect.widthMm : rect.x;
   const rowSelected = selection?.kind === 'row' && selection.id === row.id;
   const budgetW = row.powerBudgetKw * 1000;
   const over = powerW > budgetW;
-  const cx = row.x + row.tileDepthMm / 2;
+  const cx = rect.x + rect.widthMm / 2;
   const selectRow = (e: { stopPropagation(): void }) => { e.stopPropagation(); onSelect({ kind: 'row', id: row.id }); };
 
   return (
     <g>
       <g style={{ cursor: 'move' }} onPointerDown={onHeaderPointerDown} onClick={selectRow}>
-        <title>{`${row.name} — drag to move`}</title>
-        <rect x={row.x} y={row.y - HEADER_H} width={row.tileDepthMm} height={HEADER_H - 40} rx={60}
+        <title>{`${row.name} — drag sideways to reorder`}</title>
+        <rect x={rect.x} y={rect.y - HEADER_H} width={row.tileDepthMm} height={HEADER_H - 40} rx={60}
           fill={rowSelected ? paint.selection : paint.frame} fillOpacity={rowSelected ? 0.35 : 1} />
-        <text x={cx} y={row.y - HEADER_H + 250} fontSize={Math.min(230, row.tileDepthMm / 4.5)} textAnchor="middle" fontWeight={700}
+        <text x={cx} y={rect.y - HEADER_H + 250} fontSize={Math.min(230, row.tileDepthMm / 4.5)} textAnchor="middle" fontWeight={700}
           fill={rowSelected ? paint.ink : paint.frameText}>{row.name}</text>
         {/* Power and budget on separate lines so both stay legible at full-room zoom. */}
-        <text x={cx} y={row.y - HEADER_H + 490} fontSize={Math.min(210, row.tileDepthMm / 5.5)} textAnchor="middle" fontWeight={700}
+        <text x={cx} y={rect.y - HEADER_H + 490} fontSize={Math.min(210, row.tileDepthMm / 5.5)} textAnchor="middle" fontWeight={700}
           fill={over ? '#EF4444' : rowSelected ? paint.ink : paint.frameText}>{formatPower(powerW)}</text>
-        <text x={cx} y={row.y - HEADER_H + 700} fontSize={Math.min(170, row.tileDepthMm / 7)} textAnchor="middle"
+        <text x={cx} y={rect.y - HEADER_H + 700} fontSize={Math.min(170, row.tileDepthMm / 7)} textAnchor="middle"
           fill={over ? '#EF4444' : rowSelected ? paint.ink : paint.frameText}>{`of ${formatPower(budgetW)}`}</text>
       </g>
       {tiles.map((t) => {
-        const r = tileRect(row, t);
+        const r = tileRect(rect, row, t);
         const sel = selection?.kind === 'tile' && selection.rowId === row.id && selection.tile === t;
         return (
           <rect key={t} x={r.x} y={r.y} width={r.widthMm} height={r.depthMm}
@@ -63,10 +65,10 @@ export function RowDrawing({ lib, designs, layout, row, powerW, selection, onSel
             onClick={(e) => { e.stopPropagation(); onSelect({ kind: 'tile', rowId: row.id, tile: t }); }} />
         );
       })}
-      <line x1={frontX} x2={frontX} y1={row.y} y2={row.y + length} stroke={paint.accent} strokeWidth={50} />
+      <line x1={frontX} x2={frontX} y1={rect.y} y2={rect.y + length} stroke={paint.accent} strokeWidth={50} />
       {assignments.map((a) => {
         const design = designs(a.designId);
-        const r = tileRect(row, a.startTile, tileWidthOf(lib, design));
+        const r = tileRect(rect, row, a.startTile, tileWidthOf(lib, design));
         const power = design ? computeRackMetrics(lib, design).typicalW : 0;
         const sel = selection?.kind === 'assignment' && selection.id === a.id;
         // Two lines (label + power) must fit the rack's north–south extent and its width.

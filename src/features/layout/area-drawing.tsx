@@ -7,22 +7,27 @@ interface Props {
   fill: string;
   label: string;
   dashed?: boolean;
+  /** Fill opacity; overhead trays use a lighter fill so the aisle stays visible below. */
+  opacity?: number;
   selected: boolean;
+  cursor?: string;
+  /** Label position along the long side, 0..1 (default centre). */
+  labelAt?: number;
   onClick(): void;
   onPointerDown(e: PointerEvent<SVGElement>): void;
 }
 
-/** Labelled rectangle for aisles and cable trays; label runs along the long side. */
-export function AreaDrawing({ rect, fill, label, dashed, selected, onClick, onPointerDown }: Props) {
+/** Labelled rectangle for aisles, trays and facilities; label runs along the long side. */
+export function AreaDrawing({ rect, fill, label, dashed, opacity = 0.25, selected, cursor = 'move', labelAt = 0.5, onClick, onPointerDown }: Props) {
   const vertical = rect.depthMm > rect.widthMm;
   const short = Math.min(rect.widthMm, rect.depthMm);
-  const cx = rect.x + rect.widthMm / 2;
-  const cy = rect.y + rect.depthMm / 2;
+  const cx = rect.x + rect.widthMm * (vertical ? 0.5 : labelAt);
+  const cy = rect.y + rect.depthMm * (vertical ? labelAt : 0.5);
   return (
-    <g onClick={(e) => { e.stopPropagation(); onClick(); }} onPointerDown={onPointerDown} style={{ cursor: 'move' }}>
-      <rect x={rect.x} y={rect.y} width={rect.widthMm} height={rect.depthMm} fill={fill} fillOpacity={0.25}
-        stroke={selected ? paint.selection : paint.inkMuted} strokeWidth={selected ? 50 : 15} strokeDasharray={dashed ? '120 60' : undefined} />
-      <text x={cx} y={cy} fontSize={Math.min(220, short * 0.5)} textAnchor="middle" dominantBaseline="middle"
+    <g onClick={(e) => { e.stopPropagation(); onClick(); }} onPointerDown={onPointerDown} style={{ cursor }}>
+      <rect x={rect.x} y={rect.y} width={rect.widthMm} height={rect.depthMm} fill={fill} fillOpacity={opacity}
+        stroke={selected ? paint.selection : fill} strokeWidth={selected ? 50 : 20} strokeDasharray={dashed ? '120 60' : undefined} />
+      <text x={cx} y={cy} fontSize={Math.min(220, short * 0.45)} textAnchor="middle" dominantBaseline="middle"
         fill={paint.ink} pointerEvents="none" transform={vertical ? `rotate(-90 ${cx} ${cy})` : undefined}>{label}</text>
     </g>
   );

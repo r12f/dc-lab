@@ -5,17 +5,30 @@ south (down), units are millimetres.
 
 ## Model
 
-- `room`: `{ widthMm, depthMm }`
-- `rows[]`: `name`, origin `x,y` (top-left, mm), `tileCount`, `tileWidthMm` (pitch along the row),
-  `tileDepthMm` (across the row), `powerBudgetKw`, `frontFacing` (`east`/`west` — the side facing the
-  cold aisle). Rows run **vertically** (north–south): tile `i` spans
-  `y + i * tileWidthMm … y + (i + 1) * tileWidthMm`, and the row is `tileDepthMm` wide.
-- `aisles[]`: `kind` (hot/cold), rectangle `x,y,widthMm,depthMm`.
-- `trays[]`: `kind` (data/power), rectangle `x,y,widthMm,depthMm`.
+- `room`: `{ widthMm, depthMm }` — the whole hall.
+- `whitespace`: rectangle `x, y, widthMm, depthMm` inside the room — the **rack area**. Rows and aisles
+  are laid out only inside it.
+- `facilities[]`: support equipment around the rack area — `kind` (`pdu` | `cooling` | `other`), `name`,
+  rectangle `x, y, widthMm, depthMm`, optional `capacityKw`. Placed freely in the room (typically along
+  the walls, outside the rack area).
+- `rows[]`: `name`, `tileCount`, `tileWidthMm` (pitch along the row), `tileDepthMm` (across the row),
+  `powerBudgetKw`, `frontFacing` (`east`/`west` — the side facing the cold aisle). Rows run
+  **vertically** (north–south). They have no stored position.
+- `aisles[]`: `kind` (hot/cold), `widthMm`. No stored position; an aisle spans the rack area's depth.
+- `sequence`: ids of rows and aisles from west to east.
+- `trays[]`: overhead cable trays — `kind` (data/power), `aisleId`, `widthMm`. A tray **floats above an
+  aisle**: centred on it, running its full length, drawn on top of everything.
 - `assignments[]`: `rowId`, `startTile` (0-based, from the north end), `designId`, `label`.
 
-New rows, aisles and trays are placed east of the right-most element, so adding row, aisle, row…
-builds a hot/cold aisle sequence across the room.
+## Arrangement (derived, never stored)
+
+- Rows and aisles are packed edge to edge from the west edge of the rack area in `sequence` order; a
+  row's band is `tileDepthMm` wide, an aisle's `widthMm`. All start at the rack area's north edge.
+  A row is `tileCount × tileWidthMm` long; an aisle is as long as the rack area is deep.
+- New rows and aisles are appended at the east end of the sequence, so adding row, aisle, row… builds a
+  hot/cold aisle sequence. A new tray goes over the selected aisle, else the first aisle.
+- Warnings: sequence wider than the rack area; a row longer than the rack area; a facility overlapping
+  the rack area.
 
 ## Rules
 
@@ -33,13 +46,17 @@ builds a hot/cold aisle sequence across the room.
 
 - Sidebar: layouts with a text filter (name, row names, rack labels); New, Duplicate, Delete.
 - Canvas:
-  - room, aisles (blue cold / red hot), trays, vertical rows of tiles with a front-side marker,
-    assigned racks.
-  - **Drag** a row (by its header), an aisle or a tray to move it; positions snap to 100 mm and stay
-    inside the room. Dragging selects the element; a click without movement just selects.
+  - room, rack area (dashed outline), facilities (PDU amber, cooling cyan, other grey), aisles (blue
+    cold / red hot), vertical rows of tiles with a front-side marker, assigned racks, trays on top
+    (semi-transparent, so the aisle stays visible under them).
+  - **Drag** a row (by its header) or an aisle sideways to **reorder** it in the sequence; the plan
+    re-packs live while dragging. **Drag** a tray onto another aisle to move it there. **Drag** a
+    facility to move it freely (snapped to 100 mm, kept inside the room). A click without movement
+    just selects.
   - Each row header shows `name` and `power / budget` (red when over budget).
   - **Hover** a rack: tooltip with label, design, rack template, tiles, units used, devices, typical and
     max power, weight, warnings.
   - Click a tile to select it, click a rack to select the assignment.
-- Inspector: layout fields, add row/aisle/tray, selected element editor, tile assignment, DC BOM.
+- Inspector: room and rack-area fields, add row/aisle/tray/facility, selected element editor, tile
+  assignment, layout warnings, DC BOM.
 - Export SVG (tooltip and drag previews are not exported).

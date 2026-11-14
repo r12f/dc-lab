@@ -10,13 +10,10 @@ export interface Rect {
   depthMm: number;
 }
 
-/** A vertical (north–south) row of rack tiles. */
+/** A vertical (north–south) row of rack tiles; positioned by the layout sequence. */
 export interface Row {
   id: string;
   name: string;
-  /** Top-left corner (mm). */
-  x: number;
-  y: number;
   tileCount: number;
   /** Tile pitch along the row (north–south). */
   tileWidthMm: number;
@@ -26,14 +23,29 @@ export interface Row {
   frontFacing: RowFront;
 }
 
-export interface Aisle extends Rect {
+/** A hot or cold aisle between rows; positioned by the layout sequence, spans the rack area depth. */
+export interface Aisle {
   id: string;
   kind: 'hot' | 'cold';
+  widthMm: number;
 }
 
-export interface CableTray extends Rect {
+/** Overhead cable tray floating above an aisle, centred on it, full aisle length. */
+export interface CableTray {
   id: string;
   kind: 'data' | 'power';
+  aisleId: string;
+  widthMm: number;
+}
+
+export type FacilityKind = 'pdu' | 'cooling' | 'other';
+
+/** Support equipment around the rack area (power distribution, cooling units…). */
+export interface Facility extends Rect {
+  id: string;
+  kind: FacilityKind;
+  name: string;
+  capacityKw?: number;
 }
 
 export interface RackAssignment {
@@ -49,8 +61,13 @@ export interface DcLayout {
   id: string;
   name: string;
   room: { widthMm: number; depthMm: number };
+  /** Rack area inside the room; rows and aisles are packed inside it. */
+  whitespace: Rect;
+  facilities: Facility[];
   rows: Row[];
   aisles: Aisle[];
+  /** Row and aisle ids from west to east. */
+  sequence: string[];
   trays: CableTray[];
   assignments: RackAssignment[];
 }
