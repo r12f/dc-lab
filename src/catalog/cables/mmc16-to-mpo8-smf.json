@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/cable@1",
   "id": "mmc16-to-mpo8-smf",
-  "name": "MMC-16F to MPO-8F SMF harness (8F, Type B)",
+  "name": "MMC-16M to MPO-8F SMF harness (8F, Type B)",
   "type": "fiber-sm",
   "fiberCount": 8,
   "mapping": "straight",
@@ -12,7 +12,7 @@
       "count": 1,
       "connector": "MMC-16",
       "fibers": 16,
-      "gender": "female"
+      "gender": "male"
     },
     "b": {
       "count": 1,

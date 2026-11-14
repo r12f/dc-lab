@@ -1,17 +1,17 @@
 {
   "schema": "dc-lab/cable@1",
-  "id": "mmc16-2x-to-mpo8-2x-smf",
-  "name": "2x MMC-16F to 2x MPO-8F SMF harness (16F, Type B)",
+  "id": "mpo8-4x2-shuffle-smf",
+  "name": "4x MPO-8F to 2x MPO-8F SMF shuffle (16F, Type B)",
   "type": "fiber-sm",
   "fiberCount": 16,
-  "mapping": "straight",
+  "mapping": "shuffle",
   "polarity": "B",
-  "color": "#4d7c0f",
+  "color": "#fb923c",
   "ends": {
     "a": {
-      "count": 2,
-      "connector": "MMC-16",
-      "fibers": 16,
+      "count": 4,
+      "connector": "MPO-8",
+      "fibers": 8,
       "gender": "female"
     },
     "b": {

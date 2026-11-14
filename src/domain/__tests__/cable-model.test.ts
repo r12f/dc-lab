@@ -18,7 +18,7 @@ describe('cable model', () => {
     const m = fiberMap(cable('mmc16-2xmpo8-y-smf'));
     expect(m.pairs).toEqual([[8, 8]]);
     expect([m.unusedA, m.unusedB]).toEqual([0, 0]);
-    expect(cableSummary(cable('mmc16-2xmpo8-y-smf'))).toBe('1x MMC-16F → 2x MPO-8F');
+    expect(cableSummary(cable('mmc16-2xmpo8-y-smf'))).toBe('1x MMC-16M → 2x MPO-8F');
   });
   it('4x4 and 2x2 shuffles spread every A over every B', () => {
     expect(fiberMap(cable('mpo8-4x4-shuffle-smf')).pairs).toEqual([[2, 2, 2, 2], [2, 2, 2, 2], [2, 2, 2, 2], [2, 2, 2, 2]]);
@@ -37,8 +37,16 @@ describe('cable model', () => {
   });
   it('asymmetric MMC-16 -> MPO-8 drops 8 fibers per A connector', () => {
     expect(fiberMap(cable('mmc16-to-mpo8-smf')).unusedA).toBe(8);
-    const two = fiberMap(cable('mmc16-2x-to-mpo8-2x-smf'));
-    expect([two.unusedA, two.unusedB, two.links.length]).toEqual([16, 0, 16]);
+  });
+  it('MMC-to-MPO cables are male on the MMC end; the 2x MMC to 2x MPO-8 harness is gone', () => {
+    const mmcToMpo = ['mmc16-2xmpo8-y-smf', 'mmc16-2x-to-mpo8-4x-shuffle-smf', 'mmc16-to-mpo8-smf'].map(cable);
+    expect(mmcToMpo.every((c) => c.ends.a.connector === 'MMC-16' && c.ends.a.gender === 'male' && /MMC-16M/.test(c.name))).toBe(true);
+    expect(lib.cableMedia.get('mmc16-2x-to-mpo8-2x-smf')).toBeUndefined();
+  });
+  it('4x MPO-8 -> 2x MPO-8 shuffle: 16 fibers, each A connector 2 fibers to each B', () => {
+    const m = fiberMap(cable('mpo8-4x2-shuffle-smf'));
+    expect(m.links).toHaveLength(16);
+    expect(m.pairs).toEqual([[2, 2], [2, 2], [2, 2], [2, 2]]);
   });
   it('polarity B reverses positions on the B side', () => {
     const l = fiberMap(cable('mpo8-smf')).links;
