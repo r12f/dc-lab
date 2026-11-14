@@ -28,11 +28,13 @@ export function FootprintDrawing({ rack }: { rack: RackTemplate }) {
   });
   return (
     <g>
-      <text x={0} y={-10} fontSize={11} fontWeight={600} fill={paint.ink}>{`Footprint ${wide}x${deep} tiles (top view)`}</text>
-      {Array.from({ length: wide * deep }, (_, i) => (
-        <rect key={i} x={(i % wide) * TILE_PX} y={Math.floor(i / wide) * TILE_PX} width={TILE_PX} height={TILE_PX}
+      <text x={0} y={-10} fontSize={11} fontWeight={600} fill={paint.ink}>{`Footprint ${wide}x${deep} tiles (top view)${Number.isInteger(wide) ? '' : ' · dashed line = row pitch'}`}</text>
+      {Array.from({ length: Math.ceil(wide) * deep }, (_, i) => (
+        <rect key={i} x={(i % Math.ceil(wide)) * TILE_PX} y={Math.floor(i / Math.ceil(wide)) * TILE_PX} width={TILE_PX} height={TILE_PX}
           fill={paint.slot} stroke={paint.grid} />
       ))}
+      {/* Row pitch the rack takes (e.g. 1.5 tiles for ORv3): the next rack in the row starts here. */}
+      <line x1={wide * TILE_PX} x2={wide * TILE_PX} y1={-4} y2={deep * TILE_PX + 4} stroke={paint.ink} strokeDasharray="3 3" />
       {boxes.map((b) => {
         const body = b.kind === 'body';
         const dashed = !body && SIDE_KINDS[b.kind as keyof typeof SIDE_KINDS].dashed;

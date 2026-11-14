@@ -8,7 +8,7 @@
   "depthMm": 1068,
   "heightMm": 2287,
   "footprintTiles": {
-    "wide": 1,
+    "wide": 1.5,
     "deep": 2
   },
   "emptyWeightKg": 160,

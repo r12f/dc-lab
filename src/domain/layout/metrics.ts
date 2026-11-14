@@ -4,7 +4,7 @@ import { buildRackBom } from '../bom/rack-bom';
 import { BomBuilder } from '../bom/bom-builder';
 import type { BomLine } from '../bom/types';
 import type { DcLayout } from './types';
-import { occupiedTiles, type DesignLookup } from './tiles';
+import { tileWidthOf, type DesignLookup } from './tiles';
 
 export interface RowMetrics {
   rowId: string;
@@ -40,7 +40,7 @@ export function computeDcMetrics(lib: Library, designs: DesignLookup, layout: Dc
         continue;
       }
       m.rackCount++;
-      r.tilesUsed += occupiedTiles(lib, designs, a).length;
+      r.tilesUsed += tileWidthOf(lib, designs(a.designId));
       r.typicalW += rm.typicalW;
       m.maxW += rm.maxW;
       m.weightKg += rm.totalWeightKg;

@@ -32,7 +32,10 @@ south (down), units are millimetres.
 
 ## Rules
 
-- An assignment occupies `template.footprintTiles.wide` consecutive tiles starting at `startTile`.
+- An assignment occupies `template.footprintTiles.wide` tiles starting at `startTile`. Widths can be fractional
+  (ORv3 = 1.5 tiles), so `startTile` can be fractional too: assigning on a tile partly filled by a previous rack
+  starts the new rack where that one ends (two ORv3 racks fill 3 tiles exactly). Racks may not overlap.
+  "Tiles used" sums the widths (e.g. `4.5/12 tiles`).
 - It must stay inside the row and must not overlap another assignment.
 - Row power = sum of assigned designs' typical power; warn when above `powerBudgetKw`.
 

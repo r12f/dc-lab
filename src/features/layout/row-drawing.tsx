@@ -1,7 +1,7 @@
 import type { PointerEvent } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { DcLayout, Rect, Row } from '../../domain/layout/types';
-import { occupiedTiles, tileWidthOf, type DesignLookup } from '../../domain/layout/tiles';
+import { formatTiles, tilesUsed, tileWidthOf, type DesignLookup } from '../../domain/layout/tiles';
 import { tileRect } from '../../domain/layout/floor-plan';
 import { computeRackMetrics } from '../../domain/design/metrics';
 import { formatPower } from '../../domain/units';
@@ -35,7 +35,7 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
   const length = row.tileCount * row.tileWidthMm;
   const frontX = row.frontFacing === 'east' ? rect.x + rect.widthMm : rect.x;
   const rowSelected = isSelected(selection, 'row', row.id);
-  const used = new Set(assignments.flatMap((a) => occupiedTiles(lib, designs, a))).size;
+  const used = formatTiles(tilesUsed(lib, designs, assignments));
   const budgetW = row.powerBudgetKw * 1000;
   const over = powerW > budgetW;
   const cx = rect.x + rect.widthMm / 2;

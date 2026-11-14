@@ -1,3 +1,4 @@
+import { formatTiles } from '../../domain/layout/tiles';
 import type { Library } from '../../domain/library/library';
 import type { DcLayout } from '../../domain/layout/types';
 import type { DesignLookup } from '../../domain/layout/tiles';
@@ -26,7 +27,7 @@ export function DcSummaryPanel({ lib, designs, layout }: { lib: Library; designs
               return (
                 <tr key={r.rowId} className={r.typicalW > r.budgetW ? 'warn' : ''}>
                   <td>{row?.name}</td>
-                  <td className="num">{`${r.tilesUsed} / ${row?.tileCount ?? 0}`}</td>
+                  <td className="num">{`${formatTiles(r.tilesUsed)} / ${row?.tileCount ?? 0}`}</td>
                   <td className="num">{`${formatPower(r.typicalW)} / ${formatPower(r.budgetW)}`}</td>
                 </tr>
               );

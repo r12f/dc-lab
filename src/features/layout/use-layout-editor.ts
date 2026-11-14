@@ -80,7 +80,8 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
     if (problem) return problem;
     mutate((l) => {
       const id = uniqueId('r', l.assignments.map((a) => a.id));
-      const label = `${row.name.replace(/\s+/g, '')}-${String(startTile + 1).padStart(2, '0')}`;
+      // Numbered by the tile the rack starts in (a 1.5-tile rack at 1.5 is "-02").
+      const label = `${row.name.replace(/\s+/g, '')}-${String(Math.floor(startTile) + 1).padStart(2, '0')}`;
       return { ...l, assignments: [...l.assignments, { id, rowId, startTile, designId, label }] };
     });
     return undefined;

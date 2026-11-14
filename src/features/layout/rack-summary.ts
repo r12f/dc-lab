@@ -1,6 +1,6 @@
 import type { Library } from '../../domain/library/library';
 import type { RackAssignment } from '../../domain/layout/types';
-import { tileWidthOf, type DesignLookup } from '../../domain/layout/tiles';
+import { formatTiles, tileWidthOf, type DesignLookup } from '../../domain/layout/tiles';
 import { computeRackMetrics } from '../../domain/design/metrics';
 import { formatPower, formatWeight } from '../../domain/units';
 
@@ -18,7 +18,7 @@ export function rackSummary(lib: Library, designs: DesignLookup, a: RackAssignme
   }
   return [
     `${a.label} — ${design.name}`,
-    `${rack?.name ?? design.templateId} · ${tiles} tile(s) from #${a.startTile + 1}`,
+    `${rack?.name ?? design.templateId} · ${formatTiles(tiles)} tile(s) from #${formatTiles(a.startTile + 1)}`,
     `Units ${m.usedUnits}/${m.totalUnits} · ${m.deviceCount} device(s)`,
     `Power ${formatPower(m.typicalW)} typ / ${formatPower(m.maxW)} max`,
     `Weight ${formatWeight(m.totalWeightKg)}`,

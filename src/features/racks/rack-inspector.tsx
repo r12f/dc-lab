@@ -51,7 +51,7 @@ export function RackInspector({ rack: r, readOnly, onChange, onDuplicate, select
             <NumberField label="Height mm" value={r.heightMm} onChange={(heightMm) => set({ heightMm })} />
           </div>
           <div className="row2">
-            <NumberField label="Tiles wide" value={r.footprintTiles.wide} min={1}
+            <NumberField label="Tiles wide" value={r.footprintTiles.wide} min={0.5} step={0.5}
               onChange={(wide) => set({ footprintTiles: { ...r.footprintTiles, wide } })} />
             <NumberField label="Tiles deep" value={r.footprintTiles.deep} min={1}
               onChange={(deep) => set({ footprintTiles: { ...r.footprintTiles, deep } })} />
