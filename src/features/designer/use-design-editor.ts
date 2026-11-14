@@ -16,7 +16,7 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
     const device = lib.devices.get(deviceId);
     if (!design || !device) return { error: 'Unknown device' };
     const target = mount ?? defaultMount(lib, design, device);
-    if (!target) return { error: 'No free space in rack' };
+    if (!target) return { error: device.height.units === 0 ? 'No free side slot for a 0U device' : 'No free space in rack' };
     const problem = placementProblem(lib, design, device, target);
     if (problem) return { error: problem };
     const id = uniqueId('p', design.placements.map((p) => p.id));

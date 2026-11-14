@@ -62,6 +62,7 @@ export function placementProblem(
     );
     return taken ? 'Side slot occupied' : undefined;
   }
+  if (device.height.units === 0) return '0U device mounts in a side element (PDU bay / sidepod), not in the rack body';
   const sys = unitSystemProblem(device, rack);
   if (sys) return sys;
   const span = spanOf(device, rack, mount);
@@ -116,12 +117,9 @@ export function firstFreeSideSlot(lib: Library, design: RackDesign, device: Devi
   return undefined;
 }
 
-/** Default mount: zero-U devices go to a side pod, everything else to the lowest free unit. */
+/** Default mount: zero-U devices go to a free side slot (never the rack body), everything else to the lowest free unit. */
 export function defaultMount(lib: Library, design: RackDesign, device: DeviceDefinition): Mount | undefined {
-  if (device.height.units === 0) {
-    const side = firstFreeSideSlot(lib, design, device);
-    if (side) return side;
-  }
+  if (device.height.units === 0) return firstFreeSideSlot(lib, design, device);
   const pos = firstFreePosition(lib, design, device);
   return pos === undefined ? undefined : { kind: 'rack', position: pos, face: 'front' };
 }

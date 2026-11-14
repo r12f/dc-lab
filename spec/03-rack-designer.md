@@ -27,6 +27,7 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 - A rack-mounted device occupies `[position, position + units - 1]`; it must fit within the template and
   must not overlap another device on the same face (full-depth devices block both faces:
   a device is full-depth when `depthMm > template.depthMm / 2`).
+- Zero-U devices (vertical PDUs, 0U patch panels) only go into side element slots, never the rack body.
 - Side mounts go into a side element slot; the element kind decides which devices it accepts.
   Zero-U devices default to the first free accepting slot, dedicated kinds first (PDU bay, other,
   then sidepod).
