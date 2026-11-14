@@ -128,3 +128,9 @@ line across both, so a rear port can be cabled to a front one. Power is cabled t
 (C13 / C19) and each device's **PSU inlets** (`psu/1..n`, derived from `psus`, form factor = inlet C14 / C20;
 busbar-fed devices have none). IEC power connectors mate only with their counterpart (C13↔C14, C19↔C20);
 built-in cords: C13-C14, C19-C20.
+
+**Cabling view layout** follows the elevation: left side PDUs | rack devices front | rack devices rear |
+right side PDUs. Side-mounted devices stack top to bottom in their side's column (element order, then slot),
+each drawn vertically (groups stacked, 2 ports per line, front and rear groups together). Rack devices keep
+one row per device across front and rear; each device box shrinks to its own ports (a rear face with only
+PSU inlets is a small box).

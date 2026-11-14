@@ -14,6 +14,7 @@ import { paint } from '../../theme/paint';
 import { Button } from '../../ui/button';
 import { SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
+import type { SideName } from '../../domain/rack/side-elements';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -40,51 +41,72 @@ const LABEL_W = 120;
 const TITLE_H = 13;
 /** Height of the FRONT / REAR headings above the devices. */
 const SECTION_H = 22;
+/** Ports per line on a side-mounted (vertical) device. */
+const SIDE_COLS = 2;
 
 interface LegBox { ep: CableEndpoint; leg: PortLeg; x: number; y: number; w: number; h: number }
 interface PortBox { group: PortGroup; index: number; mode: string; x: number; y: number; w: number; h: number }
 interface DeviceLayout {
-  p: Placement; device: DeviceDefinition; face: PortFace; y: number; h: number; w: number;
+  p: Placement; device: DeviceDefinition; face: PortFace; x: number; y: number; h: number; w: number;
   ports: PortBox[]; legs: LegBox[]; titles: { text: string; x: number; y: number }[];
 }
 
-/** Top-to-bottom order: rack devices by top unit (highest first), then side-mounted devices. */
-function rowOrder(lib: Library, design: RackDesign) {
+/** Rack-mounted devices top to bottom (highest top unit first). */
+function rackOrder(lib: Library, design: RackDesign) {
   const rack = lib.racks.get(design.templateId);
   const top = (p: Placement) => {
     if (p.mount.kind !== 'rack') return -Infinity;
     const d = placedDevice(lib, design, p);
     return p.mount.position + (d && rack ? Math.max(1, unitsIn(d.height, rack.unitSystem)) : 1) - 1;
   };
-  return [...design.placements].sort((a, b) => top(b) - top(a));
+  return design.placements.filter((p) => p.mount.kind === 'rack').sort((a, b) => top(b) - top(a));
+}
+
+/** Side-mounted devices (vertical PDUs) on one side of the rack, top slot first — as in the elevation. */
+function sideOrder(lib: Library, design: RackDesign, side: SideName) {
+  const rack = lib.racks.get(design.templateId);
+  const elOf = (p: Placement) => (p.mount.kind === 'side' ? rack?.sideElements.find((e) => e.id === (p.mount as { elementId: string }).elementId) : undefined);
+  return design.placements
+    .filter((p) => elOf(p)?.side === side)
+    .sort((a, b) => (rack?.sideElements.indexOf(elOf(a)!) ?? 0) - (rack?.sideElements.indexOf(elOf(b)!) ?? 0)
+      || (a.mount as { slot: number }).slot - (b.mount as { slot: number }).slot);
 }
 
 /**
  * One device's face laid out like its faceplate: groups left to right, each filling column-major over its
- * rows; every port is split into its connector legs ("4x100G DR4 / MPO-12").
+ * rows; every port is split into its connector legs ("4x100G DR4 / MPO-12"). A vertical device (side-mounted
+ * PDU) stacks its groups top to bottom, `SIDE_COLS` ports wide, under its label. Coordinates start at (x0, y0);
+ * `w` / `h` are the device box's own size (it shrinks to its ports).
  */
-function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: PortFace, y0: number): DeviceLayout | undefined {
+function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: PortFace | 'all', x0: number, y0: number, vertical = false): DeviceLayout | undefined {
   const device = placedDevice(lib, design, p);
   if (!device) return undefined;
   const ports: PortBox[] = [];
   const legs: LegBox[] = [];
   const titles: DeviceLayout['titles'] = [];
-  let x = LABEL_W;
-  let bottom = 0;
-  for (const g of cableGroupsOnFace(device, deviceFaceSeenFrom(p, face))) {
+  const groups = face === 'all'
+    ? [...cableGroupsOnFace(device, 'front'), ...cableGroupsOnFace(device, 'rear')]
+    : cableGroupsOnFace(device, deviceFaceSeenFrom(p, face));
+  let x = x0 + (vertical ? PAD : LABEL_W);
+  let gy = y0 + (vertical ? 34 : 0);
+  let bottom = y0 + 34;
+  let right = x0 + LABEL_W;
+  for (const g of groups) {
     const resolved = Array.from({ length: g.count }, (_, i) => resolvePlacedPort(lib, device, p, formatPortRef({ groupId: g.id, index: i + 1 })));
     const legList = resolved.map((r) => portLegs(g, r));
     const maxLegs = Math.max(1, ...legList.map((l) => l.length));
     // Every port of a group gets the same block size (the widest port's), so columns line up.
     const portW = PORT_PAD * 2 + maxLegs * LEG_W + (maxLegs - 1) * LEG_GAP;
     const h = PORT_HEAD + LEG_H + PORT_PAD;
-    const rows = Math.max(1, g.rows);
+    // Vertical: SIDE_COLS ports per line, filled row-major top to bottom.
+    const rows = vertical ? Math.ceil(g.count / SIDE_COLS) : Math.max(1, g.rows);
     const cols = Math.ceil(g.count / rows);
-    const top = y0 + PAD + TITLE_H;
-    titles.push({ text: groupTitle(g), x, y: y0 + PAD + 9 });
+    const top = gy + PAD + TITLE_H;
+    titles.push({ text: groupTitle(g), x, y: gy + PAD + 9 });
     for (let i = 0; i < g.count; i++) {
-      const px = x + Math.floor(i / rows) * (portW + GAP);
-      const py = top + (i % rows) * (h + GAP);
+      const [col, row] = vertical ? [i % SIDE_COLS, Math.floor(i / SIDE_COLS)] : [Math.floor(i / rows), i % rows];
+      const px = x + col * (portW + GAP);
+      const py = top + row * (h + GAP);
       const portRef = formatPortRef({ groupId: g.id, index: i + 1 });
       ports.push({ group: g, index: i + 1, mode: resolved[i]?.mode ?? '', x: px, y: py, w: portW, h });
       legList[i].forEach((leg, k) => {
@@ -92,10 +114,14 @@ function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: Port
           x: px + PORT_PAD + k * (LEG_W + LEG_GAP), y: py + PORT_HEAD, w: LEG_W, h: LEG_H });
       });
       bottom = Math.max(bottom, py + h);
+      right = Math.max(right, px + portW);
     }
-    x += Math.max(cols * (portW + GAP) - GAP, groupTitle(g).length * 5.5) + GROUP_GAP;
+    const groupW = Math.max(cols * (portW + GAP) - GAP, groupTitle(g).length * 5.5);
+    right = Math.max(right, x + groupW);
+    if (vertical) gy = bottom + 2;
+    else x += groupW + GROUP_GAP;
   }
-  return { p, device, face, y: y0, h: Math.max(bottom - y0 + PAD, 40), w: x, ports, legs, titles };
+  return { p, device, face: face === 'all' ? 'front' : face, x: x0, y: y0, h: Math.max(bottom - y0 + PAD, 40), w: right - x0 + PAD, ports, legs, titles };
 }
 
 /**
@@ -119,28 +145,46 @@ export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) 
 
   const used = usedConnectors(design);
   const runColor = new Map(design.cables.map((c) => [c.id, lib.cableMedia.get(c.mediaId)?.color ?? paint.inkMuted]));
-  // Front and rear side by side so a rear port can be cabled to a front one; devices line up across both.
-  const order = rowOrder(lib, design);
+  // As in the elevation: left side PDUs | rack devices front | rack devices rear | right side PDUs.
+  // Rack devices line up across front and rear (same row); each box shrinks to its own ports.
+  const shift = (d: DeviceLayout, dx: number) => {
+    d.x += dx;
+    d.ports.forEach((pt) => { pt.x += dx; });
+    d.legs.forEach((l) => { l.x += dx; });
+    d.titles.forEach((t) => { t.x += dx; });
+  };
+  const stackSide = (side: SideName) => {
+    const out: DeviceLayout[] = [];
+    let sy = SECTION_H;
+    for (const p of sideOrder(lib, design, side)) {
+      const l = layoutDevice(lib, design, p, 'all', 0, sy, true);
+      if (!l) continue;
+      out.push(l);
+      sy += l.h + 4;
+    }
+    return out;
+  };
+  const leftSide = stackSide('left');
+  const rightSide = stackSide('right');
+  const sideW = (xs: DeviceLayout[]) => (xs.length ? Math.max(...xs.map((d) => d.w)) + 8 : 0);
+  const leftW = sideW(leftSide);
   const front: DeviceLayout[] = [];
   const rear: DeviceLayout[] = [];
   let y = SECTION_H;
-  for (const p of order) {
-    const f = layoutDevice(lib, design, p, 'front', y);
-    const r = layoutDevice(lib, design, p, 'rear', y);
+  for (const p of rackOrder(lib, design)) {
+    const f = layoutDevice(lib, design, p, 'front', leftW, y);
+    const r = layoutDevice(lib, design, p, 'rear', 0, y);
     if (!f || !r) continue;
-    const h = Math.max(f.h, r.h);
-    f.h = h; r.h = h;
     front.push(f); rear.push(r);
-    y += h + 4;
+    y += Math.max(f.h, r.h) + 4;
   }
-  const frontW = Math.max(400, ...front.map((d) => d.w)) + 10;
-  for (const d of rear) {
-    d.ports.forEach((pt) => { pt.x += frontW; });
-    d.legs.forEach((l) => { l.x += frontW; });
-    d.titles.forEach((t) => { t.x += frontW; });
-  }
-  const rearW = Math.max(400, ...rear.map((d) => d.w)) + 10;
-  const devices = [...front, ...rear];
+  const frontW = Math.max(240, ...front.map((d) => d.w)) + 8;
+  const rearX = leftW + frontW;
+  rear.forEach((d) => shift(d, rearX));
+  const rearW = Math.max(240, ...rear.map((d) => d.w)) + 8;
+  const rightX = rearX + rearW;
+  rightSide.forEach((d) => shift(d, rightX));
+  const devices = [...leftSide, ...front, ...rear, ...rightSide];
   const legOrder = new Map(devices.flatMap((d) => d.legs.map((l, i) => [endpointKey(l.ep), i + (d.face === 'rear' ? 100000 : 0)] as const)));
   const selected = new Set(selection.map(endpointKey));
 
@@ -184,8 +228,8 @@ export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) 
     onSelectCable(last);
   };
 
-  const width = frontW + rearW;
-  const height = Math.max(y, SECTION_H + 30);
+  const width = rightX + sideW(rightSide);
+  const height = Math.max(y, SECTION_H + 30, ...[...leftSide, ...rightSide].map((d) => d.y + d.h + 4));
 
   return (
     <div className="cabling-view">
@@ -207,23 +251,26 @@ export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) 
       <p className="muted">Front and rear side by side (power inlets and PDU outlets included). Press on a connector and drag to select several; drag from a selected one to deselect. A = first device selected, B = the others; the cable repeats in port order. Click a cabled connector to open its run.</p>
       <svg ref={ref} viewBox={`0 0 ${width} ${height}`} width={width} className="drawing" style={{ touchAction: 'none' }}>
         <rect width={width} height={height} fill={paint.paper} />
-        <text x={8} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>FRONT</text>
-        <text x={frontW + 8} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>REAR</text>
-        <line x1={frontW - 3} y1={0} x2={frontW - 3} y2={height} stroke={paint.inkMuted} strokeDasharray="4 3" />
+        {leftSide.length > 0 && <text x={4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>LEFT</text>}
+        <text x={leftW + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>FRONT</text>
+        <text x={rearX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>REAR</text>
+        {rightSide.length > 0 && <text x={rightX + 4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>RIGHT</text>}
+        {[leftW, rearX, rightX].filter((x, i) => x > 0 && (i !== 2 || rightSide.length > 0)).map((x) => (
+          <line key={x} x1={x - 3} y1={0} x2={x - 3} y2={height} stroke={paint.inkMuted} strokeDasharray="4 3" />
+        ))}
         {devices.length === 0 && <text x={10} y={SECTION_H + 16} fontSize={12} fill={paint.inkMuted}>No devices placed.</text>}
         {devices.map((d) => {
           const side = a.some((e) => e.placementId === d.p.id) ? 'A' : b.some((e) => e.placementId === d.p.id) ? 'B' : undefined;
-          const x0 = d.face === 'rear' ? frontW : 0;
-          const w = d.face === 'rear' ? rearW : frontW;
+          const x0 = d.x;
           return (
             <g key={`${d.face}:${d.p.id}`}>
-              <rect x={x0 + 2} y={d.y} width={w - 8} height={d.h} rx={4} fill="#1e293b" stroke={side ? paint.selection : '#475569'} strokeWidth={side ? 2 : 1} />
+              <rect x={x0 + 2} y={d.y} width={d.w - 2} height={d.h} rx={4} fill="#1e293b" stroke={side ? paint.selection : '#475569'} strokeWidth={side ? 2 : 1} />
               <text x={x0 + 8} y={d.y + 17} fontSize={12} fontWeight={700} fill="#f8fafc">{`${side ? `[${side}] ` : ''}${d.p.label}`}</text>
               <text x={x0 + 8} y={d.y + 30} fontSize={9} fill="#cbd5e1">
                 <title>{d.device.name}</title>
                 {d.device.name.length > 24 ? `${d.device.name.slice(0, 23)}…` : d.device.name}
               </text>
-              {d.legs.length === 0 && <text x={x0 + LABEL_W} y={d.y + 24} fontSize={10} fill="#94a3b8">{`no ${d.face} ports`}</text>}
+              {d.legs.length === 0 && <text x={x0 + 8} y={d.y + d.h - 4} fontSize={8} fill="#94a3b8">{`no ${d.face} ports`}</text>}
               {d.titles.map((t) => <text key={`${t.x}`} x={t.x} y={t.y} fontSize={9} fontWeight={600} fill="#e2e8f0">{t.text}</text>)}
               {d.ports.map((pt) => (
                 <g key={`${d.face}:${pt.group.id}/${pt.index}`}>
