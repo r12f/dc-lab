@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/cable@1",
   "id": "mmc-smf",
-  "name": "MMC SMF trunk",
+  "name": "MMC-16 (F) to MMC-16 (F) SMF patch (16F, Type B)",
   "type": "fiber-sm",
   "color": "#a3e635",
   "fiberCount": 16,

@@ -5,7 +5,6 @@ import { ModuleLayout } from '../../ui/module-layout';
 import { Sidebar, type SidebarItem } from '../../ui/sidebar';
 import { CanvasFrame, EmptyCanvas } from '../../ui/canvas-frame';
 import { cableTreePlacement, opticTreePlacement } from '../../domain/optics/grouping';
-import { cableSummary } from '../../domain/optics/fiber-map';
 import { fromKey, toKey } from './catalog-ref';
 import { useOpticsCatalog } from './use-optics-catalog';
 import { NewOpticsMenu } from './new-optics-menu';
@@ -45,7 +44,8 @@ export function OpticsModule() {
       return {
         id: toKey({ catalog: 'cable', id: item.id }), name: item.name, ...place,
         keywords: `${item.ends.a.connector} ${item.ends.b.connector} ${item.type} ${item.mapping} ${variantKeywords(lib, item.id)}`,
-        badge: `${cableSummary(item)}${mark(source)}`,
+        // The name already says the ends; only the project marker is shown.
+        badge: mark(source).trim() || undefined,
         children: variantChildren(lib, item.id, path),
       };
     }),

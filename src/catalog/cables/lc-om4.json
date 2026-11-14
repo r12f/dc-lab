@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/cable@1",
   "id": "lc-om4",
-  "name": "LC-LC OM4 duplex",
+  "name": "LC to LC MMF (OM4) duplex patch (2F)",
   "type": "fiber-mm",
   "color": "#22d3ee",
   "fiberCount": 2,

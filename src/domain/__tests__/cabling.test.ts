@@ -34,7 +34,7 @@ describe('in-rack cabling', () => {
     expect(effectiveLengthM(lib, d, { ...run('a', 'b', 'left'), lengthM: 5 })).toBe(5);
     const bom = buildRackBom(lib, { ...d, cables: [run('a', 'b', 'left')] });
     const line = bom.find((l) => l.kind === 'cable')!;
-    expect(line.item).toBe('LC-LC SMF duplex 2 m');
+    expect(line.item).toBe('LC to LC SMF duplex patch (2F) 2 m');
     expect(line.qty).toBe(2);
     expect(line.lengthM).toBe(4);
   });

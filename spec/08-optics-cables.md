@@ -9,7 +9,10 @@ per item (`src/catalog/optics/`, `src/catalog/cables/`); project items are store
 
 - **Sidebar**: one tree, filterable. Top level: `Optic Module / <family> / <speed>`, then one folder per cable
   type — `DAC`, `AEC`, `AOC`, `Power`, `Single-mode fiber (SMF)`, `Multimode fiber (MMF)`, `Other`. DAC / AEC / AOC
-  are sorted by speed (low to high), other cables by name.
+  are sorted by speed (low to high), other cables by name. Cable rows show no ends badge (the name carries it);
+  folders keep their item count.
+- **Fiber cable names** spell out both ends with counts and gender, the fiber type and the cable kind, then
+  fiber count and polarity: `MPO-12 (F) to 4x LC SMF breakout (8F, Type B)`, `20x MPO-8 (M) to 20x MPO-8 (M) SMF trunk (160F, Type B)`.
   - Families, in this order: **OSFP**, **QSFP-DD** (8-lane double density, its own folder), **QSFP**
     (the 4-lane variants QSFP+, QSFP28, QSFP56, QSFP112), **SFP** (SFP+, SFP28…). The exact form factor
     is the item's badge.

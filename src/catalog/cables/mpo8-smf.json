@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/cable@1",
   "id": "mpo8-smf",
-  "name": "MPO-8 SMF patch",
+  "name": "MPO-8 (F) to MPO-8 (F) SMF patch (8F, Type B)",
   "type": "fiber-sm",
   "fiberCount": 8,
   "mapping": "straight",

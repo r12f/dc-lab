@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/cable@1",
   "id": "lc-smf",
-  "name": "LC-LC SMF duplex",
+  "name": "LC to LC SMF duplex patch (2F)",
   "type": "fiber-sm",
   "color": "#fde047",
   "fiberCount": 2,

@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/cable@1",
   "id": "mpo8-4x4-shuffle-smf",
-  "name": "4x MPO-8 4x4 shuffle SMF",
+  "name": "4x MPO-8 (F) to 4x MPO-8 (F) SMF shuffle (32F, Type B)",
   "type": "fiber-sm",
   "fiberCount": 32,
   "mapping": "shuffle",
