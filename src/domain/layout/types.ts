@@ -48,6 +48,14 @@ export interface Facility extends Rect {
   capacityKw?: number;
 }
 
+/** A power feed: a PDU facility supplying `kw` to a row. A row may have feeds from several PDUs. */
+export interface PowerFeed {
+  id: string;
+  facilityId: string;
+  rowId: string;
+  kw: number;
+}
+
 export interface RackAssignment {
   id: string;
   rowId: string;
@@ -70,4 +78,6 @@ export interface DcLayout {
   sequence: string[];
   trays: CableTray[];
   assignments: RackAssignment[];
+  /** PDU -> row power feeds. */
+  feeds: PowerFeed[];
 }

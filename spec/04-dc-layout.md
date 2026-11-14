@@ -11,6 +11,7 @@ south (down), units are millimetres.
 - `facilities[]`: support equipment around the rack area — `kind` (`pdu` | `cooling` | `other`), `name`,
   rectangle `x, y, widthMm, depthMm`, optional `capacityKw`. Placed freely in the room (typically along
   the walls, outside the rack area).
+- `feeds[]`: `{ id, facilityId, rowId, kw }` — PDU-to-row power feeds (older layouts load with none).
 - `rows[]`: `name`, `tileCount`, `tileWidthMm` (pitch along the row), `tileDepthMm` (across the row),
   `powerBudgetKw`, `frontFacing` (`east`/`west` — the side facing the cold aisle). Rows run
   **vertically** (north–south). They have no stored position.
@@ -73,6 +74,12 @@ south (down), units are millimetres.
     re-packs live while dragging. **Drag** a tray onto another aisle to move it there. **Drag** a
     facility to move it freely (snapped to 100 mm, kept inside the room). A click without movement
     just selects.
+  - **Power feeds (PDU → row)**: select a PDU facility to set how many kW it feeds each row (0 = not
+    connected; one feed per PDU-row pair, a row may take feeds from several PDUs). Feeds are drawn as
+    dashed lines from the PDU to the row header, labelled with kW (labels of several feeds into one row
+    stack above its header); selecting the PDU or the row highlights its feeds. A selected row lists its
+    feeds and fed kW vs draw. Warnings: a PDU whose feeds exceed its capacity, a fed row drawing more than
+    it is fed. The DC totals table has a "PDU feed" column. Deleting a PDU or row removes its feeds.
   - Each rack tile shows the design **abbreviation** (large), the rack label and its typical power.
   - Each row header shows `name`, `power / budget` (red when over budget) and `used/total tiles`.
   - **Hover** a rack: tooltip with label, design, rack template, tiles, units used, devices, typical and

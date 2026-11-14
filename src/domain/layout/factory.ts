@@ -7,7 +7,7 @@ export function newLayout(id: string, name: string): DcLayout {
     schema: LAYOUT_SCHEMA, id, name,
     room: { widthMm: 20000, depthMm: 16000 },
     whitespace: { x: 3000, y: 2000, widthMm: 14000, depthMm: 12000 },
-    facilities: [], rows: [], aisles: [], sequence: [], trays: [], assignments: [],
+    facilities: [], rows: [], aisles: [], sequence: [], trays: [], assignments: [], feeds: [],
   };
 }
 

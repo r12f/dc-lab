@@ -6,6 +6,7 @@ import { clampToRoom, snap } from '../../domain/layout/geometry';
 import { reorderTo } from '../../domain/layout/floor-plan';
 import { duplicateElements, type DuplicableKind } from '../../domain/layout/duplicate';
 import { uniqueId } from '../../domain/ids';
+import { pruneFeeds, setFeed } from '../../domain/layout/power-feeds';
 import { useAppStore } from '../../state/store';
 
 type ListName = 'rows' | 'aisles' | 'trays' | 'facilities';
@@ -45,13 +46,15 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
   };
   const removeElement = (list: ListName, id: string) => removeElements(list, [id]);
   const removeElements = (list: ListName, ids: string[]) =>
-    mutate((l) => ({
+    mutate((l) => pruneFeeds({
       ...l,
       [list]: (l[list] as Element[]).filter((e) => !ids.includes(e.id)),
       sequence: l.sequence.filter((x) => !ids.includes(x)),
       trays: l.trays.filter((t) => !ids.includes(t.id) && !(list === 'aisles' && ids.includes(t.aisleId))),
       assignments: list === 'rows' ? l.assignments.filter((a) => !ids.includes(a.rowId)) : l.assignments,
     }));
+  /** Sets how many kW a PDU feeds into a row (0 removes the feed). */
+  const setPowerFeed = (facilityId: string, rowId: string, kw: number) => mutate((l) => setFeed(l, facilityId, rowId, kw));
 
   /** Re-orders a row/aisle so its band centre lands nearest `centerX`. */
   const reorder = (id: string, centerX: number) => mutate((l) => ({ ...l, sequence: reorderTo(l, id, centerX) }));
@@ -86,7 +89,7 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
 
   return {
     addRow, addAisle, addTray, addFacility, updateElement, updateElements, duplicate, removeElement, removeElements, reorder, moveTray, moveFacility,
-    assign, unassign, relabel, setRoom, setWhitespace, rename,
+    assign, unassign, relabel, setRoom, setWhitespace, rename, setPowerFeed,
   };
 }
 

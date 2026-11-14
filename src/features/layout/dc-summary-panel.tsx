@@ -20,7 +20,7 @@ export function DcSummaryPanel({ lib, designs, layout }: { lib: Library; designs
           { label: 'Weight', value: formatWeight(m.weightKg) },
         ]} />
         <table className="table">
-          <thead><tr><th>Row</th><th className="num">Tiles</th><th className="num">Power / budget</th></tr></thead>
+          <thead><tr><th>Row</th><th className="num">Tiles</th><th className="num">Power / budget</th><th className="num">PDU feed</th></tr></thead>
           <tbody>
             {m.rows.map((r) => {
               const row = layout.rows.find((x) => x.id === r.rowId);
@@ -29,6 +29,7 @@ export function DcSummaryPanel({ lib, designs, layout }: { lib: Library; designs
                   <td>{row?.name}</td>
                   <td className="num">{`${formatTiles(r.tilesUsed)} / ${row?.tileCount ?? 0}`}</td>
                   <td className="num">{`${formatPower(r.typicalW)} / ${formatPower(r.budgetW)}`}</td>
+                  <td className="num">{r.suppliedKw ? `${r.suppliedKw} kW` : '—'}</td>
                 </tr>
               );
             })}

@@ -5,12 +5,15 @@ import { BomBuilder } from '../bom/bom-builder';
 import type { BomLine } from '../bom/types';
 import type { DcLayout } from './types';
 import { tileWidthOf, type DesignLookup } from './tiles';
+import { feedWarnings, rowSupplyKw } from './power-feeds';
 
 export interface RowMetrics {
   rowId: string;
   tilesUsed: number;
   typicalW: number;
   budgetW: number;
+  /** kW fed by PDUs (0 = no feeds). */
+  suppliedKw: number;
 }
 
 export interface DcMetrics {
@@ -32,7 +35,7 @@ export function computeDcMetrics(lib: Library, designs: DesignLookup, layout: Dc
   };
   const m: DcMetrics = { rackCount: 0, typicalW: 0, maxW: 0, weightKg: 0, rows: [], warnings: [] };
   for (const row of layout.rows) {
-    const r: RowMetrics = { rowId: row.id, tilesUsed: 0, typicalW: 0, budgetW: row.powerBudgetKw * 1000 };
+    const r: RowMetrics = { rowId: row.id, tilesUsed: 0, typicalW: 0, budgetW: row.powerBudgetKw * 1000, suppliedKw: rowSupplyKw(layout, row.id) };
     for (const a of layout.assignments.filter((x) => x.rowId === row.id)) {
       const rm = metricsOf(a.designId);
       if (!rm) {
@@ -49,6 +52,7 @@ export function computeDcMetrics(lib: Library, designs: DesignLookup, layout: Dc
     if (r.typicalW > r.budgetW) m.warnings.push(`${row.name}: ${(r.typicalW / 1000).toFixed(1)} kW exceeds ${row.powerBudgetKw} kW budget`);
     m.rows.push(r);
   }
+  m.warnings.push(...feedWarnings(layout, new Map(m.rows.map((r) => [r.rowId, r.typicalW]))));
   return m;
 }
 

@@ -1,3 +1,4 @@
+import { FeedLines } from './feed-lines';
 import { useState, type Ref } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { DcLayout } from '../../domain/layout/types';
@@ -96,6 +97,8 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
             </g>
           );
         })}
+        <FeedLines layout={layout} plan={plan}
+          highlight={(fid, rid) => isSel('facility', fid) || isSel('row', rid)} />
         {layout.trays.map((t) => {
           const rect = trayRect(plan, t);
           return rect && (
