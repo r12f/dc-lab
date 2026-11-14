@@ -1,0 +1,32 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "patch-panel-1u-144f",
+  "name": "1U 144F Patch Panel",
+  "vendor": "Generic",
+  "model": "1U 144F Patch Panel",
+  "category": "patch-panel",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 300,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [
+    {
+      "id": "mpo",
+      "label": "MPO",
+      "connector": "MPO-12",
+      "count": 12,
+      "speedGbps": 0,
+      "lanes": 12,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": []
+}

@@ -1,0 +1,22 @@
+{
+  "id": "network-48ru-800",
+  "name": "Network Rack 48RU 800mm",
+  "kind": "network",
+  "units": 48,
+  "unitSystem": "RU",
+  "widthMm": 800,
+  "depthMm": 1200,
+  "heightMm": 2260,
+  "footprintTiles": {
+    "wide": 2,
+    "deep": 2
+  },
+  "emptyWeightKg": 180,
+  "maxLoadKg": 1500,
+  "maxPowerW": 34600,
+  "sidePods": {
+    "left": 4,
+    "right": 4
+  },
+  "schema": "dc-lab/rack@1"
+}

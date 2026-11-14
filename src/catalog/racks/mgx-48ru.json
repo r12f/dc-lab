@@ -1,0 +1,22 @@
+{
+  "id": "mgx-48ru",
+  "name": "MGX Rack 48RU",
+  "kind": "mgx",
+  "units": 48,
+  "unitSystem": "RU",
+  "widthMm": 600,
+  "depthMm": 1200,
+  "heightMm": 2260,
+  "footprintTiles": {
+    "wide": 1,
+    "deep": 2
+  },
+  "emptyWeightKg": 170,
+  "maxLoadKg": 1500,
+  "maxPowerW": 40000,
+  "sidePods": {
+    "left": 2,
+    "right": 2
+  },
+  "schema": "dc-lab/rack@1"
+}

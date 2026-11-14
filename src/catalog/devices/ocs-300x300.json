@@ -1,0 +1,32 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "ocs-300x300",
+  "name": "300x300 Optical Circuit Switch",
+  "vendor": "Generic",
+  "model": "300x300 Optical Circuit Switch",
+  "category": "ocs",
+  "height": {
+    "units": 7,
+    "system": "RU"
+  },
+  "depthMm": 800,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [
+    {
+      "id": "lc",
+      "label": "LC duplex",
+      "connector": "LC",
+      "count": 300,
+      "speedGbps": 0,
+      "lanes": 2,
+      "face": "front",
+      "rows": 6,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": []
+}

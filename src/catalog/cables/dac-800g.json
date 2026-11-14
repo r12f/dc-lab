@@ -1,0 +1,8 @@
+{
+  "id": "dac-800g",
+  "name": "800G OSFP DAC",
+  "type": "copper-dac",
+  "connector": "OSFP",
+  "color": "#94a3b8",
+  "schema": "dc-lab/cable@1"
+}

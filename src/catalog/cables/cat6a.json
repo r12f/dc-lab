@@ -1,0 +1,8 @@
+{
+  "id": "cat6a",
+  "name": "Cat6A patch",
+  "type": "other",
+  "connector": "RJ45",
+  "color": "#60a5fa",
+  "schema": "dc-lab/cable@1"
+}

@@ -1,0 +1,33 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "pdu-1u-horizontal",
+  "name": "1U Horizontal PDU",
+  "vendor": "Generic",
+  "model": "1U Horizontal PDU",
+  "category": "pdu",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 300,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0,
+    "capacityW": 7400
+  },
+  "ports": [
+    {
+      "id": "c13",
+      "label": "C13",
+      "connector": "C13",
+      "count": 16,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "rear",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": []
+}

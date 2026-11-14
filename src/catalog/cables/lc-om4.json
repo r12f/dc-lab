@@ -1,0 +1,8 @@
+{
+  "id": "lc-om4",
+  "name": "LC-LC OM4 duplex",
+  "type": "fiber-mm",
+  "connector": "LC",
+  "color": "#22d3ee",
+  "schema": "dc-lab/cable@1"
+}

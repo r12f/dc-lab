@@ -1,0 +1,44 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "pdu-vertical-3ph",
+  "name": "Vertical PDU 3-phase 0U",
+  "vendor": "Generic",
+  "model": "Vertical PDU 3-phase 0U",
+  "category": "pdu",
+  "height": {
+    "units": 0,
+    "system": "RU"
+  },
+  "depthMm": 60,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0,
+    "capacityW": 17300
+  },
+  "ports": [
+    {
+      "id": "c13",
+      "label": "C13",
+      "connector": "C13",
+      "count": 36,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "c19",
+      "label": "C19",
+      "connector": "C19",
+      "count": 6,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": []
+}

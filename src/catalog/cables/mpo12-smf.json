@@ -1,0 +1,8 @@
+{
+  "id": "mpo12-smf",
+  "name": "MPO-12 SMF trunk",
+  "type": "fiber-sm",
+  "connector": "MPO-12",
+  "color": "#facc15",
+  "schema": "dc-lab/cable@1"
+}

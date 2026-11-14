@@ -1,0 +1,11 @@
+{
+  "id": "qsfp28-100g-sr4",
+  "name": "100G QSFP28 SR4",
+  "vendor": "Generic",
+  "connector": "QSFP28",
+  "speedGbps": 100,
+  "media": "SR4",
+  "reachM": 100,
+  "powerW": 0,
+  "schema": "dc-lab/optic@1"
+}

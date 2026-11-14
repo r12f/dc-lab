@@ -1,0 +1,45 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "server-1u-compute",
+  "name": "1U Compute Server",
+  "vendor": "Generic",
+  "model": "1U Compute Server",
+  "category": "server",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 750,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [
+    {
+      "id": "nic",
+      "label": "NIC",
+      "connector": "QSFP28",
+      "count": 2,
+      "speedGbps": 100,
+      "lanes": 4,
+      "face": "rear",
+      "rows": 1,
+      "breakoutModes": [
+        "4x25G"
+      ]
+    },
+    {
+      "id": "bmc",
+      "label": "BMC",
+      "connector": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "rear",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": []
+}

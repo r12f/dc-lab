@@ -1,0 +1,22 @@
+{
+  "id": "orv3-44ou",
+  "name": "ORv3 Rack 44OU",
+  "kind": "orv3",
+  "units": 44,
+  "unitSystem": "OU",
+  "widthMm": 600,
+  "depthMm": 1068,
+  "heightMm": 2287,
+  "footprintTiles": {
+    "wide": 1,
+    "deep": 2
+  },
+  "emptyWeightKg": 160,
+  "maxLoadKg": 1400,
+  "maxPowerW": 33000,
+  "sidePods": {
+    "left": 0,
+    "right": 0
+  },
+  "schema": "dc-lab/rack@1"
+}

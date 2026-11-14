@@ -1,0 +1,21 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "power-shelf-33kw-ou",
+  "name": "33kW Power Shelf",
+  "vendor": "Generic",
+  "model": "33kW Power Shelf",
+  "category": "power-shelf",
+  "height": {
+    "units": 1,
+    "system": "OU"
+  },
+  "depthMm": 800,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0,
+    "capacityW": 33000
+  },
+  "ports": [],
+  "breakoutProfiles": []
+}

@@ -1,0 +1,56 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "switch-32x400g-qsfpdd",
+  "name": "32x400G QSFP-DD Switch",
+  "vendor": "Generic",
+  "model": "32x400G QSFP-DD Switch",
+  "category": "switch",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 600,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [
+    {
+      "id": "qsfpdd",
+      "label": "QSFP-DD",
+      "connector": "QSFP-DD",
+      "count": 32,
+      "speedGbps": 400,
+      "lanes": 8,
+      "face": "front",
+      "rows": 2,
+      "breakoutModes": [
+        "2x200G",
+        "4x100G",
+        "8x50G"
+      ]
+    },
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "connector": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": [
+    {
+      "id": "leaf-4x100g",
+      "name": "All 4x100G",
+      "groupDefaults": {
+        "qsfpdd": "4x100G"
+      },
+      "overrides": {}
+    }
+  ]
+}

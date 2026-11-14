@@ -1,0 +1,60 @@
+import type { Library } from '../../domain/library/Library';
+import type { Aisle, CableTray, DcLayout, Row } from '../../domain/layout/types';
+import { newAisle, newRow, newTray } from '../../domain/layout/factory';
+import { assignmentProblem, type DesignLookup } from '../../domain/layout/tiles';
+import { uniqueId } from '../../domain/ids';
+import { useAppStore } from '../../state/store';
+
+type ListName = 'rows' | 'aisles' | 'trays';
+type Element = Row | Aisle | CableTray;
+
+/** Commands on one DC layout. */
+export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcLayout | undefined) {
+  const update = useAppStore((s) => s.update);
+  const mutate = (fn: (l: DcLayout) => DcLayout) => layout && update('layouts', layout.id, fn);
+
+  const nextY = (l: DcLayout) =>
+    Math.max(600, ...[...l.rows.map((r) => r.y + r.tileDepthMm), ...l.aisles.map((a) => a.y + a.depthMm),
+      ...l.trays.map((t) => t.y + t.depthMm)]);
+
+  const addRow = () => mutate((l) => {
+    const id = uniqueId('row', l.rows.map((r) => r.id));
+    return { ...l, rows: [...l.rows, newRow(id, `Row ${l.rows.length + 1}`, nextY(l))] };
+  });
+  const addAisle = () => mutate((l) => ({ ...l, aisles: [...l.aisles, newAisle(uniqueId('aisle', l.aisles.map((a) => a.id)), nextY(l))] }));
+  const addTray = () => mutate((l) => ({ ...l, trays: [...l.trays, newTray(uniqueId('tray', l.trays.map((a) => a.id)), nextY(l))] }));
+
+  function updateElement<T extends Element>(list: ListName, id: string, patch: Partial<T>) {
+    mutate((l) => ({ ...l, [list]: (l[list] as Element[]).map((e) => (e.id === id ? { ...e, ...patch } : e)) }));
+  }
+  const removeElement = (list: ListName, id: string) =>
+    mutate((l) => ({
+      ...l,
+      [list]: (l[list] as Element[]).filter((e) => e.id !== id),
+      assignments: list === 'rows' ? l.assignments.filter((a) => a.rowId !== id) : l.assignments,
+    }));
+
+  /** Assigns a design to a tile; returns an error message on failure. */
+  const assign = (rowId: string, startTile: number, designId: string): string | undefined => {
+    const row = layout?.rows.find((r) => r.id === rowId);
+    if (!layout || !row) return 'Unknown row';
+    const problem = assignmentProblem(lib, designs, layout, row, startTile, designId);
+    if (problem) return problem;
+    mutate((l) => {
+      const id = uniqueId('r', l.assignments.map((a) => a.id));
+      const label = `${row.name.replace(/\s+/g, '')}-${String(startTile + 1).padStart(2, '0')}`;
+      return { ...l, assignments: [...l.assignments, { id, rowId, startTile, designId, label }] };
+    });
+    return undefined;
+  };
+  const unassign = (id: string) => mutate((l) => ({ ...l, assignments: l.assignments.filter((a) => a.id !== id) }));
+  const relabel = (id: string, label: string) =>
+    mutate((l) => ({ ...l, assignments: l.assignments.map((a) => (a.id === id ? { ...a, label } : a)) }));
+
+  const setRoom = (room: DcLayout['room']) => mutate((l) => ({ ...l, room }));
+  const rename = (name: string) => mutate((l) => ({ ...l, name }));
+
+  return { addRow, addAisle, addTray, updateElement, removeElement, assign, unassign, relabel, setRoom, rename };
+}
+
+export type LayoutEditor = ReturnType<typeof useLayoutEditor>;

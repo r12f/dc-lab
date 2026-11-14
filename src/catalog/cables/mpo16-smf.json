@@ -1,0 +1,8 @@
+{
+  "id": "mpo16-smf",
+  "name": "MPO-16 SMF trunk",
+  "type": "fiber-sm",
+  "connector": "MPO-16",
+  "color": "#eab308",
+  "schema": "dc-lab/cable@1"
+}

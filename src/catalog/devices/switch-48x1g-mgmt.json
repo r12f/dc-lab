@@ -1,0 +1,45 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "switch-48x1g-mgmt",
+  "name": "48x1GbE Management Switch",
+  "vendor": "Generic",
+  "model": "48x1GbE Management Switch",
+  "category": "switch",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 300,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [
+    {
+      "id": "rj45",
+      "label": "RJ45",
+      "connector": "RJ45",
+      "count": 48,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 2,
+      "breakoutModes": []
+    },
+    {
+      "id": "sfp",
+      "label": "SFP28",
+      "connector": "SFP28",
+      "count": 4,
+      "speedGbps": 25,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": [
+        "1x10G"
+      ]
+    }
+  ],
+  "breakoutProfiles": []
+}

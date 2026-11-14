@@ -1,0 +1,22 @@
+{
+  "id": "network-42ru-600",
+  "name": "Network Rack 42RU 600mm",
+  "kind": "network",
+  "units": 42,
+  "unitSystem": "RU",
+  "widthMm": 600,
+  "depthMm": 1200,
+  "heightMm": 2000,
+  "footprintTiles": {
+    "wide": 1,
+    "deep": 2
+  },
+  "emptyWeightKg": 150,
+  "maxLoadKg": 1360,
+  "maxPowerW": 17300,
+  "sidePods": {
+    "left": 2,
+    "right": 2
+  },
+  "schema": "dc-lab/rack@1"
+}
