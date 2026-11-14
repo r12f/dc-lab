@@ -23,8 +23,8 @@ A single JSON file (`*.dclab.json`):
 - Ctrl+S = Save, Ctrl+Shift+S = Save As, Ctrl+O = Open. The current file name is shown in the top bar.
 - File access uses the browser File System Access API (Chrome / Edge). Browsers without it
   (Firefox, Safari) fall back to opening with an upload dialog and saving as a download.
-- **Import** merges a project file's (or a single item file's)
-  devices / racks / optics / cable media into the current project (same id = replaced).
+- **Open** is a clean start: the current project (and its unsaved changes) is replaced by the file, with no
+  prompt; Save then writes to that file. There is no Import (merge) action.
 - The working project is also autosaved to `localStorage`.
 
 `hiddenBuiltins` is kept for file compatibility and always loads empty: built-in items cannot be deleted, and

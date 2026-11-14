@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 
 const when = (ms: number) => new Date(ms).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
 
-/** ▾ next to Import: recently opened / saved local project files; picking one opens it. */
+/** ▾ next to Open: recently opened / saved local project files; picking one opens it. */
 export function RecentFilesMenu({ onOpen }: { onOpen(handle: FileSystemFileHandle): void }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<RecentFile[]>([]);

@@ -17,7 +17,7 @@ html, body, #root { height: 100%; margin: 0; }
 .tabs button.active { color: var(--tab-focused-fg); background: var(--tab-focused-bg); font-weight: 700; }
 .spacer { flex: 1; }
 .project-menu { display: flex; gap: 6px; align-items: center; }
-/* Button + caret drop-down (Import ▾ recent files). */
+/* Button + caret drop-down (Open ▾ recent files). */
 .split-btn { display: inline-flex; }
 .split-btn > .btn:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
 .split-btn .btn-caret { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: -1px; padding-left: 6px; padding-right: 6px; }

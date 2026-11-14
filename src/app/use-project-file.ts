@@ -5,7 +5,6 @@ import { parseProjectFile, serializeProject } from '../domain/project/serializer
 import { slugify } from '../domain/ids';
 import { projectFiles } from '../io/gateway';
 import { isAbort } from '../io/file-gateway';
-import { pickTextFile } from '../io/download';
 import { forgetFile, loadCurrentFile, readRecent, rememberFile, storeCurrentFile, supportsRecentFiles } from '../io/recent-files';
 
 /** Handle behind a file ref (File System Access API only). */
@@ -19,13 +18,12 @@ function report(e: unknown, action: string) {
   if (!isAbort(e)) alert(`${action} failed: ${(e as Error).message}`);
 }
 
-/** Project file commands: New, Open, Import, Save, Save As. */
+/** Project file commands: New, Open (+ recent), Save, Save As. */
 export function useProjectFile() {
   const project = useAppStore((s) => s.project);
   const file = useAppStore((s) => s.file);
   const dirty = useAppStore((s) => s.project !== s.savedProject);
   const setProject = useAppStore((s) => s.setProject);
-  const importProject = useAppStore((s) => s.importProject);
   const bindFile = useAppStore((s) => s.bindFile);
 
   // The bound file survives reloads (the project itself comes back from autosave): Save keeps writing to it
@@ -52,8 +50,8 @@ export function useProjectFile() {
     bindFile(undefined, p);
   };
 
+  // Open replaces the current project with the file (a clean start, no prompt); Save then writes to that file.
   const open = async () => {
-    if (!confirmDiscard()) return;
     try {
       const opened = await projectFiles.open();
       if (!opened) return;
@@ -68,7 +66,6 @@ export function useProjectFile() {
 
   /** Opens a previously used local file (from the recent list); Save then writes back to it. */
   const openRecent = async (handle: FileSystemFileHandle) => {
-    if (!confirmDiscard()) return;
     try {
       const p = parseProjectFile(await readRecent(handle));
       setProject(p);
@@ -80,16 +77,6 @@ export function useProjectFile() {
         alert(`${handle.name} no longer exists; removed from the recent list.`);
         void forgetFile(handle).catch(() => undefined);
       } else report(e, 'Open');
-    }
-  };
-
-  const importFile = async () => {
-    const picked = await pickTextFile();
-    if (!picked) return;
-    try {
-      importProject(parseProjectFile(picked.text));
-    } catch (e) {
-      report(e, 'Import');
     }
   };
 
@@ -112,5 +99,5 @@ export function useProjectFile() {
     }
   };
 
-  return { file, dirty, newProject, open, openRecent, importFile, save, saveAs: () => saveAs() };
+  return { file, dirty, newProject, open, openRecent, save, saveAs: () => saveAs() };
 }

@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { useProjectFile } from './use-project-file';
 import { RecentFilesMenu } from './recent-files-menu';
 
-/** Project name, bound file, and New / Open / Import / Save / Save As. */
+/** Project name, bound file, and New / Open ▾ (recent files) / Save / Save As. */
 export function ProjectMenu() {
   const name = useAppStore((s) => s.project.name);
   const renameProject = useAppStore((s) => s.renameProject);
@@ -33,9 +33,8 @@ export function ProjectMenu() {
         {`${pf.file?.name ?? 'unsaved'}${pf.dirty ? ' •' : ''}`}
       </span>
       <Button onClick={pf.newProject}>New</Button>
-      <Button onClick={() => void pf.open()} title="Open a project file (Ctrl+O)">Open</Button>
       <span className="split-btn">
-        <Button onClick={() => void pf.importFile()} title="Merge a project or single device/rack file">Import</Button>
+        <Button onClick={() => void pf.open()} title="Open a project file (Ctrl+O)">Open</Button>
         <RecentFilesMenu onOpen={(h) => void pf.openRecent(h)} />
       </span>
       <Button variant="primary" onClick={() => void pf.save()} title="Save (Ctrl+S)">Save</Button>

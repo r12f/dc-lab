@@ -17,7 +17,7 @@ built-in catalog), [06-architecture.md](06-architecture.md) (code structure) and
 
 ## UI shell
 
-- **Top tab bar** selects the module. Project actions (New / Open / Import / Save / Save As) and the theme picker live on the right of the bar.
+- **Top tab bar** selects the module. Project actions (New / Open ▾ / Save / Save As) and the theme picker live on the right of the bar.
 - **Left sidebar** in every module lists the module's items (built-in and project), grouped, with **+ New**, then **Duplicate** (⧉) and **Delete** (✕) in its header; the icon buttons act on the selected item and are disabled when nothing is selected.
 - **Main canvas** is an SVG drawing of the selected item. Every canvas supports **Export SVG**.
 - **Right inspector** edits the selected item / sub-item.
@@ -50,9 +50,9 @@ drawing color — ports, roles, phases, cables, aisles, trays, facilities, infra
 are violet, power items slate). Enforced by `no-alert-colors.test.ts` over drawing sources and the cable catalog.
 Ports carry no color bar: index, form factor + breakout, connector / reach cells only.
 
-**Recent files**: **Import ▾** — the caret next to Import lists recently opened / saved local project files
+**Recent files**: **Open ▾** — the caret next to Open lists recently opened / saved local project files
 (newest first, up to 10, with last-used time; "Clear list"). Picking one **opens** it (replaces the current
-project after the unsaved-changes prompt) and binds Save to it. Browsers expose no file path, so the list keeps
+project, no prompt) and binds Save to it. Browsers expose no file path, so the list keeps
 the files' File System Access handles in IndexedDB (`dc-lab` / `recent-files`); the browser asks for read
 permission once per session. A file that no longer exists is dropped from the list. Chromium only (the caret is
 disabled elsewhere).
