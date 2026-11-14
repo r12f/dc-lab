@@ -24,7 +24,7 @@ export type DeviceCategory =
 
 export type PortFace = 'front' | 'rear';
 
-export type PortRole = 'data' | 'mgmt' | 'console' | 'service' | 'laser' | 'outlet';
+export type PortRole = 'data' | 'mgmt' | 'console' | 'service' | 'laser' | 'outlet' | 'inlet';
 
 export type OpticalEngine = 'cpo' | 'npo';
 

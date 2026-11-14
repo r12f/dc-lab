@@ -121,3 +121,10 @@ the port's form factor and mode are in its tooltip.
 
 **Delete device**: the canvas toolbar has "✕ Delete <label>" next to Export SVG, enabled when a device is
 selected; the Delete / Backspace key does the same (ignored while typing in a field).
+
+**No face toggle**: the elevation draws front and rear side by side (drop / drag on either; the mount face is
+the panel under the pointer). The cabling view also shows **front and rear side by side**, each device on one
+line across both, so a rear port can be cabled to a front one. Power is cabled there too: PDU **outlets**
+(C13 / C19) and each device's **PSU inlets** (`psu/1..n`, derived from `psus`, form factor = inlet C14 / C20;
+busbar-fed devices have none). IEC power connectors mate only with their counterpart (C13↔C14, C19↔C20);
+built-in cords: C13-C14, C19-C20.

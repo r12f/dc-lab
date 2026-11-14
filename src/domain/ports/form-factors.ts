@@ -38,6 +38,8 @@ export const FORM_FACTORS: FormFactorSpec[] = [
   spec('RJ45', 'copper'),
   spec('C13', 'power'),
   spec('C19', 'power'),
+  spec('C14', 'power'),
+  spec('C20', 'power'),
 ];
 
 export function formFactorSpec(id: string): FormFactorSpec {

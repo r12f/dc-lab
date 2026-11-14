@@ -17,6 +17,7 @@ export const ROLE_COLORS: Record<PortRole, string> = {
   console: '#fef3c7',
   laser: '#ffe4e6',
   outlet: '#e5e7eb',
+  inlet: '#e5e7eb',
 };
 
 export const PHASE_COLORS: Record<Phase, string> = {

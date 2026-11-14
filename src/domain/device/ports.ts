@@ -14,8 +14,27 @@ export function parsePortRef(text: string): PortRef | undefined {
   return m ? { groupId: m[1], index: Number(m[2]) } : undefined;
 }
 
+/** Port group id of a device's PSU power inlets (derived from `psus`, not stored in `ports`). */
+export const PSU_GROUP_ID = 'psu';
+
+/**
+ * The PSU power inlets as a rear port group ("psu/1".."psu/n", form factor = inlet, e.g. C14 / C20), so power
+ * cords connect like any other cable. Busbar-fed devices have no cordable inlet.
+ */
+export function powerInletGroup(device: DeviceDefinition): PortGroup | undefined {
+  const p = device.psus;
+  if (!p || p.count <= 0 || !p.inlet || /busbar/i.test(p.inlet)) return undefined;
+  return { id: PSU_GROUP_ID, label: 'PSU', role: 'inlet', formFactor: p.inlet, count: p.count, speedGbps: 0, lanes: 0, face: 'rear', rows: 1, breakoutModes: [] };
+}
+
 export function findGroup(device: DeviceDefinition, groupId: string): PortGroup | undefined {
-  return device.ports.find((g) => g.id === groupId);
+  return device.ports.find((g) => g.id === groupId) ?? (groupId === PSU_GROUP_ID ? powerInletGroup(device) : undefined);
+}
+
+/** Every cable-connectable group on a face: the device's port groups plus its PSU inlets (rear). */
+export function cableGroupsOnFace(device: DeviceDefinition, face: PortFace): PortGroup[] {
+  const inlets = powerInletGroup(device);
+  return [...groupsOnFace(device, face), ...(inlets && inlets.face === face ? [inlets] : [])];
 }
 
 /** Every port reference of a device, in group order. */

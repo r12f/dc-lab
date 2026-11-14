@@ -4,7 +4,8 @@ import { emptyProject } from '../project/types';
 import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import { newDesign } from '../design/factory';
 import { newPlacement } from '../design/placement';
-import { placementConnectors, planAssignments, splitSelection } from '../design/cable-assign';
+import { applicableCables, placementConnectors, planAssignments, planCable, splitSelection } from '../design/cable-assign';
+import { findGroup, PSU_GROUP_ID } from '../device/ports';
 
 const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
 const d = newDesign('d', 'D', 'network-42ru-600');
@@ -21,8 +22,23 @@ describe('cabling view assignment', () => {
     const dev = lib.devices.get('switch-32x400g-qsfpdd')!;
     const rearPorts = dev.ports.filter((g) => g.face === 'rear').reduce((n, g) => n + g.count, 0);
     const front = placementConnectors(lib, d, d.placements[2], 'front');
-    expect(front.every((e) => dev.ports.find((g) => e.portRef.startsWith(`${g.id}/`))?.face === 'rear')).toBe(true);
+    expect(front.every((e) => findGroup(dev, e.portRef.split('/')[0])?.face === 'rear')).toBe(true);
     expect(front.length >= rearPorts).toBe(true);
+    // PSU inlets are rear connectors too.
+    expect(front.filter((e) => e.portRef.startsWith(`${PSU_GROUP_ID}/`))).toHaveLength(dev.psus!.count);
+  });
+  it('power: PDU C13 outlet + device C14 PSU inlet take a C13-C14 cord; data cables do not fit', () => {
+    const pdu = { ...newPlacement('pdu', 'pdu-vertical-3ph', 'PDU1', { kind: 'rack', position: 30, face: 'rear' }) };
+    const dd = { ...d, placements: [...d.placements, pdu] };
+    const outlet = { placementId: 'pdu', portRef: `${lib.devices.get('pdu-vertical-3ph')!.ports.find((g) => g.formFactor === 'C13')!.id}/1` };
+    const inlet = { placementId: dd.placements[0].id, portRef: `${PSU_GROUP_ID}/1` };
+    const fits = applicableCables(lib, dd, [outlet], [inlet]).map((m) => m.id);
+    expect(fits).toEqual(['power-c13-c14']);
+    // The cord's C13 end plugs into the C14 inlet, its C14 end into the C13 outlet.
+    const direct = planCable(lib, dd, [inlet], [outlet], 'power-c13-c14', 'left');
+    expect(direct.error).toBeUndefined();
+    expect(direct.reversed).toBeFalsy();
+    expect(planCable(lib, dd, [outlet], [inlet], 'power-c13-c14', 'left').reversed).toBe(true);
   });
   it('repeats a cable: 10 A + 10 B connectors with a 1:1 cable = 10 runs paired in order', () => {
     const a = placementConnectors(lib, d, d.placements[0], 'front').slice(0, 10);

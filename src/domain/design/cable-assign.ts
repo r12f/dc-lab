@@ -1,6 +1,6 @@
 import type { Library } from '../library/library';
 import type { PortFace } from '../device/types';
-import { groupsOnFace, formatPortRef } from '../device/ports';
+import { cableGroupsOnFace, findGroup, formatPortRef } from '../device/ports';
 import { endpointLegs } from './connectors';
 import { estimateLengthM } from './cabling';
 import type { CableEndpoint, CableRoute, CableRun, Placement, RackDesign } from './types';
@@ -28,7 +28,7 @@ export function placementConnectors(lib: Library, design: RackDesign, placement:
   const device = lib.devices.get(placement.deviceId);
   if (!device) return [];
   const out: CableEndpoint[] = [];
-  for (const g of groupsOnFace(device, deviceFaceSeenFrom(placement, face))) {
+  for (const g of cableGroupsOnFace(device, deviceFaceSeenFrom(placement, face))) {
     for (let i = 1; i <= g.count; i++) {
       const portRef = formatPortRef({ groupId: g.id, index: i });
       const legs = endpointLegs(lib, design, placement.id, portRef);
@@ -100,7 +100,7 @@ export function endpointLeg(lib: Library, design: RackDesign, ep: CableEndpoint)
   const p = design.placements.find((x) => x.id === ep.placementId);
   const d = p && lib.devices.get(p.deviceId);
   const ref = parsePortRef(ep.portRef);
-  const g = d && ref && d.ports.find((x) => x.id === ref.groupId);
+  const g = d && ref && findGroup(d, ref.groupId);
   if (!p || !d || !g) return undefined;
   const legs = portLegs(g, resolvePlacedPort(lib, d, p, ep.portRef));
   return ep.connector ? legs[ep.connector - 1] : legs[0];
@@ -141,9 +141,9 @@ export function planCable(lib: Library, design: RackDesign, a: CableEndpoint[], 
   return { runs: [], error: `${media.name} does not fit the selected connectors` };
 }
 
-/** Cables that can be assigned over the selection (all non-power cables when nothing is selected). */
+/** Cables that can be assigned over the selection (all cables when nothing is selected). */
 export function applicableCables(lib: Library, design: RackDesign, a: CableEndpoint[], b: CableEndpoint[]): CableMedia[] {
-  const all = lib.cableMedia.items().filter((m) => m.type !== 'power');
+  const all = lib.cableMedia.items();
   if (a.length === 0 && b.length === 0) return all;
   return all.filter((m) => !planCable(lib, design, a, b, m.id, 'left').error);
 }

@@ -1,0 +1,18 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "power-c19-c20",
+  "name": "C19-C20 power cord",
+  "type": "power",
+  "color": "#111827",
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "C19"
+    },
+    "b": {
+      "count": 1,
+      "connector": "C20"
+    }
+  },
+  "mapping": "straight"
+}

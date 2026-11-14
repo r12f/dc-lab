@@ -5,7 +5,6 @@ import { newDesign } from '../../domain/design/factory';
 import { slugify, uniqueId } from '../../domain/ids';
 import { computeRackMetrics } from '../../domain/design/metrics';
 import { formatPower } from '../../domain/units';
-import type { PortFace } from '../../domain/device/types';
 import { ModuleLayout } from '../../ui/module-layout';
 import { Sidebar } from '../../ui/sidebar';
 import { CanvasFrame, EmptyCanvas } from '../../ui/canvas-frame';
@@ -26,7 +25,6 @@ export function DesignerModule() {
   const upsert = useAppStore((s) => s.upsert);
   const remove = useAppStore((s) => s.remove);
   const [creating, setCreating] = useState(false);
-  const [face, setFace] = useState<PortFace>('front');
   const [view, setView] = useState<'elevation' | 'cabling'>('elevation');
   const [placementId, setPlacementId] = useState<string>();
   const [cableId, setCableId] = useState<string>();
@@ -105,16 +103,13 @@ export function DesignerModule() {
         design ? (
           <CanvasFrame
             title={design.name}
-            exportName={`${design.id}-${view === 'cabling' ? 'cabling-' : ''}${face}`}
+            exportName={`${design.id}-${view}`}
             toolbar={
               <>
                 {message && <span className="toolbar-msg">{message}</span>}
                 {issueCount > 0 && <span className="toolbar-msg error" title="Marked in red on the rack">{`⚠ ${issueCount} problem${issueCount > 1 ? 's' : ''}`}</span>}
                 <Button variant={view === 'elevation' ? 'primary' : 'default'} onClick={() => setView('elevation')}>Elevation</Button>
                 <Button variant={view === 'cabling' ? 'primary' : 'default'} onClick={() => setView('cabling')}>Cabling</Button>
-                <span className="toolbar-sep" />
-                <Button variant={face === 'front' ? 'primary' : 'default'} onClick={() => setFace('front')}>Front</Button>
-                <Button variant={face === 'rear' ? 'primary' : 'default'} onClick={() => setFace('rear')}>Rear</Button>
                 <span className="toolbar-sep" />
                 <Button variant="danger" disabled={!selectedPlacement} onClick={deleteSelected}
                   title={selectedPlacement ? `Delete ${selectedPlacement.label} (Del)` : 'Select a device to delete it'}>
@@ -124,14 +119,13 @@ export function DesignerModule() {
             }
           >
             {(ref) => view === 'cabling' ? (
-              <CablingView ref={ref} lib={lib} design={design} editor={editor} face={face}
+              <CablingView ref={ref} lib={lib} design={design} editor={editor}
                 onSelectCable={(id) => { setCableId(id); if (id) { setPlacementId(undefined); setTab('cables'); } }} />
             ) : (
               <RackElevation
                 ref={ref}
                 lib={lib}
                 design={design}
-                face={face}
                 selectedId={placementId}
                 onSelect={(id) => { setPlacementId(id); if (id) setCableId(undefined); }}
                 selectedCableId={cableId}

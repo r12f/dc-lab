@@ -13,6 +13,7 @@ export const ROLE_TRAITS: Record<PortRole, RoleTraits> = {
   console: { label: 'Console', pluggable: false },
   laser: { label: 'Laser source', pluggable: false },
   outlet: { label: 'Power outlet', pluggable: false },
+  inlet: { label: 'Power inlet', pluggable: false },
 };
 
 export const PORT_ROLES = Object.keys(ROLE_TRAITS) as PortRole[];
