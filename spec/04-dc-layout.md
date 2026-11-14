@@ -58,8 +58,11 @@ south (down), units are millimetres.
     of the same kind. The inspector also offers group selections (all rows, cold aisles, hot aisles, all
     trays, facilities). With several selected, the inspector edits them together: a changed field is
     applied to all; fields that differ show "mixed".
-  - **Duplicate**: a row copy (with its racks, relabelled) and an aisle copy are inserted right after the
-    original; a tray copy goes over the next aisle east that has no tray of that kind; a facility copy is
+  - **Hit testing**: trays are overhead, drawn over their aisle; only a tray's outline and label take clicks,
+    so clicking inside an aisle selects the aisle even where a tray runs over it.
+  - **Duplicate**: row copies (with their racks, relabelled) and aisle copies are appended at the **east end**
+    of the sequence, in the originals' west-to-east order, so duplicating a row + aisle pattern repeats it;
+    a tray copy goes over the next aisle east that has no tray of that kind; a facility copy is
     offset 200 mm.
   - **Drag** a row (by its header) or an aisle sideways to **reorder** it in the sequence; the plan
     re-packs live while dragging. **Drag** a tray onto another aisle to move it there. **Drag** a

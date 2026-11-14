@@ -13,8 +13,9 @@ function nextRowName(rows: Row[]): string {
 
 /**
  * Copies the given elements; returns the new layout and the copies' ids.
- * - row: copy (with its racks, relabelled) inserted right after the original in the sequence;
- * - aisle: copy inserted right after the original;
+ * - row: copy (with its racks, relabelled) added at the east end of the sequence;
+ * - aisle: copy added at the east end of the sequence;
+ *   several rows/aisles are copied in their west-to-east order, so a selected block repeats as a block;
  * - tray: copy over the nearest aisle to the east that has no tray of the same kind (else same aisle);
  * - facility: copy offset 200 mm south-east.
  */
@@ -22,7 +23,9 @@ export function duplicateElements(l: DcLayout, kind: DuplicableKind, ids: string
   let next = l;
   const created: string[] = [];
   const takenIds = () => [...next.rows, ...next.aisles].map((x) => x.id);
-  for (const id of ids) {
+  // Rows/aisles copy in west-to-east order so the copies keep the originals' order.
+  const ordered = kind === 'row' || kind === 'aisle' ? [...ids].sort((a, b) => l.sequence.indexOf(a) - l.sequence.indexOf(b)) : ids;
+  for (const id of ordered) {
     if (kind === 'row') {
       const src = next.rows.find((r) => r.id === id);
       if (!src) continue;
@@ -33,13 +36,13 @@ export function duplicateElements(l: DcLayout, kind: DuplicableKind, ids: string
         taken.push(rid);
         return { ...a, id: rid, rowId: copy.id, label: `${copy.name.replace(/\s+/g, '')}-${String(a.startTile + 1).padStart(2, '0')}` };
       });
-      next = { ...next, rows: [...next.rows, copy], sequence: insertAfter(next.sequence, id, copy.id), assignments: [...next.assignments, ...racks] };
+      next = { ...next, rows: [...next.rows, copy], sequence: [...next.sequence, copy.id], assignments: [...next.assignments, ...racks] };
       created.push(copy.id);
     } else if (kind === 'aisle') {
       const src = next.aisles.find((a) => a.id === id);
       if (!src) continue;
       const copy: Aisle = { ...src, id: uniqueId('aisle', takenIds()) };
-      next = { ...next, aisles: [...next.aisles, copy], sequence: insertAfter(next.sequence, id, copy.id) };
+      next = { ...next, aisles: [...next.aisles, copy], sequence: [...next.sequence, copy.id] };
       created.push(copy.id);
     } else if (kind === 'tray') {
       const src = next.trays.find((t) => t.id === id);
@@ -59,9 +62,4 @@ export function duplicateElements(l: DcLayout, kind: DuplicableKind, ids: string
     }
   }
   return { layout: next, ids: created };
-}
-
-function insertAfter(seq: string[], after: string, id: string): string[] {
-  const i = seq.indexOf(after);
-  return i < 0 ? [...seq, id] : [...seq.slice(0, i + 1), id, ...seq.slice(i + 1)];
 }

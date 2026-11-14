@@ -100,7 +100,7 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
           const rect = trayRect(plan, t);
           return rect && (
             <g key={t.id} opacity={ghost(t.id)}>
-              <AreaDrawing rect={rect} fill={TRAY_COLORS[t.kind]} opacity={0.35} label={`${t.kind} tray (overhead)`} dashed labelAt={0.8}
+              <AreaDrawing rect={rect} fill={TRAY_COLORS[t.kind]} opacity={0.35} label={`${t.kind} tray (overhead)`} dashed labelAt={0.8} overhead
                 cursor="ew-resize" selected={isSel('tray', t.id)}
                 onPointerDown={startDrag('tray', t.id)} />
             </g>

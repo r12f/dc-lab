@@ -15,18 +15,19 @@ function sample(): DcLayout {
 }
 
 describe('duplicate layout elements', () => {
-  it('row copy goes right after the original, with its racks relabelled', () => {
+  it('row copy goes at the east end, with its racks relabelled', () => {
     const { layout, ids } = duplicateElements(sample(), 'row', ['r1']);
-    expect(layout.sequence).toEqual(['a1', 'r1', ids[0], 'a2']);
+    expect(layout.sequence).toEqual(['a1', 'r1', 'a2', ids[0]]);
     const copy = layout.rows.find((r) => r.id === ids[0])!;
     expect(copy.name).toBe('Row 2');
     expect(layout.assignments.filter((a) => a.rowId === copy.id)).toMatchObject([{ startTile: 2, label: 'Row2-03' }]);
     expect(new Set(layout.assignments.map((a) => a.id)).size).toBe(layout.assignments.length);
   });
-  it('several aisles at once, each after its original', () => {
-    const { layout, ids } = duplicateElements(sample(), 'aisle', ['a1', 'a2']);
+  it('several aisles at once are appended at the east end in their west-to-east order', () => {
+    const { layout, ids } = duplicateElements(sample(), 'aisle', ['a2', 'a1']);
     expect(ids).toHaveLength(2);
-    expect(layout.sequence).toEqual(['a1', ids[0], 'r1', 'a2', ids[1]]);
+    expect(layout.sequence).toEqual(['a1', 'r1', 'a2', ids[0], ids[1]]);
+    expect(layout.aisles.find((a) => a.id === ids[0])).toMatchObject({ kind: layout.aisles.find((a) => a.id === 'a1')!.kind });
   });
   it('tray copy moves to the next aisle without a tray of its kind', () => {
     const { layout, ids } = duplicateElements(sample(), 'tray', ['t1']);
