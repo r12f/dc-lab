@@ -105,15 +105,15 @@ export function Sidebar(props: Props) {
       <div className="sidebar-head">
         <h2>{title}</h2>
         <div className="sidebar-head-actions">
+          {onNew && <Button variant="primary" onClick={onNew}>+ New</Button>}
           {onDuplicate && (
             <Button className="btn-icon" title={selected ? `Duplicate "${selected.name}"` : 'Duplicate (select an item)'} aria-label="Duplicate"
               disabled={!selected} onClick={() => selected && onDuplicate(selected.id)}>⧉</Button>
           )}
           {onDelete && (
             <Button className="btn-icon" variant="danger" title={selected ? `Delete "${selected.name}"` : 'Delete (select an item)'} aria-label="Delete"
-              disabled={!selected} onClick={() => selected && confirm(`Delete "${selected.name}"?`) && onDelete(selected.id)}>🗑</Button>
+              disabled={!selected} onClick={() => selected && confirm(`Delete "${selected.name}"?`) && onDelete(selected.id)}>✕</Button>
           )}
-          {onNew && <Button variant="primary" onClick={onNew}>+ New</Button>}
         </div>
       </div>
       {header}

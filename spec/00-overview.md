@@ -18,7 +18,7 @@ built-in catalog), [06-architecture.md](06-architecture.md) (code structure) and
 ## UI shell
 
 - **Top tab bar** selects the module. Project actions (New / Open / Import / Save / Save As) and the theme picker live on the right of the bar.
-- **Left sidebar** in every module lists the module's items (built-in and project), grouped, with **New**, **Duplicate** (⧉) and **Delete** (🗑) in its header; the icon buttons act on the selected item and are disabled when nothing is selected.
+- **Left sidebar** in every module lists the module's items (built-in and project), grouped, with **+ New**, then **Duplicate** (⧉) and **Delete** (✕) in its header; the icon buttons act on the selected item and are disabled when nothing is selected.
 - **Main canvas** is an SVG drawing of the selected item. Every canvas supports **Export SVG**.
 - **Right inspector** edits the selected item / sub-item.
 - Sidebar and inspector widths are resizable by dragging the pane borders (180–1600 px, double-click resets; the canvas always keeps at least 240 px, side panes shrink on narrow windows).
