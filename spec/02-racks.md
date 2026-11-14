@@ -41,7 +41,8 @@ Empty slots are drawn as dashed boxes inside the element; slots exist only where
 
 ## UI
 
-- Sidebar: templates grouped by kind; New, Duplicate, Delete.
+- Sidebar: templates grouped by kind, with a text filter (name, kind, size, side element names);
+  New, Duplicate, Delete.
 - Canvas: front elevation with side elements drawn to scale (units numbered bottom-up), and a
   top-down footprint showing the rack body and side elements over floor tiles.
 - Inspector: all fields; side elements section with "+ Left" / "+ Right" (pick kind), per-element

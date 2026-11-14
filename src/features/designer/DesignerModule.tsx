@@ -50,6 +50,7 @@ export function DesignerModule() {
     id: d.id,
     name: d.name,
     path: [lib.racks.get(d.templateId)?.name ?? d.templateId],
+    keywords: d.placements.map((p) => `${p.label} ${lib.devices.get(p.deviceId)?.name ?? p.deviceId}`).join(' '),
     badge: formatPower(computeRackMetrics(lib, d).typicalW),
   }));
 
@@ -59,6 +60,7 @@ export function DesignerModule() {
         <Sidebar
           title="Rack designs"
           items={items}
+          filterable
           selectedId={selectedId}
           onSelect={(id) => { select('designer', id); setPlacementId(undefined); }}
           onNew={() => setCreating(true)}

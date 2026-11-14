@@ -43,7 +43,11 @@ export function LayoutModule() {
       sidebar={
         <Sidebar
           title="DC layouts"
-          items={layouts.map((l) => ({ id: l.id, name: l.name, path: [], badge: `${l.assignments.length} racks` }))}
+          items={layouts.map((l) => ({
+            id: l.id, name: l.name, path: [], badge: `${l.assignments.length} racks`,
+            keywords: [...l.rows.map((r) => r.name), ...l.assignments.map((a) => a.label)].join(' '),
+          }))}
+          filterable
           selectedId={selectedId}
           onSelect={(id) => { select('layout', id); setSel(undefined); }}
           onNew={create}

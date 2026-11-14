@@ -34,7 +34,8 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 
 ## UI
 
-- Sidebar: rack designs; New (pick template), Duplicate, Delete.
+- Sidebar: rack designs grouped by template, with a text filter (name, template, device labels and
+  names); New (pick template), Duplicate, Delete.
 - Canvas: elevation (front/rear toggle) with side pods. Drag a device from the palette onto a unit or
   side slot; drag a placed device to move it; click to select.
 - Inspector tabs: **Placement** (label, position, face, profile, group optics, per-port overrides by

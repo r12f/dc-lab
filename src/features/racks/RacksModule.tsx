@@ -17,12 +17,12 @@ export function RacksModule() {
     id: item.id,
     name: item.name,
     path: [RACK_KINDS[item.kind] ?? item.kind],
-    keywords: item.kind,
+    keywords: `${item.kind} ${item.units}${item.unitSystem} ${item.widthMm}mm ${item.sideElements.map((e) => e.name).join(' ')}`,
     badge: `${item.units}${item.unitSystem}${source === 'project' ? ' *' : ''}`,
   }));
   return (
     <ModuleLayout
-      sidebar={<Sidebar title="Rack templates" items={items} selectedId={ed.selectedId} onSelect={(id) => { ed.select(id); setElementId(undefined); }}
+      sidebar={<Sidebar title="Rack templates" items={items} filterable selectedId={ed.selectedId} onSelect={(id) => { ed.select(id); setElementId(undefined); }}
         onNew={() => ed.create('new-rack', newRack)} onDuplicate={ed.duplicate} onDelete={ed.del} />}
       canvas={rack ? (
         <CanvasFrame title={rack.name} exportName={rack.id}>

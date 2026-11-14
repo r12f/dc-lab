@@ -25,7 +25,7 @@ A layout (`schema: "dc-lab/layout@1"`) is a room floor plan.
 
 ## UI
 
-- Sidebar: layouts; New, Duplicate, Delete.
+- Sidebar: layouts with a text filter (name, row names, rack labels); New, Duplicate, Delete.
 - Canvas: room, aisles (blue cold / red hot), trays, rows of tiles, assigned racks; click a tile to
   select it, click a rack to select the assignment.
 - Inspector: layout fields, add row/aisle/tray, selected element editor, tile assignment, DC BOM.
