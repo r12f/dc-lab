@@ -131,6 +131,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     build: (id) => base(id, { name: 'New stiffener', category: 'stiffener', height: { units: 1, system: 'OU' }, depthMm: 50, weightKg: 2, power: { typicalW: 0, maxW: 0 } }),
   },
   {
+    id: 'brush-panel', label: 'Brush panel', description: '1RU panel with a brush strip for cable pass-through, no ports or power',
+    build: (id) => base(id, { name: 'New brush panel', category: 'brush-panel', depthMm: 40, weightKg: 0.8, power: { typicalW: 0, maxW: 0 } }),
+  },
+  {
     id: 'reserved', label: 'Empty (Reserved)', description: 'Units deliberately left empty; not hardware, not in the BOM',
     build: (id) => base(id, { name: 'New reserved space', category: 'reserved', depthMm: 0, weightKg: 0, power: { typicalW: 0, maxW: 0 } }),
   },

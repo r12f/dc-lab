@@ -46,3 +46,16 @@ describe('empty (reserved) space', () => {
     expect(buildRackBom(lib, d).filter((l) => l.kind === 'device')).toEqual([]);
   });
 });
+
+describe('brush panels', () => {
+  it('are filler hardware: hold units, add weight and a BOM line, no power', () => {
+    expect(traitsOf('brush-panel')).toMatchObject({ label: 'Brush Panel', filler: 'brush' });
+    expect(DEVICE_TEMPLATES.map((t) => t.id)).toContain('brush-panel');
+    const d = newDesign('d', 'D', 'network-42ru-600');
+    d.placements.push(newPlacement('b', 'brush-panel-1ru', 'BR1', { kind: 'rack', position: 5, face: 'front' }));
+    expect(placementProblem(lib, d, lib.devices.get('switch-48x1g-mgmt')!, { kind: 'rack', position: 5, face: 'front' })).toBeTruthy();
+    const m = computeRackMetrics(lib, d);
+    expect(m).toMatchObject({ usedUnits: 1, typicalW: 0, deviceWeightKg: 0.8 });
+    expect(buildRackBom(lib, d).find((l) => l.kind === 'device')).toMatchObject({ item: '1RU Brush Panel', category: 'Brush Panel', qty: 1 });
+  });
+});

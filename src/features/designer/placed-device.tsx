@@ -8,7 +8,7 @@ import { categoryPaint, paint } from '../../theme/paint';
 import { traitsOf } from '../../domain/device/categories';
 
 /** Blanking panels are dark, stiffeners steel grey; both visually recede behind active devices. */
-const FILLER_FILL = { blanking: '#1f2937', stiffener: '#64748b', reserved: 'none' } as const;
+const FILLER_FILL = { blanking: '#1f2937', stiffener: '#64748b', reserved: 'none', brush: '#374151' } as const;
 
 interface Props {
   placement: Placement;

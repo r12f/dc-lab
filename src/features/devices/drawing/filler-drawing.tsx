@@ -19,7 +19,7 @@ function faceHeight(d: DeviceDefinition): number {
 
 /**
  * Passive front hardware at true scale (1 unit = 1 mm): a blanking panel (plain panel with mounting
- * ears and screw holes), a stiffener (structural bar with a rib), or reserved space (dashed outline, no hardware).
+ * ears and screw holes), a brush panel (cable slot closed by bristles), a stiffener (structural bar with a rib), or reserved space (dashed outline, no hardware).
  */
 export function FillerDrawing({ device }: { device: DeviceDefinition; ctx: DrawingContext }) {
   const h = faceHeight(device);
@@ -32,6 +32,22 @@ export function FillerDrawing({ device }: { device: DeviceDefinition; ctx: Drawi
         <>
           <rect width={PANEL_W} height={h} rx={2} fill="none" stroke={paint.inkMuted} strokeWidth={2} strokeDasharray="8 5" />
           <text x={PANEL_W / 2} y={h / 2 + 5} fontSize={14} textAnchor="middle" fill={paint.inkMuted} fontWeight={700}>EMPTY (RESERVED)</text>
+        </>
+      ) : kind === 'brush' ? (
+        <>
+          {/* Panel with a horizontal slot closed by two rows of bristles meeting in the middle. */}
+          <rect width={PANEL_W} height={h} rx={2} fill="#1f2937" stroke="#475569" strokeWidth={2} />
+          <rect x={EAR_W + 20} y={h * 0.3} width={PANEL_W - (EAR_W + 20) * 2} height={h * 0.4} rx={3} fill="#0b1220" />
+          {Array.from({ length: Math.floor((PANEL_W - (EAR_W + 24) * 2) / 6) }, (_, i) => {
+            const x = EAR_W + 24 + i * 6;
+            return (
+              <g key={i} stroke="#64748b" strokeWidth={1}>
+                <line x1={x} y1={h * 0.3} x2={x} y2={h * 0.5 - 1} />
+                <line x1={x + 3} y1={h * 0.7} x2={x + 3} y2={h * 0.5 + 1} />
+              </g>
+            );
+          })}
+          <text x={PANEL_W / 2} y={h * 0.3 - 3} fontSize={11} textAnchor="middle" fill="#cbd5e1" fontWeight={700}>BRUSH PANEL</text>
         </>
       ) : kind === 'stiffener' ? (
         <>

@@ -11,7 +11,7 @@ export interface CategoryTraits {
    * Units with no ports or power: blanking panels and stiffeners (hardware), or `reserved` —
    * space deliberately left empty: it holds the units but is not hardware, so it has no BOM line.
    */
-  filler?: 'blanking' | 'stiffener' | 'reserved';
+  filler?: 'blanking' | 'stiffener' | 'reserved' | 'brush';
 }
 
 export const CATEGORY_TRAITS: Record<DeviceCategory, CategoryTraits> = {
@@ -26,6 +26,7 @@ export const CATEGORY_TRAITS: Record<DeviceCategory, CategoryTraits> = {
   // Appended after 'other' so existing categories keep their palette colors.
   'blanking-panel': { label: 'Blanking Panel', labelPrefix: 'BP', suppliesPower: false, allowsZeroU: false, filler: 'blanking' },
   stiffener: { label: 'Stiffener', labelPrefix: 'STF', suppliesPower: false, allowsZeroU: false, filler: 'stiffener' },
+  'brush-panel': { label: 'Brush Panel', labelPrefix: 'BR', suppliesPower: false, allowsZeroU: false, filler: 'brush' },
   reserved: { label: 'Empty (Reserved)', labelPrefix: 'RSV', suppliesPower: false, allowsZeroU: false, filler: 'reserved' },
 };
 

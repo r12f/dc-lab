@@ -1,0 +1,18 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "brush-panel-1ou",
+  "name": "1OU Brush Panel",
+  "category": "brush-panel",
+  "height": {
+    "units": 1,
+    "system": "OU"
+  },
+  "depthMm": 40,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [],
+  "breakoutProfiles": []
+}

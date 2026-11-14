@@ -14,7 +14,8 @@ export type DeviceCategory =
   | 'other'
   | 'blanking-panel'
   | 'stiffener'
-  | 'reserved';
+  | 'reserved'
+  | 'brush-panel';
 
 export type PortFace = 'front' | 'rear';
 
