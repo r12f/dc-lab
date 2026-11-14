@@ -19,7 +19,7 @@ html, body, #root { height: 100%; margin: 0; }
 .project-menu { display: flex; gap: 6px; align-items: center; }
 .project-name { background: var(--surface-input); border: 1px solid var(--surface-input-border); color: var(--text); padding: 4px 8px; border-radius: 4px; width: 180px; }
 
-.module { flex: 1; display: grid; grid-template-columns: 260px minmax(0, 1fr) 360px; min-height: 0; }
+.module { flex: 1; display: grid; min-height: 0; }
 .sidebar, .inspector { background: var(--panel); border-right: 1px solid var(--border); overflow: auto; min-height: 0; }
 .inspector { border-right: 0; border-left: 1px solid var(--border); }
 .canvas-pane { min-width: 0; min-height: 0; display: flex; }
@@ -113,3 +113,7 @@ details.card > summary { cursor: pointer; font-weight: 600; }
 .tooltip { position: fixed; z-index: 50; pointer-events: none; max-width: 360px; background: var(--panel); color: var(--text);
   border: 1px solid var(--dialog-border); border-radius: 6px; padding: 8px 10px; box-shadow: 0 6px 20px rgba(0,0,0,.3); font-size: 12px; line-height: 1.45; }
 .tooltip .error, .tooltip .muted { margin: 0; }
+/* Zero-width grid column; the handle overlaps both neighbours by 3px for an easy grab. */
+.splitter { position: relative; z-index: 5; width: 6px; margin: 0 -3px; cursor: col-resize; }
+.splitter:hover, body.resizing .splitter { background: color-mix(in srgb, var(--accent) 50%, transparent); }
+body.resizing { cursor: col-resize; user-select: none; }

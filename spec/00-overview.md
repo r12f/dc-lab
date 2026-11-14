@@ -20,6 +20,8 @@ built-in catalog), [06-architecture.md](06-architecture.md) (code structure) and
 - **Left sidebar** in every module lists the module's items (built-in and project), grouped, with a "New" action.
 - **Main canvas** is an SVG drawing of the selected item. Every canvas supports **Export SVG**.
 - **Right inspector** edits the selected item / sub-item.
+- Sidebar and inspector widths are resizable by dragging the pane borders (180–720 px, double-click resets).
+  Widths are shared by all modules and saved as app preferences (`dc-lab:prefs`), restored on next launch.
 
 ## Built-in vs. project items
 
