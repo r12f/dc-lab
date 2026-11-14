@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/cable@1",
   "id": "mmc16-2xmpo8-y-smf",
-  "name": "MMC-16 (F) to 2x MPO-8 (F) SMF breakout (16F, Type B)",
+  "name": "MMC-16F to 2x MPO-8F SMF breakout (16F, Type B)",
   "type": "fiber-sm",
   "fiberCount": 16,
   "mapping": "straight",

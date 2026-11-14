@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/cable@1",
   "id": "mpo8-160f-trunk-smf",
-  "name": "20x MPO-8 (M) to 20x MPO-8 (M) SMF trunk (160F, Type B)",
+  "name": "20x MPO-8M to 20x MPO-8M SMF trunk (160F, Type B)",
   "type": "fiber-sm",
   "fiberCount": 160,
   "mapping": "straight",

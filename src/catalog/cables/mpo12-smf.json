@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/cable@1",
   "id": "mpo12-smf",
-  "name": "MPO-12 (F) to MPO-12 (F) SMF patch (12F, Type B)",
+  "name": "MPO-12F to MPO-12F SMF patch (12F, Type B)",
   "type": "fiber-sm",
   "color": "#facc15",
   "fiberCount": 12,

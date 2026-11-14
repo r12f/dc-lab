@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/cable@1",
   "id": "mpo12-4xlc-smf-breakout",
-  "name": "MPO-12 (F) to 4x LC SMF breakout (8F, Type B)",
+  "name": "MPO-12F to 4x LC SMF breakout (8F, Type B)",
   "type": "fiber-sm",
   "fiberCount": 8,
   "color": "#facc15",

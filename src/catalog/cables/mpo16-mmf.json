@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/cable@1",
   "id": "mpo16-mmf",
-  "name": "MPO-16 (F) to MPO-16 (F) MMF (OM4) patch (16F, Type B)",
+  "name": "MPO-16F to MPO-16F MMF (OM4) patch (16F, Type B)",
   "type": "fiber-mm",
   "color": "#2dd4bf",
   "fiberCount": 16,
