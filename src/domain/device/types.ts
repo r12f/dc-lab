@@ -1,4 +1,4 @@
-import type { CatalogItem } from '../catalogItem';
+import type { CatalogItem } from '../catalog-item';
 import type { Height } from '../units';
 
 export const DEVICE_SCHEMA = 'dc-lab/device@1';

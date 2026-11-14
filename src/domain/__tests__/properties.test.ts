@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { Library } from '../library/Library';
+import { Library } from '../library/library';
 import { emptyProject } from '../project/types';
-import { BUILTIN_CATALOG_FOR_TESTS } from './catalogFixture';
+import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import { newDesign } from '../design/factory';
 import { newPlacement } from '../design/placement';
-import { buildRackBom } from '../bom/rackBom';
+import { buildRackBom } from '../bom/rack-bom';
 import { bomToCsv } from '../bom/csv';
 import { coerce, formatValue, valueOf } from '../properties/properties';
 import type { PropertyDef } from '../properties/types';

@@ -1,5 +1,5 @@
 import { traitsOf } from '../device/categories';
-import type { Library } from '../library/Library';
+import type { Library } from '../library/library';
 import { unitsIn } from '../units';
 import type { RackDesign } from './types';
 import { opticCounts } from './optics';

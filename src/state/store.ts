@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { createProjectSlice, type ProjectSlice } from './projectSlice';
+import { createProjectSlice, type ProjectSlice } from './project-slice';
 import { normalizeProject } from '../domain/project/serializer';
-import { createUiSlice, type UiSlice } from './uiSlice';
-import { createFileSlice, type FileSlice } from './fileSlice';
+import { createUiSlice, type UiSlice } from './ui-slice';
+import { createFileSlice, type FileSlice } from './file-slice';
 
 export type AppState = ProjectSlice & UiSlice & FileSlice;
 

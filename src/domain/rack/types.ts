@@ -1,6 +1,6 @@
-import type { CatalogItem } from '../catalogItem';
+import type { CatalogItem } from '../catalog-item';
 import type { UnitSystem } from '../units';
-import type { SideElement } from './sideElements';
+import type { SideElement } from './side-elements';
 
 export const RACK_SCHEMA = 'dc-lab/rack@1';
 

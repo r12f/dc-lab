@@ -1,4 +1,4 @@
-import type { CatalogSet } from '../library/Library';
+import type { CatalogSet } from '../library/library';
 import type { RackDesign } from '../design/types';
 import type { DcLayout } from '../layout/types';
 import type { PropertyDef, PropertyValue } from '../properties/types';

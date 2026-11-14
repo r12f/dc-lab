@@ -1,7 +1,7 @@
-import type { Library } from '../library/Library';
+import type { Library } from '../library/library';
 import { computeRackMetrics, type RackMetrics } from '../design/metrics';
-import { buildRackBom } from '../bom/rackBom';
-import { BomBuilder } from '../bom/BomBuilder';
+import { buildRackBom } from '../bom/rack-bom';
+import { BomBuilder } from '../bom/bom-builder';
 import type { BomLine } from '../bom/types';
 import type { DcLayout } from './types';
 import { occupiedTiles, type DesignLookup } from './tiles';

@@ -1,10 +1,10 @@
 import type { ComponentType } from 'react';
-import type { ModuleTab } from '../state/uiSlice';
-import { DevicesModule } from '../features/devices/DevicesModule';
-import { RacksModule } from '../features/racks/RacksModule';
-import { OpticsModule } from '../features/optics/OpticsModule';
-import { DesignerModule } from '../features/designer/DesignerModule';
-import { LayoutModule } from '../features/layout/LayoutModule';
+import type { ModuleTab } from '../state/ui-slice';
+import { DevicesModule } from '../features/devices/devices-module';
+import { RacksModule } from '../features/racks/racks-module';
+import { OpticsModule } from '../features/optics/optics-module';
+import { DesignerModule } from '../features/designer/designer-module';
+import { LayoutModule } from '../features/layout/layout-module';
 
 export interface ModuleDef {
   id: ModuleTab;

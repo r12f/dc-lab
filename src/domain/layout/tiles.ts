@@ -1,4 +1,4 @@
-import type { Library } from '../library/Library';
+import type { Library } from '../library/library';
 import type { RackDesign } from '../design/types';
 import type { DcLayout, RackAssignment, Row } from './types';
 

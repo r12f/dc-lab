@@ -1,9 +1,9 @@
 import type { DeviceDefinition, PortFace } from '../device/types';
 import { traitsOf } from '../device/categories';
 import type { RackTemplate } from '../rack/types';
-import { SIDE_KINDS } from '../rack/sideElements';
+import { SIDE_KINDS } from '../rack/side-elements';
 import { unitsIn } from '../units';
-import type { Library } from '../library/Library';
+import type { Library } from '../library/library';
 import type { Mount, Placement, RackDesign } from './types';
 
 export interface UnitSpan {

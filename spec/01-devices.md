@@ -33,7 +33,7 @@ ports `opticalEngine` (`cpo` | `npo`).
 ### Form factors
 
 The **form factor** of a port is fixed by the hardware. It comes from a registry
-(`src/domain/ports/formFactors.ts`) with a `kind`:
+(`src/domain/ports/form-factors.ts`) with a `kind`:
 
 | Kind | Examples | Meaning |
 |---|---|---|

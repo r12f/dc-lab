@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { THEMES, resolveTheme } from '../registry';
-import { themeToCssVars } from '../cssVars';
+import { themeToCssVars } from '../css-vars';
 import { contrastRatio } from '../color';
 
 const HEX = /^#[0-9A-Fa-f]{6}$/;

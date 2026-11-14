@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { Library } from '../library/Library';
+import { Library } from '../library/library';
 import { emptyProject } from '../project/types';
-import { BUILTIN_CATALOG_FOR_TESTS } from './catalogFixture';
+import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import { newDesign } from '../design/factory';
 import { newPlacement } from '../design/placement';
 import { estimateLengthM, effectiveLengthM } from '../design/cabling';
-import { buildRackBom } from '../bom/rackBom';
+import { buildRackBom } from '../bom/rack-bom';
 import { normalizeProject } from '../project/serializer';
 import type { CableRun } from '../design/types';
 

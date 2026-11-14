@@ -1,5 +1,5 @@
 import type { Theme } from './types';
-import type { Scheme } from './systemScheme';
+import type { Scheme } from './system-scheme';
 import { mizuiro } from './presets/mizuiro';
 import { landmine } from './presets/landmine';
 import { amai } from './presets/amai';

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { Library } from '../library/Library';
+import { Library } from '../library/library';
 import { emptyProject } from '../project/types';
 import { newDesign } from '../design/factory';
 import { newPlacement, placementProblem, firstFreePosition, defaultMount } from '../design/placement';
 import { computeRackMetrics } from '../design/metrics';
-import { buildRackBom } from '../bom/rackBom';
+import { buildRackBom } from '../bom/rack-bom';
 import type { DeviceDefinition } from '../device/types';
 import type { RackTemplate } from '../rack/types';
 import type { OpticDefinition } from '../optics/types';

@@ -1,4 +1,4 @@
-import type { CatalogItem } from '../catalogItem';
+import type { CatalogItem } from '../catalog-item';
 import type { HasProperties } from '../properties/types';
 
 export const OPTIC_SCHEMA = 'dc-lab/optic@1';

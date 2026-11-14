@@ -1,5 +1,5 @@
-import type { ResolvedPort } from '../../../domain/device/portSettings';
-import type { Library } from '../../../domain/library/Library';
+import type { ResolvedPort } from '../../../domain/device/port-settings';
+import type { Library } from '../../../domain/library/library';
 
 /** Inputs shared by every device drawing strategy. */
 export interface DrawingContext {

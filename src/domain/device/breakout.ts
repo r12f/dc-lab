@@ -1,6 +1,6 @@
 import type { BreakoutProfile, DeviceDefinition, PortGroup } from './types';
 import { findGroup, parsePortRef } from './ports';
-import { acceptedModules, formFactorSpec } from '../ports/formFactors';
+import { acceptedModules, formFactorSpec } from '../ports/form-factors';
 
 export interface BreakoutMode {
   fanout: number;

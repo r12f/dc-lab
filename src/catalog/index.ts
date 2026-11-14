@@ -1,7 +1,7 @@
 import type { DeviceDefinition } from '../domain/device/types';
 import type { RackTemplate } from '../domain/rack/types';
 import type { CableMedia, OpticDefinition } from '../domain/optics/types';
-import type { CatalogSet } from '../domain/library/Library';
+import type { CatalogSet } from '../domain/library/library';
 
 /** Built-in catalog: one JSON file per item, bundled at build time. */
 function load<T>(modules: Record<string, unknown>): T[] {

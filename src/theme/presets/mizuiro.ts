@@ -1,4 +1,4 @@
-import { darkTheme } from '../darkThemeFactory';
+import { darkTheme } from '../dark-theme-factory';
 
 export const mizuiro = darkTheme({
   id: 'mizuiro',

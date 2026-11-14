@@ -1,5 +1,5 @@
 import type { PortFace, PortSetting } from '../device/types';
-export type { SideName } from '../rack/sideElements';
+export type { SideName } from '../rack/side-elements';
 
 export const DESIGN_SCHEMA = 'dc-lab/rack-design@1';
 

@@ -1,10 +1,10 @@
 import type { DeviceDefinition } from '../device/types';
-import type { Library } from '../library/Library';
+import type { Library } from '../library/library';
 import { allPortRefs, parsePortRef } from '../device/ports';
 import { findProfile } from '../device/breakout';
-import { resolvePort, type ResolvedPort } from '../device/portSettings';
+import { resolvePort, type ResolvedPort } from '../device/port-settings';
 import type { Placement } from './types';
-import { cablesPerPort } from '../ports/opticMatch';
+import { cablesPerPort } from '../ports/optic-match';
 
 /** Effective setting of one port of a placed device (instance > profile). */
 export function resolvePlacedPort(lib: Library, device: DeviceDefinition, placement: Placement, portRef: string): ResolvedPort | undefined {

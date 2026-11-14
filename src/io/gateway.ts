@@ -1,6 +1,6 @@
-import { fallbackGateway } from './fallbackGateway';
-import type { FileGateway } from './fileGateway';
-import { fsAccessGateway, supportsFsAccess } from './fsAccessGateway';
+import { fallbackGateway } from './fallback-gateway';
+import type { FileGateway } from './file-gateway';
+import { fsAccessGateway, supportsFsAccess } from './fs-access-gateway';
 
 /** The file gateway for this browser. */
 export const projectFiles: FileGateway = supportsFsAccess() ? fsAccessGateway : fallbackGateway;

@@ -1,6 +1,6 @@
-import type { Library } from '../library/Library';
+import type { Library } from '../library/library';
 import type { RackTemplate } from '../rack/types';
-import { elementsOn } from '../rack/sideElements';
+import { elementsOn } from '../rack/side-elements';
 import { UNIT_MM, unitsIn } from '../units';
 import type { CableEndpoint, CableRoute, CableRun, RackDesign } from './types';
 
