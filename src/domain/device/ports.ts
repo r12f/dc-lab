@@ -36,3 +36,16 @@ export function totalPorts(device: DeviceDefinition): number {
 export function totalBandwidthGbps(device: DeviceDefinition): number {
   return device.ports.reduce((n, g) => n + g.count * g.speedGbps, 0);
 }
+
+/** Switching capacity: data ports only (mgmt/console/service/laser excluded), e.g. 64x800G = 51200. */
+export function dataBandwidthGbps(device: DeviceDefinition): number {
+  return device.ports.filter((g) => g.role === 'data').reduce((n, g) => n + g.count * g.speedGbps, 0);
+}
+
+/**
+ * Sidebar order of an item type: switches by data bandwidth, highest first (ties by name);
+ * other categories by name (undefined).
+ */
+export function deviceSortKey(device: DeviceDefinition): number | undefined {
+  return device.category === 'switch' ? -dataBandwidthGbps(device) : undefined;
+}

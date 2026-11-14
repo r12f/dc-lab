@@ -1,3 +1,4 @@
+import { deviceSortKey } from '../../domain/device/ports';
 import { useState } from 'react';
 import { useLibrary } from '../../state/use-library';
 import { useCatalogEditor } from '../../state/use-catalog-editor';
@@ -42,6 +43,7 @@ export function DevicesModule() {
       id: item.id,
       name: item.name,
       path,
+      order: deviceSortKey(item),
       keywords: `${item.category} ${variantKeywords(lib, item.id)}`,
       badge: `${formatHeight(item.height)}${source === 'project' ? ' *' : ''}`,
       children: variantChildren(lib, item.id, path),

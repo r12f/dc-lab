@@ -135,7 +135,9 @@ Drawing strategy is selected by device shape:
 
 ## UI
 
-- Sidebar: tree **Vendor → Category → Device** with a text filter (name, vendor, model, id).
+- Sidebar: tree **Type (category) → Item type → Item** (see `09-item-variants.md`) with a text filter
+  (name, vendor, model, id). Switches are sorted by data-port bandwidth (`count × speed` of `data` groups;
+  mgmt/console/service/laser excluded), highest first, ties by name; other categories by name.
 - **+ New** opens a template picker (switch, server, vertical PDU, horizontal PDU, patch panel, OCS,
   power shelf, storage, blanking panel, stiffener, blank). Each template creates a device with realistic port roles
   (data + mgmt + console, PSUs, PDU banks).
