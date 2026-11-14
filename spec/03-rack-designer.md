@@ -76,6 +76,19 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 - Canvas: elevation (front/rear toggle) with side pods. Drag a device from the palette onto a unit or
   side slot — the pointer marks the device's middle and a tall device dropped near the top or bottom slides
   inside the rack; drag a placed device to move it; click to select.
+- Canvas views: **Elevation** | **Cabling**, both with the front/rear toggle.
+- **Cabling view**: one row per placed device (top unit first, side-mounted last) with its **connector map**
+  for the chosen rack face — one box per cable connector (leg) of every port on that face; a rear-mounted
+  device shows its rear-face ports from the front; ports with no cable connector (empty cage, DAC) are one
+  box. Cabled connectors take the run's media color; clicking one opens that run in the Cables tab.
+  - Click connectors to select (click again to deselect), shift-click selects a range on the same device
+    (skipping cabled connectors).
+  - A end = connectors on the first device selected, B end = connectors on the other devices; a selection on
+    one device only is split in halves. Each end is ordered by faceplate position.
+  - **Assign** repeats the chosen cable over the selection: A taken `ends.a.count` at a time, B
+    `ends.b.count` at a time, paired in order (SW1 1–10 + SW2 1–10 with a duplex cable = 10 runs; 2 MPO
+    + 8 LC with a 1→4 breakout = 2 runs). Rejected when the counts do not divide or do not pair up, or a
+    connector is already cabled. Route: left, right, or auto (the side with the shorter estimate per run).
 - Inspector tabs: **Placement** (label, position, face, profile, group optics, per-port overrides by
   clicking ports on a faceplate preview), **Cables** (start/end device + port, route left/right, media,
   auto/manual length, quantity; selecting a device pre-fills new runs' start), **BOM** (metrics + BOM

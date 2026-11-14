@@ -51,6 +51,14 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
     mutate((d) => ({ ...d, cables: [...d.cables, { ...cable, id }] }));
     return id;
   };
+  /** Adds several runs in one change (ids unique among each other); returns their ids. */
+  const addCables = (cables: Omit<CableRun, 'id'>[]): string[] => {
+    const ids: string[] = [];
+    const taken = design?.cables.map((c) => c.id) ?? [];
+    for (let i = 0; i < cables.length; i++) ids.push(uniqueId('c', [...taken, ...ids]));
+    mutate((d) => ({ ...d, cables: [...d.cables, ...cables.map((c, i) => ({ ...c, id: ids[i] }))] }));
+    return ids;
+  };
   const updateCable = (id: string, fn: (c: CableRun) => CableRun) =>
     mutate((d) => ({ ...d, cables: d.cables.map((c) => (c.id === id ? fn(c) : c)) }));
   const removeCable = (id: string) => mutate((d) => ({ ...d, cables: d.cables.filter((c) => c.id !== id) }));
@@ -58,7 +66,7 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
   const rename = (name: string) => mutate((d) => ({ ...d, name }));
   const setAbbr = (text: string) => mutate((d) => ({ ...d, abbr: cleanAbbr(text) }));
 
-  return { addDevice, moveTo, updatePlacement, removePlacement, addCable, updateCable, removeCable, rename, setAbbr };
+  return { addDevice, moveTo, updatePlacement, removePlacement, addCable, addCables, updateCable, removeCable, rename, setAbbr };
 }
 
 export type DesignEditor = ReturnType<typeof useDesignEditor>;

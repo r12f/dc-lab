@@ -13,6 +13,7 @@ import { Button } from '../../ui/button';
 import { NewDesignForm } from './new-design-form';
 import { DevicePalette } from './device-palette';
 import { RackElevation } from './rack-elevation';
+import { CablingView } from './cabling-view';
 import { DesignInspector, type InspectorTab } from './design-inspector';
 import { useDesignEditor } from './use-design-editor';
 import { designIssues } from '../../domain/design/issues';
@@ -26,6 +27,7 @@ export function DesignerModule() {
   const remove = useAppStore((s) => s.remove);
   const [creating, setCreating] = useState(false);
   const [face, setFace] = useState<PortFace>('front');
+  const [view, setView] = useState<'elevation' | 'cabling'>('elevation');
   const [placementId, setPlacementId] = useState<string>();
   const [cableId, setCableId] = useState<string>();
   const [tab, setTab] = useState<InspectorTab>('summary');
@@ -87,17 +89,23 @@ export function DesignerModule() {
         design ? (
           <CanvasFrame
             title={design.name}
-            exportName={`${design.id}-${face}`}
+            exportName={`${design.id}-${view === 'cabling' ? 'cabling-' : ''}${face}`}
             toolbar={
               <>
                 {message && <span className="toolbar-msg">{message}</span>}
                 {issueCount > 0 && <span className="toolbar-msg error" title="Marked in red on the rack">{`⚠ ${issueCount} problem${issueCount > 1 ? 's' : ''}`}</span>}
+                <Button variant={view === 'elevation' ? 'primary' : 'default'} onClick={() => setView('elevation')}>Elevation</Button>
+                <Button variant={view === 'cabling' ? 'primary' : 'default'} onClick={() => setView('cabling')}>Cabling</Button>
+                <span className="toolbar-sep" />
                 <Button variant={face === 'front' ? 'primary' : 'default'} onClick={() => setFace('front')}>Front</Button>
                 <Button variant={face === 'rear' ? 'primary' : 'default'} onClick={() => setFace('rear')}>Rear</Button>
               </>
             }
           >
-            {(ref) => (
+            {(ref) => view === 'cabling' ? (
+              <CablingView ref={ref} lib={lib} design={design} editor={editor} face={face}
+                onSelectCable={(id) => { setCableId(id); if (id) { setPlacementId(undefined); setTab('cables'); } }} />
+            ) : (
               <RackElevation
                 ref={ref}
                 lib={lib}
