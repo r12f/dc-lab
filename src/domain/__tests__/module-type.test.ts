@@ -8,8 +8,8 @@ const lib = new Library(SHIPPED_CATALOG, emptyProject());
 const group = (deviceId: string, groupId: string) => lib.devices.get(deviceId)!.ports.find((g) => g.id === groupId)!;
 
 describe('module type -> modules', () => {
-  it('variants share a type; PSM4 is DR4', () => {
-    expect(['2xDR4', '2xDR4 LPO', '2xDR4-2'].map(moduleType)).toEqual(['2xDR4', '2xDR4', '2xDR4']);
+  it('variants share a type; PSM4 is DR4; 2xDR4+ is 2xDR4', () => {
+    expect(['2xDR4', '2xDR4 LPO', '2xDR4-2', '2xDR4+'].map(moduleType)).toEqual(['2xDR4', '2xDR4', '2xDR4', '2xDR4']);
     expect(['DR4-2', 'PSM4', 'DR4'].map(moduleType)).toEqual(['DR4', 'DR4', 'DR4']);
   });
   it('QSFP-DD port takes QSFP56 / QSFP28 modules of the type at <= port speed; DR4 includes 100G PSM4', () => {
@@ -32,5 +32,24 @@ describe('module type -> modules', () => {
     expect(pickOptic(lib, qdd, '1x100G', 'DR4')?.id).toBe('qsfp28-100g-psm4');
     expect(pickOptic(lib, qdd, '1x400G', 'DR4', 'qsfp56-200g-dr4')?.id).toBe('qsfp56-200g-dr4');
     expect(pickOptic(lib, qdd, '1x400G', 'FR4', 'qsfp56-200g-dr4')?.reach).toBe('FR4');
+  });
+});
+
+describe('OSFP 2xDR4+ (500 m and 2 km in one module)', () => {
+  it('800G / 1.6T are 2xDR4+ with 2 km reach; the separate 2 km module is gone and migrates', async () => {
+    const { normalizeProject } = await import('../project/serializer');
+    for (const id of ['osfp-800g-2xdr4', 'osfp-1600g-2xdr4']) {
+      const o = lib.optics.get(id)!;
+      expect([o.reach, o.reachM, o.name.endsWith('2xDR4+')], id).toEqual(['2xDR4+', 2000, true]);
+    }
+    expect(lib.optics.get('osfp-800g-2xdr4-2km')).toBeUndefined();
+    const p = normalizeProject({ rackDesigns: [{ id: 'd', name: 'D', templateId: 'x', cables: [], placements: [
+      { id: 'p', deviceId: 'x', label: 'S', mount: { kind: 'rack', position: 1, face: 'front' }, portSettings: {},
+        groupSettings: { osfp: { reach: '2xDR4-2', opticId: 'osfp-800g-2xdr4-2km' } } }] }] });
+    expect(p.rackDesigns[0].placements[0].groupSettings.osfp).toEqual({ reach: '2xDR4+', opticId: 'osfp-800g-2xdr4' });
+  });
+  it('2xDR4 picks the plain module, not the pigtail or LPO one', () => {
+    const g = group('switch-64x800g-osfp', 'osfp');
+    expect(pickOptic(lib, g, '2x400G', '2xDR4')?.id).toBe('osfp-800g-2xdr4');
   });
 });

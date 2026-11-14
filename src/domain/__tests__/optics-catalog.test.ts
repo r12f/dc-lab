@@ -40,7 +40,7 @@ describe('optics catalog', () => {
     pl.groupSettings = { osfp: { mode: '2x400G', reach: '2xDR4', opticId: 'osfp-800g-2xdr4', cableId: 'mpo12-smf' } };
     d.placements.push(pl);
     const csv = bomToCsv(buildRackBom(l, d), [def]);
-    expect(csv).toMatch(/800G OSFP 2xDR4,Optic,[^\n]*,Acme,64,/);
+    expect(csv).toMatch(/800G OSFP 2xDR4\+,Optic,[^\n]*,Acme,64,/);
     expect(csv).toMatch(/MPO-12[^\n]*,Cable,[^\n]*,FiberCo,128,/);
   });
 });

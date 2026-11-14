@@ -44,12 +44,12 @@ export function directAttachCables(lib: Library, group: PortGroup, mode: string,
 }
 
 /**
- * Module type of a reach class: variants of one optical interface share a type — "2xDR4 LPO" and "2xDR4-2"
- * (2 km) are 2xDR4, "DR4-2" is DR4 — and PSM4 (the <=100G name) is DR4.
+ * Module type of a reach class: variants of one optical interface share a type — "2xDR4+" (2 km), "2xDR4 LPO"
+ * are 2xDR4, "DR4-2" is DR4 — and PSM4 (the <=100G name) is DR4.
  */
 export function moduleType(reach: string | undefined): string | undefined {
   if (!reach) return undefined;
-  const t = reach.trim().replace(/[\s-].*$/, '');
+  const t = reach.trim().replace(/[\s-].*$/, '').replace(/\+$/, '');
   return t.replace(/PSM4$/i, 'DR4');
 }
 
@@ -93,9 +93,12 @@ export function pickOptic(lib: Library, group: PortGroup, mode: string, reach?: 
   // DAC / AEC / AOC: the cable plugs into the cage itself, no transceiver.
   if (!reach || directAttachType(reach)) return undefined;
   // Auto: the module of that type running the mode's speed, else the fastest of that type the port takes.
-  const of = modulesOfType(lib, group, reach);
+  // Among equals: the plain pluggable module over pigtail / LPO variants, then the exact reach.
   const total = modeTotalGbps(mode);
-  return of.find((o) => o.speedGbps === total && o.reach === reach) ?? of.find((o) => o.speedGbps === total) ?? of[0];
+  const rank = (o: OpticDefinition) => (o.packaging === 'pigtail' ? 4 : 0) + (/LPO/i.test(o.reach) ? 2 : 0) + (o.reach === reach ? 0 : 1);
+  const of = modulesOfType(lib, group, reach);
+  const atSpeed = of.filter((o) => o.speedGbps === total).sort((a, b) => rank(a) - rank(b));
+  return atSpeed[0] ?? of[0];
 }
 
 /**
@@ -105,7 +108,7 @@ export function pickOptic(lib: Library, group: PortGroup, mode: string, reach?: 
  */
 export function connectorForReach(reach: string | undefined): string | undefined {
   if (!reach) return undefined;
-  const base = reach.trim().toUpperCase().replace(/^\d+X\s*/, '').split(/[\s-]/)[0];
+  const base = reach.trim().toUpperCase().replace(/^\d+X\s*/, '').split(/[\s-]/)[0].replace(/\+$/, '');
   if (/^(DR|SR|VR)8$/.test(base)) return 'MPO-16';
   if (/^(DR4|PSM4|SR4|VR4)$/.test(base)) return 'MPO-12';
   if (/^(DR1?|FR\d*|LR\d*|ER\d*|ZR|SR|LH)$/.test(base)) return 'LC';

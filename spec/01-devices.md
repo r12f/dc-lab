@@ -198,7 +198,7 @@ load); a placement can still set one in Rack Designer.
 
 **Port settings = Speed → Module Type → Module**:
 - **Module Type**: None, or a reach class the cage takes at <= the physical port speed (2xDR4, 2xLR4, DR4…).
-  Variants fold into their type ("2xDR4 LPO" and 2 km "2xDR4-2" are 2xDR4; "DR4-2" is DR4) and **PSM4 is DR4**
+  Variants fold into their type ("2xDR4+" and "2xDR4 LPO" are 2xDR4; "DR4-2" is DR4) and **PSM4 is DR4**
   (the <=100G name of the same parallel-SMF interface). The **Connector Type** follows from it and is shown;
   None leaves the cage empty and the connector is the cage form factor (OSFP, QSFP-DD…).
 - **Module** (shown when a type is set): every module of that type the cage physically takes at <= port speed —

@@ -70,12 +70,15 @@ function moveDirectOptics(p: Json): Json {
 }
 
 /** Renamed reach classes: 100G single-lane DR is "DR1" (LC); the 100G parallel MPO module is "DR4" (was PSM4). */
-const REACH_RENAMES: Record<string, string> = { DR: 'DR1', PSM4: 'DR4' };
+const REACH_RENAMES: Record<string, string> = { DR: 'DR1', PSM4: 'DR4', '2xDR4-2': '2xDR4+' };
+/** Merged optics: old id -> the one that replaced it (800G OSFP 2xDR4 2 km = 2xDR4+). */
+const RENAMED_OPTICS: Record<string, string> = { 'osfp-800g-2xdr4-2km': 'osfp-800g-2xdr4' };
 
 function toSetting(v: unknown): unknown {
   const s = migrateDacSetting((typeof v === 'string' ? { mode: v } : v) as Json) as Json;
   const r = typeof s?.reach === 'string' ? REACH_RENAMES[s.reach] : undefined;
-  return r ? { ...s, reach: r } : s;
+  const o = typeof s?.opticId === 'string' ? RENAMED_OPTICS[s.opticId] : undefined;
+  return r || o ? { ...s, ...(r ? { reach: r } : {}), ...(o ? { opticId: o } : {}) } : s;
 }
 
 /** Profile settings carry no cable (cables are assigned in Rack Designer). */
@@ -149,7 +152,7 @@ function migrateSideMount(p: Json): Json {
 /** Optic `connector`/`media` -> `formFactor`/`reach` (+ fiber connector guessed from the reach). */
 /** Project 100G optics with a renamed reach class (DR -> DR1, PSM4 -> DR4). */
 function renameOpticReach(o: Json): Json {
-  const r = typeof o.reach === 'string' && Number(o.speedGbps) === 100 ? REACH_RENAMES[o.reach] : undefined;
+  const r = typeof o.reach === 'string' && (Number(o.speedGbps) === 100 || o.reach === '2xDR4-2') ? REACH_RENAMES[o.reach] : undefined;
   return r ? { ...o, reach: r } : o;
 }
 
@@ -237,6 +240,8 @@ const RENAMED_IDS: Record<string, string> = {
   'switch-32x800g-qsfpdd800': 'switch-32x800g-qsfpdd',
   // Network racks are 600 mm wide.
   'network-48ru-800': 'network-48ru-600',
+  // 800G OSFP 2xDR4 and its 2 km version are one module (2xDR4+).
+  'osfp-800g-2xdr4-2km': 'osfp-800g-2xdr4',
 };
 const renameFf = (x: Json): Json => {
   const ff = RENAMED_FORM_FACTORS[String(x.formFactor)];

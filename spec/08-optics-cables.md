@@ -131,3 +131,8 @@ that contradicts the reach is flagged. Every shipped optic follows the rule (tes
 
 **Cable drawing lines**: fiber cables draw one line per A-B pair from the fiber map. DAC / AEC / AOC / power
 cables have no fibers: they draw 1:1 straight lines, or a breakout (1 -> 2 / 4) from the A connector to each B.
+
+**OSFP 2xDR4+**: the 800G and 1.6T OSFP 2xDR4 modules cover both 500 m and 2 km in one part, named
+"800G / 1.6T OSFP 2xDR4+" (reach `2xDR4+`, 2 km). The separate 800G 2xDR4 2 km optic is merged into it; old
+projects load `osfp-800g-2xdr4-2km` / reach `2xDR4-2` as `osfp-800g-2xdr4` / `2xDR4+`. Module type: 2xDR4.
+Auto-pick prefers the plain pluggable module over pigtail / LPO variants of the same type.

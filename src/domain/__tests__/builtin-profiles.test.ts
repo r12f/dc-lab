@@ -5,6 +5,7 @@ import { BUILTIN_CATALOG_FOR_TESTS, SHIPPED_CATALOG } from './catalog-fixture';
 import { findProfile } from '../device/breakout';
 import { resolvePort } from '../device/port-settings';
 import { normalizeProject } from '../project/serializer';
+import { moduleType } from '../ports/optic-match';
 
 describe('default profile: native (max) speed, DR optics', () => {
   it('every shipped device defaults to "default"', () => {
@@ -21,7 +22,7 @@ describe('default profile: native (max) speed, DR optics', () => {
     for (const [id, ref, mode, reach] of cases) {
       const d = lib.devices.get(id)!;
       const r = resolvePort(lib, d, ref, findProfile(d))!;
-      expect([r.mode, r.reach, r.optic?.reach], id).toEqual([mode, reach, reach]);
+      expect([r.mode, r.reach, moduleType(r.optic?.reach)], id).toEqual([mode, reach, reach]);
     }
   });
 });
