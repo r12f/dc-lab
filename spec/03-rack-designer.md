@@ -119,7 +119,7 @@ block per connector leg side by side, each three lines: lanes / reach / connecto
 8x200G on a 2xDR4 module = two blocks "4x200G · DR4 · MPO-8"). All ports of a group share the block size;
 the port's form factor and mode are in its tooltip.
 
-**Delete device**: the canvas toolbar has "✕ Delete <label>" next to Export SVG, enabled when a device is
+**Delete device**: the canvas toolbar has an icon-only ✕ button (tooltip "Delete <label> (Del)") next to Export SVG, enabled when a device is
 selected; the Delete / Backspace key does the same (ignored while typing in a field).
 
 **No face toggle**: the elevation draws front and rear side by side (drop / drag on either; the mount face is
@@ -139,7 +139,7 @@ PSU inlets is a small box).
 Runs use a cable channel (gutter) outside the rails on each side, between the frame and the side elements,
 so the unit numbers on the rails stay visible; stubs leave each device near its top edge.
 
-**Duplicate device**: next to the toolbar's Delete button, "⧉ Duplicate <label>" (Ctrl+D) copies the selected
+**Duplicate device**: next to the toolbar's ✕ Delete button, an icon-only ⧉ button (Ctrl+D; tooltip names the device) copies the selected
 device — same item, height, breakout profile and port settings — with the next free label (SW1 -> SW2), mounted
 right above the source, else at the closest free unit (0U devices: first free side slot). Cables are not copied.
 The copy becomes the selection; with no room the toolbar reports it.

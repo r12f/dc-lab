@@ -125,13 +125,11 @@ export function DesignerModule() {
                 )}
                 <span className="toolbar-sep" />
                 <Button disabled={!selectedPlacement} onClick={duplicateSelected}
-                  title={selectedPlacement ? `Duplicate ${selectedPlacement.label} (Ctrl+D)` : 'Select a device to duplicate it'}>
-                  {selectedPlacement ? `⧉ Duplicate ${selectedPlacement.label}` : '⧉ Duplicate device'}
-                </Button>
+                  aria-label="Duplicate device"
+                  title={selectedPlacement ? `Duplicate ${selectedPlacement.label} (Ctrl+D)` : 'Select a device to duplicate it'}>⧉</Button>
                 <Button variant="danger" disabled={!selectedPlacement} onClick={deleteSelected}
-                  title={selectedPlacement ? `Delete ${selectedPlacement.label} (Del)` : 'Select a device to delete it'}>
-                  {selectedPlacement ? `✕ Delete ${selectedPlacement.label}` : '✕ Delete device'}
-                </Button>
+                  aria-label="Delete device"
+                  title={selectedPlacement ? `Delete ${selectedPlacement.label} (Del)` : 'Select a device to delete it'}>✕</Button>
               </>
             }
           >
