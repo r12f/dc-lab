@@ -104,7 +104,17 @@ export function Sidebar(props: Props) {
     <div className="sidebar-inner">
       <div className="sidebar-head">
         <h2>{title}</h2>
-        {onNew && <Button variant="primary" onClick={onNew}>+ New</Button>}
+        <div className="sidebar-head-actions">
+          {onDuplicate && (
+            <Button className="btn-icon" title={selected ? `Duplicate "${selected.name}"` : 'Duplicate (select an item)'} aria-label="Duplicate"
+              disabled={!selected} onClick={() => selected && onDuplicate(selected.id)}>⧉</Button>
+          )}
+          {onDelete && (
+            <Button className="btn-icon" variant="danger" title={selected ? `Delete "${selected.name}"` : 'Delete (select an item)'} aria-label="Delete"
+              disabled={!selected} onClick={() => selected && confirm(`Delete "${selected.name}"?`) && onDelete(selected.id)}>🗑</Button>
+          )}
+          {onNew && <Button variant="primary" onClick={onNew}>+ New</Button>}
+        </div>
       </div>
       {header}
       {filterable && (
@@ -117,14 +127,6 @@ export function Sidebar(props: Props) {
         <Tree node={buildTree(visible)} depth={0} selectedId={selectedId} collapsed={collapsed} expanded={expanded}
           forceOpen={!!filter} onToggle={toggle} onExpand={expand} onSelect={onSelect} />
       </div>
-      {selected && (onDuplicate || onDelete) && (
-        <div className="sidebar-actions">
-          {onDuplicate && <Button onClick={() => onDuplicate(selected.id)}>Duplicate</Button>}
-          {onDelete && (
-            <Button variant="danger" onClick={() => confirm(`Delete "${selected.name}"?`) && onDelete(selected.id)}>Delete</Button>
-          )}
-        </div>
-      )}
       {footer}
     </div>
   );

@@ -33,7 +33,9 @@ html, body, #root { height: 100%; margin: 0; }
 .sidebar-item:hover, .palette-item:hover { background: var(--surface-hover); }
 .sidebar-item.active { background: var(--surface-selected); color: var(--dialog-selected-fg); }
 .sidebar-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sidebar-actions { display: flex; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--border); }
+.sidebar-head-actions { display: flex; align-items: center; gap: 4px; }
+.btn-icon { min-width: 28px; padding-left: 6px; padding-right: 6px; font-size: 14px; line-height: 1; }
+.btn-icon:disabled { opacity: .4; cursor: default; }
 .badge { font-size: 10px; background: var(--surface-panel-alt); border: 1px solid var(--border); border-radius: 8px; padding: 0 6px; color: var(--muted); }
 .swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
 .palette { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
