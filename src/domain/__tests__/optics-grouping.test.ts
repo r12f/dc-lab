@@ -5,7 +5,7 @@ import { Library } from '../library/library';
 import { emptyProject } from '../project/types';
 import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import { buildTree } from '../../ui/sidebar-tree';
-import { opticTreePlacement } from '../optics/grouping';
+import { cableTreePlacement, opticTreePlacement } from '../optics/grouping';
 
 describe('optic grouping', () => {
   it('QSFP variants share one family', () => {
@@ -22,6 +22,7 @@ describe('optic grouping', () => {
     const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
     const tree = buildTree(lib.optics.items().map((o) => ({ id: o.id, name: o.name, ...opticTreePlacement(o) })));
     const optics = tree.folders[0];
+    expect(optics.label).toBe('Optic Module');
     expect(optics.folders.map((f) => f.label)).toEqual(['OSFP', 'QSFP-DD', 'QSFP', 'SFP', 'ELSFP']);
     const [qsfpdd, qsfp] = [optics.folders[1], optics.folders[2]];
     expect(qsfpdd.folders.flatMap((s) => s.items).every((i) => lib.optics.get(i.id)!.formFactor === 'QSFP-DD')).toBe(true);
@@ -30,6 +31,23 @@ describe('optic grouping', () => {
       const reaches = speed.items.map((i) => lib.optics.get(i.id)!.reach);
       expect(reaches.some((r) => /SR/.test(r)), speed.label).toBe(true);
       expect(reaches.some((r) => /LR/.test(r)), speed.label).toBe(true);
+    }
+  });
+});
+
+describe('optics & cables tree', () => {
+  it('top level: Optic Module, DAC, AEC, AOC, Power, SMF, MMF, Other; DAC/AEC/AOC by speed', () => {
+    const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
+    const tree = buildTree([
+      ...lib.optics.items().map((o) => ({ id: o.id, name: o.name, ...opticTreePlacement(o) })),
+      ...lib.cableMedia.items().map((c) => ({ id: c.id, name: c.name, ...cableTreePlacement(c) })),
+    ]);
+    expect(tree.folders.map((f) => f.label)).toEqual([
+      'Optic Module', 'DAC', 'AEC', 'AOC', 'Power', 'Single-mode fiber (SMF)', 'Multimode fiber (MMF)', 'Other',
+    ]);
+    for (const label of ['DAC', 'AEC', 'AOC']) {
+      const speeds = tree.folders.find((f) => f.label === label)!.items.map((i) => lib.cableMedia.get(i.id)!.speedGbps ?? 0);
+      expect(speeds, label).toEqual([...speeds].sort((a, b) => a - b));
     }
   });
 });

@@ -4,8 +4,7 @@ import { useAppStore } from '../../state/store';
 import { ModuleLayout } from '../../ui/module-layout';
 import { Sidebar, type SidebarItem } from '../../ui/sidebar';
 import { CanvasFrame, EmptyCanvas } from '../../ui/canvas-frame';
-import { CABLE_TYPES } from '../../domain/optics/cable-types';
-import { opticTreePlacement } from '../../domain/optics/grouping';
+import { cableTreePlacement, opticTreePlacement } from '../../domain/optics/grouping';
 import { cableSummary } from '../../domain/optics/fiber-map';
 import { fromKey, toKey } from './catalog-ref';
 import { useOpticsCatalog } from './use-optics-catalog';
@@ -41,9 +40,10 @@ export function OpticsModule() {
       };
     }),
     ...lib.cableMedia.all().map(({ item, source }) => {
-      const path = ['Cables', CABLE_TYPES[item.type] ?? item.type];
+      const place = cableTreePlacement(item);
+      const path = place.path;
       return {
-        id: toKey({ catalog: 'cable', id: item.id }), name: item.name, path, pathOrder: [1],
+        id: toKey({ catalog: 'cable', id: item.id }), name: item.name, ...place,
         keywords: `${item.ends.a.connector} ${item.ends.b.connector} ${item.type} ${item.mapping} ${variantKeywords(lib, item.id)}`,
         badge: `${cableSummary(item)}${mark(source)}`,
         children: variantChildren(lib, item.id, path),

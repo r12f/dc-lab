@@ -1,8 +1,8 @@
 import type { CableType } from './types';
 
 export const CABLE_TYPES: Record<CableType, string> = {
-  'fiber-sm': 'Single-mode fiber',
-  'fiber-mm': 'Multimode fiber',
+  'fiber-sm': 'Single-mode fiber (SMF)',
+  'fiber-mm': 'Multimode fiber (MMF)',
   'copper-dac': 'DAC',
   aec: 'AEC',
   aoc: 'AOC',

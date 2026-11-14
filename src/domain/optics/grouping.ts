@@ -1,5 +1,6 @@
 import { formatGbps } from '../units';
-import type { OpticDefinition } from './types';
+import type { CableMedia, CableType, OpticDefinition } from './types';
+import { CABLE_TYPES, isDirectAttach } from './cable-types';
 
 /**
  * Module families shown as one folder. QSFP-DD (double density, 8 lanes) is its own family; the 4-lane
@@ -35,12 +36,28 @@ export function reachOrder(reach: string): number {
   return (base < 0 ? 99 : base) * 1000 + lanes * 10 + (m[1] ? 0 : 1);
 }
 
+/** Top-level sidebar folders: optic modules first, then cable types in this order. */
+const CABLE_TYPE_ORDER: CableType[] = ['copper-dac', 'aec', 'aoc', 'power', 'fiber-sm', 'fiber-mm', 'other'];
+
+/**
+ * Sidebar folder + order for a cable: one top-level folder per cable type (DAC, AEC, AOC, Power, SMF, MMF,
+ * Other); direct-attach cables sort by speed (low to high), others by name.
+ */
+export function cableTreePlacement(c: CableMedia) {
+  const i = CABLE_TYPE_ORDER.indexOf(c.type);
+  return {
+    path: [CABLE_TYPES[c.type] ?? c.type],
+    pathOrder: [1 + (i < 0 ? CABLE_TYPE_ORDER.length : i)],
+    order: isDirectAttach(c.type) ? `${String(c.speedGbps ?? 0).padStart(6, '0')} ${c.ends.a.connector} ${c.name}` : c.name,
+  };
+}
+
 /** Sidebar folder + order for an optic: family, then speed (high to low), items by reach (short to long). */
 export function opticTreePlacement(o: OpticDefinition) {
   const family = opticFamily(o.formFactor);
   const speed = o.speedGbps > 0 ? formatGbps(o.speedGbps) : 'Other';
   return {
-    path: ['Optics', family, speed],
+    path: ['Optic Module', family, speed],
     pathOrder: [0, familyOrder(family), -o.speedGbps],
     // Reach first; same reach groups by form factor, module before pigtail.
     order: `${String(reachOrder(o.reach)).padStart(6, '0')} ${o.formFactor} ${o.packaging === 'pigtail' ? 1 : 0}`,
