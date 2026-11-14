@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import type { CableMedia, CableType, FiberMapping, Polarity } from '../../domain/optics/types';
 import { CABLE_SCHEMA } from '../../domain/optics/types';
 import { CABLE_TYPE_DESCRIPTIONS, CABLE_TYPES, isActiveCable, isDirectAttach, isFiber } from '../../domain/optics/cable-types';
@@ -14,8 +13,6 @@ interface Props {
   readOnly: boolean;
   onChange(c: CableMedia): void;
   onDuplicate(): void;
-  /** Item editor or item list, shown above the item type editor. */
-  header?: ReactNode;
 }
 
 const typeOptions = (Object.keys(CABLE_TYPES) as CableType[]).map((t) => ({ value: t, label: CABLE_TYPES[t] }));
@@ -26,15 +23,13 @@ const polarityOptions: { value: '' | Polarity; label: string }[] = [
   { value: '', label: '—' }, { value: 'A', label: 'Type A (key-up/key-down)' }, { value: 'B', label: 'Type B (key-up/key-up)' }, { value: 'C', label: 'Type C (pair flip)' },
 ];
 
-export function CableInspector({ cable: c, header, readOnly, onChange, onDuplicate }: Props) {
+export function CableInspector({ cable: c, readOnly, onChange, onDuplicate }: Props) {
   const set = (patch: Partial<CableMedia>) => onChange({ ...c, ...patch });
   const fiber = isFiber(c.type);
   const fm = fiberMap(c);
   const multi = isMultiFiber(c.ends.a.connector) || isMultiFiber(c.ends.b.connector);
   return (
-    <div className="inspector-inner">
-      {header}
-      <h3 className="inspector-subtitle">Item type</h3>
+    <>
       {readOnly && <ReadOnlyNotice onDuplicate={onDuplicate} />}
       <fieldset disabled={readOnly} className="plain">
         <Section title="General">
@@ -74,6 +69,6 @@ export function CableInspector({ cable: c, header, readOnly, onChange, onDuplica
         </Section>
       </fieldset>
       <ExportJsonButton schema={CABLE_SCHEMA} item={c} label="Export cable JSON" />
-    </div>
+    </>
   );
 }

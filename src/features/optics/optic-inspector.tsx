@@ -1,5 +1,4 @@
 import { isMultiFiber } from '../../domain/optics/connectors';
-import type { ReactNode } from 'react';
 import type { OpticDefinition, OpticPackaging, Pigtail } from '../../domain/optics/types';
 import { OPTIC_SCHEMA } from '../../domain/optics/types';
 import { withPackaging, withPigtail } from '../../domain/optics/factory';
@@ -35,8 +34,6 @@ interface Props {
   readOnly: boolean;
   onChange(o: OpticDefinition): void;
   onDuplicate(): void;
-  /** Item editor or item list, shown above the item type editor. */
-  header?: ReactNode;
 }
 
 const packagingOptions: { value: OpticPackaging; label: string }[] = [
@@ -71,13 +68,11 @@ function PigtailSection({ p, onChange }: { p: Pigtail; onChange(p: Pigtail): voi
   );
 }
 
-export function OpticInspector({ optic: o, header, readOnly, onChange, onDuplicate }: Props) {
+export function OpticInspector({ optic: o, readOnly, onChange, onDuplicate }: Props) {
   const set = (patch: Partial<OpticDefinition>) => onChange({ ...o, ...patch });
   const pigtail = o.packaging === 'pigtail';
   return (
-    <div className="inspector-inner">
-      {header}
-      <h3 className="inspector-subtitle">Item type</h3>
+    <>
       {readOnly && <ReadOnlyNotice onDuplicate={onDuplicate} />}
       <fieldset disabled={readOnly} className="plain">
         <Section title="General">
@@ -109,6 +104,6 @@ export function OpticInspector({ optic: o, header, readOnly, onChange, onDuplica
         </Section>
       </fieldset>
       <ExportJsonButton schema={OPTIC_SCHEMA} item={o} label="Export optic JSON" />
-    </div>
+    </>
   );
 }

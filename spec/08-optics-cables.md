@@ -136,3 +136,7 @@ cables have no fibers: they draw 1:1 straight lines, or a breakout (1 -> 2 / 4) 
 "800G / 1.6T OSFP 2xDR4+" (reach `2xDR4+`, 2 km). The separate 800G 2xDR4 2 km optic is merged into it; old
 projects load `osfp-800g-2xdr4-2km` / reach `2xDR4-2` as `osfp-800g-2xdr4` / `2xDR4+`. Module type: 2xDR4.
 Auto-pick prefers the plain pluggable module over pigtail / LPO variants of the same type.
+
+**Items tab**: like Devices, the Optics and Cables inspector has **Item type** | **Items (n)** tabs (shared
+`ItemTabs`). The Items tab lists the item type's items; opening one (from the list or the sidebar) shows its
+editor there with "← All items"; switching back to Item type deselects the item.

@@ -17,6 +17,7 @@ import { fromItemKey, toItemKey } from '../items/item-key';
 import { variantChildren, variantKeywords } from '../items/variant-children';
 import { ItemVariantEditor } from '../items/item-variant-editor';
 import { ItemsSection } from '../items/items-section';
+import { ItemTabs } from '../items/item-tabs';
 
 export function OpticsModule() {
   const lib = useLibrary();
@@ -61,9 +62,12 @@ export function OpticsModule() {
   const chooseItem = (id: string) => selectKey('optics', toItemKey(id));
   const withRef = (key: string, f: (r: NonNullable<typeof ref>) => void) => { const r = fromKey(key); if (r) f(r); };
   const header = ref && (variant
-    ? <ItemVariantEditor lib={lib} variant={variant} itemTypeName={(optic ?? cable)?.name ?? ''} commands={variants}
-        onDeleted={() => cat.choose(ref)}
-        readOnly={variants.isReadOnly(variant, typeReadOnly)} />
+    ? <>
+        <button type="button" className="link" onClick={() => cat.choose(ref)}>← All items</button>
+        <ItemVariantEditor lib={lib} variant={variant} itemTypeName={(optic ?? cable)?.name ?? ''} commands={variants}
+          onDeleted={() => cat.choose(ref)}
+          readOnly={variants.isReadOnly(variant, typeReadOnly)} />
+      </>
     : <ItemsSection lib={lib} target={ref.catalog} itemId={ref.id} commands={variants} onSelect={chooseItem} />);
 
   return (
@@ -88,12 +92,17 @@ export function OpticsModule() {
         ) : <EmptyCanvas text="Select or create an optic or cable." />
       }
       inspector={
-        optic ? (
-          <OpticInspector optic={optic} header={header} readOnly={typeReadOnly} onChange={(o) => cat.save('optic', o)}
-            onDuplicate={() => cat.duplicate({ catalog: 'optic', id: optic.id })} />
-        ) : cable ? (
-          <CableInspector cable={cable} header={header} readOnly={typeReadOnly} onChange={(c) => cat.save('cable', c)}
-            onDuplicate={() => cat.duplicate({ catalog: 'cable', id: cable.id })} />
+        ref && (optic || cable) ? (
+          <ItemTabs key={`${ref.catalog}:${ref.id}`} items={header} itemCount={lib.variants.of(ref.id).length}
+            itemSelected={!!variant} onLeaveItem={() => variant && cat.choose(ref)}>
+            {optic ? (
+              <OpticInspector optic={optic} readOnly={typeReadOnly} onChange={(o) => cat.save('optic', o)}
+                onDuplicate={() => cat.duplicate({ catalog: 'optic', id: optic.id })} />
+            ) : cable && (
+              <CableInspector cable={cable} readOnly={typeReadOnly} onChange={(c) => cat.save('cable', c)}
+                onDuplicate={() => cat.duplicate({ catalog: 'cable', id: cable.id })} />
+            )}
+          </ItemTabs>
         ) : undefined
       }
     />

@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react';
-import { Tabs } from '../../ui/tabs';
+import type { ReactNode } from 'react';
+import { ItemTabs } from '../items/item-tabs';
 import type { DeviceDefinition } from '../../domain/device/types';
 import type { Library } from '../../domain/library/library';
 import { validateDevice } from '../../domain/device/validate';
@@ -35,15 +35,11 @@ interface Props {
 }
 
 export function DeviceInspector(props: Props) {
-  const [tab, setTab] = useState<'type' | 'items'>('type');
-  // Opening an item (from the sidebar or the list) shows the Items tab.
-  const showItems = tab === 'items' || props.itemSelected;
   return (
-    <div className="inspector-inner">
-      <Tabs<'type' | 'items'> tabs={[{ id: 'type', label: 'Item type' }, { id: 'items', label: `Items (${props.itemCount ?? 0})` }]}
-        value={showItems ? 'items' : 'type'} onChange={(t) => { setTab(t); if (t === 'type') props.onLeaveItem?.(); }} />
-      {showItems ? props.header : <ItemTypeBody {...props} />}
-    </div>
+    <ItemTabs items={props.header} itemCount={props.itemCount ?? 0} itemSelected={!!props.itemSelected}
+      onLeaveItem={() => props.onLeaveItem?.()}>
+      <ItemTypeBody {...props} />
+    </ItemTabs>
   );
 }
 
