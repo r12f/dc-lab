@@ -45,12 +45,18 @@ export function directAttachCables(lib: Library, group: PortGroup, mode: string,
 
 /**
  * Module type of a reach class: variants of one optical interface share a type — "2xDR4+" (2 km), "2xDR4 LPO"
- * are 2xDR4, "DR4-2" is DR4 — and PSM4 (the <=100G name) is DR4.
+ * are 2xDR4, "DR4-2" is DR4 — and the 4-lane parallel SMF family is one type: PSM4 at <= 100G, DR4 above.
+ * Matching key only; show it with `moduleTypeLabel`.
  */
 export function moduleType(reach: string | undefined): string | undefined {
   if (!reach) return undefined;
   const t = reach.trim().replace(/[\s-].*$/, '').replace(/\+$/, '');
   return t.replace(/PSM4$/i, 'DR4');
+}
+
+/** Name of a module type on a port: the 4-lane parallel SMF type is PSM4 on <= 100G ports, DR4 above. */
+export function moduleTypeLabel(type: string | undefined, portSpeedGbps: number): string | undefined {
+  return type === 'DR4' && portSpeedGbps <= 100 ? 'PSM4' : type;
 }
 
 /**
@@ -74,7 +80,7 @@ export function reachOptions(lib: Library, group: PortGroup, mode: string): stri
   const direct = Object.keys(DIRECT_REACH).filter((r) => directAttachCables(lib, group, mode, r).length);
   const types = lib.optics.items()
     .filter((o) => o.reach && moduleFits(group.formFactor, o.formFactor) && o.speedGbps <= group.speedGbps)
-    .map((o) => moduleType(o.reach)!);
+    .map((o) => moduleTypeLabel(moduleType(o.reach), group.speedGbps)!);
   return [...new Set([...direct, ...types])];
 }
 

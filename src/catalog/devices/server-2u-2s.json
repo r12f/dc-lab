@@ -65,7 +65,7 @@
       "name": "Default (native speed, DR)",
       "groupDefaults": {
         "qsfp28": {
-          "reach": "DR4"
+          "reach": "PSM4"
         }
       },
       "overrides": {}

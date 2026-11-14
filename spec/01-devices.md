@@ -133,9 +133,9 @@ Drawing strategy is selected by device shape:
 - **In-Row Chiller** (`chiller`): full-height device with cooling capacity / pump power; fills a chiller rack.
 - **Default breakout profile** (`defaultProfileId`): every device has one. Built-ins ship "Default (native speed,
   DR)": every data / service cage at its native (maximum) speed with the DR-class module of that speed —
-  2xDR4 on 800G / 1.6T OSFP, DR4 on 400G and 100G QSFP — all parallel SMF on MPO-12. 100G QSFP28 has two DR
-  modules: **DR4** (4x25G parallel, MPO-12, the default; formerly listed as PSM4) and **DR1** (single lane,
-  duplex LC). Old project settings load as DR -> DR1, PSM4 -> DR4. No default reach where no DR module exists. Placements
+  2xDR4 on 800G / 1.6T OSFP, DR4 on 400G QSFP, PSM4 on 100G QSFP — all parallel SMF on MPO-12. 100G QSFP28
+  has **PSM4** (4x25G parallel, MPO-12, the default) and **DR1** (single lane, LC); there is no 100G DR4.
+  Old project settings load as DR -> DR1. No default reach where no DR module exists. Placements
   that pick no profile and the Devices canvas use it; "Make default" in the profile editor; the default cannot
   be deleted. Projects get a "Default" profile on load.
 - **Profiles on built-in devices**: a built-in device stays read-only, but its breakout profiles are editable
@@ -198,8 +198,9 @@ load); a placement can still set one in Rack Designer.
 
 **Port settings = Speed → Module Type → Module**:
 - **Module Type**: None, or a reach class the cage takes at <= the physical port speed (2xDR4, 2xLR4, DR4…).
-  Variants fold into their type ("2xDR4+" and "2xDR4 LPO" are 2xDR4; "DR4-2" is DR4) and **PSM4 is DR4**
-  (the <=100G name of the same parallel-SMF interface). The **Connector Type** follows from it and is shown;
+  Variants fold into their type ("2xDR4+" and "2xDR4 LPO" are 2xDR4; "DR4-2" is DR4) and the 4-lane
+  parallel SMF family is one type, named **PSM4** on <= 100G ports and **DR4** above (a 400G QSFP-DD port's
+  DR4 list includes the 100G PSM4 module). The **Connector Type** follows from it and is shown;
   None leaves the cage empty and the connector is the cage form factor (OSFP, QSFP-DD…).
 - **Module** (shown when a type is set): every module of that type the cage physically takes at <= port speed —
   QSFP-DD takes QSFP56 / QSFP28 modules, QSFP28 does not take QSFP-DD. "auto" picks the module at the breakout's

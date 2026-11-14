@@ -69,8 +69,8 @@ function moveDirectOptics(p: Json): Json {
   return { ...p, optics: kept, cableMedia: cables, variants };
 }
 
-/** Renamed reach classes: 100G single-lane DR is "DR1" (LC); the 100G parallel MPO module is "DR4" (was PSM4). */
-const REACH_RENAMES: Record<string, string> = { DR: 'DR1', PSM4: 'DR4', '2xDR4-2': '2xDR4+' };
+/** Renamed reach classes: 100G single-lane DR is "DR1" (LC); 2 km 2xDR4 is "2xDR4+". (PSM4 and DR4 are one type.) */
+const REACH_RENAMES: Record<string, string> = { DR: 'DR1', '2xDR4-2': '2xDR4+' };
 /** Merged optics: old id -> the one that replaced it (800G OSFP 2xDR4 2 km = 2xDR4+). */
 const RENAMED_OPTICS: Record<string, string> = { 'osfp-800g-2xdr4-2km': 'osfp-800g-2xdr4' };
 
@@ -150,7 +150,7 @@ function migrateSideMount(p: Json): Json {
 }
 
 /** Optic `connector`/`media` -> `formFactor`/`reach` (+ fiber connector guessed from the reach). */
-/** Project 100G optics with a renamed reach class (DR -> DR1, PSM4 -> DR4). */
+/** Project optics with a renamed reach class (100G DR -> DR1, 2xDR4-2 -> 2xDR4+). */
 function renameOpticReach(o: Json): Json {
   const r = typeof o.reach === 'string' && (Number(o.speedGbps) === 100 || o.reach === '2xDR4-2') ? REACH_RENAMES[o.reach] : undefined;
   return r ? { ...o, reach: r } : o;

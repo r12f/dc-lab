@@ -3,7 +3,7 @@ import type { PortGroup, PortSetting } from '../domain/device/types';
 import type { ResolvedPort } from '../domain/device/port-settings';
 import { modesOf, speedLabel } from '../domain/device/breakout';
 import { ROLE_TRAITS } from '../domain/device/roles';
-import { cableConnector, compatibleCables, compatibleOptics, directAttachType, isEnginePort, moduleType, modulesOfType, reachOptions } from '../domain/ports/optic-match';
+import { cableConnector, compatibleCables, compatibleOptics, directAttachType, isEnginePort, moduleType, moduleTypeLabel, modulesOfType, reachOptions } from '../domain/ports/optic-match';
 import { reachOrder } from '../domain/optics/grouping';
 import { SelectField } from './fields';
 
@@ -48,6 +48,7 @@ export function PortSettingFields({ lib, group, value, onChange, effective, inhe
   const types = reachOptions(lib, group, mode).filter((r) => !profile || !directAttachType(r))
     .sort((x, y) => Number(!!directAttachType(y)) - Number(!!directAttachType(x)) || reachOrder(x) - reachOrder(y));
   const type = effective?.reach && !directAttachType(effective.reach) ? moduleType(effective.reach) : undefined;
+  const label = (r?: string) => (r && !directAttachType(r) ? moduleTypeLabel(moduleType(r), group.speedGbps) : r);
   const modules = type && !engine ? modulesOfType(lib, group, type) : [];
   const cables = compatibleCables(lib, group, effective?.optic, effective?.reach, mode);
   const set = (patch: PortSetting) => onChange({ ...value, ...patch });
@@ -59,9 +60,9 @@ export function PortSettingFields({ lib, group, value, onChange, effective, inhe
       <SelectField label="Speed / breakout" value={field(value.mode)}
         options={[{ value: INHERIT, label: inh(inherited && speedLabel(inherited.mode)) }, ...modesOf(group).map((m) => ({ value: m, label: speedLabel(m) || m }))]}
         onChange={(v) => set({ mode: unfield(v), opticId: undefined })} />
-      <SelectField label={engine ? `Reach (${group.opticalEngine?.toUpperCase() ?? 'fiber'} engine)` : 'Module Type'} value={field(value.reach)}
+      <SelectField label={engine ? `Reach (${group.opticalEngine?.toUpperCase() ?? 'fiber'} engine)` : 'Module Type'} value={field(engine ? value.reach : label(value.reach))}
         options={[
-          { value: INHERIT, label: inh(inherited?.reach ? moduleType(inherited.reach) : inherited ? 'None' : undefined) },
+          { value: INHERIT, label: inh(inherited?.reach ? label(inherited.reach) : inherited ? 'None' : undefined) },
           { value: NONE, label: engine ? 'unset' : 'None' },
           ...types.map((r) => ({ value: r, label: r })),
         ]}

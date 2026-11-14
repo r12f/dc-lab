@@ -88,7 +88,7 @@
           "reach": "2xDR4"
         },
         "service": {
-          "reach": "DR4"
+          "reach": "PSM4"
         }
       },
       "overrides": {}

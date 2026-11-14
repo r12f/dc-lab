@@ -24,7 +24,11 @@ describe('module type -> modules', () => {
     const all = reachOptions(lib, q28, '1x100G').flatMap((t) => modulesOfType(lib, q28, t));
     expect(all.length).toBeGreaterThan(0);
     expect(all.some((o) => o.formFactor === 'QSFP-DD' || o.speedGbps > 100)).toBe(false);
-    expect(modulesOfType(lib, q28, 'DR4').map((o) => o.id)).toEqual(['qsfp28-100g-psm4']);
+    expect(modulesOfType(lib, q28, 'PSM4').map((o) => o.id)).toEqual(['qsfp28-100g-psm4']);
+    // Named PSM4 on a 100G port, DR4 on faster ones; never "DR4" at 100G.
+    expect(reachOptions(lib, q28, '1x100G')).toContain('PSM4');
+    expect(reachOptions(lib, q28, '1x100G')).not.toContain('DR4');
+    expect(reachOptions(lib, group('switch-32x400g-qsfpdd', 'qsfpdd'), '1x400G')).toContain('DR4');
   });
   it('auto pick: the module of the type at the mode speed; a pinned slower one of the type is kept', () => {
     const qdd = group('switch-32x400g-qsfpdd', 'qsfpdd');

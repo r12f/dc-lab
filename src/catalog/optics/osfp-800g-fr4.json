@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/optic@1",
   "id": "osfp-800g-fr4",
-  "name": "800G OSFP FR4 (8x100G to 4x200G)",
+  "name": "800G OSFP FR4",
   "packaging": "module",
   "formFactor": "OSFP",
   "speedGbps": 800,
