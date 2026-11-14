@@ -136,7 +136,8 @@ Drawing strategy is selected by device shape:
   default" in the profile editor; the default cannot be deleted. Projects get a "Default" profile on load.
 - **Items tab**: the Devices inspector has **Item type** | **Items (n)** tabs. A device item can override the item
   type's **typical / max power and weight** (`specs`); empty fields inherit. Rack metrics and the BOM use the
-  placed item's values.
+  placed item's values. Each item in the list has a ✕ delete button, and an opened item has "✕ Delete item"
+  at the bottom (both ask to confirm; also in Optics & Cables).
 - **Variable height** (`resizable`): any device can be marked "Variable height" in the Devices inspector; its
   height is then set per placement in Rack Designer and `height` is the default size. Fillers (below) default to it.
 - **PSU arrangement** (`psus.layout`): `split` (default, half on each rear edge) or `row` (one row side by side,

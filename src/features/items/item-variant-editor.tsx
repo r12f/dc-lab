@@ -4,6 +4,7 @@ import { Button } from '../../ui/button';
 import { Field, Section, TextField } from '../../ui/fields';
 import { CustomPropertiesSection } from '../properties/custom-properties-section';
 import type { ItemVariantCommands } from './use-item-variants';
+import { variantLabel } from '../../domain/items/variants';
 
 interface Props {
   lib: Library;
@@ -11,6 +12,8 @@ interface Props {
   itemTypeName: string;
   readOnly: boolean;
   commands: ItemVariantCommands;
+  /** After the item is deleted (e.g. go back to the item type). */
+  onDeleted?(): void;
 }
 
 /** Override field: empty = inherit the item type's value (shown as the placeholder). */
@@ -48,7 +51,7 @@ function DeviceSpecs({ lib, v, set, disabled }: { lib: Library; v: ItemVariant; 
 }
 
 /** Item (vendor product) editor: vendor, model / vendor PN, default flag, custom properties. */
-export function ItemVariantEditor({ lib, variant: v, itemTypeName, readOnly, commands }: Props) {
+export function ItemVariantEditor({ lib, variant: v, itemTypeName, readOnly, commands, onDeleted }: Props) {
   const isDefault = lib.variants.defaultOf(v.itemId)?.id === v.id;
   const set = (patch: Partial<ItemVariant>) => commands.save({ ...v, ...patch });
   return (
@@ -66,6 +69,11 @@ export function ItemVariantEditor({ lib, variant: v, itemTypeName, readOnly, com
       </Section>
       {v.target === 'device' && <DeviceSpecs lib={lib} v={v} set={set} disabled={readOnly} />}
       <CustomPropertiesSection target={v.target} item={v} builtin={readOnly} onChange={(properties) => set({ properties })} />
+      <Button variant="danger" onClick={() => {
+        if (!confirm(`Delete item "${variantLabel(v) || v.id}"?`)) return;
+        commands.del(v);
+        onDeleted?.();
+      }}>✕ Delete item</Button>
     </>
   );
 }

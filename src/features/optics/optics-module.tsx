@@ -62,6 +62,7 @@ export function OpticsModule() {
   const withRef = (key: string, f: (r: NonNullable<typeof ref>) => void) => { const r = fromKey(key); if (r) f(r); };
   const header = ref && (variant
     ? <ItemVariantEditor lib={lib} variant={variant} itemTypeName={(optic ?? cable)?.name ?? ''} commands={variants}
+        onDeleted={() => cat.choose(ref)}
         readOnly={variants.isReadOnly(variant, typeReadOnly)} />
     : <ItemsSection lib={lib} target={ref.catalog} itemId={ref.id} commands={variants} onSelect={chooseItem} />);
 

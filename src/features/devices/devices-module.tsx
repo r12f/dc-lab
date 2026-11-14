@@ -104,6 +104,7 @@ export function DevicesModule() {
               ? <>
                   <button type="button" className="link" onClick={() => select(device.id)}>← All items</button>
                   <ItemVariantEditor lib={lib} variant={variant} itemTypeName={device.name} commands={variants}
+                    onDeleted={() => select(device.id)}
                     readOnly={variants.isReadOnly(variant, typeReadOnly)} />
                 </>
               : <ItemsSection lib={lib} target="device" itemId={device.id} commands={variants}
