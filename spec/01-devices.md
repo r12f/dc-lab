@@ -179,8 +179,8 @@ Drawing strategy is selected by device shape:
 - **+ New** opens a template picker (switch, server, vertical PDU, horizontal PDU, patch panel, OCS,
   power shelf, storage, blanking panel, stiffener, blank). Each template creates a device with realistic port roles
   (data + mgmt + console, PSUs, PDU banks).
-- Delete works for project devices and built-in devices. Deleting a built-in hides it in this project
-  (`hiddenBuiltins`); "Show hidden built-ins" restores them.
+- Delete works for project devices only: built-in devices (and the generic item of a built-in type) cannot be
+  deleted; ✕ is disabled with "Built-in items cannot be deleted". Same in Racks and Optics and Cables.
 - Canvas: click a port to select it, Ctrl/Shift-click to add to the selection.
 - Inspector: general fields, custom properties (editable on built-ins too; manage definitions inline), PSU / PDU input, port group editor (role, bank, phase), breakout profile
   editor (group default and selected-ports setting: mode, optic, cable).

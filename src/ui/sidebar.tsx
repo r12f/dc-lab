@@ -14,6 +14,8 @@ interface Props {
   onNew?(): void;
   onDuplicate?(id: string): void;
   onDelete?(id: string): void;
+  /** False for items that cannot be deleted (built-ins); the delete button is disabled with the reason. */
+  canDelete?(id: string): boolean;
   /** Rendered under the title (forms, palettes). */
   header?: ReactNode;
   /** Rendered under the action bar. */
@@ -89,7 +91,7 @@ function Tree({ node, depth, selectedId, collapsed, expanded, forceOpen, onToggl
 
 /** Filterable, collapsible tree of items with New / Duplicate / Delete actions. */
 export function Sidebar(props: Props) {
-  const { title, items, selectedId, onSelect, onNew, onDuplicate, onDelete, header, footer, emptyText, filterable, lower } = props;
+  const { title, items, selectedId, onSelect, onNew, onDuplicate, onDelete, canDelete, header, footer, emptyText, filterable, lower } = props;
   const listHeight = usePreferences((s) => s.sidebarListHeight);
   const setListHeight = usePreferences((s) => s.setSidebarListHeight);
   const [filter, setFilter] = useState('');
@@ -117,8 +119,10 @@ export function Sidebar(props: Props) {
               disabled={!selected} onClick={() => selected && onDuplicate(selected.id)}>⧉</Button>
           )}
           {onDelete && (
-            <Button className="btn-icon" variant="danger" title={selected ? `Delete "${selected.name}"` : 'Delete (select an item)'} aria-label="Delete"
-              disabled={!selected} onClick={() => selected && confirm(`Delete "${selected.name}"?`) && onDelete(selected.id)}>✕</Button>
+            <Button className="btn-icon" variant="danger" aria-label="Delete"
+              title={!selected ? 'Delete (select an item)' : canDelete && !canDelete(selected.id) ? 'Built-in items cannot be deleted' : `Delete "${selected.name}"`}
+              disabled={!selected || (!!canDelete && !canDelete(selected.id))}
+              onClick={() => selected && confirm(`Delete "${selected.name}"?`) && onDelete(selected.id)}>✕</Button>
           )}
         </div>
       </div>

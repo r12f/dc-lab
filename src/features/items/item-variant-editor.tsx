@@ -69,11 +69,11 @@ export function ItemVariantEditor({ lib, variant: v, itemTypeName, readOnly, com
       </Section>
       {v.target === 'device' && <DeviceSpecs lib={lib} v={v} set={set} disabled={readOnly} />}
       <CustomPropertiesSection target={v.target} item={v} builtin={readOnly} onChange={(properties) => set({ properties })} />
-      <Button variant="danger" onClick={() => {
+      {commands.canDelete(v) && <Button variant="danger" onClick={() => {
         if (!confirm(`Delete item "${variantLabel(v) || v.id}"?`)) return;
         commands.del(v);
         onDeleted?.();
-      }}>✕ Delete item</Button>
+      }}>✕ Delete item</Button>}
     </>
   );
 }

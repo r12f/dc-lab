@@ -113,7 +113,7 @@ describe('QSFP-DD800 removal', () => {
     expect(p.devices[0].ports[0]).toMatchObject({ formFactor: 'QSFP-DD', label: 'QSFP-DD' });
     expect(p.optics[0].formFactor).toBe('QSFP-DD');
     expect(p.rackDesigns[0].placements[0].deviceId).toBe('switch-32x800g-qsfpdd');
-    expect(p.hiddenBuiltins).toEqual(['switch-32x800g-qsfpdd']);
+    expect(p.hiddenBuiltins).toEqual([]);
     expect(p.builtinProperties).toEqual({ 'switch-32x800g-qsfpdd': { a: 1 } });
   });
 });

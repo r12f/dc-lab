@@ -76,6 +76,5 @@ Empty slots are drawn as dashed boxes inside the element; slots exist only where
   editor, move toward/away from the rack, remove.
 - Export SVG.
 
-**Deleted built-in templates come back**: deleting a built-in rack template only hides it in the project
-(`hiddenBuiltins`). The sidebar footer then shows "Show n hidden built-in items", which restores this module's
-hidden built-ins (Devices and Optics and Cables have the same footer, each restoring only its own).
+**Built-in templates cannot be deleted**: ✕ is disabled for them (tooltip "Built-in items cannot be deleted");
+only project templates are deleted. Duplicate a built-in to change it.

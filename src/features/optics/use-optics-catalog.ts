@@ -12,7 +12,6 @@ export function useOpticsCatalog(lib: Library) {
   const select = useAppStore((s) => s.select);
   const upsert = useAppStore((s) => s.upsert);
   const remove = useAppStore((s) => s.remove);
-  const hideBuiltin = useAppStore((s) => s.hideBuiltin);
 
   const collection = (c: OpticsCatalog): ItemCollection<CatalogItem> =>
     (c === 'optic' ? lib.optics : lib.cableMedia) as unknown as ItemCollection<CatalogItem>;
@@ -34,8 +33,9 @@ export function useOpticsCatalog(lib: Library) {
     choose({ catalog: r.catalog, id: copy.id });
   };
   const del = (r: CatalogRef) => {
-    if (collection(r.catalog).sourceOf(r.id) === 'builtin') hideBuiltin(r.id);
-    else remove(STORE_KEY[r.catalog], r.id);
+    // Built-in items ship with the app and cannot be deleted.
+    if (collection(r.catalog).sourceOf(r.id) === 'builtin') return;
+    remove(STORE_KEY[r.catalog], r.id);
     choose(undefined);
   };
   return { ref, readOnly, choose, save, create, duplicate, del, collection };

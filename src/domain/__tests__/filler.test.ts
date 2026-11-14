@@ -75,6 +75,6 @@ describe('size-adjustable fillers', () => {
       { id: 'b', deviceId: 'stiffener-1ou', label: 'STF1', mount: { kind: 'rack', position: 9, face: 'front' }, portSettings: {}, groupSettings: {} },
     ] }] });
     expect(p.rackDesigns[0].placements.map((x) => [x.deviceId, x.units])).toEqual([['reserved', 4], ['stiffener', 1]]);
-    expect(p.hiddenBuiltins).toEqual(['reserved']);
+    expect(p.hiddenBuiltins).toEqual([]);
   });
 });

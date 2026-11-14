@@ -19,10 +19,7 @@ import { fromItemKey, toItemKey } from '../items/item-key';
 import { variantChildren, variantKeywords } from '../items/variant-children';
 import { ItemVariantEditor } from '../items/item-variant-editor';
 import { ItemsSection } from '../items/items-section';
-import { HiddenBuiltinsFooter } from '../catalog/hidden-builtins-footer';
-import { BUILTIN_CATALOG } from '../../catalog';
 
-const BUILTIN_DEVICE_IDS = BUILTIN_CATALOG.devices.map((d) => d.id);
 
 export function DevicesModule() {
   const lib = useLibrary();
@@ -74,10 +71,10 @@ export function DevicesModule() {
           onNew={() => setMenuOpen((o) => !o)}
           onDuplicate={duplicateSel}
           onDelete={deleteSel}
+          canDelete={(k) => (variant ? variants.canDelete(variant) : ed.canDelete(k))}
           header={menuOpen && (
             <NewDeviceMenu onClose={() => setMenuOpen(false)} onPick={(t) => ed.create(`new-${t.id}`, t.build)} />
           )}
-          footer={<HiddenBuiltinsFooter builtinIds={BUILTIN_DEVICE_IDS} />}
         />
       }
       canvas={

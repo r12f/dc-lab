@@ -16,7 +16,6 @@ export function useCatalogEditor<T extends CatalogItem>(key: CatalogKey, tab: Mo
   const select = useAppStore((s) => s.select);
   const upsert = useAppStore((s) => s.upsert);
   const remove = useAppStore((s) => s.remove);
-  const hideBuiltin = useAppStore((s) => s.hideBuiltin);
 
   const selected = collection.get(selectedId);
   const readOnly = !!selectedId && collection.sourceOf(selectedId) === 'builtin';
@@ -36,9 +35,10 @@ export function useCatalogEditor<T extends CatalogItem>(key: CatalogKey, tab: Mo
     select(tab, copy.id);
   };
   const del = (id: string) => {
-    if (collection.sourceOf(id) === 'builtin') hideBuiltin(id);
-    else remove(key, id);
+    // Built-in items ship with the app and cannot be deleted.
+    if (collection.sourceOf(id) === 'builtin') return;
+    remove(key, id);
     select(tab, undefined);
   };
-  return { selected, selectedId, readOnly, select: (id: string | undefined) => select(tab, id), save, create, duplicate, del };
+  return { selected, selectedId, readOnly, canDelete: (id: string) => collection.sourceOf(id) === 'project', select: (id: string | undefined) => select(tab, id), save, create, duplicate, del };
 }

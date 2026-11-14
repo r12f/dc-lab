@@ -18,10 +18,7 @@ import { variantChildren, variantKeywords } from '../items/variant-children';
 import { ItemVariantEditor } from '../items/item-variant-editor';
 import { ItemsSection } from '../items/items-section';
 import { ItemTabs } from '../items/item-tabs';
-import { HiddenBuiltinsFooter } from '../catalog/hidden-builtins-footer';
-import { BUILTIN_CATALOG } from '../../catalog';
 
-const BUILTIN_OPTICS_IDS = [...BUILTIN_CATALOG.optics, ...BUILTIN_CATALOG.cableMedia].map((x) => x.id);
 
 export function OpticsModule() {
   const lib = useLibrary();
@@ -80,8 +77,12 @@ export function OpticsModule() {
           onNew={() => setMenuOpen((o) => !o)}
           onDuplicate={(k) => (variant ? chooseItem(variants.duplicate(variant)) : withRef(k, cat.duplicate))}
           onDelete={(k) => { if (variant) { variants.del(variant); cat.choose(ref); } else withRef(k, cat.del); }}
+          canDelete={(k) => {
+            if (variant) return variants.canDelete(variant);
+            const r = fromKey(k);
+            return !!r && cat.collection(r.catalog).sourceOf(r.id) === 'project';
+          }}
           header={menuOpen && <NewOpticsMenu onClose={() => setMenuOpen(false)} onPick={(c) => cat.create(c.catalog, c.baseId, c.build)} />}
-          footer={<HiddenBuiltinsFooter builtinIds={BUILTIN_OPTICS_IDS} />}
         />
       }
       canvas={

@@ -27,7 +27,8 @@ A single JSON file (`*.dclab.json`):
   devices / racks / optics / cable media into the current project (same id = replaced).
 - The working project is also autosaved to `localStorage`.
 
-`hiddenBuiltins` lists built-in item ids deleted in this project; they are excluded from every list.
+`hiddenBuiltins` is kept for file compatibility and always loads empty: built-in items cannot be deleted, and
+ones hidden by older versions come back.
 
 ## Custom properties
 

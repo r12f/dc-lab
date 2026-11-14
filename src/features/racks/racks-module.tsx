@@ -7,10 +7,7 @@ import { Sidebar } from '../../ui/sidebar';
 import { CanvasFrame, EmptyCanvas } from '../../ui/canvas-frame';
 import { RackTemplateDrawing } from './rack-template-drawing';
 import { RackInspector } from './rack-inspector';
-import { HiddenBuiltinsFooter } from '../catalog/hidden-builtins-footer';
-import { BUILTIN_CATALOG } from '../../catalog';
 
-const BUILTIN_RACK_IDS = BUILTIN_CATALOG.racks.map((r) => r.id);
 
 export function RacksModule() {
   const lib = useLibrary();
@@ -27,8 +24,7 @@ export function RacksModule() {
   return (
     <ModuleLayout
       sidebar={<Sidebar title="Rack templates" items={items} filterable selectedId={ed.selectedId} onSelect={(id) => { ed.select(id); setElementId(undefined); }}
-        onNew={() => ed.create('new-rack', newRack)} onDuplicate={ed.duplicate} onDelete={ed.del}
-        footer={<HiddenBuiltinsFooter builtinIds={BUILTIN_RACK_IDS} />} />}
+        onNew={() => ed.create('new-rack', newRack)} onDuplicate={ed.duplicate} onDelete={ed.del} canDelete={ed.canDelete} />}
       canvas={rack ? (
         <CanvasFrame title={rack.name} exportName={rack.id}>
           {(ref) => <RackTemplateDrawing ref={ref} rack={rack} selectedElementId={elementId} onElementClick={setElementId} />}
