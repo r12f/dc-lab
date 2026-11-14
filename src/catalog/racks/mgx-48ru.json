@@ -15,26 +15,5 @@
   "maxLoadKg": 1500,
   "maxPowerW": 40000,
   "schema": "dc-lab/rack@1",
-  "sideElements": [
-    {
-      "id": "pdu-bay-l",
-      "name": "PDU bay L",
-      "kind": "pdu-bay",
-      "side": "left",
-      "widthMm": 100,
-      "depthMm": 1200,
-      "slots": 2,
-      "weightKg": 5
-    },
-    {
-      "id": "pdu-bay-r",
-      "name": "PDU bay R",
-      "kind": "pdu-bay",
-      "side": "right",
-      "widthMm": 100,
-      "depthMm": 1200,
-      "slots": 2,
-      "weightKg": 5
-    }
-  ]
+  "sideElements": []
 }

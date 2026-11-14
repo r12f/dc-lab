@@ -6,6 +6,7 @@ import { ReadOnlyNotice } from '../../ui/ReadOnlyNotice';
 import { Button } from '../../ui/Button';
 import { downloadText } from '../../io/download';
 import { SideElementsEditor } from './SideElementsEditor';
+import { defaultSideElements } from '../../domain/rack/sideElements';
 
 interface Props {
   rack: RackTemplate;
@@ -19,6 +20,14 @@ interface Props {
 const kindOptions = (Object.keys(RACK_KINDS) as RackKind[]).map((k) => ({ value: k, label: RACK_KINDS[k] }));
 const systemOptions: { value: UnitSystem; label: string }[] = [{ value: 'RU', label: 'RU' }, { value: 'OU', label: 'OU' }];
 
+const sideSignature = (els: { side: string; kind: string; widthMm: number }[]) => els.map((e) => `${e.side}:${e.kind}:${e.widthMm}`).join();
+
+/** Changing kind swaps in that kind's default side elements, unless the user customised them. */
+function withKind(r: RackTemplate, kind: RackKind): Partial<RackTemplate> {
+  const untouched = sideSignature(r.sideElements) === sideSignature(defaultSideElements(r.kind, r.depthMm));
+  return untouched ? { kind, sideElements: defaultSideElements(kind, r.depthMm) } : { kind };
+}
+
 export function RackInspector({ rack: r, readOnly, onChange, onDuplicate, selectedElementId, onSelectElement }: Props) {
   const set = (patch: Partial<RackTemplate>) => onChange({ ...r, ...patch });
   return (
@@ -28,7 +37,7 @@ export function RackInspector({ rack: r, readOnly, onChange, onDuplicate, select
         <Section title="General">
           <TextField label="Id" value={r.id} onChange={() => undefined} disabled />
           <TextField label="Name" value={r.name} onChange={(name) => set({ name })} />
-          <SelectField<RackKind> label="Kind" value={r.kind} options={kindOptions} onChange={(kind) => set({ kind })} />
+          <SelectField<RackKind> label="Kind" value={r.kind} options={kindOptions} onChange={(kind) => set(withKind(r, kind))} />
           <div className="row2">
             <NumberField label="Units" value={r.units} min={1} onChange={(units) => set({ units })} />
             <SelectField<UnitSystem> label="Unit" value={r.unitSystem} options={systemOptions} onChange={(unitSystem) => set({ unitSystem })} />

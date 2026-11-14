@@ -50,6 +50,18 @@ export const SIDE_KINDS: Record<SideElementKind, SideKindTraits> = {
 
 export const SIDE_ELEMENT_KINDS = Object.keys(SIDE_KINDS) as SideElementKind[];
 
+/**
+ * Default side elements by rack kind: network racks get a PDU bay next to the body and a sidepod
+ * outside it on each side; server-type racks (server, MGX, ORv3, ORW) get none.
+ */
+export function defaultSideElements(kind: string, depthMm: number): SideElement[] {
+  if (kind !== 'network') return [];
+  return (['left', 'right'] as const).flatMap((side) => {
+    const s = side === 'left' ? 'l' : 'r';
+    return [newSideElement(`pdu-bay-${s}`, 'pdu-bay', side, depthMm), newSideElement(`sidepod-${s}`, 'sidepod', side, depthMm)];
+  });
+}
+
 export function newSideElement(id: string, kind: SideElementKind, side: SideName, depthMm: number): SideElement {
   const t = SIDE_KINDS[kind];
   return { id, name: `${t.label} ${side === 'left' ? 'L' : 'R'}`, kind, side, depthMm, ...t.defaults };

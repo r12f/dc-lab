@@ -28,6 +28,15 @@ A rack can have any number of boxes on either side. Each box is one **side eleme
 
 Elements on one side are ordered from the rack body outward (first = adjacent to the rack).
 
+Defaults by rack kind (built-in templates follow these):
+
+| Rack kind | Side elements |
+|---|---|
+| `network` | each side: PDU bay (100 mm, next to the body) + sidepod (300 mm, outside) |
+| `server`, `mgx`, `orv3`, `orw` | none |
+
+`footprintTiles.wide` of built-in network racks covers body + side elements (600 + 2×400 mm → 3 tiles).
+
 Kind traits (registry):
 
 | Kind | Drawn as | Accepts |

@@ -3,7 +3,8 @@ import { Library } from '../library/Library';
 import { emptyProject } from '../project/types';
 import { newDesign } from '../design/factory';
 import { defaultMount, placementProblem } from '../design/placement';
-import { newSideElement } from '../rack/sideElements';
+import { defaultSideElements, newSideElement } from '../rack/sideElements';
+import { BUILTIN_CATALOG_FOR_TESTS } from './catalogFixture';
 import { normalizeProject } from '../project/serializer';
 import type { DeviceDefinition } from '../device/types';
 import type { RackTemplate } from '../rack/types';
@@ -24,6 +25,19 @@ const lib = new Library(
   { devices: [pdu as unknown as DeviceDefinition, sw as unknown as DeviceDefinition], racks: [withSides], optics: [], cableMedia: [] },
   emptyProject(),
 );
+
+describe('default side elements', () => {
+  it('network racks: PDU bay + sidepod on each side; server racks: none', () => {
+    const els = defaultSideElements('network', 1200);
+    expect(els.map((e) => `${e.side}:${e.kind}`)).toEqual(['left:pdu-bay', 'left:sidepod', 'right:pdu-bay', 'right:sidepod']);
+    for (const k of ['server', 'mgx', 'orv3', 'orw']) expect(defaultSideElements(k, 1200)).toEqual([]);
+  });
+  it('built-in templates follow the defaults', () => {
+    for (const r of BUILTIN_CATALOG_FOR_TESTS.racks) {
+      expect(r.sideElements.map((e) => `${e.side}:${e.kind}`), r.id).toEqual(defaultSideElements(r.kind, r.depthMm).map((e) => `${e.side}:${e.kind}`));
+    }
+  });
+});
 
 describe('side elements', () => {
   const design = newDesign('d', 'D', withSides.id);
