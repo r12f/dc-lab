@@ -110,3 +110,6 @@ details.card > summary { cursor: pointer; font-weight: 600; }
 .file-name { color: var(--muted); font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .theme-picker { width: 120px; }
 * { scrollbar-color: var(--general-subtle) transparent; }
+.tooltip { position: fixed; z-index: 50; pointer-events: none; max-width: 360px; background: var(--panel); color: var(--text);
+  border: 1px solid var(--dialog-border); border-radius: 6px; padding: 8px 10px; box-shadow: 0 6px 20px rgba(0,0,0,.3); font-size: 12px; line-height: 1.45; }
+.tooltip .error, .tooltip .muted { margin: 0; }

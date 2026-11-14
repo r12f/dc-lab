@@ -84,9 +84,29 @@ export function migrateOptic(o: Json): Json {
   return { ...rest, formFactor: connector, reach, fiberConnector: n && fiber ? `${n}x ${fiber}` : fiber };
 }
 
+/**
+ * Old layouts had horizontal rows (`frontFacing` north/south). Rotate the whole plan 90° so rows run
+ * north–south: (x, y) -> (y, x), rectangles swap width/depth, room swaps dimensions.
+ */
+export function migrateLayout(l: Json): Json {
+  const rows = (l.rows as Json[]) ?? [];
+  const horizontal = rows.some((r) => r.frontFacing === 'north' || r.frontFacing === 'south');
+  if (!horizontal) return l;
+  const swapRect = (r: Json) => ({ ...r, x: r.y, y: r.x, widthMm: r.depthMm, depthMm: r.widthMm });
+  const room = l.room as Json | undefined;
+  return {
+    ...l,
+    room: room && { widthMm: room.depthMm, depthMm: room.widthMm },
+    rows: rows.map((r) => ({ ...r, x: r.y, y: r.x, frontFacing: r.frontFacing === 'north' ? 'west' : 'east' })),
+    aisles: ((l.aisles as Json[]) ?? []).map(swapRect),
+    trays: ((l.trays as Json[]) ?? []).map(swapRect),
+  };
+}
+
 export function migrateProjectJson(p: Json): Json {
   return {
     ...p,
+    layouts: ((p.layouts as Json[]) ?? []).map(migrateLayout),
     optics: ((p.optics as Json[]) ?? []).map(migrateOptic),
     devices: ((p.devices as Json[]) ?? []).map(migrateDevice),
     racks: ((p.racks as Json[]) ?? []).map(migrateRack),

@@ -1,9 +1,9 @@
-import type { Compass, Row } from '../../domain/layout/types';
+import type { RowFront, Row } from '../../domain/layout/types';
 import { Button } from '../../ui/Button';
 import { NumberField, SelectField, TextField } from '../../ui/fields';
 import type { LayoutEditor } from './useLayoutEditor';
 
-const facing = [{ value: 'south' as Compass, label: 'South (down)' }, { value: 'north' as Compass, label: 'North (up)' }];
+const facing = [{ value: 'west' as RowFront, label: 'West (left)' }, { value: 'east' as RowFront, label: 'East (right)' }];
 
 export function RowForm({ row, editor, onRemoved }: { row: Row; editor: LayoutEditor; onRemoved(): void }) {
   const set = (patch: Partial<Row>) => editor.updateElement<Row>('rows', row.id, patch);
@@ -16,12 +16,12 @@ export function RowForm({ row, editor, onRemoved }: { row: Row; editor: LayoutEd
       </div>
       <div className="row3">
         <NumberField label="Tiles" value={row.tileCount} min={1} onChange={(tileCount) => set({ tileCount })} />
-        <NumberField label="Tile W mm" value={row.tileWidthMm} onChange={(tileWidthMm) => set({ tileWidthMm })} />
-        <NumberField label="Tile D mm" value={row.tileDepthMm} onChange={(tileDepthMm) => set({ tileDepthMm })} />
+        <NumberField label="Tile pitch mm" value={row.tileWidthMm} onChange={(tileWidthMm) => set({ tileWidthMm })} />
+        <NumberField label="Row depth mm" value={row.tileDepthMm} onChange={(tileDepthMm) => set({ tileDepthMm })} />
       </div>
       <div className="row2">
         <NumberField label="Power budget kW" value={row.powerBudgetKw} onChange={(powerBudgetKw) => set({ powerBudgetKw })} />
-        <SelectField<Compass> label="Front (cold aisle)" value={row.frontFacing} options={facing} onChange={(frontFacing) => set({ frontFacing })} />
+        <SelectField<RowFront> label="Front (cold aisle)" value={row.frontFacing} options={facing} onChange={(frontFacing) => set({ frontFacing })} />
       </div>
       <Button variant="danger" onClick={() => { editor.removeElement('rows', row.id); onRemoved(); }}>Remove row</Button>
     </div>

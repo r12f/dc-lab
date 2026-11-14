@@ -2,27 +2,27 @@ import type { Library } from '../../domain/library/Library';
 import type { Aisle, CableTray, DcLayout, Row } from '../../domain/layout/types';
 import { newAisle, newRow, newTray } from '../../domain/layout/factory';
 import { assignmentProblem, type DesignLookup } from '../../domain/layout/tiles';
+import { clampToRoom, eastEdge, movableRect, snap, type MovableKind } from '../../domain/layout/geometry';
 import { uniqueId } from '../../domain/ids';
 import { useAppStore } from '../../state/store';
 
 type ListName = 'rows' | 'aisles' | 'trays';
 type Element = Row | Aisle | CableTray;
 
+const LIST: Record<MovableKind, ListName> = { row: 'rows', aisle: 'aisles', tray: 'trays' };
+
 /** Commands on one DC layout. */
 export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcLayout | undefined) {
   const update = useAppStore((s) => s.update);
   const mutate = (fn: (l: DcLayout) => DcLayout) => layout && update('layouts', layout.id, fn);
 
-  const nextY = (l: DcLayout) =>
-    Math.max(600, ...[...l.rows.map((r) => r.y + r.tileDepthMm), ...l.aisles.map((a) => a.y + a.depthMm),
-      ...l.trays.map((t) => t.y + t.depthMm)]);
-
+  // New elements go east of everything, so row/aisle/row builds an aisle sequence.
   const addRow = () => mutate((l) => {
     const id = uniqueId('row', l.rows.map((r) => r.id));
-    return { ...l, rows: [...l.rows, newRow(id, `Row ${l.rows.length + 1}`, nextY(l))] };
+    return { ...l, rows: [...l.rows, newRow(id, `Row ${l.rows.length + 1}`, eastEdge(l))] };
   });
-  const addAisle = () => mutate((l) => ({ ...l, aisles: [...l.aisles, newAisle(uniqueId('aisle', l.aisles.map((a) => a.id)), nextY(l))] }));
-  const addTray = () => mutate((l) => ({ ...l, trays: [...l.trays, newTray(uniqueId('tray', l.trays.map((a) => a.id)), nextY(l))] }));
+  const addAisle = () => mutate((l) => ({ ...l, aisles: [...l.aisles, newAisle(uniqueId('aisle', l.aisles.map((a) => a.id)), eastEdge(l))] }));
+  const addTray = () => mutate((l) => ({ ...l, trays: [...l.trays, newTray(uniqueId('tray', l.trays.map((a) => a.id)), eastEdge(l))] }));
 
   function updateElement<T extends Element>(list: ListName, id: string, patch: Partial<T>) {
     mutate((l) => ({ ...l, [list]: (l[list] as Element[]).map((e) => (e.id === id ? { ...e, ...patch } : e)) }));
@@ -33,6 +33,16 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
       [list]: (l[list] as Element[]).filter((e) => e.id !== id),
       assignments: list === 'rows' ? l.assignments.filter((a) => a.rowId !== id) : l.assignments,
     }));
+
+  /** Moves a row/aisle/tray so its top-left is at (x, y), snapped and kept inside the room. */
+  const moveElement = (kind: MovableKind, id: string, x: number, y: number) =>
+    mutate((l) => {
+      const r = movableRect(l, kind, id);
+      if (!r) return l;
+      const pos = clampToRoom(l, snap(x), snap(y), r.widthMm, r.depthMm);
+      const list = LIST[kind];
+      return { ...l, [list]: (l[list] as Element[]).map((e) => (e.id === id ? { ...e, ...pos } : e)) };
+    });
 
   /** Assigns a design to a tile; returns an error message on failure. */
   const assign = (rowId: string, startTile: number, designId: string): string | undefined => {
@@ -54,7 +64,7 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
   const setRoom = (room: DcLayout['room']) => mutate((l) => ({ ...l, room }));
   const rename = (name: string) => mutate((l) => ({ ...l, name }));
 
-  return { addRow, addAisle, addTray, updateElement, removeElement, assign, unassign, relabel, setRoom, rename };
+  return { addRow, addAisle, addTray, updateElement, removeElement, moveElement, assign, unassign, relabel, setRoom, rename };
 }
 
 export type LayoutEditor = ReturnType<typeof useLayoutEditor>;

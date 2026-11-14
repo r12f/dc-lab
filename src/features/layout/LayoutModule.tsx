@@ -59,7 +59,7 @@ export function LayoutModule() {
       canvas={
         layout ? (
           <CanvasFrame title={layout.name} exportName={layout.id}>
-            {(ref) => <LayoutCanvas ref={ref} lib={lib} designs={designs} layout={layout} selection={sel} onSelect={setSel} />}
+            {(ref) => <LayoutCanvas ref={ref} lib={lib} designs={designs} layout={layout} selection={sel} onSelect={setSel} onMove={editor.moveElement} />}
           </CanvasFrame>
         ) : (
           <EmptyCanvas text="Select or create a DC layout." />
