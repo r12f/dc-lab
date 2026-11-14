@@ -4,6 +4,13 @@ import { groupsOnFace, formatPortRef } from '../device/ports';
 import { endpointLegs } from './connectors';
 import { estimateLengthM } from './cabling';
 import type { CableEndpoint, CableRoute, CableRun, Placement, RackDesign } from './types';
+import type { CableMedia } from '../optics/types';
+import { connectorsMate } from '../optics/connectors';
+import { isDirectAttach } from '../optics/cable-types';
+import { fiberTypeFor } from '../ports/optic-match';
+import { portLegs, type PortLeg } from '../ports/legs';
+import { parsePortRef } from '../device/ports';
+import { resolvePlacedPort } from './optics';
 
 /** Stable key of a connector endpoint ("p1|osfp/3|2"). */
 export function endpointKey(ep: CableEndpoint): string {
@@ -86,6 +93,59 @@ export function planAssignments(
     runs.push({ from, to, route: side, mediaId, quantity: 1 });
   }
   return { runs };
+}
+
+/** Leg of an endpoint (the physical connector and what runs on it). */
+export function endpointLeg(lib: Library, design: RackDesign, ep: CableEndpoint): PortLeg | undefined {
+  const p = design.placements.find((x) => x.id === ep.placementId);
+  const d = p && lib.devices.get(p.deviceId);
+  const ref = parsePortRef(ep.portRef);
+  const g = d && ref && d.ports.find((x) => x.id === ref.groupId);
+  if (!p || !d || !g) return undefined;
+  const legs = portLegs(g, resolvePlacedPort(lib, d, p, ep.portRef));
+  return ep.connector ? legs[ep.connector - 1] : legs[0];
+}
+
+/** True when a cable end fits a leg: connector mates; fiber type matches the reach; direct-attach speed matches. */
+function endFits(media: CableMedia, side: 'a' | 'b', leg: PortLeg | undefined): boolean {
+  if (!leg) return false;
+  const end = media.ends[side];
+  if (!connectorsMate(end.connector, leg.connector)) return false;
+  if (isDirectAttach(media.type)) return !media.speedGbps || !leg.portGbps || media.speedGbps === leg.portGbps;
+  const fiber = fiberTypeFor(leg.reach);
+  return !fiber || !media.type.startsWith('fiber') || media.type === fiber;
+}
+
+export interface CablePlan extends AssignmentPlan {
+  /** True when the cable runs B→A over the selection (its A end on the selection's B side). */
+  reversed?: boolean;
+}
+
+/**
+ * Plan for one cable over the selection: tried as A→B, then reversed (e.g. an MPO→4xLC breakout selected
+ * LC side first). Errors when the cable's ends do not fit the selected connectors.
+ */
+export function planCable(lib: Library, design: RackDesign, a: CableEndpoint[], b: CableEndpoint[], mediaId: string, route: CableRoute | 'auto'): CablePlan {
+  const media = lib.cableMedia.get(mediaId);
+  if (!media) return { runs: [], error: 'Pick a cable' };
+  const fits = (x: CableEndpoint[], y: CableEndpoint[]) =>
+    x.every((e) => endFits(media, 'a', endpointLeg(lib, design, e))) && y.every((e) => endFits(media, 'b', endpointLeg(lib, design, e)));
+  if (fits(a, b)) {
+    const p = planAssignments(lib, design, a, b, mediaId, route);
+    if (!p.error || !fits(b, a)) return p;
+  }
+  if (fits(b, a)) {
+    const p = planAssignments(lib, design, b, a, mediaId, route);
+    return { ...p, reversed: true };
+  }
+  return { runs: [], error: `${media.name} does not fit the selected connectors` };
+}
+
+/** Cables that can be assigned over the selection (all non-power cables when nothing is selected). */
+export function applicableCables(lib: Library, design: RackDesign, a: CableEndpoint[], b: CableEndpoint[]): CableMedia[] {
+  const all = lib.cableMedia.items().filter((m) => m.type !== 'power');
+  if (a.length === 0 && b.length === 0) return all;
+  return all.filter((m) => !planCable(lib, design, a, b, m.id, 'left').error);
 }
 
 function shorterRoute(lib: Library, design: RackDesign, from: CableEndpoint[], to: CableEndpoint[]): CableRoute {

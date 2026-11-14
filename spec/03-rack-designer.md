@@ -82,12 +82,19 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   side slot — the pointer marks the device's middle and a tall device dropped near the top or bottom slides
   inside the rack; drag a placed device to move it; click to select.
 - Canvas views: **Elevation** | **Cabling**, both with the front/rear toggle.
-- **Cabling view**: one row per placed device (top unit first, side-mounted last) with its **connector map**
-  for the chosen rack face — one box per cable connector (leg) of every port on that face; a rear-mounted
-  device shows its rear-face ports from the front; ports with no cable connector (empty cage, DAC) are one
-  box. Cabled connectors take the run's media color; clicking one opens that run in the Cables tab.
-  - Click connectors to select (click again to deselect), shift-click selects a range on the same device
-    (skipping cabled connectors).
+- **Cabling view**: one block per placed device (top unit first, side-mounted last) showing the chosen rack
+  face **laid out like the faceplate** (groups left to right, each column-major over its rows; a rear-mounted
+  device shows its rear-face ports from the front). Each **physical port** box shows its index and mode
+  (`OSFP 8x100G`) and contains one box per **connector** (leg) with what runs on it — mode and reach split over
+  the module's connectors: an 8x100G 2xDR4 port = 2 connectors, each `4x100G DR4` on `MPO-12`. Ports without a
+  module connector (empty cage, DAC/AEC/AOC, RJ45, fiber ports) are one connector box. Cabled connectors take
+  the run's media color; clicking one opens that run in the Cables tab. Device faceplates (Devices, Placement
+  preview) show the same per-connector text (`2× 4x100G DR4`, details in the tooltip).
+  - **Selecting**: press on a connector and drag across others to select them; starting on a selected one
+    drags to deselect. Cabled connectors are skipped.
+  - **Cable list** shows only cables that fit the selection: each end's connector mates, the fiber type
+    matches the leg's reach (SMF/MMF), direct-attach speed matches the port; a cable that fits only the other
+    way round (e.g. an MPO→4xLC breakout selected LC side first) is offered and laid reversed.
   - A end = connectors on the first device selected, B end = connectors on the other devices; a selection on
     one device only is split in halves. Each end is ordered by faceplate position.
   - **Assign** repeats the chosen cable over the selection: A taken `ends.a.count` at a time, B

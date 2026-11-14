@@ -1,15 +1,19 @@
-import { useState, type Ref } from 'react';
+import { useEffect, useRef, useState, type PointerEvent, type Ref } from 'react';
 import type { Library } from '../../domain/library/library';
-import type { CableEndpoint, CableRoute, RackDesign } from '../../domain/design/types';
-import type { PortFace } from '../../domain/device/types';
-import { endpointKey, placementConnectors, planAssignments, splitSelection, usedConnectors } from '../../domain/design/cable-assign';
+import type { CableEndpoint, CableRoute, Placement, RackDesign } from '../../domain/design/types';
+import type { DeviceDefinition, PortFace, PortGroup } from '../../domain/device/types';
+import { applicableCables, deviceFaceSeenFrom, endpointKey, planCable, splitSelection, usedConnectors } from '../../domain/design/cable-assign';
 import { endpointLabel } from '../../domain/design/connectors';
+import { resolvePlacedPort } from '../../domain/design/optics';
+import { formatPortRef, groupsOnFace } from '../../domain/device/ports';
+import { portLegs, type PortLeg } from '../../domain/ports/legs';
+import { groupTitle } from '../devices/drawing/group-title';
 import { unitsIn } from '../../domain/units';
+import { placedDevice } from '../../domain/design/sizing';
 import { paint } from '../../theme/paint';
 import { Button } from '../../ui/button';
 import { SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
-import { placedDevice } from '../../domain/design/sizing';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -20,15 +24,27 @@ interface Props {
   onSelectCable(id: string | undefined): void;
 }
 
-const BOX = { w: 30, h: 20, gap: 3 };
-const PER_LINE = 32;
-const LABEL_W = 150;
-const ROW_PAD = 8;
+/** Port box: header line (index + mode) above one stacked row per connector leg. */
+const PORT_W = 128;
+const PORT_HEAD = 16;
+const LEG_H = 26;
+const GAP = 6;
+const GROUP_GAP = 22;
+const PAD = 10;
+const LABEL_W = 170;
+const TITLE_H = 16;
+
+interface LegBox { ep: CableEndpoint; leg: PortLeg; x: number; y: number; w: number; h: number }
+interface PortBox { group: PortGroup; index: number; mode: string; x: number; y: number; w: number; h: number }
+interface DeviceLayout {
+  p: Placement; device: DeviceDefinition; y: number; h: number; w: number;
+  ports: PortBox[]; legs: LegBox[]; titles: { text: string; x: number; y: number }[];
+}
 
 /** Top-to-bottom order: rack devices by top unit (highest first), then side-mounted devices. */
 function rowOrder(lib: Library, design: RackDesign) {
   const rack = lib.racks.get(design.templateId);
-  const top = (p: RackDesign['placements'][number]) => {
+  const top = (p: Placement) => {
     if (p.mount.kind !== 'rack') return -Infinity;
     const d = placedDevice(lib, design, p);
     return p.mount.position + (d && rack ? Math.max(1, unitsIn(d.height, rack.unitSystem)) : 1) - 1;
@@ -37,76 +53,123 @@ function rowOrder(lib: Library, design: RackDesign) {
 }
 
 /**
- * Cabling view: every device's connector map for one rack face. Click connectors to select (shift = range
- * on the same device); the selection is split into A (first device) and B (other devices) ends, and the chosen
- * cable is repeated over them in faceplate order (A1..A10 ↔ B1..B10 = 10 runs).
+ * One device's face laid out like its faceplate: groups left to right, each filling column-major over its
+ * rows; every port is split into its connector legs ("4x100G DR4 / MPO-12").
+ */
+function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: PortFace, y0: number): DeviceLayout | undefined {
+  const device = placedDevice(lib, design, p);
+  if (!device) return undefined;
+  const ports: PortBox[] = [];
+  const legs: LegBox[] = [];
+  const titles: DeviceLayout['titles'] = [];
+  let x = LABEL_W;
+  let bottom = 0;
+  for (const g of groupsOnFace(device, deviceFaceSeenFrom(p, face))) {
+    if (g.role === 'outlet') continue;
+    const resolved = Array.from({ length: g.count }, (_, i) => resolvePlacedPort(lib, device, p, formatPortRef({ groupId: g.id, index: i + 1 })));
+    const legList = resolved.map((r) => portLegs(g, r));
+    const maxLegs = Math.max(1, ...legList.map((l) => l.length));
+    const h = PORT_HEAD + maxLegs * LEG_H + 4;
+    const rows = Math.max(1, g.rows);
+    const cols = Math.ceil(g.count / rows);
+    const top = y0 + PAD + TITLE_H;
+    titles.push({ text: groupTitle(g), x, y: y0 + PAD + 11 });
+    for (let i = 0; i < g.count; i++) {
+      const px = x + Math.floor(i / rows) * (PORT_W + GAP);
+      const py = top + (i % rows) * (h + GAP);
+      const portRef = formatPortRef({ groupId: g.id, index: i + 1 });
+      ports.push({ group: g, index: i + 1, mode: resolved[i]?.mode ?? '', x: px, y: py, w: PORT_W, h });
+      legList[i].forEach((leg, k) => {
+        legs.push({ ep: { placementId: p.id, portRef, connector: leg.index }, leg, x: px + 3, y: py + PORT_HEAD + k * LEG_H, w: PORT_W - 6, h: LEG_H - 3 });
+      });
+      bottom = Math.max(bottom, py + h);
+    }
+    x += Math.max(cols * (PORT_W + GAP) - GAP, groupTitle(g).length * 7) + GROUP_GAP;
+  }
+  return { p, device, y: y0, h: Math.max(bottom - y0 + PAD, 54), w: x, ports, legs, titles };
+}
+
+/**
+ * Cabling view: every device's face drawn like its faceplate, each port split into its connector legs with
+ * what runs on them. Press on a connector and drag to select several (dragging from a selected one deselects).
+ * The selection splits into A (first device) and B (other devices); only cables that fit both ends are offered,
+ * and the chosen one repeats in faceplate order.
  */
 export function CablingView({ ref, lib, design, editor, face, onSelectCable }: Props) {
   const [selection, setSelection] = useState<CableEndpoint[]>([]);
-  const [anchor, setAnchor] = useState<string>();
-  const media = lib.cableMedia.items().filter((m) => m.type !== 'power');
-  const [mediaId, setMediaId] = useState(media[0]?.id ?? '');
   const [route, setRoute] = useState<CableRoute | 'auto'>('auto');
+  const [mediaId, setMediaId] = useState('');
   const [message, setMessage] = useState<string>();
+  const drag = useRef<{ adding: boolean } | undefined>(undefined);
+
+  useEffect(() => {
+    const up = () => { drag.current = undefined; };
+    window.addEventListener('pointerup', up);
+    return () => window.removeEventListener('pointerup', up);
+  }, []);
 
   const used = usedConnectors(design);
   const runColor = new Map(design.cables.map((c) => [c.id, lib.cableMedia.get(c.mediaId)?.color ?? paint.inkMuted]));
-  const rows = rowOrder(lib, design).map((p) => ({ p, conns: placementConnectors(lib, design, p, face) }));
-  const order = new Map(rows.flatMap((r) => r.conns.map((e, i) => [endpointKey(e), i] as const)));
+  let y = 0;
+  const devices: DeviceLayout[] = [];
+  for (const p of rowOrder(lib, design)) {
+    const l = layoutDevice(lib, design, p, face, y);
+    if (!l) continue;
+    devices.push(l);
+    y += l.h + 6;
+  }
+  const order = new Map(devices.flatMap((d) => d.legs.map((l, i) => [endpointKey(l.ep), i] as const)));
   const selected = new Set(selection.map(endpointKey));
 
   // A/B split by device, each side in faceplate order so repeats pair 1↔1, 2↔2…
-  const byFaceplate = (eps: CableEndpoint[]) => [...eps].sort((x, y) =>
-    x.placementId === y.placementId ? (order.get(endpointKey(x)) ?? 0) - (order.get(endpointKey(y)) ?? 0) : 0);
+  const byFaceplate = (eps: CableEndpoint[]) => [...eps].sort((x, z) =>
+    x.placementId === z.placementId ? (order.get(endpointKey(x)) ?? 0) - (order.get(endpointKey(z)) ?? 0) : 0);
   const split = splitSelection(selection);
   const a = byFaceplate(split.a);
   const b = byFaceplate(split.b);
-  const plan = selection.length ? planAssignments(lib, design, a, b, mediaId, route) : undefined;
+  const cables = applicableCables(lib, design, a, b);
+  const media = cables.find((c) => c.id === mediaId) ?? cables[0];
+  const plan = selection.length && media ? planCable(lib, design, a, b, media.id, route) : undefined;
 
-  const click = (row: CableEndpoint[], ep: CableEndpoint, range: boolean) => {
+  const setSel = (ep: CableEndpoint, on: boolean) => {
     const key = endpointKey(ep);
-    setMessage(undefined);
-    const runId = used.get(key);
-    if (runId && !range) { onSelectCable(runId); return; }
-    if (range && anchor) {
-      const i = row.findIndex((e) => endpointKey(e) === anchor);
-      const j = row.findIndex((e) => endpointKey(e) === key);
-      if (i >= 0 && j >= 0) {
-        const span = row.slice(Math.min(i, j), Math.max(i, j) + 1).filter((e) => !used.has(endpointKey(e)) && !selected.has(endpointKey(e)));
-        setSelection([...selection, ...span]);
-        setAnchor(key);
-        return;
-      }
-    }
-    setSelection(selected.has(key) ? selection.filter((e) => endpointKey(e) !== key) : [...selection, ep]);
-    setAnchor(key);
+    if (used.has(key)) return;
+    setSelection((cur) => {
+      const has = cur.some((e) => endpointKey(e) === key);
+      if (on && !has) return [...cur, ep];
+      if (!on && has) return cur.filter((e) => endpointKey(e) !== key);
+      return cur;
+    });
   };
+  const down = (ep: CableEndpoint, e: PointerEvent) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    setMessage(undefined);
+    const runId = used.get(endpointKey(ep));
+    if (runId) { onSelectCable(runId); return; }
+    const adding = !selected.has(endpointKey(ep));
+    drag.current = { adding };
+    setSel(ep, adding);
+  };
+  const enter = (ep: CableEndpoint) => { if (drag.current) setSel(ep, drag.current.adding); };
 
   const assign = () => {
     if (!plan || plan.error) return;
     const last = editor.addCables(plan.runs).at(-1);
     setMessage(`${plan.runs.length} cable${plan.runs.length > 1 ? 's' : ''} assigned`);
     setSelection([]);
-    setAnchor(undefined);
     onSelectCable(last);
   };
 
-  // Geometry: one row per device, connectors wrapped PER_LINE per line.
-  let y = 0;
-  const laid = rows.map(({ p, conns }) => {
-    const lines = Math.max(1, Math.ceil(conns.length / PER_LINE));
-    const h = ROW_PAD * 2 + 12 + lines * (BOX.h + BOX.gap);
-    const r = { p, conns, y, h };
-    y += h + 4;
-    return r;
-  });
-  const width = LABEL_W + PER_LINE * (BOX.w + BOX.gap) + 10;
+  const width = Math.max(600, ...devices.map((d) => d.w)) + 10;
   const height = Math.max(y, 40);
 
   return (
     <div className="cabling-view">
       <div className="cabling-bar">
-        <SelectField label="Cable" value={mediaId} options={media.map((m) => ({ value: m.id, label: m.name }))} onChange={setMediaId} />
+        <SelectField label={`Cable (${cables.length} fit)`} value={media?.id ?? ''}
+          options={cables.length ? cables.map((m) => ({ value: m.id, label: m.name })) : [{ value: '', label: 'No cable fits the selection' }]}
+          disabled={!cables.length} onChange={setMediaId} />
         <SelectField<CableRoute | 'auto'> label="Route" value={route}
           options={[{ value: 'auto', label: 'auto (shorter)' }, { value: 'left', label: 'Left side' }, { value: 'right', label: 'Right side' }]}
           onChange={setRoute} />
@@ -114,39 +177,45 @@ export function CablingView({ ref, lib, design, editor, face, onSelectCable }: P
         <Button variant="primary" disabled={!plan || !!plan.error} onClick={assign}>
           {plan && !plan.error ? `Assign ${plan.runs.length} cable${plan.runs.length > 1 ? 's' : ''}` : 'Assign'}
         </Button>
-        <Button disabled={!selection.length} onClick={() => { setSelection([]); setAnchor(undefined); }}>Clear</Button>
+        <Button disabled={!selection.length} onClick={() => setSelection([])}>Clear</Button>
         {plan?.error && <span className="warn">{plan.error}</span>}
-        {message && !plan && <span className="muted">{message}</span>}
+        {message && !selection.length && <span className="muted">{message}</span>}
       </div>
-      <p className="muted">Click connectors to select, shift-click for a range. A = first device selected, B = the others; the cable repeats in port order. Click a cabled connector to open its run.</p>
-      <svg ref={ref} viewBox={`0 0 ${width} ${height}`} width={width} className="drawing">
+      <p className="muted">Press on a connector and drag to select several; drag from a selected one to deselect. A = first device selected, B = the others; the cable repeats in port order. Click a cabled connector to open its run.</p>
+      <svg ref={ref} viewBox={`0 0 ${width} ${height}`} width={width} className="drawing" style={{ touchAction: 'none' }}>
         <rect width={width} height={height} fill={paint.paper} />
-        {laid.length === 0 && <text x={10} y={24} fontSize={12} fill={paint.inkMuted}>No devices placed.</text>}
-        {laid.map(({ p, conns, y: ry, h }) => {
-          const device = placedDevice(lib, design, p);
-          const side = a.some((e) => e.placementId === p.id) ? 'A' : b.some((e) => e.placementId === p.id) ? 'B' : undefined;
+        {devices.length === 0 && <text x={10} y={24} fontSize={12} fill={paint.inkMuted}>No devices placed.</text>}
+        {devices.map((d) => {
+          const side = a.some((e) => e.placementId === d.p.id) ? 'A' : b.some((e) => e.placementId === d.p.id) ? 'B' : undefined;
           return (
-            <g key={p.id} transform={`translate(0 ${ry})`}>
-              <rect x={2} y={0} width={width - 4} height={h} rx={4} fill="#1e293b" stroke={side ? paint.selection : '#475569'} strokeWidth={side ? 2 : 1} />
-              <text x={10} y={ROW_PAD + 12} fontSize={12} fontWeight={700} fill="#f8fafc">{`${side ? `[${side}] ` : ''}${p.label}`}</text>
-              <text x={10} y={ROW_PAD + 26} fontSize={10} fill="#cbd5e1">{device?.name ?? p.deviceId}</text>
-              {conns.length === 0 && <text x={LABEL_W} y={ROW_PAD + 26} fontSize={10} fill="#94a3b8">{`no ${face}-side ports`}</text>}
-              {conns.map((ep, i) => {
+            <g key={d.p.id}>
+              <rect x={2} y={d.y} width={width - 4} height={d.h} rx={4} fill="#1e293b" stroke={side ? paint.selection : '#475569'} strokeWidth={side ? 2 : 1} />
+              <text x={10} y={d.y + 20} fontSize={13} fontWeight={700} fill="#f8fafc">{`${side ? `[${side}] ` : ''}${d.p.label}`}</text>
+              <text x={10} y={d.y + 36} fontSize={10} fill="#cbd5e1">{d.device.name}</text>
+              {d.legs.length === 0 && <text x={LABEL_W} y={d.y + 30} fontSize={10} fill="#94a3b8">{`no ${face}-side ports`}</text>}
+              {d.titles.map((t) => <text key={`${t.x}`} x={t.x} y={t.y} fontSize={10} fontWeight={600} fill="#e2e8f0">{t.text}</text>)}
+              {d.ports.map((pt) => (
+                <g key={`${pt.group.id}/${pt.index}`}>
+                  <rect x={pt.x} y={pt.y} width={pt.w} height={pt.h} rx={3} fill="#0f172a" stroke="#475569" />
+                  <text x={pt.x + 4} y={pt.y + 12} fontSize={10} fontWeight={700} fill="#e2e8f0">{pt.index}</text>
+                  <text x={pt.x + pt.w - 4} y={pt.y + 12} fontSize={9} textAnchor="end" fill="#94a3b8">{`${pt.group.formFactor} ${pt.mode}`}</text>
+                </g>
+              ))}
+              {d.legs.map(({ ep, leg, x, y: ly, w, h }) => {
                 const key = endpointKey(ep);
                 const runId = used.get(key);
                 const sel = selected.has(key);
-                const x = LABEL_W + (i % PER_LINE) * (BOX.w + BOX.gap);
-                const by = ROW_PAD + 12 + Math.floor(i / PER_LINE) * (BOX.h + BOX.gap);
                 const fill = runId ? runColor.get(runId) : sel ? paint.selection : '#334155';
-                const multiLeg = conns.filter((c) => c.portRef === ep.portRef).length > 1;
-                const text = `${ep.portRef.split('/')[1] ?? ep.portRef}${multiLeg ? `.${ep.connector}` : ''}`;
+                const ink = runId || sel ? '#0f172a' : '#e2e8f0';
+                const top = [leg.mode, leg.reach].filter(Boolean).join(' ');
                 return (
-                  <g key={key} style={{ cursor: 'pointer' }} onClick={(e) => click(conns, ep, e.shiftKey)}>
-                    <title>{`${endpointLabel(design, ep)}${runId ? ' · cabled (click to open run)' : ''}`}</title>
-                    <rect x={x} y={by} width={BOX.w} height={BOX.h} rx={2} fill={fill}
-                      stroke={sel ? '#fff' : '#0f172a'} strokeWidth={sel ? 2 : 1} />
-                    <text x={x + BOX.w / 2} y={by + 13} fontSize={8} textAnchor="middle" fontWeight={600}
-                      fill={runId || sel ? '#0f172a' : '#e2e8f0'} pointerEvents="none">{text}</text>
+                  <g key={key} style={{ cursor: runId ? 'pointer' : 'cell' }} onPointerDown={(e) => down(ep, e)} onPointerEnter={() => enter(ep)}>
+                    <title>{`${endpointLabel(design, ep)} · ${leg.label}${runId ? ' · cabled (click to open run)' : ''}`}</title>
+                    <rect x={x} y={ly} width={w} height={h} rx={2} fill={fill} stroke={sel ? '#fff' : '#0f172a'} strokeWidth={sel ? 2 : 1} />
+                    <text x={x + 4} y={ly + 10} fontSize={8.5} fontWeight={700} fill={ink} pointerEvents="none">
+                      {`${leg.index ? `${leg.index} · ` : ''}${top || leg.connector}`}
+                    </text>
+                    {top && <text x={x + 4} y={ly + 20} fontSize={8} fill={ink} opacity={0.85} pointerEvents="none">{leg.connector}</text>}
                   </g>
                 );
               })}

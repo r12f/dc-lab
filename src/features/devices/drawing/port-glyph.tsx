@@ -6,6 +6,7 @@ import { formFactorSpec } from '../../../domain/ports/form-factors';
 import { portConnectors } from '../../../domain/ports/optic-match';
 import { ConnectorBoxes } from './connector-boxes';
 import { portLabel } from '../../../domain/device/port-label';
+import { portLegs } from '../../../domain/ports/legs';
 import { paint } from '../../../theme/paint';
 
 /**
@@ -30,13 +31,17 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
   const speed = r ? speedLabel(r.mode) : '';
   const iface = portLabel(box.group, r?.mode);
   const conns = pluggable && r ? portConnectors(box.group, optic) : undefined;
+  // Per-connector view: a 2xDR4 module at 8x100G is two legs, each "4x100G DR4" on an MPO-12.
+  const legs = pluggable && r ? portLegs(box.group, r) : [];
+  const multi = legs.length > 1;
+  const legText = multi ? `${legs.length}× ${[legs[0].mode, legs[0].reach].filter(Boolean).join(' ')}` : r?.reach;
   const engine = box.group.opticalEngine ? ` · ${box.group.opticalEngine.toUpperCase()}` : '';
   const tip = [
     `${box.ref} · ${box.group.formFactor}${engine} · ${ROLE_TRAITS[box.group.role].label}`,
     speed ? `Speed ${speed}` : '',
     r?.reach ? `Reach ${r.reach}` : '',
     optic ? `Module ${optic.name}${r?.autoOptic ? ' (auto)' : ''}` : '',
-    conns ? `Connectors ${conns.count}x ${conns.connector}` : '',
+    ...(multi ? legs.map((l) => `Connector ${l.index}: ${l.label}`) : [conns ? `Connectors ${conns.count}x ${conns.connector}` : '']),
     cable ? `Cable ${cable.name}` : '',
   ].filter(Boolean).join('\n');
   const markColor = optic ? idColor(optic.id) : r?.reach ? idColor(r.reach) : undefined;
@@ -60,7 +65,7 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
         <>
           {t(19, 12, '#0f172a', String(box.index), true)}
           {t(31, fitFont(iface, box.w, 10), '#1e293b', iface, true)}
-          {r?.reach && t(42, 9, '#92400e', r.reach)}
+          {legText && t(42, 9, '#92400e', legText)}
         </>
       ) : (
         <>
