@@ -8,8 +8,9 @@ per item (`src/catalog/optics/`, `src/catalog/cables/`); project items are store
 ## Layout
 
 - **Sidebar**: one tree, filterable — `Optics / <family> / <speed>` and `Cables / <type>`.
-  - Families: every QSFP variant (QSFP+, QSFP28, QSFP56, QSFP112, QSFP-DD) is one **QSFP** folder;
-    likewise **OSFP** and **SFP** (SFP+, SFP28…). The exact form factor is the item's badge.
+  - Families, in this order: **OSFP**, **QSFP-DD** (8-lane double density, its own folder), **QSFP**
+    (the 4-lane variants QSFP+, QSFP28, QSFP56, QSFP112), **SFP** (SFP+, SFP28…). The exact form factor
+    is the item's badge.
   - Speed folders sort high to low (800G, 400G, 200G…); items inside sort by reach from short to long
     (DAC, SR, DR, FR, LR, ER, ZR; lane multiplier breaks ties: DR4 < 2xDR4 < DR8).
 - **Built-in catalog** covers every family/speed with the common reach classes (illustrative values):

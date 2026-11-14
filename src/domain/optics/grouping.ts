@@ -1,8 +1,12 @@
 import type { OpticDefinition } from './types';
 
-/** Module families shown as one folder: every QSFP variant (QSFP+, 28, 56, 112, -DD) is "QSFP". */
+/**
+ * Module families shown as one folder. QSFP-DD (double density, 8 lanes) is its own family; the 4-lane
+ * QSFP variants (QSFP+, 28, 56, 112) share "QSFP". OSFP variants share "OSFP".
+ */
 export function opticFamily(formFactor: string): string {
   const f = formFactor.toUpperCase();
+  if (f.startsWith('QSFP-DD')) return 'QSFP-DD';
   if (f.startsWith('QSFP')) return 'QSFP';
   if (f.startsWith('OSFP')) return 'OSFP';
   if (f.startsWith('SFP')) return 'SFP';
@@ -10,7 +14,7 @@ export function opticFamily(formFactor: string): string {
 }
 
 /** Family folder order: highest-speed families first. */
-const FAMILY_ORDER = ['OSFP', 'QSFP', 'SFP'];
+const FAMILY_ORDER = ['OSFP', 'QSFP-DD', 'QSFP', 'SFP'];
 
 export function familyOrder(family: string): number | string {
   const i = FAMILY_ORDER.indexOf(family);
