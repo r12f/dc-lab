@@ -20,6 +20,21 @@
   },
   "ports": [
     {
+      "id": "qsfp28",
+      "label": "DATA",
+      "role": "data",
+      "formFactor": "QSFP28",
+      "count": 1,
+      "speedGbps": 100,
+      "lanes": 4,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": [
+        "4x25G",
+        "2x50G"
+      ]
+    },
+    {
       "id": "bmc",
       "label": "BMC",
       "role": "mgmt",
@@ -42,21 +57,6 @@
       "face": "front",
       "rows": 1,
       "breakoutModes": []
-    },
-    {
-      "id": "qsfp28",
-      "label": "DATA",
-      "role": "data",
-      "formFactor": "QSFP28",
-      "count": 1,
-      "speedGbps": 100,
-      "lanes": 4,
-      "face": "rear",
-      "rows": 1,
-      "breakoutModes": [
-        "4x25G",
-        "2x50G"
-      ]
     }
   ],
   "breakoutProfiles": [
