@@ -62,6 +62,7 @@ export function DesignerModule() {
 
   return (
     <ModuleLayout
+      module="designer"
       sidebar={
         <Sidebar
           title="Rack designs"
@@ -73,16 +74,12 @@ export function DesignerModule() {
           onDuplicate={duplicate}
           onDelete={(id) => { remove('rackDesigns', id); select('designer', undefined); }}
           emptyText="Create a rack design from a template."
-          header={
-            <>
-              {creating && <NewDesignForm lib={lib} onCreate={create} onCancel={() => setCreating(false)} />}
-              {design && <DevicePalette lib={lib} rack={lib.racks.get(design.templateId)} onAdd={(id, variantId) => {
-                const r = editor.addDevice(id, undefined, variantId);
-                report(r.error);
-                if (r.id) setPlacementId(r.id);
-              }} />}
-            </>
-          }
+          header={creating && <NewDesignForm lib={lib} onCreate={create} onCancel={() => setCreating(false)} />}
+          lower={design && <DevicePalette lib={lib} rack={lib.racks.get(design.templateId)} onAdd={(id, variantId) => {
+            const r = editor.addDevice(id, undefined, variantId);
+            report(r.error);
+            if (r.id) setPlacementId(r.id);
+          }} />}
         />
       }
       canvas={

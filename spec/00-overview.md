@@ -22,7 +22,8 @@ built-in catalog), [06-architecture.md](06-architecture.md) (code structure) and
 - **Main canvas** is an SVG drawing of the selected item. Every canvas supports **Export SVG**.
 - **Right inspector** edits the selected item / sub-item.
 - Sidebar and inspector widths are resizable by dragging the pane borders (180–1600 px, double-click resets; the canvas always keeps at least 240 px, side panes shrink on narrow windows).
-  Widths are shared by all modules and saved as app preferences (`dc-lab:prefs`), restored on next launch.
+  Widths are shared by all modules except Rack Designer, whose inspector keeps its own width (default 640 px, so
+  the BOM fits). All are saved as app preferences (`dc-lab:prefs`), restored on next launch.
 
 ## Built-in vs. project items
 

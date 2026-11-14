@@ -73,6 +73,8 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   one derived from the design name.
 - Sidebar: rack designs grouped by template, with a text filter (name, template, device labels and
   names); New (pick template), Duplicate, Delete.
+- Sidebar layout: rack designs on top, **device palette below taking the rest**; the boundary is draggable
+  (double-click resets; height saved in app preferences).
 - Device palette: the Devices tree — Type → Item type → Items (vendor products); drag or double-click an
   item type (default item) or a specific item. Only devices of the rack's unit system are listed (RU racks
   take RU and 0U devices, OU racks OU and 0U); placing a device of the other system is rejected.

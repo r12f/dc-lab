@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from './button';
+import { Splitter } from './splitter';
+import { DEFAULT_SIDEBAR_LIST_HEIGHT, usePreferences } from '../state/preferences';
 import { buildTree, countItems, matchesFilter, type SidebarItem, type TreeNode } from './sidebar-tree';
 
 export type { SidebarItem } from './sidebar-tree';
@@ -16,6 +18,8 @@ interface Props {
   header?: ReactNode;
   /** Rendered under the action bar. */
   footer?: ReactNode;
+  /** Lower pane under the item list (e.g. the device palette); the list/pane boundary is draggable. */
+  lower?: ReactNode;
   emptyText?: string;
   filterable?: boolean;
 }
@@ -85,7 +89,9 @@ function Tree({ node, depth, selectedId, collapsed, expanded, forceOpen, onToggl
 
 /** Filterable, collapsible tree of items with New / Duplicate / Delete actions. */
 export function Sidebar(props: Props) {
-  const { title, items, selectedId, onSelect, onNew, onDuplicate, onDelete, header, footer, emptyText, filterable } = props;
+  const { title, items, selectedId, onSelect, onNew, onDuplicate, onDelete, header, footer, emptyText, filterable, lower } = props;
+  const listHeight = usePreferences((s) => s.sidebarListHeight);
+  const setListHeight = usePreferences((s) => s.setSidebarListHeight);
   const [filter, setFilter] = useState('');
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -117,16 +123,31 @@ export function Sidebar(props: Props) {
         </div>
       </div>
       {header}
-      {filterable && (
-        <div className="sidebar-filter">
-          <input placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
-        </div>
-      )}
-      <div className="sidebar-list">
-        {visible.length === 0 && <p className="muted pad">{items.length ? 'No matches.' : emptyText ?? 'Nothing here yet.'}</p>}
-        <Tree node={buildTree(visible)} depth={0} selectedId={selectedId} collapsed={collapsed} expanded={expanded}
-          forceOpen={!!filter} onToggle={toggle} onExpand={expand} onSelect={onSelect} />
-      </div>
+      {(() => {
+        const list = (
+          <>
+            {filterable && (
+              <div className="sidebar-filter">
+                <input placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+              </div>
+            )}
+            <div className="sidebar-list">
+              {visible.length === 0 && <p className="muted pad">{items.length ? 'No matches.' : emptyText ?? 'Nothing here yet.'}</p>}
+              <Tree node={buildTree(visible)} depth={0} selectedId={selectedId} collapsed={collapsed} expanded={expanded}
+                forceOpen={!!filter} onToggle={toggle} onExpand={expand} onSelect={onSelect} />
+            </div>
+          </>
+        );
+        if (!lower) return list;
+        return (
+          <>
+            <div className="sidebar-split-top" style={{ height: listHeight }}>{list}</div>
+            <Splitter orientation="horizontal" label="List height" width={listHeight} direction={1}
+              onResize={setListHeight} onReset={() => setListHeight(DEFAULT_SIDEBAR_LIST_HEIGHT)} />
+            <div className="sidebar-split-bottom">{lower}</div>
+          </>
+        );
+      })()}
       {footer}
     </div>
   );
