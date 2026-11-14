@@ -8,4 +8,8 @@ describe('100G QSFP28 breakout', () => {
     expect(groups.length).toBeGreaterThan(0);
     for (const [id, g] of groups) expect(modesOf(g).slice(0, 4), id).toEqual(['1x100G', '2x50G', '4x25G', '4x10G']);
   });
+  it('64x800G OSFP switch has two SFP28 service ports', () => {
+    const g = SHIPPED_CATALOG.devices.find((d) => d.id === 'switch-64x800g-osfp')!.ports.find((x) => x.formFactor === 'SFP28')!;
+    expect([g.role, g.count, g.speedGbps]).toEqual(['service', 2, 25]);
+  });
 });

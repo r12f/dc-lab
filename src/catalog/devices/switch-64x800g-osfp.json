@@ -41,7 +41,7 @@
       "label": "SERVICE",
       "role": "service",
       "formFactor": "SFP28",
-      "count": 1,
+      "count": 2,
       "speedGbps": 25,
       "lanes": 1,
       "face": "front",
