@@ -89,7 +89,6 @@
       "groupDefaults": {
         "osfp": {
           "mode": "2x400G",
-          "cableId": "mpo12-smf",
           "reach": "2xDR4"
         }
       },

@@ -78,6 +78,13 @@ function toSetting(v: unknown): unknown {
   return r ? { ...s, reach: r } : s;
 }
 
+/** Profile settings carry no cable (cables are assigned in Rack Designer). */
+function toProfileSetting(v: unknown): unknown {
+  const { cableId: _c, ...rest } = toSetting(v) as Json;
+  void _c;
+  return rest;
+}
+
 function mapValues(obj: unknown, fn: (v: unknown) => unknown): Json {
   return Object.fromEntries(Object.entries((obj as Json) ?? {}).map(([k, v]) => [k, fn(v)]));
 }
@@ -91,8 +98,8 @@ export function migrateDevice(d: Json): Json {
   const ports = ((d.ports as Json[]) ?? []).map(migrateGroup);
   const breakoutProfiles = ((d.breakoutProfiles as Json[]) ?? []).map((p) => ({
     ...p,
-    groupDefaults: mapValues(p.groupDefaults, toSetting),
-    overrides: mapValues(p.overrides, toSetting),
+    groupDefaults: mapValues(p.groupDefaults, toProfileSetting),
+    overrides: mapValues(p.overrides, toProfileSetting),
   }));
   const out = { ...d, ports, breakoutProfiles } as Json;
   // Every device has a default breakout profile.
@@ -331,7 +338,7 @@ export function migrateProjectJson(raw: Json): Json {
     builtinProfiles: Object.fromEntries(Object.entries((p.builtinProfiles as Json | undefined) ?? {}).map(([id, bp]) => [id, {
       ...(bp as Json),
       breakoutProfiles: (((bp as Json).breakoutProfiles as Json[]) ?? []).map((x) => ({
-        ...x, groupDefaults: mapValues(x.groupDefaults, toSetting), overrides: mapValues(x.overrides, toSetting),
+        ...x, groupDefaults: mapValues(x.groupDefaults, toProfileSetting), overrides: mapValues(x.overrides, toProfileSetting),
       })),
     }])),
   };

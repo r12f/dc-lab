@@ -72,10 +72,10 @@ describe('CPO / NPO fiber ports', () => {
 });
 
 describe('cable count per port', () => {
-  it('2xDR4 module needs two MPO-12 trunks per port', () => {
+  it('2xDR4 module needs two MPO-12 trunks per port (cable set on the placement, not the profile)', () => {
     const osfp = dev('switch-64x800g-osfp');
     const placement = { id: 'p', deviceId: osfp.id, label: 'SW1', mount: { kind: 'rack' as const, position: 1, face: 'front' as const },
-      breakoutProfileId: 'all-2x400g', portSettings: {}, groupSettings: {} };
+      breakoutProfileId: 'all-2x400g', portSettings: {}, groupSettings: { osfp: { cableId: 'mpo12-smf' } } };
     const counts = portItemCounts(lib, osfp, placement);
     expect(counts.optics.get('osfp-800g-2xdr4')).toBe(64);
     expect(counts.cables.get('mpo12-smf')).toBe(128);

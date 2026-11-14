@@ -80,10 +80,13 @@ export function connectorForReach(reach: string | undefined): string | undefined
   return undefined;
 }
 
-/** Connector a cable must have on this port: the port itself (CPO/NPO), the module's fiber connector, or the one its reach implies. */
+/**
+ * Connector a cable must have on this port: the port itself (CPO/NPO), the module's fiber connector, the one an
+ * optical reach implies, or — no module in the cage — the cage form factor (a DAC / AEC / AOC plugs in there).
+ */
 export function cableConnector(group: PortGroup, optic?: OpticDefinition, reach?: string): string | undefined {
   if (isEnginePort(group)) return group.formFactor;
-  if (!optic) return directAttachType(reach) ? undefined : connectorForReach(reach);
+  if (!optic) return connectorForReach(reach) ?? group.formFactor;
   return optic.fiberConnector ? optic.fiberConnector.replace(/^\d+x\s*/i, '') : optic.formFactor;
 }
 
@@ -123,7 +126,8 @@ export function fiberTypeFor(reach: string | undefined): CableMedia['type'] | un
 
 /** Cables whose connector matches the port/module and whose fiber type matches the reach. */
 export function compatibleCables(lib: Library, group: PortGroup, optic?: OpticDefinition, reach?: string, mode?: string): CableMedia[] {
-  if (!optic && directAttachType(reach)) return directAttachCables(lib, group, mode ?? `1x${group.speedGbps}G`, reach);
+  // Empty cage: only direct-attach cables plug in (of the reach's kind when one is set).
+  if (!optic && !isEnginePort(group) && !connectorForReach(reach)) return directAttachCables(lib, group, mode ?? `1x${group.speedGbps}G`, reach);
   const connector = cableConnector(group, optic, reach);
   const fiber = fiberTypeFor(optic?.reach ?? reach);
   return lib.cableMedia.items().filter((c) =>

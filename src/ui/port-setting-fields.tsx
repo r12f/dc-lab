@@ -18,6 +18,11 @@ interface Props {
   effective?: ResolvedPort;
   /** What the port resolves to without `value` (shown as "inherit (…)"). */
   inherited?: ResolvedPort;
+  /**
+   * Breakout profile: only cage + connector matter — no cable pick, no DAC/AEC/AOC reach (an empty cage's
+   * connector is the cage itself; direct-attach cables are chosen in the Rack Designer cabling view).
+   */
+  profile?: boolean;
 }
 
 const field = (v: string | undefined) => (v === undefined ? INHERIT : v);
@@ -28,14 +33,14 @@ const unfield = (v: string) => (v === INHERIT ? undefined : v);
  * (incl. backward-compatible modules), the chosen speed and reach. CPO/NPO fiber ports pick reach from
  * the engine and have no module.
  */
-export function PortSettingFields({ lib, group, value, onChange, effective, inherited }: Props) {
+export function PortSettingFields({ lib, group, value, onChange, effective, inherited, profile }: Props) {
   if (group.role === 'laser') return <LaserModuleField lib={lib} group={group} value={value} onChange={onChange} inherited={inherited} />;
   if (!ROLE_TRAITS[group.role].pluggable) {
     return <p className="muted">{`${ROLE_TRAITS[group.role].label} ports have no speed or reach settings.`}</p>;
   }
   const engine = isEnginePort(group);
   const mode = effective?.mode ?? value.mode ?? modesOf(group)[0];
-  const reaches = reachOptions(lib, group, mode);
+  const reaches = reachOptions(lib, group, mode).filter((r) => !profile || !directAttachType(r));
   const modules = compatibleOptics(lib, group, mode).filter((o) => !effective?.reach || o.reach === effective.reach);
   const cables = compatibleCables(lib, group, effective?.optic, effective?.reach, mode);
   const direct = !engine && !!directAttachType(effective?.reach);
@@ -50,7 +55,7 @@ export function PortSettingFields({ lib, group, value, onChange, effective, inhe
       <SelectField label={engine ? `Reach (${group.opticalEngine?.toUpperCase() ?? 'fiber'} engine)` : 'Reach'} value={field(value.reach)}
         options={[
           { value: INHERIT, label: inh(inherited?.reach) },
-          { value: NONE, label: engine ? 'unset' : 'none (empty cage)' },
+          { value: NONE, label: engine ? 'unset' : profile ? `none — no module (${group.formFactor} cage: DAC / AEC / AOC)` : 'none (empty cage)' },
           ...reaches.map((r) => ({ value: r, label: r })),
         ]}
         onChange={(v) => set({ reach: unfield(v), opticId: undefined })} />
@@ -65,14 +70,16 @@ export function PortSettingFields({ lib, group, value, onChange, effective, inhe
       {!direct && (
         <p className="muted">{`Cable connector: ${connectorText(group, effective) ?? '— (pick a reach / module)'}`}</p>
       )}
-      <SelectField label={`Cable${connectorText(group, effective) ? ` (fits ${connectorText(group, effective)})` : ''}`}
-        value={field(value.cableId)}
-        options={[
-          { value: INHERIT, label: inh(lib.cableMedia.get(inherited?.cableId)?.name) },
-          { value: NONE, label: 'none' },
-          ...cables.map((c) => ({ value: c.id, label: c.name })),
-        ]}
-        onChange={(v) => set({ cableId: unfield(v) })} />
+      {!profile && (
+        <SelectField label={`Cable${connectorText(group, effective) ? ` (fits ${connectorText(group, effective)})` : ''}`}
+          value={field(value.cableId)}
+          options={[
+            { value: INHERIT, label: inh(lib.cableMedia.get(inherited?.cableId)?.name) },
+            { value: NONE, label: 'none' },
+            ...cables.map((c) => ({ value: c.id, label: c.name })),
+          ]}
+          onChange={(v) => set({ cableId: unfield(v) })} />
+      )}
       {direct && <p className="muted">{`${effective?.reach} cable plugs into the ${group.formFactor} cage directly — no transceiver.`}</p>}
       {!engine && !direct && modes(lib, group, mode, effective) && <p className="muted">{modes(lib, group, mode, effective)}</p>}
     </>
@@ -83,7 +90,8 @@ export function PortSettingFields({ lib, group, value, onChange, effective, inhe
 function connectorText(group: PortGroup, eff?: ResolvedPort): string | undefined {
   if (isEnginePort(group)) return group.formFactor;
   if (eff?.optic?.fiberConnector) return eff.optic.fiberConnector;
-  return cableConnector(group, undefined, eff?.reach);
+  const c = cableConnector(group, undefined, eff?.reach);
+  return c === group.formFactor ? `${c} (no module: DAC / AEC / AOC)` : c;
 }
 
 /** External laser source cages (CPO): only a module choice. */

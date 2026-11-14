@@ -50,7 +50,7 @@ export function BreakoutProfilesEditor(props: Props) {
   /** Shared value across selected ports for each field (undefined when they differ). */
   const shared: PortSetting = {};
   if (profile && refs.length) {
-    for (const key of ['mode', 'reach', 'opticId', 'cableId'] as const) {
+    for (const key of ['mode', 'reach', 'opticId'] as const) {
       const vals = new Set(refs.map((r) => profile.overrides[r]?.[key]));
       if (vals.size === 1) shared[key] = [...vals][0];
     }
@@ -82,7 +82,7 @@ export function BreakoutProfilesEditor(props: Props) {
           {refs.length > 0 && selGroup ? (
             <div className="card">
               <strong>{refs.length === 1 ? `Port ${refs[0]}` : `${refs.length} ports in ${selGroup.label}`}</strong>
-              <PortSettingFields lib={lib} group={selGroup} value={shared} inherited={inheritedFor(refs[0])}
+              <PortSettingFields profile lib={lib} group={selGroup} value={shared} inherited={inheritedFor(refs[0])}
                 effective={effectiveFor(refs[0], shared)}
                 onChange={applyToSelected} />
               <div className="row2">
@@ -100,7 +100,7 @@ export function BreakoutProfilesEditor(props: Props) {
             {device.ports.filter((g) => ROLE_TRAITS[g.role].pluggable || g.role === 'laser').map((g) => (
               <div key={g.id} className="subcard">
                 <strong>{g.label}</strong>
-                <PortSettingFields lib={lib} group={g} value={profile.groupDefaults[g.id] ?? {}}
+                <PortSettingFields profile lib={lib} group={g} value={profile.groupDefaults[g.id] ?? {}}
                   effective={resolvePort(lib, device, `${g.id}/1`, { ...profile, overrides: {} })}
                   onChange={(s) => setProfile({ ...profile, groupDefaults: withSetting(profile.groupDefaults, g.id, s) })} />
               </div>
