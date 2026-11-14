@@ -69,8 +69,13 @@ function moveDirectOptics(p: Json): Json {
   return { ...p, optics: kept, cableMedia: cables, variants };
 }
 
+/** Renamed reach classes: 100G single-lane DR is "DR1" (LC); the 100G parallel MPO module is "DR4" (was PSM4). */
+const REACH_RENAMES: Record<string, string> = { DR: 'DR1', PSM4: 'DR4' };
+
 function toSetting(v: unknown): unknown {
-  return migrateDacSetting((typeof v === 'string' ? { mode: v } : v) as Json);
+  const s = migrateDacSetting((typeof v === 'string' ? { mode: v } : v) as Json) as Json;
+  const r = typeof s?.reach === 'string' ? REACH_RENAMES[s.reach] : undefined;
+  return r ? { ...s, reach: r } : s;
 }
 
 function mapValues(obj: unknown, fn: (v: unknown) => unknown): Json {
@@ -135,8 +140,14 @@ function migrateSideMount(p: Json): Json {
 }
 
 /** Optic `connector`/`media` -> `formFactor`/`reach` (+ fiber connector guessed from the reach). */
+/** Project 100G optics with a renamed reach class (DR -> DR1, PSM4 -> DR4). */
+function renameOpticReach(o: Json): Json {
+  const r = typeof o.reach === 'string' && Number(o.speedGbps) === 100 ? REACH_RENAMES[o.reach] : undefined;
+  return r ? { ...o, reach: r } : o;
+}
+
 export function migrateOptic(o: Json): Json {
-  if (o.formFactor) return o.packaging ? o : { ...o, packaging: 'module' };
+  if (o.formFactor) return renameOpticReach(o.packaging ? o : { ...o, packaging: 'module' });
   const { connector, media, ...rest } = o;
   const reach = String(media ?? '');
   const fiber = /SR|DR|PSM/i.test(reach) ? 'MPO-12' : /FR|LR|ER/i.test(reach) ? 'LC' : '';
@@ -316,5 +327,12 @@ export function migrateProjectJson(raw: Json): Json {
       })),
     })),
     hiddenBuiltins: p.hiddenBuiltins ?? [],
+    // Profile edits on built-in devices: same setting migrations as device profiles.
+    builtinProfiles: Object.fromEntries(Object.entries((p.builtinProfiles as Json | undefined) ?? {}).map(([id, bp]) => [id, {
+      ...(bp as Json),
+      breakoutProfiles: (((bp as Json).breakoutProfiles as Json[]) ?? []).map((x) => ({
+        ...x, groupDefaults: mapValues(x.groupDefaults, toSetting), overrides: mapValues(x.overrides, toSetting),
+      })),
+    }])),
   };
 }

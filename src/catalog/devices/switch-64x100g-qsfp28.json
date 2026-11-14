@@ -63,10 +63,10 @@
   "breakoutProfiles": [
     {
       "id": "default",
-      "name": "Default (native speed, DR4-class parallel SMF)",
+      "name": "Default (native speed, DR)",
       "groupDefaults": {
         "qsfp28": {
-          "reach": "PSM4"
+          "reach": "DR4"
         }
       },
       "overrides": {}

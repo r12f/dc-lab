@@ -1,11 +1,11 @@
 {
   "schema": "dc-lab/optic@1",
   "id": "qsfp28-100g-psm4",
-  "name": "100G QSFP28 PSM4",
+  "name": "100G QSFP28 DR4 (PSM4, MPO-12)",
   "packaging": "module",
   "formFactor": "QSFP28",
   "speedGbps": 100,
-  "reach": "PSM4",
+  "reach": "DR4",
   "fiberConnector": "MPO-12",
   "reachM": 500,
   "powerW": 0

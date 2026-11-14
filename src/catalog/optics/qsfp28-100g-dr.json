@@ -1,11 +1,11 @@
 {
   "schema": "dc-lab/optic@1",
   "id": "qsfp28-100g-dr",
-  "name": "100G QSFP28 DR1 (single-lane, duplex LC)",
+  "name": "100G QSFP28 DR1 (duplex LC)",
   "packaging": "module",
   "formFactor": "QSFP28",
   "speedGbps": 100,
-  "reach": "DR",
+  "reach": "DR1",
   "fiberConnector": "LC",
   "reachM": 500,
   "powerW": 0
