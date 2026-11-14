@@ -17,7 +17,8 @@
   "psus": {
     "count": 6,
     "inlet": "Busbar",
-    "ratedW": 0
+    "ratedW": 0,
+    "layout": "row"
   },
   "ports": [],
   "breakoutProfiles": []

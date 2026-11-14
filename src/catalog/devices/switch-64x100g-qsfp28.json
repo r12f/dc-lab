@@ -28,7 +28,7 @@
       "speedGbps": 100,
       "lanes": 4,
       "face": "front",
-      "rows": 2,
+      "rows": 4,
       "breakoutModes": [
         "4x25G",
         "2x50G",

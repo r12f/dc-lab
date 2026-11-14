@@ -23,7 +23,9 @@ export function PowerInputForm({ device: d, onChange }: Props) {
             <TextField label="Inlet" value={psu.inlet} onChange={(inlet) => onChange({ ...d, psus: { ...psu, inlet } })} />
             <NumberField label="Rated W" value={psu.ratedW} min={0} onChange={(ratedW) => onChange({ ...d, psus: { ...psu, ratedW } })} />
           </div>
-          <p className="muted">PSUs are drawn on the rear, split evenly left/right.</p>
+          <SelectField label="Arrangement" value={psu.layout ?? 'split'}
+            options={[{ value: 'split', label: 'Split left / right' }, { value: 'row', label: 'One row' }]}
+            onChange={(v) => onChange({ ...d, psus: { ...psu, layout: v === 'row' ? 'row' : undefined } })} />
           <Button variant="danger" onClick={() => onChange({ ...d, psus: undefined })}>Remove PSUs</Button>
         </div>
       ) : (

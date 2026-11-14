@@ -30,7 +30,7 @@ export function spanOf(device: DeviceDefinition, rack: RackTemplate, mount: Moun
  * PDUs, patch panels) fit either.
  */
 export function unitSystemProblem(device: DeviceDefinition, rack: RackTemplate): string | undefined {
-  if (device.height.units === 0 || device.height.system === rack.unitSystem || isResizable(device.category)) return undefined;
+  if (device.height.units === 0 || device.height.system === rack.unitSystem || isResizable(device)) return undefined;
   return `${device.height.system} device does not fit a ${rack.unitSystem} rack`;
 }
 

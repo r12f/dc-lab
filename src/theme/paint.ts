@@ -34,6 +34,8 @@ const CATEGORY_COLORS: Record<DeviceCategory, string> = {
   ocs: '#36719A',
   'power-shelf': '#4F5D73',
   storage: '#3F7F5F',
+  tester: '#5B5F97',
+  'console-server': '#4A7A8C',
   other: '#64748B',
   'blanking-panel': '#1F2937',
   stiffener: '#64748B',

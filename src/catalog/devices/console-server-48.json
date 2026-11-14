@@ -2,7 +2,7 @@
   "schema": "dc-lab/device@1",
   "id": "console-server-48",
   "name": "48-port Console Server",
-  "category": "other",
+  "category": "console-server",
   "height": {
     "units": 1,
     "system": "RU"

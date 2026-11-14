@@ -19,15 +19,25 @@ const at = (id: string, deviceId: string, label: string, position: number, units
 describe('size-adjustable fillers', () => {
   it('blanking / brush panels, stiffeners and empty space: one built-in each, all under Misc', () => {
     for (const c of ['blanking-panel', 'brush-panel', 'stiffener', 'reserved'] as const) {
-      expect(isResizable(c)).toBe(true);
+      expect(isResizable({ category: c })).toBe(true);
       expect(categoryFolder(c)).toBe('Misc');
       expect(lib.devices.items().filter((d) => d.category === c).map((d) => d.id)).toEqual([c]);
     }
     expect(categoryFolder('patch-panel')).toBe('Patch / Fiber Housing');
-    expect(isResizable('patch-panel')).toBe(false);
+    expect(isResizable({ category: 'patch-panel' })).toBe(false);
+  });
+  it('any device can be made variable-height; a filler can be fixed', () => {
+    const sw = { ...lib.devices.get('switch-48x1g-mgmt')!, id: 'sw-var', resizable: true };
+    const bp = { ...lib.devices.get('blanking-panel')!, id: 'bp-fixed', resizable: false };
+    expect(isResizable(sw)).toBe(true);
+    expect(isResizable(bp)).toBe(false);
+    const l = new Library(BUILTIN_CATALOG_FOR_TESTS, { ...emptyProject(), devices: [sw, bp] });
+    const d = newDesign('d', 'D', 'network-42ru-600');
+    d.placements.push(at('a', 'sw-var', 'SW1', 1, 3), at('b', 'bp-fixed', 'BP1', 4, 3));
+    expect(computeRackMetrics(l, d).usedUnits).toBe(3 + 1);
     expect(DEVICE_TEMPLATES.map((t) => t.id)).toEqual(expect.arrayContaining(['blanking-panel', 'stiffener', 'brush-panel', 'reserved']));
   });
-  it('take the height set on the placement and the rack unit system (RU and OU racks)', () => {
+  it('fillers take the height set on the placement and the rack unit system (RU and OU racks)', () => {
     const d = newDesign('d', 'D', 'network-42ru-600');
     d.placements.push(at('b', 'blanking-panel', 'BP1', 1, 3));
     expect(placementProblem(lib, d, mgmt, { kind: 'rack', position: 3, face: 'front' })).toMatch(/Overlaps BP1/);

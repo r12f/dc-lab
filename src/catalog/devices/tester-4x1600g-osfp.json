@@ -2,7 +2,7 @@
   "schema": "dc-lab/device@1",
   "id": "tester-4x1600g-osfp",
   "name": "4x1.6T OSFP Traffic Generator",
-  "category": "other",
+  "category": "tester",
   "height": {
     "units": 2,
     "system": "RU"
@@ -14,7 +14,7 @@
     "maxW": 0
   },
   "psus": {
-    "count": 2,
+    "count": 3,
     "inlet": "C20",
     "ratedW": 0
   },

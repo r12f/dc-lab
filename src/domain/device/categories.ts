@@ -28,6 +28,8 @@ export const CATEGORY_TRAITS: Record<DeviceCategory, CategoryTraits> = {
   ocs: { label: 'OCS', labelPrefix: 'OCS', suppliesPower: false, allowsZeroU: false },
   'power-shelf': { label: 'Power Shelf', labelPrefix: 'PS', suppliesPower: true, allowsZeroU: false },
   storage: { label: 'Storage', labelPrefix: 'STG', suppliesPower: false, allowsZeroU: false },
+  tester: { label: 'Tester', labelPrefix: 'TG', suppliesPower: false, allowsZeroU: false },
+  'console-server': { label: 'Console Server', labelPrefix: 'CS', suppliesPower: false, allowsZeroU: false },
   other: { label: 'Other', labelPrefix: 'DEV', suppliesPower: false, allowsZeroU: true },
   // Appended after 'other' so existing categories keep their palette colors.
   'blanking-panel': { label: 'Blanking Panel', labelPrefix: 'BP', suppliesPower: false, allowsZeroU: false, filler: 'blanking', folder: MISC, resizable: true },
@@ -48,4 +50,6 @@ export function categoryFolder(category: DeviceCategory): string {
   return t.folder ?? t.label;
 }
 
-export const isResizable = (category: DeviceCategory): boolean => !!traitsOf(category).resizable;
+/** Size-adjustable device: its own flag, else its category's default (fillers). */
+export const isResizable = (device: { category: DeviceCategory; resizable?: boolean }): boolean =>
+  device.resizable ?? !!traitsOf(device.category).resizable;

@@ -8,7 +8,7 @@ Single-device definitions. One device = one JSON file (`schema: "dc-lab/device@1
 |---|---|
 | `id`, `name`, `vendor`, `model` | Identity. `id` is unique across built-in + project. `model` is shown as **Model / Vendor PN**. |
 | `properties` | Values of project-wide custom properties (see [05-project-file.md](05-project-file.md#custom-properties)) |
-| `category` | `switch`, `server`, `pdu`, `patch-panel` (Patch / Fiber Housing), `ocs`, `power-shelf`, `storage`, `other`, `blanking-panel`, `stiffener`, `brush-panel`, `reserved` |
+| `category` | `switch`, `server`, `pdu`, `patch-panel` (Patch / Fiber Housing), `ocs`, `power-shelf`, `storage`, `tester`, `console-server`, `other`, `blanking-panel`, `stiffener`, `brush-panel`, `reserved` |
 | `height` | `{ units, system: "RU" \| "OU" }`; `0` units = zero-U (vertical PDU, side-pod device) |
 | `depthMm`, `weightKg` | Physical metrics |
 | `power` | `{ typicalW, maxW, capacityW? }`. `capacityW` is set for power *suppliers* (PDU, power shelf). |
@@ -126,6 +126,10 @@ Drawing strategy is selected by device shape:
   native speed and count (`QSFP-DD 400G ×32`); each data port shows its index, speed (`400G` unsplit,
   `2x400G` breakout — never `1x…`) and reach. Ports are ≥ 54x46 units, text ≥ 9 units, drawn 1:1. Width follows content — the
   widest face (ports + PSUs) sets the box width, so small devices draw narrow.
+- **Variable height** (`resizable`): any device can be marked "Variable height" in the Devices inspector; its
+  height is then set per placement in Rack Designer and `height` is the default size. Fillers (below) default to it.
+- **PSU arrangement** (`psus.layout`): `split` (default, half on each rear edge) or `row` (one row side by side,
+  e.g. power shelves).
 - **Misc — size-adjustable fillers**: blanking panel, brush panel, stiffener and Empty (Reserved) are listed
   together under the **Misc** folder (sidebar and palette). Each is **one item whose height is set per
   placement** in Rack Designer (1…n units, in the rack's unit system — RU or OU), not one item per size. The

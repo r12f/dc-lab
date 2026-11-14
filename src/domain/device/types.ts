@@ -11,6 +11,8 @@ export type DeviceCategory =
   | 'ocs'
   | 'power-shelf'
   | 'storage'
+  | 'tester'
+  | 'console-server'
   | 'other'
   | 'blanking-panel'
   | 'stiffener'
@@ -78,6 +80,8 @@ export interface DevicePower {
 /** Hot-swap PSUs on the rear face, split evenly left/right. */
 export interface PsuSpec {
   count: number;
+  /** Rear arrangement: `split` = half on each edge (default), `row` = one row side by side (power shelves). */
+  layout?: 'split' | 'row';
   inlet: string;
   ratedW: number;
 }
@@ -103,4 +107,6 @@ export interface DeviceDefinition extends CatalogItem {
   ports: PortGroup[];
   breakoutProfiles: BreakoutProfile[];
   notes?: string;
+  /** Height is chosen per placement (1..n units in the rack's unit system); `height` is the default size. Defaults per category (fillers). */
+  resizable?: boolean;
 }

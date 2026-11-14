@@ -1,5 +1,5 @@
 import type { DeviceCategory, DeviceDefinition } from '../../domain/device/types';
-import { DEVICE_CATEGORIES, traitsOf } from '../../domain/device/categories';
+import { DEVICE_CATEGORIES, isResizable, traitsOf } from '../../domain/device/categories';
 import type { UnitSystem } from '../../domain/units';
 import { NumberField, Section, SelectField, TextField } from '../../ui/fields';
 
@@ -25,6 +25,10 @@ export function DeviceGeneralForm({ device: d, onChange }: Props) {
         <SelectField<UnitSystem> label="Unit" value={d.height.system} options={systemOptions}
           onChange={(system) => set({ height: { ...d.height, system } })} />
       </div>
+      <label className="checkbox">
+        <input type="checkbox" checked={isResizable(d)} onChange={(e) => set({ resizable: e.target.checked })} />
+        {' Variable height — set per placement in Rack Designer (height above = default size)'}
+      </label>
       <div className="row2">
         <NumberField label="Depth (mm)" value={d.depthMm} min={0} onChange={(depthMm) => set({ depthMm })} />
         <NumberField label="Weight (kg)" value={d.weightKg} min={0} step={0.1} onChange={(weightKg) => set({ weightKg })} />

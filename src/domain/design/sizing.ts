@@ -11,7 +11,7 @@ import type { Placement, RackDesign } from './types';
  * default height; the name gets the size ("2RU Blanking Panel"). Other devices are returned unchanged.
  */
 export function sizedDevice(device: DeviceDefinition, rack: RackTemplate | undefined, units?: number): DeviceDefinition {
-  if (!isResizable(device.category)) return device;
+  if (!isResizable(device)) return device;
   const base = Math.max(1, device.height.units);
   const n = Math.max(1, Math.round(units ?? base));
   const height = { units: n, system: rack?.unitSystem ?? device.height.system };
@@ -26,5 +26,5 @@ export function placedDevice(lib: Library, design: RackDesign, p: Placement): De
 
 /** BOM key suffix: each size of a size-adjustable filler is its own line ("@2RU"). */
 export function sizeKey(device: DeviceDefinition): string {
-  return isResizable(device.category) ? `@${formatHeight(device.height)}` : '';
+  return isResizable(device) ? `@${formatHeight(device.height)}` : '';
 }

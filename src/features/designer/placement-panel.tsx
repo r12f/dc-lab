@@ -39,7 +39,7 @@ export function PlacementPanel({ lib, placement: p, templateId, editor, onRemove
       <Section title="Instance">
         <TextField label="Label" value={p.label} onChange={(label) => update((x) => ({ ...x, label }))} />
         <p className="muted">{`${placed.name} · ${formatHeight(placed.height)} · ${formatPower(device.power.typicalW)}`}</p>
-        {isResizable(device.category) && mount.kind === 'rack' && (
+        {isResizable(device) && mount.kind === 'rack' && (
           <NumberField label={`Height (${placed.height.system})`} value={placed.height.units} min={1}
             onChange={(units) => onError(editor.resize(p.id, Math.max(1, Math.round(units))))} />
         )}
