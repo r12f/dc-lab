@@ -46,7 +46,8 @@ export function rackGeometry(rack: RackTemplate, gutter = 0): RackGeometry {
   const bodyOuter = Math.max(MIN_BODY_PX + RAIL_W * 2, rack.widthMm * PX_PER_MM);
   const bodyW = bodyOuter - RAIL_W * 2;
   const originX = sideWidth(left) + gutter;
-  const originY = 48;
+  // Title (y 14) and subtitle (y 30) above; side element names sit 8px over the body — keep them clear.
+  const originY = 60;
   const bodyH = rack.units * unitPx;
 
   const sideBoxes: SideElementBox[] = [];
