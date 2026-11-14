@@ -13,6 +13,8 @@ export interface InsertAnchor {
   after?: string;
   aisleId?: string;
   facilityId?: string;
+  /** Door a new door is placed next to. */
+  doorId?: string;
 }
 
 const pos = (l: DcLayout, id: string) => l.sequence.indexOf(id);
@@ -71,7 +73,7 @@ export function addFacilityNear(l: DcLayout, kind: FacilityKind, nextTo?: string
  */
 export function insertAnchor(
   l: DcLayout,
-  sel: { kind: 'row' | 'aisle' | 'tray' | 'facility'; ids: string[] } | { kind: 'tile'; rowId: string } | { kind: 'assignment'; id: string } | undefined,
+  sel: { kind: 'row' | 'aisle' | 'tray' | 'facility' | 'door'; ids: string[] } | { kind: 'tile'; rowId: string } | { kind: 'assignment'; id: string } | undefined,
 ): InsertAnchor {
   if (!sel) return {};
   const last = (ids: string[]) => [...ids].sort((a, b) => pos(l, a) - pos(l, b)).at(-1);
@@ -89,6 +91,8 @@ export function insertAnchor(
     }
     case 'facility':
       return { facilityId: sel.ids.at(-1) };
+    case 'door':
+      return { doorId: sel.ids.at(-1) };
     case 'tile':
       return { after: sel.rowId, aisleId: aisleFrom(l, pos(l, sel.rowId) + 1) };
     case 'assignment': {

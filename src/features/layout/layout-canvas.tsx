@@ -1,3 +1,4 @@
+import { DoorArrowDefs, DoorDrawing } from './door-drawing';
 import { FeedLines } from './feed-lines';
 import { useState, type Ref } from 'react';
 import type { Library } from '../../domain/library/library';
@@ -69,6 +70,12 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
         <text x={ws.x + 80} y={ws.y + ws.depthMm + 260} fontSize={200} fill={paint.inkMuted} pointerEvents="none">
           {`Rack area ${ws.widthMm / 1000} × ${ws.depthMm / 1000} m · used ${plan.usedWidthMm / 1000} m`}
         </text>
+        <DoorArrowDefs />
+        {layout.doors.map((d) => (
+          <g key={d.id} opacity={ghost(d.id)}>
+            <DoorDrawing layout={layout} door={d} selected={isSel('door', d.id)} onPointerDown={startDrag('door', d.id)} />
+          </g>
+        ))}
         {layout.facilities.map((f) => (
           <g key={f.id} opacity={ghost(f.id)}>
             <AreaDrawing rect={f} fill={FACILITY_COLORS[f.kind]} opacity={0.45}

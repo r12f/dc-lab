@@ -1,7 +1,8 @@
+import { addDoor } from './doors';
 import { uniqueId } from '../ids';
 import type { Aisle, CableTray, DcLayout, Facility, Row } from './types';
 
-export type DuplicableKind = 'row' | 'aisle' | 'tray' | 'facility';
+export type DuplicableKind = 'row' | 'aisle' | 'tray' | 'facility' | 'door';
 
 /** Next free "Row N" name. */
 function nextRowName(rows: Row[]): string {
@@ -53,6 +54,10 @@ export function duplicateElements(l: DcLayout, kind: DuplicableKind, ids: string
       const copy: CableTray = { ...src, id: uniqueId('tray', next.trays.map((t) => t.id)), aisleId: free ?? src.aisleId };
       next = { ...next, trays: [...next.trays, copy] };
       created.push(copy.id);
+    } else if (kind === 'door') {
+      const r = addDoor(next, id);
+      next = r.layout;
+      created.push(r.id);
     } else {
       const src = next.facilities.find((f) => f.id === id);
       if (!src) continue;

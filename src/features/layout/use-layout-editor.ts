@@ -1,5 +1,6 @@
 import type { Library } from '../../domain/library/library';
-import type { Aisle, CableTray, DcLayout, Facility, FacilityKind, Rect, Row } from '../../domain/layout/types';
+import type { Aisle, CableTray, DcLayout, Door, Facility, FacilityKind, Rect, Row, Wall } from '../../domain/layout/types';
+import { addDoor, clampDoor } from '../../domain/layout/doors';
 import { addAisleAfter, addFacilityNear, addRowAfter, addTrayOver, type InsertAnchor } from '../../domain/layout/insert';
 import { assignmentProblem, type DesignLookup } from '../../domain/layout/tiles';
 import { clampToRoom, snap } from '../../domain/layout/geometry';
@@ -9,8 +10,8 @@ import { uniqueId } from '../../domain/ids';
 import { pruneFeeds, setFeed } from '../../domain/layout/power-feeds';
 import { useAppStore } from '../../state/store';
 
-type ListName = 'rows' | 'aisles' | 'trays' | 'facilities';
-type Element = Row | Aisle | CableTray | Facility;
+type ListName = 'rows' | 'aisles' | 'trays' | 'facilities' | 'doors';
+type Element = Row | Aisle | CableTray | Facility | Door;
 
 /** Commands on one DC layout. */
 export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcLayout | undefined) {
@@ -29,6 +30,11 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
   const addAisle = (anchor: InsertAnchor = {}) => add((l) => addAisleAfter(l, anchor.after));
   const addTray = (anchor: InsertAnchor = {}) => add((l) => addTrayOver(l, anchor.aisleId));
   const addFacility = (kind: FacilityKind, anchor: InsertAnchor = {}) => add((l) => addFacilityNear(l, kind, anchor.facilityId));
+  const addDoorTo = (anchor: InsertAnchor = {}) => add((l) => addDoor(l, anchor.doorId));
+  /** Moves a door to a wall position (kept on the wall). */
+  const moveDoor = (id: string, wall: Wall, offsetMm: number) => mutate((l) => ({
+    ...l, doors: l.doors.map((d) => (d.id === id ? clampDoor(l, { ...d, wall, offsetMm }) : d)),
+  }));
 
   function updateElement<T extends Element>(list: ListName, id: string, patch: Partial<T>) {
     updateElements<T>(list, [id], patch);
@@ -89,7 +95,7 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
 
   return {
     addRow, addAisle, addTray, addFacility, updateElement, updateElements, duplicate, removeElement, removeElements, reorder, moveTray, moveFacility,
-    assign, unassign, relabel, setRoom, setWhitespace, rename, setPowerFeed,
+    assign, unassign, relabel, setRoom, setWhitespace, rename, setPowerFeed, addDoor: addDoorTo, moveDoor,
   };
 }
 

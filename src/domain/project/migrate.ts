@@ -157,7 +157,7 @@ function sequenceLayout(l: Json): Json {
 
 export function migrateLayout(l: Json): Json {
   const out = sequenceLayout(rotateLayout(l));
-  return { ...out, feeds: (out.feeds as Json[] | undefined) ?? [] };
+  return { ...out, feeds: (out.feeds as Json[] | undefined) ?? [], doors: (out.doors as Json[] | undefined) ?? [] };
 }
 
 /** Removed form factor "QSFP-DD800" -> "QSFP-DD" (an 800G QSFP-DD cage); old built-in device id renamed. */

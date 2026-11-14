@@ -2,6 +2,7 @@ import { useState, type PointerEvent } from 'react';
 import type { DcLayout } from '../../domain/layout/types';
 import { computeFloorPlan, nearestAisle, reorderTo, trayRect } from '../../domain/layout/floor-plan';
 import { clampToRoom, snap } from '../../domain/layout/geometry';
+import { clampDoor, nearestWallSpot } from '../../domain/layout/doors';
 import { toSvgPoint } from '../../io/svg-point';
 import type { DragKind } from './selection';
 import type { LayoutEditor } from './use-layout-editor';
@@ -70,6 +71,11 @@ export function useDragMove(layout: DcLayout, editor: LayoutEditor) {
           facilities: layout.facilities.map((f) => (f.id === drag.id
             ? { ...f, ...clampToRoom(layout, snap(f.x + dx), snap(f.y + dy), f.widthMm, f.depthMm) } : f)),
         };
+      case 'door': {
+        // Doors slide along the walls: the pointer picks the nearest wall and the spot on it.
+        const spot = nearestWallSpot(layout, drag.x, drag.y, layout.doors.find((d) => d.id === drag.id)?.widthMm ?? 0);
+        return { ...layout, doors: layout.doors.map((d) => (d.id === drag.id ? clampDoor(layout, { ...d, ...spot }) : d)) };
+      }
     }
   };
 
@@ -83,6 +89,9 @@ export function useDragMove(layout: DcLayout, editor: LayoutEditor) {
     else if (d.kind === 'tray') {
       const t = p.trays.find((x) => x.id === d.id);
       if (t) editor.moveTray(d.id, t.aisleId);
+    } else if (d.kind === 'door') {
+      const door = p.doors.find((x) => x.id === d.id);
+      if (door) editor.moveDoor(d.id, door.wall, door.offsetMm);
     } else {
       const f = p.facilities.find((x) => x.id === d.id);
       if (f) editor.moveFacility(d.id, f.x, f.y);

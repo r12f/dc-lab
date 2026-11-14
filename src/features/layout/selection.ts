@@ -1,5 +1,5 @@
 /** Layout elements that can be selected (several at once), duplicated and dragged. */
-export type ElementKind = 'row' | 'aisle' | 'tray' | 'facility';
+export type ElementKind = 'row' | 'aisle' | 'tray' | 'facility' | 'door';
 
 /** What is selected on the layout canvas. Elements of one kind can be multi-selected. */
 export type LayoutSelection =
@@ -11,7 +11,7 @@ export type ElementSelection = Extract<LayoutSelection, { ids: string[] }>;
 
 export type DragKind = ElementKind;
 
-export const ELEMENT_KINDS: ElementKind[] = ['row', 'aisle', 'tray', 'facility'];
+export const ELEMENT_KINDS: ElementKind[] = ['row', 'aisle', 'tray', 'facility', 'door'];
 
 export function isElementSelection(s: LayoutSelection | undefined): s is ElementSelection {
   return !!s && 'ids' in s;

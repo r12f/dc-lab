@@ -5,9 +5,10 @@ import type { ElementKind, ElementSelection, LayoutSelection } from './selection
 import { RowForm } from './row-form';
 import { AisleForm, FacilityForm, TrayForm } from './area-forms';
 import { PduFeedsForm, RowFeedsSummary } from './feeds-form';
+import { DoorForm } from './door-form';
 
 const NAMES: Record<ElementKind, [string, string]> = {
-  row: ['row', 'rows'], aisle: ['aisle', 'aisles'], tray: ['tray', 'trays'], facility: ['facility', 'facilities'],
+  row: ['row', 'rows'], aisle: ['aisle', 'aisles'], tray: ['tray', 'trays'], facility: ['facility', 'facilities'], door: ['door', 'doors'],
 };
 
 /** "Select all" shortcuts over the layout, e.g. all cold aisles. */
@@ -19,6 +20,7 @@ function groupsOf(layout: DcLayout): { label: string; sel: ElementSelection }[] 
     g('Hot aisles', 'aisle', layout.aisles.filter((a) => a.kind === 'hot').map((a) => a.id)),
     g('All trays', 'tray', layout.trays.map((t) => t.id)),
     g('Facilities', 'facility', layout.facilities.map((f) => f.id)),
+    g('Doors', 'door', layout.doors.map((d) => d.id)),
   ].filter((x) => x.sel.ids.length > 0);
 }
 
@@ -41,7 +43,7 @@ export function ElementPanel({ layout, editor, selection, onSelect, rowDrawW }: 
   const { kind, ids } = selection;
   const pick = <T extends { id: string }>(xs: T[]) => xs.filter((x) => ids.includes(x.id));
   const n = ids.length;
-  const list = ({ row: 'rows', aisle: 'aisles', tray: 'trays', facility: 'facilities' } as const)[kind];
+  const list = ({ row: 'rows', aisle: 'aisles', tray: 'trays', facility: 'facilities', door: 'doors' } as const)[kind];
   return (
     <div className="card">
       <strong>{n === 1 ? `1 ${NAMES[kind][0]}` : `${n} ${NAMES[kind][1]} — changes apply to all`}</strong>
@@ -49,6 +51,7 @@ export function ElementPanel({ layout, editor, selection, onSelect, rowDrawW }: 
       {kind === 'aisle' && <AisleForm aisles={pick(layout.aisles)} editor={editor} />}
       {kind === 'tray' && <TrayForm trays={pick(layout.trays)} layout={layout} editor={editor} />}
       {kind === 'facility' && <FacilityForm facilities={pick(layout.facilities)} editor={editor} />}
+      {kind === 'door' && <DoorForm doors={pick(layout.doors)} layout={layout} editor={editor} />}
       {kind === 'facility' && n === 1 && pick(layout.facilities)[0].kind === 'pdu' && (
         <PduFeedsForm layout={layout} pdu={pick(layout.facilities)[0]} editor={editor} />
       )}

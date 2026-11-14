@@ -48,6 +48,19 @@ export interface Facility extends Rect {
   capacityKw?: number;
 }
 
+export type Wall = 'north' | 'south' | 'east' | 'west';
+
+/** A door in a room wall: `offsetMm` from the wall's west (north/south walls) or north (east/west walls) end. */
+export interface Door {
+  id: string;
+  name: string;
+  wall: Wall;
+  offsetMm: number;
+  widthMm: number;
+  /** Main entrance (drawn bolder) vs other doors (fire exit, loading). */
+  kind: 'entry' | 'exit';
+}
+
 /** A power feed: a PDU facility supplying `kw` to a row. A row may have feeds from several PDUs. */
 export interface PowerFeed {
   id: string;
@@ -80,4 +93,6 @@ export interface DcLayout {
   assignments: RackAssignment[];
   /** PDU -> row power feeds. */
   feeds: PowerFeed[];
+  /** Doors in the room walls. */
+  doors: Door[];
 }

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import type { LayoutEditor } from './use-layout-editor';
 import { isElementSelection, type LayoutSelection } from './selection';
 
-const LIST = { row: 'rows', aisle: 'aisles', tray: 'trays', facility: 'facilities' } as const;
+const LIST = { row: 'rows', aisle: 'aisles', tray: 'trays', facility: 'facilities', door: 'doors' } as const;
 
 /** Ctrl+D duplicates and Delete removes the selected rows/aisles/trays/facilities (not while typing). */
 export function useLayoutShortcuts(editor: LayoutEditor, sel: LayoutSelection | undefined,

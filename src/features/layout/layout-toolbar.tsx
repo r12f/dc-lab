@@ -17,7 +17,7 @@ export function LayoutToolbar({ layout, editor, selection, onSelect }: Props) {
   // New elements go after the selection; the new element becomes the selection, so repeated clicks chain.
   const anchor = insertAnchor(layout, selection);
   const added = (kind: ElementKind, id: string | undefined) => { if (id) onSelect({ kind, ids: [id] }); };
-  const list = elements && ({ row: 'rows', aisle: 'aisles', tray: 'trays', facility: 'facilities' } as const)[elements.kind];
+  const list = elements && ({ row: 'rows', aisle: 'aisles', tray: 'trays', facility: 'facilities', door: 'doors' } as const)[elements.kind];
   return (
     <div className="toolbar-group">
       <Button title="After the selected row/aisle, else at the east end" onClick={() => added('row', editor.addRow(anchor))}>+ Row</Button>
@@ -25,6 +25,7 @@ export function LayoutToolbar({ layout, editor, selection, onSelect }: Props) {
       <Button title="Over the selected aisle, else the next aisle east of the selection" onClick={() => added('tray', editor.addTray(anchor))}>+ Tray</Button>
       <Button title="Next to the selected facility" onClick={() => added('facility', editor.addFacility('pdu', anchor))}>+ PDU</Button>
       <Button title="Next to the selected facility" onClick={() => added('facility', editor.addFacility('cooling', anchor))}>+ Cooling</Button>
+      <Button title="Entry on the south wall, or next to the selected door; drag along the walls" onClick={() => added('door', editor.addDoor(anchor))}>+ Door</Button>
       <span className="toolbar-sep" />
       <Button disabled={!elements} title="Ctrl+D"
         onClick={() => elements && onSelect({ kind: elements.kind, ids: editor.duplicate(elements.kind, elements.ids) })}>
