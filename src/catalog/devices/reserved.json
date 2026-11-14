@@ -1,13 +1,13 @@
 {
   "schema": "dc-lab/device@1",
-  "id": "blanking-panel-2ru",
-  "name": "2RU Blanking Panel",
-  "category": "blanking-panel",
+  "id": "reserved",
+  "name": "Empty (Reserved)",
+  "category": "reserved",
   "height": {
-    "units": 2,
+    "units": 1,
     "system": "RU"
   },
-  "depthMm": 20,
+  "depthMm": 0,
   "weightKg": 0,
   "power": {
     "typicalW": 0,

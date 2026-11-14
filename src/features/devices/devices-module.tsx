@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useLibrary } from '../../state/use-library';
 import { useCatalogEditor } from '../../state/use-catalog-editor';
 import { useAppStore } from '../../state/store';
-import { traitsOf } from '../../domain/device/categories';
+import { categoryFolder } from '../../domain/device/categories';
 import { findProfile } from '../../domain/device/breakout';
 import { resolvePort } from '../../domain/device/port-settings';
 import { formatHeight } from '../../domain/units';
@@ -38,7 +38,7 @@ export function DevicesModule() {
 
   // Type (category) -> item type -> items.
   const items = lib.devices.all().map(({ item, source }) => {
-    const path = [traitsOf(item.category).label];
+    const path = [categoryFolder(item.category)];
     return {
       id: item.id,
       name: item.name,

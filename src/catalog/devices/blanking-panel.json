@@ -1,13 +1,13 @@
 {
   "schema": "dc-lab/device@1",
-  "id": "stiffener-1ou",
-  "name": "1OU Rack Stiffener",
-  "category": "stiffener",
+  "id": "blanking-panel",
+  "name": "Blanking Panel",
+  "category": "blanking-panel",
   "height": {
     "units": 1,
-    "system": "OU"
+    "system": "RU"
   },
-  "depthMm": 50,
+  "depthMm": 20,
   "weightKg": 0,
   "power": {
     "typicalW": 0,

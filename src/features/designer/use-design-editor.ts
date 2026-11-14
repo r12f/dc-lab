@@ -35,6 +35,16 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
     return problem;
   };
 
+  /** Sets the height of a size-adjustable filler; returns the problem when it does not fit. */
+  const resize = (placementId: string, units: number): string | undefined => {
+    const p = design?.placements.find((x) => x.id === placementId);
+    const device = p && lib.devices.get(p.deviceId);
+    if (!design || !p || !device) return 'Unknown placement';
+    const problem = placementProblem(lib, design, device, p.mount, placementId, units);
+    if (!problem) updatePlacement(placementId, (x) => ({ ...x, units }));
+    return problem;
+  };
+
   const updatePlacement = (id: string, fn: (p: Placement) => Placement) =>
     mutate((d) => ({ ...d, placements: d.placements.map((p) => (p.id === id ? fn(p) : p)) }));
 
@@ -66,7 +76,7 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
   const rename = (name: string) => mutate((d) => ({ ...d, name }));
   const setAbbr = (text: string) => mutate((d) => ({ ...d, abbr: cleanAbbr(text) }));
 
-  return { addDevice, moveTo, updatePlacement, removePlacement, addCable, addCables, updateCable, removeCable, rename, setAbbr };
+  return { addDevice, moveTo, resize, updatePlacement, removePlacement, addCable, addCables, updateCable, removeCable, rename, setAbbr };
 }
 
 export type DesignEditor = ReturnType<typeof useDesignEditor>;

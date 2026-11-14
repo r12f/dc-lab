@@ -9,6 +9,8 @@ import { DeviceDrawing } from '../devices/drawing/device-drawing';
 import { resolvePlacedPort } from '../../domain/design/optics';
 import { variantLabel } from '../../domain/items/variants';
 import type { DesignEditor } from './use-design-editor';
+import { isResizable } from '../../domain/device/categories';
+import { sizedDevice } from '../../domain/design/sizing';
 import { GroupOpticsEditor } from './group-optics-editor';
 import { PortConfigEditor } from './port-config-editor';
 
@@ -18,22 +20,29 @@ interface Props {
   templateId: string;
   editor: DesignEditor;
   onRemoved(): void;
+  /** Shows a rejected change (e.g. a filler grown into another device). */
+  onError(message: string | undefined): void;
 }
 
 const faceOptions = [{ value: 'front' as PortFace, label: 'Front' }, { value: 'rear' as PortFace, label: 'Rear' }];
 
-export function PlacementPanel({ lib, placement: p, templateId, editor, onRemoved }: Props) {
+export function PlacementPanel({ lib, placement: p, templateId, editor, onRemoved, onError }: Props) {
   const [port, setPort] = useState<string>();
   const device = lib.devices.get(p.deviceId);
   if (!device) return <p className="muted">Unknown device {p.deviceId}</p>;
   const update = (fn: (x: Placement) => Placement) => editor.updatePlacement(p.id, fn);
+  const placed = sizedDevice(device, lib.racks.get(templateId), p.units);
   const mount = p.mount;
 
   return (
     <>
       <Section title="Instance">
         <TextField label="Label" value={p.label} onChange={(label) => update((x) => ({ ...x, label }))} />
-        <p className="muted">{`${device.name} · ${formatHeight(device.height)} · ${formatPower(device.power.typicalW)}`}</p>
+        <p className="muted">{`${placed.name} · ${formatHeight(placed.height)} · ${formatPower(device.power.typicalW)}`}</p>
+        {isResizable(device.category) && mount.kind === 'rack' && (
+          <NumberField label={`Height (${placed.height.system})`} value={placed.height.units} min={1}
+            onChange={(units) => onError(editor.resize(p.id, Math.max(1, Math.round(units))))} />
+        )}
         {mount.kind === 'rack' ? (
           <div className="row2">
             <NumberField label="Bottom unit" value={mount.position} min={1}

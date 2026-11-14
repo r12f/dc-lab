@@ -20,9 +20,10 @@ interface Props {
   onTabChange(tab: InspectorTab): void;
   cableId?: string;
   onSelectCable(id: string | undefined): void;
+  onError(message: string | undefined): void;
 }
 
-export function DesignInspector({ lib, design, editor, placementId, onSelectPlacement, tab, onTabChange, cableId, onSelectCable }: Props) {
+export function DesignInspector({ lib, design, editor, placementId, onSelectPlacement, tab, onTabChange, cableId, onSelectCable, onError }: Props) {
   const placement = design.placements.find((p) => p.id === placementId);
   return (
     <div className="inspector-inner">
@@ -39,7 +40,7 @@ export function DesignInspector({ lib, design, editor, placementId, onSelectPlac
       {tab === 'summary' && <RackSummaryPanel lib={lib} design={design} />}
       {tab === 'placement' && (placement ? (
         <PlacementPanel lib={lib} placement={placement} templateId={design.templateId} editor={editor}
-          onRemoved={() => onSelectPlacement(undefined)} />
+          onRemoved={() => onSelectPlacement(undefined)} onError={onError} />
       ) : <p className="muted">Select a device on the rack.</p>)}
       {tab === 'cables' && (
         <CablesPanel lib={lib} design={design} editor={editor} selectedId={cableId} onSelect={onSelectCable}

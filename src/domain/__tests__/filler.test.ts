@@ -6,56 +6,63 @@ import { newDesign } from '../design/factory';
 import { newPlacement, placementProblem } from '../design/placement';
 import { computeRackMetrics } from '../design/metrics';
 import { buildRackBom } from '../bom/rack-bom';
-import { traitsOf } from '../device/categories';
+import { categoryFolder, isResizable, traitsOf } from '../device/categories';
 import { DEVICE_TEMPLATES } from '../device/templates';
+import { normalizeProject } from '../project/serializer';
+import type { Placement } from '../design/types';
 
 const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
+const mgmt = lib.devices.get('switch-48x1g-mgmt')!;
+const at = (id: string, deviceId: string, label: string, position: number, units?: number): Placement =>
+  ({ ...newPlacement(id, deviceId, label, { kind: 'rack', position, face: 'front' }), ...(units ? { units } : {}) });
 
-describe('blanking panels and stiffeners', () => {
-  it('are filler categories with built-ins and templates', () => {
-    expect(traitsOf('blanking-panel').filler).toBe('blanking');
-    expect(traitsOf('stiffener').filler).toBe('stiffener');
-    expect(lib.devices.get('blanking-panel-1ru')?.ports).toEqual([]);
-    expect(DEVICE_TEMPLATES.map((t) => t.id)).toEqual(expect.arrayContaining(['blanking-panel', 'stiffener']));
+describe('size-adjustable fillers', () => {
+  it('blanking / brush panels, stiffeners and empty space: one built-in each, all under Misc', () => {
+    for (const c of ['blanking-panel', 'brush-panel', 'stiffener', 'reserved'] as const) {
+      expect(isResizable(c)).toBe(true);
+      expect(categoryFolder(c)).toBe('Misc');
+      expect(lib.devices.items().filter((d) => d.category === c).map((d) => d.id)).toEqual([c]);
+    }
+    expect(categoryFolder('patch-panel')).toBe('Patch / Fiber Housing');
+    expect(isResizable('patch-panel')).toBe(false);
+    expect(DEVICE_TEMPLATES.map((t) => t.id)).toEqual(expect.arrayContaining(['blanking-panel', 'stiffener', 'brush-panel', 'reserved']));
   });
-  it('occupy units, add weight and BOM lines, no power', () => {
+  it('take the height set on the placement and the rack unit system (RU and OU racks)', () => {
     const d = newDesign('d', 'D', 'network-42ru-600');
-    d.placements.push(newPlacement('b', 'blanking-panel-2ru', 'BP1', { kind: 'rack', position: 1, face: 'front' }));
-    expect(placementProblem(lib, d, lib.devices.get('switch-48x1g-mgmt')!, { kind: 'rack', position: 2, face: 'front' })).toBeTruthy();
-    const m = computeRackMetrics(lib, d);
-    expect(m.usedUnits).toBe(2);
-    expect(m.typicalW).toBe(0);
-    expect(buildRackBom(lib, d).find((l) => l.kind === 'device')).toMatchObject({ item: '2RU Blanking Panel', category: 'Blanking Panel', qty: 1 });
+    d.placements.push(at('b', 'blanking-panel', 'BP1', 1, 3));
+    expect(placementProblem(lib, d, mgmt, { kind: 'rack', position: 3, face: 'front' })).toMatch(/Overlaps BP1/);
+    expect(placementProblem(lib, d, mgmt, { kind: 'rack', position: 4, face: 'front' })).toBeUndefined();
+    expect(computeRackMetrics(lib, d)).toMatchObject({ usedUnits: 3, typicalW: 0, deviceWeightKg: 1.5 });
+    expect(buildRackBom(lib, d).find((l) => l.kind === 'device')).toMatchObject({ item: '3RU Blanking Panel', category: 'Blanking Panel', qty: 1 });
+    const o = newDesign('o', 'O', 'orv3-44ou');
+    expect(placementProblem(lib, o, lib.devices.get('stiffener')!, { kind: 'rack', position: 1, face: 'front' })).toBeUndefined();
   });
-});
-
-describe('empty (reserved) space', () => {
-  it('is a filler category with built-ins and a template', () => {
+  it('growing a filler into another device is rejected', () => {
+    const d = newDesign('d', 'D', 'network-42ru-600');
+    d.placements.push(at('b', 'blanking-panel', 'BP1', 1), at('s', 'switch-48x1g-mgmt', 'SW1', 3));
+    expect(placementProblem(lib, d, lib.devices.get('blanking-panel')!, d.placements[0].mount, 'b', 2)).toBeUndefined();
+    expect(placementProblem(lib, d, lib.devices.get('blanking-panel')!, d.placements[0].mount, 'b', 3)).toMatch(/Overlaps SW1/);
+  });
+  it('different sizes of one filler are separate BOM lines', () => {
+    const d = newDesign('d', 'D', 'network-42ru-600');
+    d.placements.push(at('a', 'brush-panel', 'BR1', 1), at('b', 'brush-panel', 'BR2', 2, 2), at('c', 'brush-panel', 'BR3', 4, 2));
+    const lines = buildRackBom(lib, d).filter((l) => l.kind === 'device').map((l) => [l.item, l.qty]);
+    expect(lines).toEqual(expect.arrayContaining([['1RU Brush Panel', 1], ['2RU Brush Panel', 2]]));
+  });
+  it('empty (reserved) space holds units but adds no weight, power or BOM line', () => {
     expect(traitsOf('reserved')).toMatchObject({ label: 'Empty (Reserved)', filler: 'reserved' });
-    expect(lib.devices.get('reserved-2ru')).toMatchObject({ category: 'reserved', weightKg: 0, ports: [] });
-    expect(DEVICE_TEMPLATES.map((t) => t.id)).toContain('reserved');
-  });
-  it('holds units (blocks other devices) but adds no weight, power or BOM line', () => {
     const d = newDesign('d', 'D', 'network-42ru-600');
-    d.placements.push(newPlacement('r', 'reserved-4ru', 'RSV1', { kind: 'rack', position: 10, face: 'front' }));
-    expect(placementProblem(lib, d, lib.devices.get('switch-48x1g-mgmt')!, { kind: 'rack', position: 12, face: 'front' })).toBeTruthy();
-    const m = computeRackMetrics(lib, d);
-    expect(m.usedUnits).toBe(4);
-    expect(m.typicalW).toBe(0);
-    expect(m.deviceWeightKg).toBe(0);
+    d.placements.push(at('r', 'reserved', 'RSV1', 10, 4));
+    expect(placementProblem(lib, d, mgmt, { kind: 'rack', position: 13, face: 'front' })).toBeTruthy();
+    expect(computeRackMetrics(lib, d)).toMatchObject({ usedUnits: 4, typicalW: 0, deviceWeightKg: 0 });
     expect(buildRackBom(lib, d).filter((l) => l.kind === 'device')).toEqual([]);
   });
-});
-
-describe('brush panels', () => {
-  it('are filler hardware: hold units, add weight and a BOM line, no power', () => {
-    expect(traitsOf('brush-panel')).toMatchObject({ label: 'Brush Panel', filler: 'brush' });
-    expect(DEVICE_TEMPLATES.map((t) => t.id)).toContain('brush-panel');
-    const d = newDesign('d', 'D', 'network-42ru-600');
-    d.placements.push(newPlacement('b', 'brush-panel-1ru', 'BR1', { kind: 'rack', position: 5, face: 'front' }));
-    expect(placementProblem(lib, d, lib.devices.get('switch-48x1g-mgmt')!, { kind: 'rack', position: 5, face: 'front' })).toBeTruthy();
-    const m = computeRackMetrics(lib, d);
-    expect(m).toMatchObject({ usedUnits: 1, typicalW: 0, deviceWeightKg: 0.8 });
-    expect(buildRackBom(lib, d).find((l) => l.kind === 'device')).toMatchObject({ item: '1RU Brush Panel', category: 'Brush Panel', qty: 1 });
+  it('old fixed-size fillers migrate to the adjustable item with that height', () => {
+    const p = normalizeProject({ schema: 'dc-lab/project@1', hiddenBuiltins: ['reserved-1ru', 'reserved-2ru'], rackDesigns: [{ id: 'd', placements: [
+      { id: 'a', deviceId: 'reserved-4ru', label: 'RSV1', mount: { kind: 'rack', position: 1, face: 'front' }, portSettings: {}, groupSettings: {} },
+      { id: 'b', deviceId: 'stiffener-1ou', label: 'STF1', mount: { kind: 'rack', position: 9, face: 'front' }, portSettings: {}, groupSettings: {} },
+    ] }] });
+    expect(p.rackDesigns[0].placements.map((x) => [x.deviceId, x.units])).toEqual([['reserved', 4], ['stiffener', 1]]);
+    expect(p.hiddenBuiltins).toEqual(['reserved']);
   });
 });

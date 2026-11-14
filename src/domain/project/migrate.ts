@@ -211,7 +211,19 @@ const renameFf = (x: Json): Json => {
   if (!ff) return x;
   return { ...x, formFactor: ff, ...(x.label === x.formFactor ? { label: ff } : {}) };
 };
-const renameId = (id: unknown) => RENAMED_IDS[String(id)] ?? id;
+/** Fixed-size built-in fillers became one size-adjustable item each: old id -> [new id, units]. */
+const SIZED_FILLERS: Record<string, [string, number]> = {
+  'blanking-panel-1ru': ['blanking-panel', 1], 'blanking-panel-2ru': ['blanking-panel', 2], 'blanking-panel-1ou': ['blanking-panel', 1],
+  'brush-panel-1ru': ['brush-panel', 1], 'brush-panel-2ru': ['brush-panel', 2], 'brush-panel-1ou': ['brush-panel', 1],
+  'reserved-1ru': ['reserved', 1], 'reserved-2ru': ['reserved', 2], 'reserved-4ru': ['reserved', 4], 'reserved-1ou': ['reserved', 1],
+  'stiffener-1ou': ['stiffener', 1],
+};
+const renameId = (id: unknown) => RENAMED_IDS[String(id)] ?? SIZED_FILLERS[String(id)]?.[0] ?? id;
+/** Placement of a removed fixed-size filler -> the size-adjustable item with that height. */
+const renamePlacement = (x: Json): Json => {
+  const sized = SIZED_FILLERS[String(x.deviceId)];
+  return sized ? { ...x, deviceId: sized[0], units: x.units ?? sized[1] } : { ...x, deviceId: renameId(x.deviceId) };
+};
 
 function migrateRenames(p: Json): Json {
   const props = (p.builtinProperties as Json | undefined) ?? {};
@@ -221,9 +233,10 @@ function migrateRenames(p: Json): Json {
     optics: ((p.optics as Json[]) ?? []).map(renameFf),
     rackDesigns: ((p.rackDesigns as Json[]) ?? []).map((d) => ({
       ...d, templateId: renameId(d.templateId),
-      placements: ((d.placements as Json[]) ?? []).map((x) => ({ ...x, deviceId: renameId(x.deviceId) })),
+      placements: ((d.placements as Json[]) ?? []).map(renamePlacement),
     })),
-    hiddenBuiltins: ((p.hiddenBuiltins as unknown[]) ?? []).map(renameId),
+    hiddenBuiltins: [...new Set(((p.hiddenBuiltins as unknown[]) ?? []).map(renameId))],
+    variants: ((p.variants as Json[]) ?? []).map((v) => ({ ...v, itemId: renameId(v.itemId) })),
     builtinProperties: Object.fromEntries(Object.entries(props).map(([k, v]) => [renameId(k), v])),
   };
 }

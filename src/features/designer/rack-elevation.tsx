@@ -17,6 +17,7 @@ import { mountAt } from './mount-at';
 import { paint } from '../../theme/paint';
 import { routeCables } from './cable-routes';
 import { CableRoutesDrawing } from './cable-routes-drawing';
+import { placedDevice } from '../../domain/design/sizing';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -54,7 +55,7 @@ export function RackElevation({ ref, lib, design, face, selectedId, onSelect, se
   const issues = designIssues(lib, design);
   const visible = design.placements.filter((p) => {
     if (p.mount.kind === 'side' || p.mount.face === face) return true;
-    const d = lib.devices.get(p.deviceId);
+    const d = placedDevice(lib, design, p);
     return !!d && isFullDepth(d, rack);
   });
 
@@ -81,7 +82,7 @@ export function RackElevation({ ref, lib, design, face, selectedId, onSelect, se
     e.stopPropagation();
     onSelect(id);
     const p = design.placements.find((x) => x.id === id);
-    const d = p && lib.devices.get(p.deviceId);
+    const d = p && placedDevice(lib, design, p);
     if (!p || !d) return;
     const pt = svgPoint(e);
     const r = placementRect(p, d, rack, geo);
@@ -99,7 +100,7 @@ export function RackElevation({ ref, lib, design, face, selectedId, onSelect, se
   const dragMount = (): Mount | undefined => {
     if (!drag) return undefined;
     const p = design.placements.find((x) => x.id === drag.id);
-    const d = p && lib.devices.get(p.deviceId);
+    const d = p && placedDevice(lib, design, p);
     if (!p || !d) return undefined;
     const r = placementRect(p, d, rack, geo);
     const mount = mountAt(geo, rack, face, drag.x, drag.y + r.h - geo.unitPx / 2);
@@ -137,7 +138,7 @@ export function RackElevation({ ref, lib, design, face, selectedId, onSelect, se
         subtitle={`${rack.name} · ${metrics.usedUnits}/${metrics.totalUnits} ${rack.unitSystem} · ${formatPower(metrics.typicalW)} typ · ${formatWeight(metrics.totalWeightKg)}`}
       >
         {visible.map((p) => {
-          const device = lib.devices.get(p.deviceId);
+          const device = placedDevice(lib, design, p);
           return device ? (
             <PlacedDevice key={p.id} placement={p} device={device} rack={rack} geo={geo}
               ghost={p.mount.kind === 'rack' && p.mount.face !== face}

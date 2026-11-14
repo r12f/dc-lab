@@ -3,6 +3,7 @@ import type { RackAssignment } from '../../domain/layout/types';
 import { formatTiles, tileWidthOf, type DesignLookup } from '../../domain/layout/tiles';
 import { computeRackMetrics } from '../../domain/design/metrics';
 import { formatPower, formatWeight } from '../../domain/units';
+import { placedDevice } from '../../domain/design/sizing';
 
 /** Multi-line summary of an assigned rack, shown as a hover tooltip. */
 export function rackSummary(lib: Library, designs: DesignLookup, a: RackAssignment): string[] {
@@ -13,7 +14,7 @@ export function rackSummary(lib: Library, designs: DesignLookup, a: RackAssignme
   const tiles = tileWidthOf(lib, design);
   const counts = new Map<string, number>();
   for (const p of design.placements) {
-    const name = lib.devices.get(p.deviceId)?.name ?? p.deviceId;
+    const name = placedDevice(lib, design, p)?.name ?? p.deviceId;
     counts.set(name, (counts.get(name) ?? 0) + 1);
   }
   return [

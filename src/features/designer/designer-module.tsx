@@ -132,7 +132,7 @@ export function DesignerModule() {
         design && (
           <DesignInspector lib={lib} design={design} editor={editor} placementId={placementId}
             onSelectPlacement={setPlacementId} tab={tab} onTabChange={setTab}
-            cableId={cableId} onSelectCable={setCableId} />
+            cableId={cableId} onSelectCable={setCableId} onError={report} />
         )
       }
     />

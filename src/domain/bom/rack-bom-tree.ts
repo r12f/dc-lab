@@ -8,6 +8,7 @@ import { effectiveLengthM } from '../design/cabling';
 import { variantLabel } from '../items/variants';
 import { BomBuilder } from './bom-builder';
 import type { BomLine } from './types';
+import { placedDevice, sizeKey } from '../design/sizing';
 
 /**
  * A node of the rack BOM tree. Group nodes (rack frame, side elements, in-rack cables) structure
@@ -37,10 +38,10 @@ export function buildRackBomTree(lib: Library, design: RackDesign): BomNode | un
   const devicesIn = (placements: Placement[], scope: string): BomNode[] => {
     const groups = new Map<string, { line: BomLine; parts: BomBuilder }>();
     for (const p of placements) {
-      const d = lib.devices.get(p.deviceId);
+      const d = placedDevice(lib, design, p);
       if (!d || traitsOf(d.category).filler === 'reserved') continue;
       const v = item(d.id, p.variantId);
-      const key = `${scope}:device:${v?.id ?? d.id}`;
+      const key = `${scope}:device:${v?.id ?? d.id}${sizeKey(d)}`;
       let g = groups.get(key);
       if (!g) {
         g = {

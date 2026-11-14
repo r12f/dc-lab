@@ -1,5 +1,6 @@
 import type { DeviceDefinition, PortFace } from '../device/types';
-import { traitsOf } from '../device/categories';
+import { isResizable, traitsOf } from '../device/categories';
+import { sizedDevice } from './sizing';
 import type { RackTemplate } from '../rack/types';
 import { SIDE_KINDS } from '../rack/side-elements';
 import { unitsIn } from '../units';
@@ -29,7 +30,7 @@ export function spanOf(device: DeviceDefinition, rack: RackTemplate, mount: Moun
  * PDUs, patch panels) fit either.
  */
 export function unitSystemProblem(device: DeviceDefinition, rack: RackTemplate): string | undefined {
-  if (device.height.units === 0 || device.height.system === rack.unitSystem) return undefined;
+  if (device.height.units === 0 || device.height.system === rack.unitSystem || isResizable(device.category)) return undefined;
   return `${device.height.system} device does not fit a ${rack.unitSystem} rack`;
 }
 
@@ -49,6 +50,8 @@ export function placementProblem(
   device: DeviceDefinition,
   mount: Mount,
   ignoreId?: string,
+  /** Height of a size-adjustable filler; defaults to the placement being moved, else the item's height. */
+  units = design.placements.find((p) => p.id === ignoreId)?.units,
 ): string | undefined {
   const rack = lib.racks.get(design.templateId);
   if (!rack) return 'Unknown rack template';
@@ -62,6 +65,7 @@ export function placementProblem(
     );
     return taken ? 'Side slot occupied' : undefined;
   }
+  device = sizedDevice(lib.devices.get(device.id) ?? device, rack, units);
   if (device.height.units === 0) return '0U device mounts in a side element (PDU bay / sidepod), not in the rack body';
   const sys = unitSystemProblem(device, rack);
   if (sys) return sys;
@@ -71,7 +75,7 @@ export function placementProblem(
   for (const other of design.placements) {
     if (other.id === ignoreId) continue;
     const od = lib.devices.get(other.deviceId);
-    const os = od && spanOf(od, rack, other.mount);
+    const os = od && spanOf(sizedDevice(od, rack, other.units), rack, other.mount);
     if (os && spansOverlap(span, os)) return `Overlaps ${other.label}`;
   }
   return undefined;

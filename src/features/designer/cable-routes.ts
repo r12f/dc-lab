@@ -3,6 +3,7 @@ import type { CableRoute, CableRun, Placement, RackDesign } from '../../domain/d
 import type { RackTemplate } from '../../domain/rack/types';
 import type { RackGeometry } from '../../drawing/rack-geometry';
 import { placementRect } from './placed-device';
+import { sizedDevice } from '../../domain/design/sizing';
 
 export interface RoutedCable {
   run: CableRun;
@@ -14,9 +15,9 @@ export interface RoutedCable {
 
 /** Where a cable leaves a device toward the channel on `route`: the device edge on that side, at its centre height. */
 function exitPoint(lib: Library, rack: RackTemplate, geo: RackGeometry, p: Placement, route: CableRoute): [number, number] | undefined {
-  const d = lib.devices.get(p.deviceId);
-  if (!d) return undefined;
-  const r = placementRect(p, d, rack, geo);
+  const raw = lib.devices.get(p.deviceId);
+  if (!raw) return undefined;
+  const r = placementRect(p, sizedDevice(raw, rack, p.units), rack, geo);
   if (r.w === 0) return undefined;
   const y = r.y + r.h / 2;
   if (p.mount.kind === 'side') {

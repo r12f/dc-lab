@@ -15,6 +15,8 @@ export interface Placement {
   variantId?: string;
   label: string;
   mount: Mount;
+  /** Size-adjustable fillers only: height in the rack's units (default: the item's height). */
+  units?: number;
   breakoutProfileId?: string;
   /** portRef -> instance setting (overrides profile). */
   portSettings: Record<string, PortSetting>;

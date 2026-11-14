@@ -14,18 +14,20 @@ const rack = (id: string) => lib.racks.get(id)!;
 
 describe('unit systems', () => {
   it('RU racks take RU and 0U devices, not OU ones (and vice versa)', () => {
-    expect(fitsRackUnits(dev('blanking-panel-1ru'), rack('network-42ru-600'))).toBe(true);
-    expect(fitsRackUnits(dev('blanking-panel-1ou'), rack('network-42ru-600'))).toBe(false);
-    expect(fitsRackUnits(dev('blanking-panel-1ou'), rack('orv3-44ou'))).toBe(true);
-    expect(fitsRackUnits(dev('blanking-panel-1ru'), rack('orv3-44ou'))).toBe(false);
+    expect(fitsRackUnits(dev('switch-48x1g-mgmt'), rack('network-42ru-600'))).toBe(true);
+    expect(fitsRackUnits(dev('power-shelf-33kw-ou'), rack('network-42ru-600'))).toBe(false);
+    expect(fitsRackUnits(dev('power-shelf-33kw-ou'), rack('orv3-44ou'))).toBe(true);
+    expect(fitsRackUnits(dev('switch-48x1g-mgmt'), rack('orv3-44ou'))).toBe(false);
+    // Size-adjustable fillers take the rack's unit system.
+    expect(fitsRackUnits(dev('blanking-panel'), rack('orv3-44ou'))).toBe(true);
     const d = newDesign('d', 'D', 'network-42ru-600');
-    expect(placementProblem(lib, d, dev('stiffener-1ou'), { kind: 'rack', position: 1, face: 'front' })).toBe('OU device does not fit a RU rack');
+    expect(placementProblem(lib, d, dev('power-shelf-33kw-ou'), { kind: 'rack', position: 1, face: 'front' })).toBe('OU device does not fit a RU rack');
   });
   it('a 1RU blanking panel takes exactly 1 unit', () => {
     const r = rack('network-42ru-600');
-    expect(spanOf(dev('blanking-panel-1ru'), r, { kind: 'rack', position: 5, face: 'front' })).toMatchObject({ bottom: 5, top: 5 });
+    expect(spanOf(dev('blanking-panel'), r, { kind: 'rack', position: 5, face: 'front' })).toMatchObject({ bottom: 5, top: 5 });
     const d = newDesign('d', 'D', r.id);
-    d.placements.push(newPlacement('b', 'blanking-panel-1ru', 'BP1', { kind: 'rack', position: 5, face: 'front' }));
+    d.placements.push(newPlacement('b', 'blanking-panel', 'BP1', { kind: 'rack', position: 5, face: 'front' }));
     expect(computeRackMetrics(lib, d).usedUnits).toBe(1);
   });
   it('an 8RU GPU server fits an empty 42RU rack at the top', () => {

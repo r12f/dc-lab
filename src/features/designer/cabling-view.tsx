@@ -9,6 +9,7 @@ import { paint } from '../../theme/paint';
 import { Button } from '../../ui/button';
 import { SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
+import { placedDevice } from '../../domain/design/sizing';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -29,7 +30,7 @@ function rowOrder(lib: Library, design: RackDesign) {
   const rack = lib.racks.get(design.templateId);
   const top = (p: RackDesign['placements'][number]) => {
     if (p.mount.kind !== 'rack') return -Infinity;
-    const d = lib.devices.get(p.deviceId);
+    const d = placedDevice(lib, design, p);
     return p.mount.position + (d && rack ? Math.max(1, unitsIn(d.height, rack.unitSystem)) : 1) - 1;
   };
   return [...design.placements].sort((a, b) => top(b) - top(a));
@@ -122,7 +123,7 @@ export function CablingView({ ref, lib, design, editor, face, onSelectCable }: P
         <rect width={width} height={height} fill={paint.paper} />
         {laid.length === 0 && <text x={10} y={24} fontSize={12} fill={paint.inkMuted}>No devices placed.</text>}
         {laid.map(({ p, conns, y: ry, h }) => {
-          const device = lib.devices.get(p.deviceId);
+          const device = placedDevice(lib, design, p);
           const side = a.some((e) => e.placementId === p.id) ? 'A' : b.some((e) => e.placementId === p.id) ? 'B' : undefined;
           return (
             <g key={p.id} transform={`translate(0 ${ry})`}>

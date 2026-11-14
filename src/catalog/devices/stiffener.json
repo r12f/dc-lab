@@ -1,13 +1,13 @@
 {
   "schema": "dc-lab/device@1",
-  "id": "blanking-panel-1ru",
-  "name": "1RU Blanking Panel",
-  "category": "blanking-panel",
+  "id": "stiffener",
+  "name": "Rack Stiffener",
+  "category": "stiffener",
   "height": {
     "units": 1,
     "system": "RU"
   },
-  "depthMm": 20,
+  "depthMm": 50,
   "weightKg": 0,
   "power": {
     "typicalW": 0,

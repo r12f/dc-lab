@@ -1,11 +1,11 @@
 {
   "schema": "dc-lab/device@1",
-  "id": "brush-panel-1ou",
-  "name": "1OU Brush Panel",
+  "id": "brush-panel",
+  "name": "Brush Panel",
   "category": "brush-panel",
   "height": {
     "units": 1,
-    "system": "OU"
+    "system": "RU"
   },
   "depthMm": 40,
   "weightKg": 0,

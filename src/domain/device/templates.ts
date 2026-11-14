@@ -95,7 +95,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     }),
   },
   {
-    id: 'patch-panel', label: 'Patch panel', description: '12 MPO adapters',
+    id: 'patch-panel', label: 'Patch / Fiber Housing', description: '12 MPO adapters',
     build: (id) => base(id, {
       name: 'New patch panel', category: 'patch-panel', depthMm: 300, weightKg: 3, power: { typicalW: 0, maxW: 0 },
       ports: [group('mpo', 'MPO', 'data', 'MPO-12', 12, 0, { lanes: 12 })],
@@ -123,19 +123,19 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     }),
   },
   {
-    id: 'blanking-panel', label: 'Blanking panel', description: '1RU filler panel, no ports or power',
+    id: 'blanking-panel', label: 'Blanking panel', description: 'Filler panel, no ports or power; height set per placement',
     build: (id) => base(id, { name: 'New blanking panel', category: 'blanking-panel', depthMm: 20, weightKg: 0.5, power: { typicalW: 0, maxW: 0 } }),
   },
   {
-    id: 'stiffener', label: 'Stiffener', description: 'Structural rack stiffener bar, no ports or power',
-    build: (id) => base(id, { name: 'New stiffener', category: 'stiffener', height: { units: 1, system: 'OU' }, depthMm: 50, weightKg: 2, power: { typicalW: 0, maxW: 0 } }),
+    id: 'stiffener', label: 'Stiffener', description: 'Structural rack stiffener bar; height set per placement',
+    build: (id) => base(id, { name: 'New stiffener', category: 'stiffener', depthMm: 50, weightKg: 2, power: { typicalW: 0, maxW: 0 } }),
   },
   {
-    id: 'brush-panel', label: 'Brush panel', description: '1RU panel with a brush strip for cable pass-through, no ports or power',
+    id: 'brush-panel', label: 'Brush panel', description: 'Panel with a brush strip for cable pass-through; height set per placement',
     build: (id) => base(id, { name: 'New brush panel', category: 'brush-panel', depthMm: 40, weightKg: 0.8, power: { typicalW: 0, maxW: 0 } }),
   },
   {
-    id: 'reserved', label: 'Empty (Reserved)', description: 'Units deliberately left empty; not hardware, not in the BOM',
+    id: 'reserved', label: 'Empty (Reserved)', description: 'Units deliberately left empty; height set per placement; not in the BOM',
     build: (id) => base(id, { name: 'New reserved space', category: 'reserved', depthMm: 0, weightKg: 0, power: { typicalW: 0, maxW: 0 } }),
   },
   { id: 'blank', label: 'Blank', description: 'No ports', build: (id) => base(id, {}) },

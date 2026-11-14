@@ -9,6 +9,8 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   - `deviceId`, `label` (instance id, e.g. `T0-1`)
   - `mount`: `{ kind: "rack", position, face }` (bottom unit, 1-based) or `{ kind: "side", elementId, slot }`
     (slot in a rack side element, 1 = top)
+  - `units` — size-adjustable fillers only (Misc: blanking / brush panel, stiffener, Empty): height in the
+    rack's units; set in the Device tab ("Height"), rejected when it would overlap or leave the rack
   - `breakoutProfileId` — one of the device's profiles (optional); supplies default mode/optic/cable per port
   - `portSettings[portRef]` / `groupSettings[groupId]` — instance `{ mode, opticId, cableId }` overriding the profile
 - `cables[]` — in-rack cable runs:

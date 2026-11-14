@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { DeviceDefinition } from '../../domain/device/types';
 import type { RackTemplate } from '../../domain/rack/types';
-import { traitsOf } from '../../domain/device/categories';
+import { categoryFolder, isResizable } from '../../domain/device/categories';
 import { deviceSortKey } from '../../domain/device/ports';
 import { fitsRackUnits } from '../../domain/design/placement';
 import { variantLabel } from '../../domain/items/variants';
@@ -30,9 +30,9 @@ export function DevicePalette({ lib, rack, onAdd }: Props) {
   const [open, setOpen] = useState<Set<string>>(new Set());
   const devices = lib.devices.items().filter((d) => !rack || fitsRackUnits(d, rack));
   const items: SidebarItem[] = devices.map((d) => ({
-    id: d.id, name: d.name, path: [traitsOf(d.category).label], order: deviceSortKey(d),
+    id: d.id, name: d.name, path: [categoryFolder(d.category)], order: deviceSortKey(d),
     keywords: `${d.category} ${lib.variants.of(d.id).map((v) => variantLabel(v)).join(' ')}`,
-    badge: formatHeight(d.height),
+    badge: isResizable(d.category) ? 'n U' : formatHeight(d.height),
   })).filter((i) => matchesFilter(i, q));
   const hidden = lib.devices.items().length - devices.length;
   const toggle = (set: Set<string>, key: string) => { const n = new Set(set); if (n.has(key)) n.delete(key); else n.add(key); return n; };
@@ -52,7 +52,7 @@ export function DevicePalette({ lib, rack, onAdd }: Props) {
             : <span className="caret" />}
           <span className="swatch" style={{ background: categoryPaint(d.category) }} />
           <span className="sidebar-item-name">{d.name}</span>
-          <span className="badge">{formatHeight(d.height)}</span>
+          <span className="badge">{isResizable(d.category) ? `n${rack?.unitSystem ?? 'U'}` : formatHeight(d.height)}</span>
         </div>
         {expanded && variants.map((v) => (
           <div key={v.id} className="palette-item sidebar-subitem" style={{ paddingLeft: 12 + depth * 12 + 36 }} draggable

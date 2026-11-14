@@ -4,6 +4,7 @@ import { formatPower, unitsIn } from '../units';
 import type { RackDesign } from './types';
 import { activeCableW, opticCounts } from './optics';
 import { placementProblem } from './placement';
+import { placedDevice } from './sizing';
 
 export interface RackMetrics {
   totalUnits: number;
@@ -37,7 +38,7 @@ export function computeRackMetrics(lib: Library, design: RackDesign): RackMetric
   if (!rack) m.warnings.push(`Unknown rack template "${design.templateId}"`);
 
   for (const p of design.placements) {
-    const device = lib.devices.get(p.deviceId);
+    const device = placedDevice(lib, design, p);
     if (!device) {
       m.warnings.push(`${p.label}: unknown device "${p.deviceId}"`);
       continue;

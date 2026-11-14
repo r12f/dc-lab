@@ -7,6 +7,7 @@ import { effectiveLengthM } from '../design/cabling';
 import { variantLabel } from '../items/variants';
 import { BomBuilder } from './bom-builder';
 import type { BomLine } from './types';
+import { placedDevice, sizeKey } from '../design/sizing';
 
 /**
  * Rack BOM. Device lines are keyed by item (vendor product); optic and cable lines use their item
@@ -21,12 +22,12 @@ export function buildRackBom(lib: Library, design: RackDesign): BomLine[] {
       vendorModel: '', qty: 1, unitW: 0, notes: [], properties: rack.properties });
   }
   for (const p of design.placements) {
-    const d = lib.devices.get(p.deviceId);
+    const d = placedDevice(lib, design, p);
     if (!d) continue;
     // Reserved space holds units but is not hardware: nothing to buy.
     if (traitsOf(d.category).filler === 'reserved') continue;
     const v = item(d.id, p.variantId);
-    bom.add({ key: `device:${v?.id ?? d.id}`, kind: 'device', item: d.name, category: traitsOf(d.category).label,
+    bom.add({ key: `device:${v?.id ?? d.id}${sizeKey(d)}`, kind: 'device', item: d.name, category: traitsOf(d.category).label,
       vendorModel: variantLabel(v), qty: 1, unitW: d.power.typicalW, notes: [p.label], properties: v?.properties });
     const counts = portItemCounts(lib, d, p);
     for (const [cableId, n] of counts.cables) {

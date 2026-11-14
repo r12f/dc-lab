@@ -3,6 +3,7 @@ import type { RackTemplate } from '../rack/types';
 import { elementsOn } from '../rack/side-elements';
 import { UNIT_MM, unitsIn } from '../units';
 import type { CableEndpoint, CableRoute, CableRun, RackDesign } from './types';
+import { placedDevice } from './sizing';
 
 const SLACK_M = 0.5;
 const ROUND_M = 0.5;
@@ -15,7 +16,7 @@ interface EndpointPos {
 
 function endpointPos(lib: Library, design: RackDesign, rack: RackTemplate, ep: CableEndpoint): EndpointPos | undefined {
   const p = design.placements.find((x) => x.id === ep.placementId);
-  const d = p && lib.devices.get(p.deviceId);
+  const d = p && placedDevice(lib, design, p);
   if (!p || !d) return undefined;
   const unitMm = UNIT_MM[rack.unitSystem];
   const totalMm = rack.units * unitMm;

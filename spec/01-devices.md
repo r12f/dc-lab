@@ -8,7 +8,7 @@ Single-device definitions. One device = one JSON file (`schema: "dc-lab/device@1
 |---|---|
 | `id`, `name`, `vendor`, `model` | Identity. `id` is unique across built-in + project. `model` is shown as **Model / Vendor PN**. |
 | `properties` | Values of project-wide custom properties (see [05-project-file.md](05-project-file.md#custom-properties)) |
-| `category` | `switch`, `server`, `pdu`, `patch-panel`, `ocs`, `power-shelf`, `storage`, `other`, `blanking-panel`, `stiffener` |
+| `category` | `switch`, `server`, `pdu`, `patch-panel` (Patch / Fiber Housing), `ocs`, `power-shelf`, `storage`, `other`, `blanking-panel`, `stiffener`, `brush-panel`, `reserved` |
 | `height` | `{ units, system: "RU" \| "OU" }`; `0` units = zero-U (vertical PDU, side-pod device) |
 | `depthMm`, `weightKg` | Physical metrics |
 | `power` | `{ typicalW, maxW, capacityW? }`. `capacityW` is set for power *suppliers* (PDU, power shelf). |
@@ -126,17 +126,25 @@ Drawing strategy is selected by device shape:
   native speed and count (`QSFP-DD 400G ×32`); each data port shows its index, speed (`400G` unsplit,
   `2x400G` breakout — never `1x…`) and reach. Ports are ≥ 54x46 units, text ≥ 9 units, drawn 1:1. Width follows content — the
   widest face (ports + PSUs) sets the box width, so small devices draw narrow.
+- **Misc — size-adjustable fillers**: blanking panel, brush panel, stiffener and Empty (Reserved) are listed
+  together under the **Misc** folder (sidebar and palette). Each is **one item whose height is set per
+  placement** in Rack Designer (1…n units, in the rack's unit system — RU or OU), not one item per size. The
+  item's height is its default size; weight scales linearly from it. BOM lines are named and split by size
+  (`2RU Blanking Panel`). Built-ins: `blanking-panel`, `brush-panel`, `stiffener`, `reserved` (1RU default);
+  the former fixed-size built-ins (`blanking-panel-2ru`, `reserved-4ru`, `stiffener-1ou`…) migrate to these
+  with the old height.
+- **Patch / Fiber Housing** (category `patch-panel`): fiber patch panels and housings; its own folder.
 - **Blanking panel / stiffener** (categories `blanking-panel`, `stiffener` — passive "filler" hardware with
   no ports, PSUs or power): a single front panel at true scale (19" wide, height from RU/OU) with
   mounting ears; blanking panels dark, stiffeners steel grey with a rib. They occupy units in Rack
   Designer and count in the BOM and weight like any device.
 - **Brush panel** (category `brush-panel`): filler hardware with a horizontal slot closed by brush
   bristles, so cables pass front-to-rear while airflow stays blocked. Drawn as a dark panel with the
-  bristle slot; holds units, counts in BOM and weight, no power. Built-ins: 1RU, 2RU, 1OU.
+  bristle slot; holds units, counts in BOM and weight, no power.
 - **Empty (Reserved)** (category `reserved`): units **deliberately left empty** (future growth, airflow,
   cable slack). Unlike a blanking panel it is not hardware: drawn as a dashed outline on the empty-slot
   fill with "EMPTY (RESERVED)", it occupies units in Rack Designer (nothing else can be placed there) but
-  has no weight, power or BOM line. Built-ins: 1RU, 2RU, 4RU, 1OU.
+  has no weight, power or BOM line.
 - **Vertical PDU** (category `pdu`, height 0): a tall strip with input cord at the top, outlets
   stacked by bank, each bank labelled with breaker/phase and colored by phase (L1/L2/L3).
 
