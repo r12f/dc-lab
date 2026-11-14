@@ -42,7 +42,9 @@ describe('size-adjustable fillers', () => {
     d.placements.push(at('b', 'blanking-panel', 'BP1', 1, 3));
     expect(placementProblem(lib, d, mgmt, { kind: 'rack', position: 3, face: 'front' })).toMatch(/Overlaps BP1/);
     expect(placementProblem(lib, d, mgmt, { kind: 'rack', position: 4, face: 'front' })).toBeUndefined();
-    expect(computeRackMetrics(lib, d)).toMatchObject({ usedUnits: 3, typicalW: 0, deviceWeightKg: 1.5 });
+    // Height scales the filler's own per-unit weight.
+    const perUnit = lib.devices.get('blanking-panel')!.weightKg / lib.devices.get('blanking-panel')!.height.units;
+    expect(computeRackMetrics(lib, d)).toMatchObject({ usedUnits: 3, typicalW: 0, deviceWeightKg: perUnit * 3 });
     expect(buildRackBom(lib, d).find((l) => l.kind === 'device')).toMatchObject({ item: '3RU Blanking Panel', category: 'Blanking Panel', qty: 1 });
     const o = newDesign('o', 'O', 'orv3-44ou');
     expect(placementProblem(lib, o, lib.devices.get('stiffener')!, { kind: 'rack', position: 1, face: 'front' })).toBeUndefined();
