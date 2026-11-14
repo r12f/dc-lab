@@ -1,12 +1,12 @@
 import type { PortFace, PortSetting } from '../device/types';
+export type { SideName } from '../rack/sideElements';
 
 export const DESIGN_SCHEMA = 'dc-lab/rack-design@1';
 
-export type SideName = 'left' | 'right';
 
 export type Mount =
   | { kind: 'rack'; position: number; face: PortFace }
-  | { kind: 'side'; side: SideName; slot: number };
+  | { kind: 'side'; elementId: string; slot: number };
 
 export interface Placement {
   id: string;

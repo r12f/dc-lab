@@ -29,7 +29,7 @@ export function computeRackMetrics(lib: Library, design: RackDesign): RackMetric
     supplyCapacityW: 0,
     rackMaxPowerW: rack?.maxPowerW ?? 0,
     deviceWeightKg: 0,
-    totalWeightKg: rack?.emptyWeightKg ?? 0,
+    totalWeightKg: (rack?.emptyWeightKg ?? 0) + (rack?.sideElements.reduce((n, e) => n + e.weightKg, 0) ?? 0),
     maxLoadKg: rack?.maxLoadKg ?? 0,
     deviceCount: design.placements.length,
     warnings: [],

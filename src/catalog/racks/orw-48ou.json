@@ -14,9 +14,6 @@
   "emptyWeightKg": 300,
   "maxLoadKg": 3000,
   "maxPowerW": 140000,
-  "sidePods": {
-    "left": 0,
-    "right": 0
-  },
-  "schema": "dc-lab/rack@1"
+  "schema": "dc-lab/rack@1",
+  "sideElements": []
 }

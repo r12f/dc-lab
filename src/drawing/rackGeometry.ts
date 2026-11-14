@@ -1,36 +1,68 @@
 import type { RackTemplate } from '../domain/rack/types';
-import type { SideName } from '../domain/design/types';
+import { elementsOn, type SideElement, type SideName } from '../domain/rack/sideElements';
+
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface SideElementBox extends Rect {
+  element: SideElement;
+}
 
 /** Pixel geometry of a rack elevation drawing (shared by Racks and Rack Designer). */
 export interface RackGeometry {
   unitPx: number;
   railW: number;
   bodyW: number;
-  podW: number;
-  podSlotH: number;
+  /** Left edge of the rails. */
   originX: number;
   originY: number;
+  bodyH: number;
+  sideBoxes: SideElementBox[];
   width: number;
   height: number;
 }
 
-export const SIDE_SLOT_PX = 90;
+/** Horizontal scale: rack body and side elements are drawn to this many px per mm. */
+export const PX_PER_MM = 0.5;
+const RAIL_W = 26;
+const SIDE_GAP = 4;
+const MIN_BODY_PX = 220;
+
+function sideWidth(elements: SideElement[]): number {
+  return elements.reduce((n, e) => n + Math.max(12, e.widthMm * PX_PER_MM) + SIDE_GAP, 0);
+}
 
 export function rackGeometry(rack: RackTemplate): RackGeometry {
   const unitPx = 18;
-  const railW = 26;
-  const bodyW = 300;
-  const hasPods = rack.sidePods.left + rack.sidePods.right > 0;
-  const podW = hasPods ? 34 : 0;
-  const originX = podW + 8;
-  const originY = 40;
+  const left = elementsOn(rack.sideElements, 'left');
+  const right = elementsOn(rack.sideElements, 'right');
+  const bodyOuter = Math.max(MIN_BODY_PX + RAIL_W * 2, rack.widthMm * PX_PER_MM);
+  const bodyW = bodyOuter - RAIL_W * 2;
+  const originX = sideWidth(left);
+  const originY = 48;
   const bodyH = rack.units * unitPx;
-  const maxSlots = Math.max(rack.sidePods.left, rack.sidePods.right, 1);
+
+  const sideBoxes: SideElementBox[] = [];
+  const place = (list: SideElement[], side: SideName) => {
+    // Ordered from the body outward.
+    let edge = side === 'left' ? originX : originX + bodyOuter;
+    for (const element of list) {
+      const w = Math.max(12, element.widthMm * PX_PER_MM);
+      const x = side === 'left' ? edge - SIDE_GAP - w : edge + SIDE_GAP;
+      sideBoxes.push({ element, x, y: originY - 4, w, h: bodyH + 8 });
+      edge = side === 'left' ? x : x + w;
+    }
+  };
+  place(left, 'left');
+  place(right, 'right');
+
   return {
-    unitPx, railW, bodyW, podW,
-    podSlotH: bodyH / maxSlots,
-    originX, originY,
-    width: originX * 2 + railW * 2 + bodyW,
+    unitPx, railW: RAIL_W, bodyW, originX, originY, bodyH, sideBoxes,
+    width: originX + bodyOuter + sideWidth(right),
     height: originY + bodyH + 30,
   };
 }
@@ -50,7 +82,24 @@ export function unitAtY(g: RackGeometry, rack: RackTemplate, y: number): number 
   return Math.min(rack.units, Math.max(1, u));
 }
 
-export function sideSlotRect(g: RackGeometry, side: SideName, slot: number) {
-  const x = side === 'left' ? 4 : g.width - g.podW - 4;
-  return { x, y: g.originY + (slot - 1) * g.podSlotH, w: g.podW, h: g.podSlotH };
+export function sideBox(g: RackGeometry, elementId: string): SideElementBox | undefined {
+  return g.sideBoxes.find((b) => b.element.id === elementId);
+}
+
+const SLOT_PAD = 3;
+
+/** Slot `slot` (1 = top) inside a side element box. */
+export function sideSlotRect(box: SideElementBox, slot: number): Rect {
+  const n = Math.max(1, box.element.slots);
+  const h = (box.h - SLOT_PAD * 2) / n;
+  return { x: box.x + SLOT_PAD, y: box.y + SLOT_PAD + (slot - 1) * h, w: box.w - SLOT_PAD * 2, h };
+}
+
+/** Side element and slot under an svg point, if any. */
+export function sideSlotAt(g: RackGeometry, x: number, y: number): { elementId: string; slot: number } | undefined {
+  const box = g.sideBoxes.find((b) => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
+  if (!box || box.element.slots < 1) return undefined;
+  const h = (box.h - SLOT_PAD * 2) / box.element.slots;
+  const slot = Math.min(box.element.slots, Math.max(1, Math.floor((y - box.y - SLOT_PAD) / h) + 1));
+  return { elementId: box.element.id, slot };
 }

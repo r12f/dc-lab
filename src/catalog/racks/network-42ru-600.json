@@ -14,9 +14,17 @@
   "emptyWeightKg": 150,
   "maxLoadKg": 1360,
   "maxPowerW": 17300,
-  "sidePods": {
-    "left": 2,
-    "right": 2
-  },
-  "schema": "dc-lab/rack@1"
+  "schema": "dc-lab/rack@1",
+  "sideElements": [
+    {
+      "id": "sidepod-r",
+      "name": "Sidepod R",
+      "kind": "sidepod",
+      "side": "right",
+      "widthMm": 300,
+      "depthMm": 1200,
+      "slots": 2,
+      "weightKg": 40
+    }
+  ]
 }

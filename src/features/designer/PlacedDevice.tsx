@@ -3,7 +3,7 @@ import type { DeviceDefinition } from '../../domain/device/types';
 import type { Placement } from '../../domain/design/types';
 import type { RackTemplate } from '../../domain/rack/types';
 import { unitsIn } from '../../domain/units';
-import { bodyX, sideSlotRect, unitTopY, type RackGeometry } from '../../drawing/rackGeometry';
+import { bodyX, sideBox, sideSlotRect, unitTopY, type RackGeometry } from '../../drawing/rackGeometry';
 import { categoryPaint, paint } from '../../theme/paint';
 
 interface Props {
@@ -19,7 +19,10 @@ interface Props {
 }
 
 export function placementRect(p: Placement, device: DeviceDefinition, rack: RackTemplate, geo: RackGeometry) {
-  if (p.mount.kind === 'side') return sideSlotRect(geo, p.mount.side, p.mount.slot);
+  if (p.mount.kind === 'side') {
+    const box = sideBox(geo, p.mount.elementId);
+    return box ? sideSlotRect(box, p.mount.slot) : { x: 0, y: 0, w: 0, h: 0 };
+  }
   const units = Math.max(1, unitsIn(device.height, rack.unitSystem));
   const top = unitTopY(geo, rack, p.mount.position + units - 1);
   return { x: bodyX(geo), y: top, w: geo.bodyW, h: units * geo.unitPx };

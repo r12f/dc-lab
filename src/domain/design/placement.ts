@@ -1,6 +1,7 @@
 import type { DeviceDefinition, PortFace } from '../device/types';
 import { traitsOf } from '../device/categories';
 import type { RackTemplate } from '../rack/types';
+import { SIDE_KINDS } from '../rack/sideElements';
 import { unitsIn } from '../units';
 import type { Library } from '../library/Library';
 import type { Mount, Placement, RackDesign } from './types';
@@ -38,11 +39,12 @@ export function placementProblem(
   const rack = lib.racks.get(design.templateId);
   if (!rack) return 'Unknown rack template';
   if (mount.kind === 'side') {
-    if (!traitsOf(device.category).allowsZeroU) return `${traitsOf(device.category).label} cannot mount in a side pod`;
-    const slots = rack.sidePods[mount.side];
-    if (mount.slot < 1 || mount.slot > slots) return `No side slot ${mount.side} ${mount.slot}`;
+    const el = rack.sideElements.find((e) => e.id === mount.elementId);
+    if (!el) return 'Unknown side element';
+    if (!SIDE_KINDS[el.kind].accepts(device)) return `${el.name} does not accept ${traitsOf(device.category).label}`;
+    if (mount.slot < 1 || mount.slot > el.slots) return `${el.name} has no slot ${mount.slot}`;
     const taken = design.placements.some(
-      (p) => p.id !== ignoreId && p.mount.kind === 'side' && p.mount.side === mount.side && p.mount.slot === mount.slot,
+      (p) => p.id !== ignoreId && p.mount.kind === 'side' && p.mount.elementId === mount.elementId && p.mount.slot === mount.slot,
     );
     return taken ? 'Side slot occupied' : undefined;
   }
@@ -84,13 +86,14 @@ export function newPlacement(id: string, deviceId: string, label: string, mount:
   return { id, deviceId, label, mount, portSettings: {}, groupSettings: {} };
 }
 
-/** First free side-pod slot (left then right), if any. */
+/** First free side-element slot that accepts the device; dedicated kinds (e.g. PDU bay) first. */
 export function firstFreeSideSlot(lib: Library, design: RackDesign, device: DeviceDefinition): Mount | undefined {
   const rack = lib.racks.get(design.templateId);
   if (!rack) return undefined;
-  for (const side of ['left', 'right'] as const) {
-    for (let slot = 1; slot <= rack.sidePods[side]; slot++) {
-      const mount: Mount = { kind: 'side', side, slot };
+  const ordered = [...rack.sideElements].sort((a, b) => SIDE_KINDS[a.kind].priority - SIDE_KINDS[b.kind].priority);
+  for (const el of ordered) {
+    for (let slot = 1; slot <= el.slots; slot++) {
+      const mount: Mount = { kind: 'side', elementId: el.id, slot };
       if (!placementProblem(lib, design, device, mount)) return mount;
     }
   }

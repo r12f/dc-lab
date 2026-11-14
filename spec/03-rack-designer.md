@@ -7,10 +7,10 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 - `templateId` — rack template.
 - `placements[]` — a device instance:
   - `deviceId`, `label` (instance id, e.g. `T0-1`)
-  - `mount`: `{ kind: "rack", position, face }` (bottom unit, 1-based) or `{ kind: "side", side, slot }`
+  - `mount`: `{ kind: "rack", position, face }` (bottom unit, 1-based) or `{ kind: "side", elementId, slot }`
+    (slot in a rack side element, 1 = top)
   - `breakoutProfileId` — one of the device's profiles (optional); supplies default mode/optic/cable per port
-  - `portConfig[portRef]` — per-port `breakout` override and `opticId`
-  - `groupOptics[groupId]` — default optic for every port in a group
+  - `portSettings[portRef]` / `groupSettings[groupId]` — instance `{ mode, opticId, cableId }` overriding the profile
 - `cables[]` — in-rack cable runs: `from`/`to` endpoints (`placementId`, `portRef`), `mediaId`,
   `lengthM`, `quantity`.
 
@@ -19,13 +19,15 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 - A rack-mounted device occupies `[position, position + units - 1]`; it must fit within the template and
   must not overlap another device on the same face (full-depth devices block both faces:
   a device is full-depth when `depthMm > template.depthMm / 2`).
-- Zero-U devices go into side-pod slots; only categories with the zero-U trait may.
+- Side mounts go into a side element slot; the element kind decides which devices it accepts.
+  Zero-U devices default to the first free accepting slot, dedicated kinds first (PDU bay, other,
+  then sidepod).
 - Optic connector must match the port group connector.
 
 ## Derived data (recomputed on every change)
 
 - **Metrics**: used/total units, typical/max power (devices + optics), supply capacity (PDUs/shelves),
-  total weight (rack + devices), warnings (over power, over load, supply < max draw, overlaps).
+  total weight (rack + side elements + devices), warnings (over power, over load, supply < max draw, overlaps).
 - **BOM**: rack template x1, devices by id, optics by id (instance > profile), port-attached cables from
   profiles (quantity), in-rack cable runs by media (quantity, total length).
   Columns: Item, Category, Vendor/Model, Qty, Unit W, Total W, Notes.

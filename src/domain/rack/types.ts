@@ -1,5 +1,6 @@
 import type { CatalogItem } from '../catalogItem';
 import type { UnitSystem } from '../units';
+import type { SideElement } from './sideElements';
 
 export const RACK_SCHEMA = 'dc-lab/rack@1';
 
@@ -26,7 +27,8 @@ export interface RackTemplate extends CatalogItem {
   emptyWeightKg: number;
   maxLoadKg: number;
   maxPowerW: number;
-  sidePods: { left: number; right: number };
+  /** Boxes attached to the left/right of the rack body, ordered from the body outward. */
+  sideElements: SideElement[];
   notes?: string;
 }
 
@@ -45,6 +47,6 @@ export function newRack(id: string): RackTemplate {
     emptyWeightKg: 150,
     maxLoadKg: 1000,
     maxPowerW: 15000,
-    sidePods: { left: 0, right: 0 },
+    sideElements: [],
   };
 }

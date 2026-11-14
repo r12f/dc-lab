@@ -25,7 +25,7 @@ describe('rack design', () => {
   const design = newDesign('d', 'D', rack.id);
   const p1 = newPlacement('p1', sw.id, 'SW1', { kind: 'rack', position: 1, face: 'front' });
   p1.groupSettings = { osfp: { opticId: optic.id } };
-  design.placements.push(p1, newPlacement('p2', pdu.id, 'PDU1', { kind: 'side', side: 'left', slot: 1 }));
+  design.placements.push(p1, newPlacement('p2', pdu.id, 'PDU1', { kind: 'side', elementId: 'sidepod-r', slot: 1 }));
 
   it('detects overlap and finds the next free unit', () => {
     const d = lib.devices.get(sw.id)!;
@@ -34,10 +34,12 @@ describe('rack design', () => {
     expect(placementProblem(lib, design, d, { kind: 'rack', position: 42, face: 'front' })).toMatch(/Does not fit/);
   });
   it('defaults zero-U devices to a free side slot', () => {
-    expect(defaultMount(lib, design, lib.devices.get(pdu.id)!)).toEqual({ kind: 'side', side: 'left', slot: 2 });
+    expect(defaultMount(lib, design, lib.devices.get(pdu.id)!)).toEqual({ kind: 'side', elementId: 'sidepod-r', slot: 2 });
   });
-  it('rejects switches in side pods', () => {
-    expect(placementProblem(lib, design, lib.devices.get(sw.id)!, { kind: 'side', side: 'right', slot: 1 })).toMatch(/side pod/);
+  it('rejects occupied and missing side slots', () => {
+    const s = lib.devices.get(sw.id)!;
+    expect(placementProblem(lib, design, s, { kind: 'side', elementId: 'sidepod-r', slot: 1 })).toMatch(/occupied/);
+    expect(placementProblem(lib, design, s, { kind: 'side', elementId: 'sidepod-r', slot: 3 })).toMatch(/no slot/);
   });
   it('sums power including optics', () => {
     const m = computeRackMetrics(lib, design);

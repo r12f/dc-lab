@@ -5,18 +5,21 @@ import { NumberField, Section, SelectField, TextField } from '../../ui/fields';
 import { ReadOnlyNotice } from '../../ui/ReadOnlyNotice';
 import { Button } from '../../ui/Button';
 import { downloadText } from '../../io/download';
+import { SideElementsEditor } from './SideElementsEditor';
 
 interface Props {
   rack: RackTemplate;
   readOnly: boolean;
   onChange(rack: RackTemplate): void;
   onDuplicate(): void;
+  selectedElementId?: string;
+  onSelectElement(id: string | undefined): void;
 }
 
 const kindOptions = (Object.keys(RACK_KINDS) as RackKind[]).map((k) => ({ value: k, label: RACK_KINDS[k] }));
 const systemOptions: { value: UnitSystem; label: string }[] = [{ value: 'RU', label: 'RU' }, { value: 'OU', label: 'OU' }];
 
-export function RackInspector({ rack: r, readOnly, onChange, onDuplicate }: Props) {
+export function RackInspector({ rack: r, readOnly, onChange, onDuplicate, selectedElementId, onSelectElement }: Props) {
   const set = (patch: Partial<RackTemplate>) => onChange({ ...r, ...patch });
   return (
     <div className="inspector-inner">
@@ -50,14 +53,9 @@ export function RackInspector({ rack: r, readOnly, onChange, onDuplicate }: Prop
             <NumberField label="Max load kg" value={r.maxLoadKg} onChange={(maxLoadKg) => set({ maxLoadKg })} />
             <NumberField label="Max power W" value={r.maxPowerW} onChange={(maxPowerW) => set({ maxPowerW })} />
           </div>
-          <div className="row2">
-            <NumberField label="Side pod L slots" value={r.sidePods.left} min={0}
-              onChange={(left) => set({ sidePods: { ...r.sidePods, left } })} />
-            <NumberField label="Side pod R slots" value={r.sidePods.right} min={0}
-              onChange={(right) => set({ sidePods: { ...r.sidePods, right } })} />
-          </div>
           <TextField label="Notes" value={r.notes ?? ''} onChange={(notes) => set({ notes })} />
         </Section>
+        <SideElementsEditor rack={r} onChange={onChange} selectedId={selectedElementId} onSelect={onSelectElement} />
       </fieldset>
       <Button onClick={() => downloadText(`${r.id}.json`, JSON.stringify({ schema: 'dc-lab/rack@1', ...r }, null, 2))}>
         Export rack JSON

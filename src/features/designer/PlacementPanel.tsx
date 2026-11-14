@@ -14,13 +14,14 @@ import { PortConfigEditor } from './PortConfigEditor';
 interface Props {
   lib: Library;
   placement: Placement;
+  templateId: string;
   editor: DesignEditor;
   onRemoved(): void;
 }
 
 const faceOptions = [{ value: 'front' as PortFace, label: 'Front' }, { value: 'rear' as PortFace, label: 'Rear' }];
 
-export function PlacementPanel({ lib, placement: p, editor, onRemoved }: Props) {
+export function PlacementPanel({ lib, placement: p, templateId, editor, onRemoved }: Props) {
   const [port, setPort] = useState<string>();
   const device = lib.devices.get(p.deviceId);
   if (!device) return <p className="muted">Unknown device {p.deviceId}</p>;
@@ -40,7 +41,7 @@ export function PlacementPanel({ lib, placement: p, editor, onRemoved }: Props) 
               onChange={(face) => editor.moveTo(p.id, { ...mount, face })} />
           </div>
         ) : (
-          <p className="muted">{`Side pod ${mount.side}, slot ${mount.slot}`}</p>
+          <p className="muted">{`${lib.racks.get(templateId)?.sideElements.find((e) => e.id === mount.elementId)?.name ?? mount.elementId}, slot ${mount.slot}`}</p>
         )}
         <SelectField
           label="Breakout profile"

@@ -14,9 +14,27 @@
   "emptyWeightKg": 180,
   "maxLoadKg": 1500,
   "maxPowerW": 34600,
-  "sidePods": {
-    "left": 4,
-    "right": 4
-  },
-  "schema": "dc-lab/rack@1"
+  "schema": "dc-lab/rack@1",
+  "sideElements": [
+    {
+      "id": "pdu-bay-l",
+      "name": "PDU bay L",
+      "kind": "pdu-bay",
+      "side": "left",
+      "widthMm": 100,
+      "depthMm": 1200,
+      "slots": 2,
+      "weightKg": 5
+    },
+    {
+      "id": "cable-mgr-r",
+      "name": "Cable manager R",
+      "kind": "cable-manager",
+      "side": "right",
+      "widthMm": 150,
+      "depthMm": 1200,
+      "slots": 0,
+      "weightKg": 15
+    }
+  ]
 }

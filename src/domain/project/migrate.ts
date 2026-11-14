@@ -46,13 +46,36 @@ export function migratePlacement(p: Json): Json {
   return { ...rest, portSettings, groupSettings };
 }
 
+/** Old `sidePods: { left, right }` slot counts -> one sidepod element per side holding those slots. */
+export function migrateRack(r: Json): Json {
+  if (Array.isArray(r.sideElements)) return r;
+  const pods = (r.sidePods as { left?: number; right?: number }) ?? {};
+  const sideElements = (['left', 'right'] as const)
+    .filter((side) => (pods[side] ?? 0) > 0)
+    .map((side) => ({
+      id: `sidepod-${side}`, name: `Sidepod ${side === 'left' ? 'L' : 'R'}`, kind: 'sidepod', side,
+      widthMm: 100, depthMm: Number(r.depthMm ?? 1200), slots: pods[side], weightKg: 0,
+    }));
+  const { sidePods: _s, ...rest } = r;
+  void _s;
+  return { ...rest, sideElements };
+}
+
+/** Old side mounts `{ side, slot }` -> `{ elementId: "sidepod-<side>", slot }`. */
+function migrateSideMount(p: Json): Json {
+  const m = p.mount as Json | undefined;
+  if (m?.kind !== 'side' || m.elementId) return p;
+  return { ...p, mount: { kind: 'side', elementId: `sidepod-${String(m.side)}`, slot: m.slot } };
+}
+
 export function migrateProjectJson(p: Json): Json {
   return {
     ...p,
     devices: ((p.devices as Json[]) ?? []).map(migrateDevice),
+    racks: ((p.racks as Json[]) ?? []).map(migrateRack),
     rackDesigns: ((p.rackDesigns as Json[]) ?? []).map((d) => ({
       ...d,
-      placements: ((d.placements as Json[]) ?? []).map(migratePlacement),
+      placements: ((d.placements as Json[]) ?? []).map(migratePlacement).map(migrateSideMount),
     })),
     hiddenBuiltins: p.hiddenBuiltins ?? [],
   };
