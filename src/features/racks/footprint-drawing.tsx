@@ -1,5 +1,5 @@
 import type { RackTemplate } from '../../domain/rack/types';
-import { elementsOn, overallWidthMm, SIDE_KINDS } from '../../domain/rack/side-elements';
+import { elementsOn, isInternal, overallWidthMm, SIDE_KINDS } from '../../domain/rack/side-elements';
 import { paint } from '../../theme/paint';
 
 const TILE_PX = 60;
@@ -12,8 +12,10 @@ const TILE_MM = 600;
 export function FootprintDrawing({ rack }: { rack: RackTemplate }) {
   const { wide, deep } = rack.footprintTiles;
   const s = TILE_PX / TILE_MM;
-  const left = [...elementsOn(rack.sideElements, 'left')].reverse(); // outermost first
-  const right = elementsOn(rack.sideElements, 'right');
+  // Internal elements (PDU bays) sit inside the enclosure: drawn over the body edge, no extra width.
+  const outside = rack.sideElements.filter((e) => !isInternal(e));
+  const left = [...elementsOn(outside, 'left')].reverse(); // outermost first
+  const right = elementsOn(outside, 'right');
   const overall = overallWidthMm(rack.widthMm, rack.sideElements);
   const tilesW = wide * TILE_MM;
   let x = 0;
@@ -26,6 +28,15 @@ export function FootprintDrawing({ rack }: { rack: RackTemplate }) {
     x += b.w;
     return out;
   });
+  const bodyX = boxes.find((b) => b.kind === 'body')!.x;
+  for (const side of ['left', 'right'] as const) {
+    let edge = side === 'left' ? bodyX : bodyX + rack.widthMm;
+    for (const e of elementsOn(rack.sideElements, side).filter(isInternal)) {
+      const x = side === 'left' ? edge : edge - e.widthMm;
+      boxes.push({ key: e.id, w: e.widthMm, d: e.depthMm, label: `${e.name} (inside rack)`, kind: e.kind, x });
+      edge = side === 'left' ? edge + e.widthMm : edge - e.widthMm;
+    }
+  }
   return (
     <g>
       <text x={0} y={-10} fontSize={11} fontWeight={600} fill={paint.ink}>{`Footprint ${wide}x${deep} tiles (top view)${Number.isInteger(wide) ? '' : ' · dashed line = row pitch'}`}</text>

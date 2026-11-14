@@ -26,6 +26,8 @@ export interface SideKindTraits {
   defaults: Pick<SideElement, 'widthMm' | 'slots' | 'weightKg'>;
   /** Default-placement priority; lower = tried first (dedicated bays before generic sidepods). */
   priority: number;
+  /** Sits inside the rack enclosure (between rails and side panel): adds no width to the footprint. */
+  internal?: boolean;
 }
 
 /** Behaviour per side-element kind (registry pattern). */
@@ -35,7 +37,7 @@ export const SIDE_KINDS: Record<SideElementKind, SideKindTraits> = {
     defaults: { widthMm: 300, slots: 1, weightKg: 40 },
   },
   'pdu-bay': {
-    label: 'PDU bay', dashed: false, hatched: false, accepts: (d) => d.category === 'pdu', priority: 1,
+    label: 'PDU bay', dashed: false, hatched: false, accepts: (d) => d.category === 'pdu', priority: 1, internal: true,
     defaults: { widthMm: 100, slots: 1, weightKg: 5 },
   },
   'cable-manager': {
@@ -72,7 +74,10 @@ export function elementsOn(elements: readonly SideElement[], side: SideName): Si
   return elements.filter((e) => e.side === side);
 }
 
-/** Total width of the rack body plus all side elements. */
+/** True when the element sits inside the rack enclosure (PDU bay) and takes no floor space. */
+export const isInternal = (e: Pick<SideElement, 'kind'>): boolean => !!SIDE_KINDS[e.kind]?.internal;
+
+/** Footprint width: rack body plus the side elements outside it (internal ones such as PDU bays excluded). */
 export function overallWidthMm(bodyWidthMm: number, elements: readonly SideElement[]): number {
-  return bodyWidthMm + elements.reduce((n, e) => n + e.widthMm, 0);
+  return bodyWidthMm + elements.filter((e) => !isInternal(e)).reduce((n, e) => n + e.widthMm, 0);
 }

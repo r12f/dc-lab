@@ -1,6 +1,6 @@
 import type { Library } from '../library/library';
 import type { RackTemplate } from '../rack/types';
-import { elementsOn } from '../rack/side-elements';
+import { elementsOn, isInternal } from '../rack/side-elements';
 import { UNIT_MM, unitsIn } from '../units';
 import type { CableEndpoint, CableRoute, CableRun, RackDesign } from './types';
 import { placedDevice } from './sizing';
@@ -32,7 +32,8 @@ function endpointPos(lib: Library, design: RackDesign, rack: RackTemplate, ep: C
   const heightMm = totalMm - (mount.slot - 0.5) * slotH;
   // Distance from the element centre to the body edge on its side, through nearer elements.
   const same = elementsOn(rack.sideElements, el.side);
-  const inner = same.slice(0, same.indexOf(el)).reduce((n, e) => n + e.widthMm, 0) + el.widthMm / 2;
+  // Internal elements (PDU bays) sit inside the enclosure and add no distance for elements outside them.
+  const inner = same.slice(0, same.indexOf(el)).filter((e) => !isInternal(e)).reduce((n, e) => n + e.widthMm, 0) + el.widthMm / 2;
   const toChannelMm: Record<CableRoute, number> = el.side === 'left'
     ? { left: inner, right: inner + rack.widthMm }
     : { right: inner, left: inner + rack.widthMm };
