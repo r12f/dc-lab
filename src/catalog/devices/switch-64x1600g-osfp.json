@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/device@1",
   "id": "switch-64x1600g-osfp",
-  "name": "64x1.6T OSFP LC Switch (liquid-cooled)",
+  "name": "64x1.6T OSFP LC Switch",
   "category": "switch",
   "height": {
     "units": 2,
