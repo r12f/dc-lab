@@ -1,0 +1,13 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "qsfpp-40g-sr4",
+  "name": "40G QSFP+ SR4",
+  "packaging": "module",
+  "vendor": "Generic",
+  "formFactor": "QSFP+",
+  "speedGbps": 40,
+  "reach": "SR4",
+  "fiberConnector": "MPO-12",
+  "reachM": 150,
+  "powerW": 0
+}

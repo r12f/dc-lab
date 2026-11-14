@@ -1,0 +1,13 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "sfp28-25g-er",
+  "name": "25G SFP28 ER",
+  "packaging": "module",
+  "vendor": "Generic",
+  "formFactor": "SFP28",
+  "speedGbps": 25,
+  "reach": "ER",
+  "fiberConnector": "LC",
+  "reachM": 40000,
+  "powerW": 0
+}

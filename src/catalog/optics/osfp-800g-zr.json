@@ -1,0 +1,13 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "osfp-800g-zr",
+  "name": "800G OSFP ZR",
+  "packaging": "module",
+  "vendor": "Generic",
+  "formFactor": "OSFP",
+  "speedGbps": 800,
+  "reach": "ZR",
+  "fiberConnector": "LC",
+  "reachM": 120000,
+  "powerW": 0
+}

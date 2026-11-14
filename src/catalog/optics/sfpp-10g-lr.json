@@ -1,0 +1,13 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "sfpp-10g-lr",
+  "name": "10G SFP+ LR",
+  "packaging": "module",
+  "vendor": "Generic",
+  "formFactor": "SFP+",
+  "speedGbps": 10,
+  "reach": "LR",
+  "fiberConnector": "LC",
+  "reachM": 10000,
+  "powerW": 0
+}

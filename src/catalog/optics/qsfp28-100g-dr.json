@@ -1,0 +1,13 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "qsfp28-100g-dr",
+  "name": "100G QSFP28 DR",
+  "packaging": "module",
+  "vendor": "Generic",
+  "formFactor": "QSFP28",
+  "speedGbps": 100,
+  "reach": "DR",
+  "fiberConnector": "LC",
+  "reachM": 500,
+  "powerW": 0
+}

@@ -1,0 +1,31 @@
+import { describe, expect, it } from 'vitest';
+import { opticFamily, reachOrder } from '../optics/grouping';
+import { Library } from '../library/library';
+import { emptyProject } from '../project/types';
+import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
+import { buildTree } from '../../ui/sidebar-tree';
+import { opticTreePlacement } from '../optics/grouping';
+
+describe('optic grouping', () => {
+  it('QSFP variants share one family', () => {
+    expect(['QSFP+', 'QSFP28', 'QSFP56', 'QSFP112', 'QSFP-DD'].map(opticFamily)).toEqual(['QSFP', 'QSFP', 'QSFP', 'QSFP', 'QSFP']);
+    expect(opticFamily('SFP28')).toBe('SFP');
+  });
+  it('reach sorts short to long', () => {
+    const r = ['ZR', 'LR4', 'DR8', 'SR4', '2xDR4', 'FR4', 'DAC', 'DR4', 'ER4'];
+    expect([...r].sort((a, b) => reachOrder(a) - reachOrder(b))).toEqual(['DAC', 'SR4', 'DR4', '2xDR4', 'DR8', 'FR4', 'LR4', 'ER4', 'ZR']);
+  });
+  it('tree: QSFP folder, speeds high to low, every speed has SR..LR', () => {
+    const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
+    const tree = buildTree(lib.optics.items().map((o) => ({ id: o.id, name: o.name, ...opticTreePlacement(o) })));
+    const optics = tree.folders[0];
+    expect(optics.folders.map((f) => f.label)).toEqual(['OSFP', 'QSFP', 'SFP', 'ELSFP']);
+    const qsfp = optics.folders[1];
+    expect(qsfp.folders.map((f) => f.label)).toEqual(['800G', '400G', '200G', '100G', '40G']);
+    for (const speed of qsfp.folders) {
+      const reaches = speed.items.map((i) => lib.optics.get(i.id)!.reach);
+      expect(reaches.some((r) => /SR/.test(r)), speed.label).toBe(true);
+      expect(reaches.some((r) => /LR/.test(r)), speed.label).toBe(true);
+    }
+  });
+});

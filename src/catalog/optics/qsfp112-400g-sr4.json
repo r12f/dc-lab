@@ -1,0 +1,13 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "qsfp112-400g-sr4",
+  "name": "400G QSFP112 SR4",
+  "packaging": "module",
+  "vendor": "Generic",
+  "formFactor": "QSFP112",
+  "speedGbps": 400,
+  "reach": "SR4",
+  "fiberConnector": "MPO-12",
+  "reachM": 100,
+  "powerW": 0
+}

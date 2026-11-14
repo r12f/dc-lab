@@ -5,6 +5,7 @@ import { ModuleLayout } from '../../ui/module-layout';
 import { Sidebar, type SidebarItem } from '../../ui/sidebar';
 import { CanvasFrame, EmptyCanvas } from '../../ui/canvas-frame';
 import { CABLE_TYPES } from '../../domain/optics/cable-types';
+import { opticTreePlacement } from '../../domain/optics/grouping';
 import { fromKey, toKey } from './catalog-ref';
 import { useOpticsCatalog } from './use-optics-catalog';
 import { NewOpticsMenu } from './new-optics-menu';
@@ -24,13 +25,14 @@ export function OpticsModule() {
   const items: SidebarItem[] = [
     ...lib.optics.all().map(({ item, source }) => ({
       id: toKey({ catalog: 'optic', id: item.id }), name: item.name,
-      path: ['Optics', item.formFactor || 'Other'],
+      ...opticTreePlacement(item),
       keywords: `${item.vendor} ${item.model ?? ''} ${item.reach} ${item.packaging} ${item.fiberConnector}`,
-      badge: `${item.packaging === 'pigtail' ? 'pigtail' : `${item.speedGbps}G`}${mark(source)}`,
+      badge: `${item.formFactor}${item.packaging === 'pigtail' ? ' pigtail' : ''}${mark(source)}`,
     })),
     ...lib.cableMedia.all().map(({ item, source }) => ({
       id: toKey({ catalog: 'cable', id: item.id }), name: item.name,
       path: ['Cables', CABLE_TYPES[item.type] ?? item.type],
+      pathOrder: [1],
       keywords: `${item.vendor ?? ''} ${item.model ?? ''} ${item.connector} ${item.type}`,
       badge: `${item.connector}${mark(source)}`,
     })),
