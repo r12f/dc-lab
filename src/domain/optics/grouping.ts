@@ -22,8 +22,8 @@ export function familyOrder(family: string): number | string {
   return i >= 0 ? i : family;
 }
 
-/** Reach classes from shortest to longest (DAC/AOC first, coherent ZR last). */
-const REACH_ORDER = ['DAC', 'AOC', 'VR', 'SR', 'DR', 'FR', 'LR', 'ER', 'ZR', 'ELS'];
+/** Optic reach classes from shortest to longest (coherent ZR last). */
+const REACH_ORDER = ['VR', 'SR', 'DR', 'FR', 'LR', 'ER', 'ZR', 'ELS'];
 
 /** Sort key of a reach class: base class order, then lane multiplier (DR4 < 2xDR4 < DR8). */
 export function reachOrder(reach: string): number {

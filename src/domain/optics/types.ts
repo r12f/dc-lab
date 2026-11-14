@@ -17,7 +17,6 @@ export interface Pigtail {
   gender?: 'male' | 'female';
 }
 
-/** An optic: pluggable module (transceiver, AOC/DAC end, laser source) or pigtail optic. */
 /** An optic item type; vendor products are ItemVariants of it. */
 export interface OpticDefinition extends CatalogItem {
   schema?: typeof OPTIC_SCHEMA;
@@ -26,9 +25,9 @@ export interface OpticDefinition extends CatalogItem {
   formFactor: string;
   /** Total module speed (Gbps). */
   speedGbps: number;
-  /** Optical interface / reach class, e.g. "2xDR4", "FR4", "SR4", "DAC". */
+  /** Optical interface / reach class, e.g. "2xDR4", "FR4", "SR4" (never DAC/AEC/AOC: those are cables). */
   reach: string;
-  /** Connector a cable mates with: module face or pigtail end, e.g. "MPO-12", "2x MPO-12", "LC"; empty for DAC. */
+  /** Connector a cable mates with: module face or pigtail end, e.g. "MPO-12", "2x MPO-12", "LC". */
   fiberConnector: string;
   /** Pigtail optics only. */
   pigtail?: Pigtail;

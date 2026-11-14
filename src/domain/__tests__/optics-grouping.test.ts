@@ -15,8 +15,8 @@ describe('optic grouping', () => {
     expect(opticFamily('SFP28')).toBe('SFP');
   });
   it('reach sorts short to long', () => {
-    const r = ['ZR', 'LR4', 'DR8', 'SR4', '2xDR4', 'FR4', 'DAC', 'DR4', 'ER4'];
-    expect([...r].sort((a, b) => reachOrder(a) - reachOrder(b))).toEqual(['DAC', 'SR4', 'DR4', '2xDR4', 'DR8', 'FR4', 'LR4', 'ER4', 'ZR']);
+    const r = ['ZR', 'LR4', 'DR8', 'SR4', '2xDR4', 'FR4', 'DR4', 'ER4'];
+    expect([...r].sort((a, b) => reachOrder(a) - reachOrder(b))).toEqual(['SR4', 'DR4', '2xDR4', 'DR8', 'FR4', 'LR4', 'ER4', 'ZR']);
   });
   it('tree: QSFP-DD and QSFP folders, speeds high to low, every speed has SR..LR', () => {
     const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());

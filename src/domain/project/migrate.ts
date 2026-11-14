@@ -21,13 +21,52 @@ function inferRole(g: Json): PortRole {
 /** Built-in DAC "optics" became direct-attach cables: optic id -> cable id. */
 const DAC_OPTIC_TO_CABLE: Record<string, string> = { 'osfp-800g-dac': 'dac-800g', 'qsfp28-100g-dac': 'dac-100g' };
 
-/** A port setting that pinned a DAC "optic" now sets reach DAC and the DAC cable instead. */
+/** Direct-attach reach classes: cables, never optics. */
+const DIRECT_REACH: Record<string, string> = { DAC: 'copper-dac', AEC: 'aec', AOC: 'aoc' };
+const directReach = (o: Json) => DIRECT_REACH[String(o.reach ?? o.media ?? '').trim().toUpperCase()] ? String(o.reach ?? o.media).trim().toUpperCase() : undefined;
+
+/** Project optics that were really DAC / AEC / AOC: optic id -> { cable id, reach }; filled per project. */
+let directOptics: Record<string, { cable: string; reach: string }> = {};
+
+/** A port setting that pinned a DAC "optic" now sets reach DAC/AEC/AOC and the cable instead. */
 function migrateDacSetting(s: Json): Json {
-  const cable = DAC_OPTIC_TO_CABLE[String(s.opticId)];
-  if (!cable) return s;
+  const id = String(s.opticId);
+  const hit = directOptics[id] ?? (DAC_OPTIC_TO_CABLE[id] ? { cable: DAC_OPTIC_TO_CABLE[id], reach: 'DAC' } : undefined);
+  if (!hit) return s;
   const { opticId: _o, ...rest } = s;
   void _o;
-  return { ...rest, reach: 'DAC', cableId: rest.cableId ?? cable };
+  return { ...rest, reach: hit.reach, cableId: rest.cableId ?? hit.cable };
+}
+
+/**
+ * Project optics with a direct-attach reach (DAC / AEC / AOC) move to cables: same id, both ends the module
+ * plug, link speed from the optic; power per end only for active cables. Removed from the optics list.
+ */
+function moveDirectOptics(p: Json): Json {
+  directOptics = {};
+  const optics = (p.optics as Json[]) ?? [];
+  const cables = [...((p.cableMedia as Json[]) ?? [])];
+  const have = new Set(cables.map((c) => String(c.id)));
+  const kept: Json[] = [];
+  for (const o of optics) {
+    const reach = directReach(o);
+    if (!reach) { kept.push(o); continue; }
+    const id = String(o.id);
+    const plug = String(o.formFactor ?? o.connector ?? '');
+    if (!have.has(id)) {
+      const type = DIRECT_REACH[reach];
+      cables.push({
+        schema: 'dc-lab/cable@1', id, name: String(o.name ?? id), type, color: '#94a3b8',
+        ends: { a: { count: 1, connector: plug }, b: { count: 1, connector: plug } }, mapping: 'straight',
+        speedGbps: Number(o.speedGbps ?? 0), ...(type === 'copper-dac' ? {} : { powerWPerEnd: Number(o.powerW ?? 0) }),
+        ...(o.reachM ? { maxLengthM: Number(o.reachM) } : {}),
+      });
+      have.add(id);
+    }
+    directOptics[id] = { cable: id, reach };
+  }
+  const variants = ((p.variants as Json[]) ?? []).map((v) => (v.target === 'optic' && directOptics[String(v.itemId)] ? { ...v, target: 'cable' } : v));
+  return { ...p, optics: kept, cableMedia: cables, variants };
 }
 
 function toSetting(v: unknown): unknown {
@@ -230,7 +269,7 @@ function migrateVariants(p: Json): Json {
 }
 
 export function migrateProjectJson(raw: Json): Json {
-  const p = migrateVariants(migrateRenames(raw));
+  const p = moveDirectOptics(migrateVariants(migrateRenames(raw)));
   return {
     ...p,
     cableMedia: ((p.cableMedia as Json[]) ?? []).map(migrateCable),

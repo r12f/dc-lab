@@ -7,6 +7,7 @@ import { FORM_FACTORS } from '../../domain/ports/form-factors';
 import { NumberField, Section, SelectField, TextField } from '../../ui/fields';
 import { ReadOnlyNotice } from '../../ui/read-only-notice';
 import { ExportJsonButton } from './export-json-button';
+import { directAttachType } from '../../domain/ports/optic-match';
 
 interface Props {
   optic: OpticDefinition;
@@ -71,6 +72,7 @@ export function OpticInspector({ optic: o, header, readOnly, onChange, onDuplica
           </div>
           <div className="row2">
             <TextField label="Reach" value={o.reach} onChange={(reach) => set({ reach })} />
+            {directAttachType(o.reach) && <p className="error">DAC / AEC / AOC are cables, not optics — create a Cable instead.</p>}
             <NumberField label="Max reach m" value={o.reachM} min={0} onChange={(reachM) => set({ reachM })} />
           </div>
           <TextField label={pigtail ? 'Fiber connector (from pigtail)' : 'Fiber connector'} value={o.fiberConnector}

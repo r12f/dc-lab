@@ -12,7 +12,7 @@ per item (`src/catalog/optics/`, `src/catalog/cables/`); project items are store
     (the 4-lane variants QSFP+, QSFP28, QSFP56, QSFP112), **SFP** (SFP+, SFP28…). The exact form factor
     is the item's badge.
   - Speed folders sort high to low (1.6T, 800G, 400G, 200G…; speeds from 1000G are shown in T); items inside sort by reach from short to long
-    (DAC, SR, DR, FR, LR, ER, ZR; lane multiplier breaks ties: DR4 < 2xDR4 < DR8).
+    (SR, DR, FR, LR, ER, ZR; lane multiplier breaks ties: DR4 < 2xDR4 < DR8).
 - **Built-in catalog** covers every family/speed with the common reach classes (illustrative values):
   SR, DR, FR, LR, ER and ZR where the speed class has them. "+ New" offers
   *Optic module*, *Pigtail optic* and *Cable*.
@@ -30,7 +30,7 @@ per item (`src/catalog/optics/`, `src/catalog/cables/`); project items are store
 | `packaging` | `module` (pluggable, fiber connector on the module face) or `pigtail` (fiber permanently attached) |
 | `vendor`, `model` | Vendor and model / vendor PN |
 | `formFactor` | Host-side form factor (cage it plugs into, e.g. `OSFP`), or the engine/port form factor for a pigtail on a CPO/NPO port |
-| `speedGbps`, `reach`, `reachM` | Total speed, reach class (`DR4`, `2xFR4`, `SR4`, `DAC`…), max reach in metres |
+| `speedGbps`, `reach`, `reachM` | Total speed, reach class (`DR4`, `2xFR4`, `SR4`…; never `DAC`/`AEC`/`AOC`), max reach in metres |
 | `fiberConnector` | Connector a cable must mate with: module face (`MPO-12`, `2x MPO-12`, `LC`) or the pigtail end connector |
 | `pigtail` | Pigtail only: `{ count, connector, fiberType, lengthM }` — number of fiber legs, end connector, `fiber-sm`/`fiber-mm`, leg length |
 | `powerW`, `weightKg` | Power and weight per optic |
@@ -107,7 +107,9 @@ plugs (AEC retimers, AOC optics) add `powerWPerEnd` per port to rack power and a
 that unit power. Fiber cable lists never offer direct-attach cables. Built-ins: DAC 100G QSFP28 /
 400G QSFP-DD / 800G OSFP; AEC 400G QSFP-DD / 800G OSFP / 1.6T OSFP; AOC 100G QSFP28 / 400G QSFP-DD /
 800G OSFP (illustrative lengths and power). The former DAC "optics" were removed; project port settings
-that pinned them now set reach `DAC` and the matching DAC cable.
+that pinned them now set reach `DAC` and the matching DAC cable. Any project optic with reach `DAC` / `AEC` /
+`AOC` is moved to cables on load (same id, both ends its module plug, its speed; its power per end for
+AEC/AOC); port settings pinning it switch to that reach + cable. The optic inspector flags such a reach.
 
 ## Custom properties
 
