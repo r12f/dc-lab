@@ -22,10 +22,7 @@ export const PHASE_COLORS: Record<Phase, string> = {
   L1: '#b45309', L2: '#111827', L3: '#6b7280', 'L1-L2': '#9a3412', 'L2-L3': '#374151', 'L3-L1': '#78716c',
 };
 
-/** Short mode text drawn inside a port, e.g. "4x200" (G omitted to save space). */
-export function shortMode(mode: string): string {
-  return mode.replace(/G$/i, '');
-}
+export { speedLabel } from '../../../domain/device/breakout';
 
 /** Stable color for an item id (optic / cable markers). */
 export function idColor(id: string): string {

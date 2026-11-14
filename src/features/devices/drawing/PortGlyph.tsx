@@ -1,13 +1,13 @@
 import type { PortBox } from './faceplateLayout';
 import type { DrawingContext } from './types';
-import { idColor, modeColor, ROLE_COLORS, shortMode } from './portStyle';
+import { idColor, modeColor, ROLE_COLORS, speedLabel } from './portStyle';
 import { ROLE_TRAITS } from '../../../domain/device/roles';
 import { formFactorSpec } from '../../../domain/ports/formFactors';
 import { paint } from '../../../theme/paint';
 
 /**
- * One port cage. Data/service ports show index + breakout; a top strip marks the optic and a
- * bottom strip marks the attached cable. Other roles show their role label.
+ * One port. Data/service ports show index, speed ("400G" / "2x400G") and reach; a top strip marks the
+ * module/reach and a bottom strip the attached cable. Other roles show their label or index.
  */
 export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
   const r = ctx.resolve(box.ref);
@@ -18,33 +18,35 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
   const cable = r?.cableId ? ctx.lib.cableMedia.get(r.cableId) : undefined;
   const fiberPort = formFactorSpec(box.group.formFactor).kind === 'fiber';
   const cx = box.x + box.w / 2;
+  const speed = r ? speedLabel(r.mode) : '';
   const engine = box.group.opticalEngine ? ` · ${box.group.opticalEngine.toUpperCase()}` : '';
   const tip = [
     `${box.ref} · ${box.group.formFactor}${engine} · ${ROLE_TRAITS[box.group.role].label}`,
-    pluggable && r ? `Speed ${r.mode}` : '',
+    speed ? `Speed ${speed}` : '',
     r?.reach ? `Reach ${r.reach}` : '',
     optic ? `Module ${optic.name}${r?.autoOptic ? ' (auto)' : ''}` : '',
     cable ? `Cable ${cable.name}` : '',
   ].filter(Boolean).join('\n');
   const markColor = optic ? idColor(optic.id) : r?.reach ? idColor(r.reach) : undefined;
+  const t = (y: number, size: number, fill: string, text: string, bold = false) => (
+    <text x={cx} y={box.y + y} fontSize={size} textAnchor="middle" fill={fill} fontWeight={bold ? 700 : 500} pointerEvents="none">{text}</text>
+  );
   return (
     <g style={{ cursor: 'pointer' }} onClick={(e) => ctx.onPortClick?.(box.ref, e.ctrlKey || e.metaKey || e.shiftKey)}>
       <title>{tip}</title>
       {/* Fiber ports (CPO/NPO) are drawn rounded to set them apart from module cages. */}
-      <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={fiberPort ? 8 : 2} fill={fill}
-        stroke={sel ? paint.selection : '#0f172a'} strokeWidth={sel ? 2.5 : 1} />
-      {markColor && <rect x={box.x + 2} y={box.y + 2} width={box.w - 4} height={3} fill={markColor} pointerEvents="none" />}
-      {cable && <rect x={box.x + 2} y={box.y + box.h - 5} width={box.w - 4} height={3} fill={cable.color} pointerEvents="none" />}
+      <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={fiberPort ? 12 : 3} fill={fill}
+        stroke={sel ? paint.selection : '#0f172a'} strokeWidth={sel ? 3 : 1} />
+      {markColor && <rect x={box.x + 3} y={box.y + 3} width={box.w - 6} height={4} fill={markColor} pointerEvents="none" />}
+      {cable && <rect x={box.x + 3} y={box.y + box.h - 7} width={box.w - 6} height={4} fill={cable.color} pointerEvents="none" />}
       {pluggable ? (
         <>
-          <text x={cx} y={box.y + 12} fontSize={8} textAnchor="middle" fill="#fff" fontWeight={700} pointerEvents="none">{box.index}</text>
-          <text x={cx} y={box.y + 18} fontSize={6} textAnchor="middle" fill="#e2e8f0" pointerEvents="none">{r ? shortMode(r.mode) : ''}</text>
-          {r?.reach && <text x={cx} y={box.y + 24} fontSize={5.5} textAnchor="middle" fill="#fde68a" pointerEvents="none">{r.reach}</text>}
+          {t(18, 12, '#fff', String(box.index), true)}
+          {t(30, 10, '#f1f5f9', speed, true)}
+          {r?.reach && t(41, 9, '#fde68a', r.reach)}
         </>
       ) : (
-        <text x={cx} y={box.y + box.h / 2 + 3} fontSize={box.group.count > 1 ? 7 : 6} textAnchor="middle" fill="#fff" pointerEvents="none">
-          {box.group.count > 1 ? box.index : box.group.label}
-        </text>
+        t(box.h / 2 + 4, 10, '#fff', box.group.count > 1 ? String(box.index) : box.group.label, true)
       )}
     </g>
   );

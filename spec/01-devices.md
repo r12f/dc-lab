@@ -111,7 +111,9 @@ The effective breakout and optic/cable are drawn on every port.
 
 Drawing strategy is selected by device shape:
 
-- **Rack faceplate** (height > 0): front and rear faces, same width. Width follows content — the
+- **Rack faceplate** (height > 0): front and rear faces, same width. Each group is titled with form factor,
+  native speed and count (`QSFP-DD 400G ×32`); each data port shows its index, speed (`400G` unsplit,
+  `2x400G` breakout — never `1x…`) and reach. Ports are ≥ 54x46 units, text ≥ 9 units, drawn 1:1. Width follows content — the
   widest face (ports + PSUs) sets the box width, so small devices draw narrow.
 - **Vertical PDU** (category `pdu`, height 0): a tall strip with input cord at the top, outlets
   stacked by bank, each bank labelled with breaker/phase and colored by phase (L1/L2/L3).

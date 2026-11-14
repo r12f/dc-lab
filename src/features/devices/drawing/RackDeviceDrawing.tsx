@@ -1,6 +1,8 @@
 import type { DeviceDefinition } from '../../../domain/device/types';
 import { layoutFace, type FaceLayout } from './faceplateLayout';
 import { PortGlyph } from './PortGlyph';
+import { groupTitle } from './groupTitle';
+import { PORT } from './faceplateLayout';
 import { PsuGlyph } from './PsuGlyph';
 import type { DrawingContext } from './types';
 import { categoryPaint, paint } from '../../../theme/paint';
@@ -14,17 +16,17 @@ function Face({ device, layout, ctx, y }: { device: DeviceDefinition; layout: Fa
   const color = categoryPaint(device.category);
   return (
     <g transform={`translate(0 ${y})`}>
-      <text x={0} y={-5} fontSize={11} fill={paint.inkMuted} fontWeight={600}>{layout.face.toUpperCase()}</text>
+      <text x={0} y={-8} fontSize={14} fill={paint.inkMuted} fontWeight={700}>{layout.face.toUpperCase()}</text>
       <rect width={layout.width} height={layout.height} rx={4} fill="#1e293b" stroke={color} strokeWidth={2} />
       {layout.labels.map((l) => (
-        <text key={l.group.id} x={l.x} y={l.y} fontSize={8} fill="#cbd5e1">{`${l.group.label} (${l.group.count})`}</text>
+        <text key={l.group.id} x={l.x} y={l.y} fontSize={PORT.labelFont} fontWeight={600} fill="#e2e8f0">{groupTitle(l.group)}</text>
       ))}
       {layout.ports.map((p) => <PortGlyph key={p.ref} box={p} ctx={ctx} />)}
       {layout.psus.map((b, i) => (
         <PsuGlyph key={i} box={b} index={i + 1} inlet={device.psus?.inlet ?? ''} ratedW={device.psus?.ratedW ?? 0} />
       ))}
       {layout.ports.length === 0 && layout.psus.length === 0 && (
-        <text x={10} y={layout.height / 2 + 4} fontSize={10} fill="#94a3b8">empty</text>
+        <text x={10} y={layout.height / 2 + 4} fontSize={12} fill="#94a3b8">empty</text>
       )}
     </g>
   );
@@ -36,11 +38,11 @@ export function rackDeviceLayouts(device: DeviceDefinition) {
   return { front: layoutFace(device, 'front', width), rear: layoutFace(device, 'rear', width), width };
 }
 
-const GAP = 26;
+const GAP = 36;
 
 export function rackDeviceSize(device: DeviceDefinition): DrawingSize {
   const { front, rear, width } = rackDeviceLayouts(device);
-  return { width, height: 16 + front.height + GAP + rear.height };
+  return { width, height: 22 + front.height + GAP + rear.height };
 }
 
 /** Front and rear faceplates of a rack-mounted device. */
@@ -48,8 +50,8 @@ export function RackDeviceDrawing({ device, ctx }: { device: DeviceDefinition; c
   const { front, rear } = rackDeviceLayouts(device);
   return (
     <g>
-      <Face device={device} layout={front} ctx={ctx} y={16} />
-      <Face device={device} layout={rear} ctx={ctx} y={16 + front.height + GAP} />
+      <Face device={device} layout={front} ctx={ctx} y={22} />
+      <Face device={device} layout={rear} ctx={ctx} y={22 + front.height + GAP} />
     </g>
   );
 }

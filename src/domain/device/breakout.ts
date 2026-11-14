@@ -16,6 +16,16 @@ export function formatMode(mode: BreakoutMode): string {
   return `${mode.fanout}x${mode.speedGbps}G`;
 }
 
+/**
+ * Human-readable speed of a mode: "400G" for an unsplit port (1x400G), "2x400G" for a breakout.
+ * Empty for unrated ports (0G, e.g. passive fiber or console).
+ */
+export function speedLabel(mode: string): string {
+  const m = parseMode(mode);
+  if (!m || m.speedGbps === 0) return '';
+  return m.fanout === 1 ? `${m.speedGbps}G` : `${m.fanout}x${m.speedGbps}G`;
+}
+
 export function nativeMode(group: PortGroup): string {
   return formatMode({ fanout: 1, speedGbps: group.speedGbps });
 }

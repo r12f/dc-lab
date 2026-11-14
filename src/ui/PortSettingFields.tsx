@@ -1,7 +1,7 @@
 import type { Library } from '../domain/library/Library';
 import type { PortGroup, PortSetting } from '../domain/device/types';
 import type { ResolvedPort } from '../domain/device/portSettings';
-import { modesOf } from '../domain/device/breakout';
+import { modesOf, speedLabel } from '../domain/device/breakout';
 import { ROLE_TRAITS } from '../domain/device/roles';
 import { compatibleCables, compatibleOptics, isEnginePort, reachOptions } from '../domain/ports/opticMatch';
 import { SelectField } from './fields';
@@ -44,7 +44,7 @@ export function PortSettingFields({ lib, group, value, onChange, effective, inhe
   return (
     <>
       <SelectField label="Speed / breakout" value={field(value.mode)}
-        options={[{ value: INHERIT, label: inh(inherited?.mode) }, ...modesOf(group).map((m) => ({ value: m, label: m }))]}
+        options={[{ value: INHERIT, label: inh(inherited && speedLabel(inherited.mode)) }, ...modesOf(group).map((m) => ({ value: m, label: speedLabel(m) || m }))]}
         onChange={(v) => set({ mode: unfield(v), opticId: undefined })} />
       <SelectField label={engine ? `Reach (${group.opticalEngine?.toUpperCase() ?? 'fiber'} engine)` : 'Reach'} value={field(value.reach)}
         options={[

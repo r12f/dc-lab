@@ -1,0 +1,13 @@
+import type { PortGroup } from '../../../domain/device/types';
+
+/**
+ * Label above a port group: form factor and native speed, e.g. "QSFP-DD 400G ×32",
+ * "MPO-16 800G CPO ×128", "MGMT RJ45 1G". Uses the group label when it differs from the form factor.
+ */
+export function groupTitle(g: PortGroup): string {
+  const name = g.label && g.label !== g.formFactor ? `${g.label} ${g.formFactor}` : g.formFactor;
+  const speed = g.speedGbps > 0 ? ` ${g.speedGbps}G` : '';
+  const engine = g.opticalEngine ? ` ${g.opticalEngine.toUpperCase()}` : '';
+  const count = g.count > 1 ? ` ×${g.count}` : '';
+  return `${name}${speed}${engine}${count}`;
+}

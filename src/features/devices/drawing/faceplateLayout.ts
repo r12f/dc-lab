@@ -1,5 +1,6 @@
 import type { DeviceDefinition, PortFace, PortGroup } from '../../../domain/device/types';
 import { formatPortRef, groupsOnFace } from '../../../domain/device/ports';
+import { groupTitle } from './groupTitle';
 
 export interface Box {
   x: number;
@@ -29,12 +30,16 @@ export interface FaceLayout {
   psus: Box[];
 }
 
-export const PORT = { w: 34, h: 30, gap: 4, groupGap: 18, pad: 10, label: 12 };
-export const PSU = { w: 46, h: 34, gap: 6 };
-const MIN_WIDTH = 160;
+/** Faceplate metrics in SVG units. Ports are sized so index, speed and reach stay legible at 100% zoom. */
+export const PORT = { w: 54, h: 46, gap: 5, groupGap: 26, pad: 14, label: 20, labelFont: 12 };
+export const SMALL_PORT = { w: 50, h: 34 };
+export const PSU = { w: 76, h: 54, gap: 8 };
+const MIN_WIDTH = 240;
+/** Approximate glyph width of the group label font, used to reserve label space. */
+const LABEL_CHAR_W = PORT.labelFont * 0.62;
 
 function portSize(g: PortGroup) {
-  return g.role === 'data' || g.role === 'service' ? { w: PORT.w, h: PORT.h } : { w: 30, h: 22 };
+  return g.role === 'data' || g.role === 'service' ? { w: PORT.w, h: PORT.h } : SMALL_PORT;
 }
 
 /** Lays out port groups left to right; each group fills column-major over `rows` rows. */
@@ -48,13 +53,13 @@ function layoutPorts(device: DeviceDefinition, face: PortFace, x0: number) {
     const cols = Math.ceil(g.count / rows);
     const { w, h } = portSize(g);
     const y0 = PORT.pad + PORT.label;
-    labels.push({ group: g, x, y: y0 - 3 });
+    labels.push({ group: g, x, y: y0 - 6 });
     for (let i = 0; i < g.count; i++) {
       const box = { x: x + Math.floor(i / rows) * (w + PORT.gap), y: y0 + (i % rows) * (h + PORT.gap), w, h };
       ports.push({ ...box, ref: formatPortRef({ groupId: g.id, index: i + 1 }), group: g, index: i + 1 });
       bottom = Math.max(bottom, box.y + h);
     }
-    const labelW = g.label.length * 6;
+    const labelW = groupTitle(g).length * LABEL_CHAR_W;
     x += Math.max(cols * (w + PORT.gap) - PORT.gap, labelW) + PORT.groupGap;
   }
   return { ports, labels, right: x - PORT.groupGap, bottom };
@@ -79,7 +84,7 @@ export function layoutFace(device: DeviceDefinition, face: PortFace, width?: num
   const contentRight = Math.max(right, portsX) + PORT.pad + psuCol(slots.right);
   const w = Math.max(width ?? 0, contentRight, MIN_WIDTH);
   const psuRows = Math.max(slots.left, slots.right);
-  const h = Math.max(bottom + PORT.pad, psuRows ? PORT.pad * 2 + psuRows * (PSU.h + PSU.gap) - PSU.gap : 0, 48);
+  const h = Math.max(bottom + PORT.pad, psuRows ? PORT.pad * 2 + psuRows * (PSU.h + PSU.gap) - PSU.gap : 0, 72);
   const psus: Box[] = [];
   for (let i = 0; i < slots.left; i++) psus.push({ x: PORT.pad, y: PORT.pad + i * (PSU.h + PSU.gap), w: PSU.w, h: PSU.h });
   for (let i = 0; i < slots.right; i++) psus.push({ x: w - PORT.pad - PSU.w, y: PORT.pad + i * (PSU.h + PSU.gap), w: PSU.w, h: PSU.h });
