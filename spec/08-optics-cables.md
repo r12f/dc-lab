@@ -121,3 +121,10 @@ AEC/AOC); port settings pinning it switch to that reach + cable. The optic inspe
 
 Property definitions can target `device`, `rack`, `optic` and `cable`. Optic and cable lines in the
 BOM show the values of `showInBom` properties.
+
+**Reach fixes the cable connector** (`connectorForReach`): parallel optics — DR4, PSM4, SR4 (and 2x variants)
+— use **MPO-8/12** (one per leg); 8-lane DR8 / SR8 use MPO-16; duplex optics — DR1, FR4, LR4, ER4, ZR, SFP
+SR/LR/ER — use **LC**. In a breakout profile (and Rack Designer port settings) the chosen module / reach shows
+its cable connector and the Cable list offers only cables with that connector (and the right fiber type).
+In the Optics editor, typing a reach sets the module's fiber connector (2xDR4 -> "2x MPO-12"), and a connector
+that contradicts the reach is flagged. Every shipped optic follows the rule (tested).

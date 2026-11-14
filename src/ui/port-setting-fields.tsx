@@ -3,7 +3,7 @@ import type { PortGroup, PortSetting } from '../domain/device/types';
 import type { ResolvedPort } from '../domain/device/port-settings';
 import { modesOf, speedLabel } from '../domain/device/breakout';
 import { ROLE_TRAITS } from '../domain/device/roles';
-import { compatibleCables, compatibleOptics, directAttachType, isEnginePort, reachOptions } from '../domain/ports/optic-match';
+import { cableConnector, compatibleCables, compatibleOptics, directAttachType, isEnginePort, reachOptions } from '../domain/ports/optic-match';
 import { SelectField } from './fields';
 
 const INHERIT = '__inherit';
@@ -62,7 +62,10 @@ export function PortSettingFields({ lib, group, value, onChange, effective, inhe
           ]}
           onChange={(v) => set({ opticId: unfield(v) })} />
       )}
-      <SelectField label={`Cable${effective?.optic?.fiberConnector || engine ? ` (${engine ? group.formFactor : effective?.optic?.fiberConnector})` : ''}`}
+      {!direct && (
+        <p className="muted">{`Cable connector: ${connectorText(group, effective) ?? '— (pick a reach / module)'}`}</p>
+      )}
+      <SelectField label={`Cable${connectorText(group, effective) ? ` (fits ${connectorText(group, effective)})` : ''}`}
         value={field(value.cableId)}
         options={[
           { value: INHERIT, label: inh(lib.cableMedia.get(inherited?.cableId)?.name) },
@@ -74,6 +77,13 @@ export function PortSettingFields({ lib, group, value, onChange, effective, inhe
       {!engine && !direct && modes(lib, group, mode, effective) && <p className="muted">{modes(lib, group, mode, effective)}</p>}
     </>
   );
+}
+
+/** The port's cable connector(s), fixed by the module (or the reach): "2x MPO-12", "LC", "MPO-16". */
+function connectorText(group: PortGroup, eff?: ResolvedPort): string | undefined {
+  if (isEnginePort(group)) return group.formFactor;
+  if (eff?.optic?.fiberConnector) return eff.optic.fiberConnector;
+  return cableConnector(group, undefined, eff?.reach);
 }
 
 /** External laser source cages (CPO): only a module choice. */

@@ -66,10 +66,24 @@ export function pickOptic(lib: Library, group: PortGroup, mode: string, reach?: 
   return options.find((o) => o.reach === reach);
 }
 
-/** Connector a cable must have on this port: the module's fiber connector, or the port itself. */
-export function cableConnector(group: PortGroup, optic?: OpticDefinition): string | undefined {
+/**
+ * Cable connector a reach class implies (one per module leg): parallel optics (DR4, PSM4, SR4, DR8, SR8 and
+ * their 2x variants) use MPO (MPO-8 / MPO-12 mate; 8-lane = MPO-16); duplex optics (DR1, FR4, LR4, ER4, ZR,
+ * SR/LR/ER of SFP) use LC. Undefined for unknown / direct-attach reaches.
+ */
+export function connectorForReach(reach: string | undefined): string | undefined {
+  if (!reach) return undefined;
+  const base = reach.trim().toUpperCase().replace(/^\d+X\s*/, '').split(/[\s-]/)[0];
+  if (/^(DR|SR|VR)8$/.test(base)) return 'MPO-16';
+  if (/^(DR4|PSM4|SR4|VR4)$/.test(base)) return 'MPO-12';
+  if (/^(DR1?|FR\d*|LR\d*|ER\d*|ZR|SR|LH)$/.test(base)) return 'LC';
+  return undefined;
+}
+
+/** Connector a cable must have on this port: the port itself (CPO/NPO), the module's fiber connector, or the one its reach implies. */
+export function cableConnector(group: PortGroup, optic?: OpticDefinition, reach?: string): string | undefined {
   if (isEnginePort(group)) return group.formFactor;
-  if (!optic) return undefined;
+  if (!optic) return directAttachType(reach) ? undefined : connectorForReach(reach);
   return optic.fiberConnector ? optic.fiberConnector.replace(/^\d+x\s*/i, '') : optic.formFactor;
 }
 
@@ -110,7 +124,7 @@ export function fiberTypeFor(reach: string | undefined): CableMedia['type'] | un
 /** Cables whose connector matches the port/module and whose fiber type matches the reach. */
 export function compatibleCables(lib: Library, group: PortGroup, optic?: OpticDefinition, reach?: string, mode?: string): CableMedia[] {
   if (!optic && directAttachType(reach)) return directAttachCables(lib, group, mode ?? `1x${group.speedGbps}G`, reach);
-  const connector = cableConnector(group, optic);
+  const connector = cableConnector(group, optic, reach);
   const fiber = fiberTypeFor(optic?.reach ?? reach);
   return lib.cableMedia.items().filter((c) =>
     c.type !== 'power' && !isDirectAttach(c.type)

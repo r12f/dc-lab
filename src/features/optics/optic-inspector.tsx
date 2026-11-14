@@ -7,7 +7,28 @@ import { FORM_FACTORS } from '../../domain/ports/form-factors';
 import { NumberField, Section, SelectField, TextField } from '../../ui/fields';
 import { ReadOnlyNotice } from '../../ui/read-only-notice';
 import { ExportJsonButton } from './export-json-button';
-import { directAttachType } from '../../domain/ports/optic-match';
+import { connectorForReach, directAttachType } from '../../domain/ports/optic-match';
+import { connectorsMate } from '../../domain/optics/connectors';
+
+/** Lane multiplier of a reach ("2xDR4" -> "2x "). */
+const legPrefix = (reach: string) => /^(\d+)x/i.exec(reach.trim())?.[1];
+
+/** Typing a reach sets the connector it implies (2xDR4 -> "2x MPO-12", FR4 -> "LC"); unknown reaches keep it. */
+function reachConnector(o: OpticDefinition, reach: string): Partial<OpticDefinition> {
+  if (o.packaging === 'pigtail') return {};
+  const c = connectorForReach(reach);
+  if (!c) return {};
+  const n = legPrefix(reach);
+  return { fiberConnector: n ? `${n}x ${c}` : c };
+}
+
+/** Connector that contradicts the reach (e.g. DR4 on LC). */
+function connectorMismatch(o: OpticDefinition): string | undefined {
+  const want = connectorForReach(o.reach);
+  const have = o.fiberConnector?.replace(/^\d+x\s*/i, '');
+  if (!want || !have || connectorsMate(want, have)) return undefined;
+  return `${o.reach} uses ${want === 'MPO-12' ? 'MPO-8/12' : want}, not ${have}.`;
+}
 
 interface Props {
   optic: OpticDefinition;
@@ -71,12 +92,13 @@ export function OpticInspector({ optic: o, header, readOnly, onChange, onDuplica
             <NumberField label="Speed Gbps" value={o.speedGbps} min={0} onChange={(speedGbps) => set({ speedGbps })} />
           </div>
           <div className="row2">
-            <TextField label="Reach" value={o.reach} onChange={(reach) => set({ reach })} />
+            <TextField label="Reach" value={o.reach} onChange={(reach) => set({ reach, ...reachConnector(o, reach) })} />
             {directAttachType(o.reach) && <p className="error">DAC / AEC / AOC are cables, not optics — create a Cable instead.</p>}
             <NumberField label="Max reach m" value={o.reachM} min={0} onChange={(reachM) => set({ reachM })} />
           </div>
           <TextField label={pigtail ? 'Fiber connector (from pigtail)' : 'Fiber connector'} value={o.fiberConnector}
             disabled={pigtail} onChange={(fiberConnector) => set({ fiberConnector })} />
+          {!pigtail && connectorMismatch(o) && <p className="error">{connectorMismatch(o)}</p>}
         </Section>
         {pigtail && o.pigtail && <PigtailSection p={o.pigtail} onChange={(p) => onChange(withPigtail(o, p))} />}
         <Section title="Power & weight">
