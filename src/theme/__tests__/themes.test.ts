@@ -25,6 +25,12 @@ describe('themes', () => {
       expect(contrastRatio(t.tab.focused.fg, t.tab.focused.bg), `${t.id} tab`).toBeGreaterThanOrEqual(4.5);
     }
   });
+  it('rack frame / optic cage stand out from the canvas and their labels are readable', () => {
+    for (const t of THEMES) {
+      expect(contrastRatio(t.canvas.frame, t.canvas.paper), `${t.id} frame vs paper`).toBeGreaterThanOrEqual(3);
+      expect(contrastRatio(t.canvas.frameText, t.canvas.frame), `${t.id} frame text`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
   it('follows the system scheme when nothing valid is chosen', () => {
     expect(resolveTheme(undefined, 'dark').id).toBe('dark');
     expect(resolveTheme(undefined, 'light').id).toBe('light');

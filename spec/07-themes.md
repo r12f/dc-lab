@@ -27,7 +27,7 @@ Area mapping:
 | `header` | Table header rows (BOM, row metrics) |
 | `surface.selected` | Selected sidebar item, selected table row |
 | `canvas.paper/ink` | Drawing background and text |
-| `canvas.frame/frameText/slot` | Rack rails, unit numbers, empty unit fill |
+| `canvas.frame/frameText/slot` | Rack rails, unit numbers, empty unit fill; also the optic cage block and DC Layout row headers. Dark themes invert Light: Light has a dark frame with light text on white paper, so dark themes use a light frame (the theme's secondary text color) with dark text. Frame vs paper ≥ 3:1, frame text ≥ 4.5:1 (tested). |
 | `canvas.selection` | Selection outlines on every canvas. Always a blue: red/amber/yellow are reserved for warnings, so a selection must never look like an error. |
 | `canvas.onFill` | Text drawn on palette-colored fills (placed devices, assigned racks) |
 | `highlightPalette` | User highlight colors. Not used for device categories: category colors are a fixed calm set (blues, teals, purples, greys) and faceplate borders are neutral grey, because red/amber are reserved for warnings. |

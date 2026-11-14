@@ -37,7 +37,9 @@ export function darkTheme(c: DarkPresetColors): Theme {
     dialog: { border: c.accent, title: c.text, text: c.text, muted: c.muted, selected: { fg: c.text, bg: c.selected } },
     canvas: {
       paper: c.base, ink: c.text, inkMuted: c.textDim, grid: c.separator,
-      frame: c.raised, frameText: c.textDim, slot: c.selected, selection: c.selection,
+      // Inverse of the light theme: Light draws a dark frame with light text on white paper, so dark themes
+      // draw a light frame (the secondary text color) with dark text on the dark paper.
+      frame: c.textDim, frameText: c.base, slot: c.selected, selection: c.selection,
     },
     highlightPalette: c.palette,
   };
