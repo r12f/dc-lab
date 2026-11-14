@@ -1,3 +1,4 @@
+import { formatGbps } from '../../domain/units';
 import type { DeviceDefinition, OpticalEngine, Phase, PortFace, PortGroup, PortRole } from '../../domain/device/types';
 import { FORM_FACTORS, formFactorSpec } from '../../domain/ports/form-factors';
 import { newPortGroup } from '../../domain/device/factory';
@@ -52,7 +53,7 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
   const pluggable = ROLE_TRAITS[group.role].pluggable;
   return (
     <details className="card" open={false}>
-      <summary>{`${group.label} · ${group.count}x ${group.formFactor}${group.opticalEngine ? ` ${group.opticalEngine.toUpperCase()}` : ''}${group.speedGbps ? ` ${group.speedGbps}G` : ''} · ${group.face}`}</summary>
+      <summary>{`${group.label} · ${group.count}x ${group.formFactor}${group.opticalEngine ? ` ${group.opticalEngine.toUpperCase()}` : ''}${group.speedGbps ? ` ${formatGbps(group.speedGbps)}` : ''} · ${group.face}`}</summary>
       <div className="row2">
         <TextField label="Label" value={group.label} onChange={(label) => set({ label })} />
         <SelectField<PortRole> label="Role" value={group.role} options={roleOptions} onChange={(role) => set({ role })} />

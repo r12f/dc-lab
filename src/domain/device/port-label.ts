@@ -1,3 +1,4 @@
+import { formatGbps } from '../units';
 import type { PortGroup } from './types';
 import { speedLabel } from './breakout';
 
@@ -6,6 +7,6 @@ import { speedLabel } from './breakout';
  * "OSFP 800G", "OSFP 2x400G", "RJ45 1G", "LC", "C13".
  */
 export function portLabel(group: PortGroup, mode?: string): string {
-  const speed = mode ? speedLabel(mode) : group.speedGbps > 0 ? `${group.speedGbps}G` : '';
+  const speed = mode ? speedLabel(mode) : group.speedGbps > 0 ? formatGbps(group.speedGbps) : '';
   return speed ? `${group.formFactor} ${speed}` : group.formFactor;
 }

@@ -1,3 +1,4 @@
+import { formatGbps } from '../../domain/units';
 import { genderedConnector, MODULE_FACE_GENDER } from '../../domain/optics/connectors';
 import type { Ref } from 'react';
 import type { OpticDefinition } from '../../domain/optics/types';
@@ -39,7 +40,7 @@ export function OpticDrawing({ ref, optic: o }: Props) {
       {/* Host edge connector */}
       <rect x={20} y={cy - 22} width={22} height={44} fill={paint.frame} />
       <rect x={40} y={bodyY} width={BODY_W} height={BODY_H} rx={8} fill={paint.slot} stroke={paint.ink} strokeWidth={1.5} />
-      <text x={40 + BODY_W / 2} y={cy - 12} fontSize={22} fontWeight={700} textAnchor="middle" fill={paint.ink}>{`${o.formFactor} ${o.speedGbps ? `${o.speedGbps}G` : ''}`}</text>
+      <text x={40 + BODY_W / 2} y={cy - 12} fontSize={22} fontWeight={700} textAnchor="middle" fill={paint.ink}>{`${o.formFactor} ${o.speedGbps ? formatGbps(o.speedGbps) : ''}`}</text>
       <text x={40 + BODY_W / 2} y={cy + 18} fontSize={18} textAnchor="middle" fill={paint.ink}>{o.reach}</text>
       {legs === 0 ? (
         <>

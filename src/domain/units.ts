@@ -27,3 +27,8 @@ export function formatPower(w: number): string {
 export function formatWeight(kg: number): string {
   return `${kg.toFixed(1)} kg`;
 }
+
+/** Speed for display: "800G", "1.6T", "3.2T" (Tbps from 1000G up). */
+export function formatGbps(gbps: number): string {
+  return gbps >= 1000 ? `${Math.round(gbps / 100) / 10}T` : `${gbps}G`;
+}

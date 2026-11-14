@@ -1,3 +1,4 @@
+import { formatGbps } from '../../../domain/units';
 import type { PortGroup } from '../../../domain/device/types';
 
 /**
@@ -6,7 +7,7 @@ import type { PortGroup } from '../../../domain/device/types';
  */
 export function groupTitle(g: PortGroup): string {
   const name = g.label && g.label !== g.formFactor ? `${g.label} ${g.formFactor}` : g.formFactor;
-  const speed = g.speedGbps > 0 ? ` ${g.speedGbps}G` : '';
+  const speed = g.speedGbps > 0 ? ` ${formatGbps(g.speedGbps)}` : '';
   const engine = g.opticalEngine ? ` ${g.opticalEngine.toUpperCase()}` : '';
   const count = g.count > 1 ? ` ×${g.count}` : '';
   return `${name}${speed}${engine}${count}`;

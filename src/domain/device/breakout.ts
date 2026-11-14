@@ -1,3 +1,4 @@
+import { formatGbps } from '../units';
 import type { BreakoutProfile, DeviceDefinition, PortGroup } from './types';
 import { findGroup, parsePortRef } from './ports';
 import { acceptedModules, formFactorSpec } from '../ports/form-factors';
@@ -23,7 +24,7 @@ export function formatMode(mode: BreakoutMode): string {
 export function speedLabel(mode: string): string {
   const m = parseMode(mode);
   if (!m || m.speedGbps === 0) return '';
-  return m.fanout === 1 ? `${m.speedGbps}G` : `${m.fanout}x${m.speedGbps}G`;
+  return m.fanout === 1 ? formatGbps(m.speedGbps) : `${m.fanout}x${formatGbps(m.speedGbps)}`;
 }
 
 export function nativeMode(group: PortGroup): string {

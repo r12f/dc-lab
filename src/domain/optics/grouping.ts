@@ -1,3 +1,4 @@
+import { formatGbps } from '../units';
 import type { OpticDefinition } from './types';
 
 /**
@@ -37,7 +38,7 @@ export function reachOrder(reach: string): number {
 /** Sidebar folder + order for an optic: family, then speed (high to low), items by reach (short to long). */
 export function opticTreePlacement(o: OpticDefinition) {
   const family = opticFamily(o.formFactor);
-  const speed = o.speedGbps > 0 ? `${o.speedGbps}G` : 'Other';
+  const speed = o.speedGbps > 0 ? formatGbps(o.speedGbps) : 'Other';
   return {
     path: ['Optics', family, speed],
     pathOrder: [0, familyOrder(family), -o.speedGbps],

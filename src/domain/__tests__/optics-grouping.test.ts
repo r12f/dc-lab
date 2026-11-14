@@ -1,3 +1,4 @@
+import { formatGbps } from '../units';
 import { describe, expect, it } from 'vitest';
 import { opticFamily, reachOrder } from '../optics/grouping';
 import { Library } from '../library/library';
@@ -30,5 +31,21 @@ describe('optic grouping', () => {
       expect(reaches.some((r) => /SR/.test(r)), speed.label).toBe(true);
       expect(reaches.some((r) => /LR/.test(r)), speed.label).toBe(true);
     }
+  });
+});
+
+describe('1.6T optics', () => {
+  it('speed labels switch to T from 1000G', () => {
+    expect(formatGbps(800)).toBe('800G');
+    expect(formatGbps(1600)).toBe('1.6T');
+    expect(formatGbps(3200)).toBe('3.2T');
+  });
+  it('OSFP has a 1.6T folder first, with SR..ZR reaches', () => {
+    const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
+    const tree = buildTree(lib.optics.items().map((o) => ({ id: o.id, name: o.name, ...opticTreePlacement(o) })));
+    const osfp = tree.folders[0].folders[0];
+    expect(osfp.folders.map((f) => f.label)).toEqual(['1.6T', '800G', '400G']);
+    const reaches = osfp.folders[0].items.map((i) => lib.optics.get(i.id)!.reach);
+    for (const r of [/SR/, /DR/, /FR/, /LR/, /ZR/]) expect(reaches.some((x) => r.test(x)), String(r)).toBe(true);
   });
 });
