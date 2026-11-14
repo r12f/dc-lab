@@ -30,7 +30,7 @@
       "speedGbps": 800,
       "lanes": 8,
       "face": "front",
-      "rows": 2,
+      "rows": 4,
       "breakoutModes": [
         "2x400G",
         "4x200G",
