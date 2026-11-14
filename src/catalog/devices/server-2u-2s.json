@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/device@1",
   "id": "server-2u-2s",
-  "name": "2U 2-Socket Server",
+  "name": "2U Server",
   "category": "server",
   "height": {
     "units": 2,
@@ -42,13 +42,32 @@
       "face": "front",
       "rows": 1,
       "breakoutModes": []
+    },
+    {
+      "id": "qsfp28",
+      "label": "DATA",
+      "role": "data",
+      "formFactor": "QSFP28",
+      "count": 1,
+      "speedGbps": 100,
+      "lanes": 4,
+      "face": "rear",
+      "rows": 1,
+      "breakoutModes": [
+        "4x25G",
+        "2x50G"
+      ]
     }
   ],
   "breakoutProfiles": [
     {
       "id": "default",
-      "name": "Default",
-      "groupDefaults": {},
+      "name": "Default (native speed, DR)",
+      "groupDefaults": {
+        "qsfp28": {
+          "reach": "DR4"
+        }
+      },
       "overrides": {}
     }
   ],
