@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/device@1",
   "id": "switch-28x400g-qsfpdd-smart",
-  "name": "28x400G QSFP-DD Smart Switch (DPU)",
+  "name": "28x400G QSFP-DD Smart Switch (4xDPU)",
   "category": "switch",
   "height": {
     "units": 2,
