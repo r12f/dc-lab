@@ -1,12 +1,12 @@
 {
   "id": "cdu-rack-sidecar",
-  "name": "CDU Sidecar Rack (in-row)",
+  "name": "CDU Sidecar Rack 48RU (in-row)",
   "kind": "cdu",
-  "units": 40,
+  "units": 48,
   "unitSystem": "RU",
   "widthMm": 600,
   "depthMm": 1200,
-  "heightMm": 2000,
+  "heightMm": 2260,
   "footprintTiles": {
     "wide": 1,
     "deep": 2

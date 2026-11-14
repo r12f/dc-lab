@@ -4,7 +4,7 @@
   "name": "In-Row Liquid-to-Air CDU Sidecar 110kW",
   "category": "cdu",
   "height": {
-    "units": 40,
+    "units": 48,
     "system": "RU"
   },
   "depthMm": 1200,
@@ -15,7 +15,7 @@
   },
   "ports": [],
   "breakoutProfiles": [],
-  "notes": "Full-height in-row sidecar: fills a CDU rack (40U). Cooling 110 kW; pump power, weight TBD.",
+  "notes": "Full-height in-row sidecar: fills a 48RU CDU rack. Cooling 110 kW; pump power, weight TBD.",
   "cooling": {
     "capacityKw": 110,
     "pumpW": 0

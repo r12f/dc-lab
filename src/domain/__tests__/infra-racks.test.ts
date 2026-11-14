@@ -39,7 +39,8 @@ describe('power / CDU racks', () => {
     expect(p.warnings).toEqual([]);
     const c = computeRackMetrics(lib, cdu);
     expect(c.coolingCapacityKw).toBe(110);
-    expect(c.usedUnits).toBe(40);
+    expect(c.usedUnits).toBe(48);
+    expect(c.totalUnits).toBe(48);
     expect(c.warnings).toEqual([]);
   });
   it('a sidecar serves the adjacent IT racks on both sides, up to a gap or another sidecar of its kind', () => {
