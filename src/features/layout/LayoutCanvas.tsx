@@ -5,6 +5,7 @@ import type { DesignLookup } from '../../domain/layout/tiles';
 import type { LayoutSelection } from './selection';
 import { RowDrawing } from './RowDrawing';
 import { AreaDrawing } from './AreaDrawing';
+import { paint } from '../../theme/paint';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -15,6 +16,9 @@ interface Props {
   onSelect(sel: LayoutSelection | undefined): void;
 }
 
+/** Aisle colors are semantic (cold = blue, hot = red) and stay fixed across themes. */
+const AISLE = { cold: '#3B82F6', hot: '#EF4444' };
+
 /** Room plan drawn in millimetres (1 SVG unit = 1 mm). */
 export function LayoutCanvas({ ref, lib, designs, layout, selection, onSelect }: Props) {
   const { widthMm, depthMm } = layout.room;
@@ -23,16 +27,16 @@ export function LayoutCanvas({ ref, lib, designs, layout, selection, onSelect }:
   return (
     <svg ref={ref} viewBox={`${-pad} ${-pad} ${widthMm + pad * 2} ${depthMm + pad * 2}`}
       width={(widthMm + pad * 2) * pxPerMm} className="drawing">
-      <rect x={-pad} y={-pad} width={widthMm + pad * 2} height={depthMm + pad * 2} fill="#fff" onClick={() => onSelect(undefined)} />
-      <text x={0} y={-200} fontSize={260} fontWeight={700} fill="#0f172a">{layout.name}</text>
-      <rect x={0} y={0} width={widthMm} height={depthMm} fill="#f8fafc" stroke="#0f172a" strokeWidth={40}
+      <rect x={-pad} y={-pad} width={widthMm + pad * 2} height={depthMm + pad * 2} fill={paint.paper} onClick={() => onSelect(undefined)} />
+      <text x={0} y={-200} fontSize={260} fontWeight={700} fill={paint.ink}>{layout.name}</text>
+      <rect x={0} y={0} width={widthMm} height={depthMm} fill={paint.slot} stroke={paint.ink} strokeWidth={40}
         onClick={() => onSelect(undefined)} />
       {layout.aisles.map((a) => (
-        <AreaDrawing key={a.id} rect={a} fill={a.kind === 'cold' ? '#bfdbfe' : '#fecaca'} label={`${a.kind} aisle`}
+        <AreaDrawing key={a.id} rect={a} fill={a.kind === 'cold' ? AISLE.cold : AISLE.hot} label={`${a.kind} aisle`}
           selected={selection?.kind === 'aisle' && selection.id === a.id} onClick={() => onSelect({ kind: 'aisle', id: a.id })} />
       ))}
       {layout.trays.map((t) => (
-        <AreaDrawing key={t.id} rect={t} fill={t.kind === 'data' ? '#fde68a' : '#d4d4d8'} label={`${t.kind} tray`} dashed
+        <AreaDrawing key={t.id} rect={t} fill={t.kind === 'data' ? paint.warn : paint.inkMuted} label={`${t.kind} tray`} dashed
           selected={selection?.kind === 'tray' && selection.id === t.id} onClick={() => onSelect({ kind: 'tray', id: t.id })} />
       ))}
       {layout.rows.map((r) => (

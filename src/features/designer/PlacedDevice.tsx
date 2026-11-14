@@ -2,9 +2,9 @@ import type { PointerEvent } from 'react';
 import type { DeviceDefinition } from '../../domain/device/types';
 import type { Placement } from '../../domain/design/types';
 import type { RackTemplate } from '../../domain/rack/types';
-import { traitsOf } from '../../domain/device/categories';
 import { unitsIn } from '../../domain/units';
 import { bodyX, sideSlotRect, unitTopY, type RackGeometry } from '../../drawing/rackGeometry';
+import { categoryPaint, paint } from '../../theme/paint';
 
 interface Props {
   placement: Placement;
@@ -28,7 +28,7 @@ export function placementRect(p: Placement, device: DeviceDefinition, rack: Rack
 /** A device instance drawn in the elevation. */
 export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dragging, onPointerDown }: Props) {
   const r = placementRect(placement, device, rack, geo);
-  const color = traitsOf(device.category).color;
+  const color = categoryPaint(device.category);
   const vertical = placement.mount.kind === 'side';
   const cx = r.x + r.w / 2;
   const cy = r.y + r.h / 2;
@@ -37,9 +37,9 @@ export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dr
       <title>{`${placement.label} — ${device.name}`}</title>
       <rect x={r.x + 1} y={r.y + 1} width={r.w - 2} height={r.h - 2} rx={2}
         fill={color} fillOpacity={ghost ? 0.25 : 0.9}
-        stroke={selected ? '#facc15' : '#0f172a'} strokeWidth={selected ? 3 : 1}
+        stroke={selected ? paint.selection : paint.ink} strokeWidth={selected ? 3 : 1}
         strokeDasharray={ghost ? '4 2' : undefined} />
-      <text x={cx} y={cy + 4} fontSize={vertical ? 9 : 10} textAnchor="middle" fill={ghost ? '#0f172a' : '#fff'}
+      <text x={cx} y={cy + 4} fontSize={vertical ? 9 : 10} textAnchor="middle" fill={ghost ? paint.ink : paint.paper}
         fontWeight={600} transform={vertical ? `rotate(-90 ${cx} ${cy})` : undefined} pointerEvents="none">
         {vertical ? placement.label : `${placement.label} · ${device.name}`}
       </text>

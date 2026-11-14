@@ -4,6 +4,7 @@ import { traitsOf } from '../../../domain/device/categories';
 import { formatHeight, formatPower } from '../../../domain/units';
 import { drawingStrategyFor } from './drawingStrategy';
 import type { DrawingContext } from './types';
+import { paint } from '../../../theme/paint';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -24,11 +25,11 @@ export function DeviceDrawing({ ref, device, ctx, compact }: Props) {
   const psu = device.psus ? ` · ${device.psus.count}x PSU ${device.psus.inlet}` : '';
   return (
     <svg ref={ref} viewBox={`-10 -10 ${width} ${height}`} width={width} className="drawing">
-      <rect x={-10} y={-10} width={width} height={height} fill="#fff" />
+      <rect x={-10} y={-10} width={width} height={height} fill={paint.paper} />
       {!compact && (
         <>
-          <text x={0} y={8} fontSize={15} fontWeight={700} fill="#0f172a">{device.name}</text>
-          <text x={0} y={25} fontSize={10} fill="#475569">
+          <text x={0} y={8} fontSize={15} fontWeight={700} fill={paint.ink}>{device.name}</text>
+          <text x={0} y={25} fontSize={10} fill={paint.inkMuted}>
             {`${device.vendor} ${device.model} · ${traitsOf(device.category).label} · ${formatHeight(device.height)} · ` +
               `${formatPower(device.power.typicalW)} typ / ${formatPower(device.power.maxW)} max · ${device.weightKg} kg${psu}`}
           </text>

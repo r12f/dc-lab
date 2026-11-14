@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Library } from '../../domain/library/Library';
-import { traitsOf } from '../../domain/device/categories';
 import { formatHeight } from '../../domain/units';
+import { categoryPaint } from '../../theme/paint';
 
 export const DEVICE_DRAG_TYPE = 'application/x-dclab-device';
 
@@ -23,7 +23,7 @@ export function DevicePalette({ lib, onAdd }: { lib: Library; onAdd(deviceId: st
             onDoubleClick={() => onAdd(d.id)}
             title="Drag onto the rack, or double-click to add"
           >
-            <span className="swatch" style={{ background: traitsOf(d.category).color }} />
+            <span className="swatch" style={{ background: categoryPaint(d.category) }} />
             <span className="sidebar-item-name">{d.name}</span>
             <span className="badge">{formatHeight(d.height)}</span>
           </div>

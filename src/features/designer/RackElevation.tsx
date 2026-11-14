@@ -11,6 +11,7 @@ import { toSvgPoint } from '../../io/svgPoint';
 import { DEVICE_DRAG_TYPE } from './DevicePalette';
 import { PlacedDevice, placementRect } from './PlacedDevice';
 import { mountAt } from './mountAt';
+import { paint } from '../../theme/paint';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -108,7 +109,7 @@ export function RackElevation({ ref, lib, design, face, selectedId, onSelect, on
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >
-      <rect x={-10} y={-10} width={geo.width + 20} height={geo.height + 20} fill="#fff" onPointerDown={() => onSelect(undefined)} />
+      <rect x={-10} y={-10} width={geo.width + 20} height={geo.height + 20} fill={paint.paper} onPointerDown={() => onSelect(undefined)} />
       <RackFrame
         rack={rack}
         geo={geo}
@@ -126,7 +127,7 @@ export function RackElevation({ ref, lib, design, face, selectedId, onSelect, on
         })}
         {preview?.kind === 'rack' && (
           <rect data-export="skip" x={geo.originX + geo.railW} y={unitTopY(geo, rack, preview.position)}
-            width={geo.bodyW} height={geo.unitPx} fill="none" stroke="#facc15" strokeWidth={2} pointerEvents="none" />
+            width={geo.bodyW} height={geo.unitPx} fill="none" stroke={paint.selection} strokeWidth={2} pointerEvents="none" />
         )}
       </RackFrame>
     </svg>

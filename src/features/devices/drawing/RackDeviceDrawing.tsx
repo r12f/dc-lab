@@ -1,9 +1,9 @@
 import type { DeviceDefinition } from '../../../domain/device/types';
-import { traitsOf } from '../../../domain/device/categories';
 import { layoutFace, type FaceLayout } from './faceplateLayout';
 import { PortGlyph } from './PortGlyph';
 import { PsuGlyph } from './PsuGlyph';
 import type { DrawingContext } from './types';
+import { categoryPaint, paint } from '../../../theme/paint';
 
 export interface DrawingSize {
   width: number;
@@ -11,10 +11,10 @@ export interface DrawingSize {
 }
 
 function Face({ device, layout, ctx, y }: { device: DeviceDefinition; layout: FaceLayout; ctx: DrawingContext; y: number }) {
-  const color = traitsOf(device.category).color;
+  const color = categoryPaint(device.category);
   return (
     <g transform={`translate(0 ${y})`}>
-      <text x={0} y={-5} fontSize={11} fill="#334155" fontWeight={600}>{layout.face.toUpperCase()}</text>
+      <text x={0} y={-5} fontSize={11} fill={paint.inkMuted} fontWeight={600}>{layout.face.toUpperCase()}</text>
       <rect width={layout.width} height={layout.height} rx={4} fill="#1e293b" stroke={color} strokeWidth={2} />
       {layout.labels.map((l) => (
         <text key={l.group.id} x={l.x} y={l.y} fontSize={8} fill="#cbd5e1">{`${l.group.label} (${l.group.count})`}</text>

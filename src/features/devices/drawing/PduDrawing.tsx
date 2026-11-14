@@ -5,6 +5,7 @@ import { PortGlyph } from './PortGlyph';
 import { PHASE_COLORS } from './portStyle';
 import type { DrawingContext } from './types';
 import type { DrawingSize } from './RackDeviceDrawing';
+import { paint } from '../../../theme/paint';
 
 export function pduSize(device: DeviceDefinition): DrawingSize {
   const l = layoutPdu(device);
@@ -37,14 +38,14 @@ export function PduDrawing({ device, ctx }: { device: DeviceDefinition; ctx: Dra
             <text x={l.width - 10} y={b.y + 12} fontSize={7} textAnchor="end" fill="#fcd34d">
               {`${g?.phase ?? ''} ${g?.breakerA ? `${g.breakerA}A` : ''}`}
             </text>
-            <text x={l.width + 10} y={b.y + b.h / 2 + 3} fontSize={9} fill="#334155">
+            <text x={l.width + 10} y={b.y + b.h / 2 + 3} fontSize={9} fill={paint.inkMuted}>
               {`Bank ${b.bank}: ${count} outlets · ${g?.phase ?? '?'}${g?.breakerA ? ` · ${g.breakerA}A breaker` : ''}`}
             </text>
           </g>
         );
       })}
       {l.ports.map((p) => <PortGlyph key={p.ref} box={p} ctx={ctx} />)}
-      <text x={l.width + 10} y={14} fontSize={9} fill="#334155">{`Capacity ${formatPower(device.power.capacityW ?? 0)}`}</text>
+      <text x={l.width + 10} y={14} fontSize={9} fill={paint.inkMuted}>{`Capacity ${formatPower(device.power.capacityW ?? 0)}`}</text>
     </g>
   );
 }

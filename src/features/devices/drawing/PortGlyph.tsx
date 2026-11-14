@@ -2,6 +2,7 @@ import type { PortBox } from './faceplateLayout';
 import type { DrawingContext } from './types';
 import { idColor, modeColor, ROLE_COLORS, shortMode } from './portStyle';
 import { ROLE_TRAITS } from '../../../domain/device/roles';
+import { paint } from '../../../theme/paint';
 
 /**
  * One port cage. Data/service ports show index + breakout; a top strip marks the optic and a
@@ -25,7 +26,7 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
     <g style={{ cursor: 'pointer' }} onClick={(e) => ctx.onPortClick?.(box.ref, e.ctrlKey || e.metaKey || e.shiftKey)}>
       <title>{tip}</title>
       <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={2} fill={fill}
-        stroke={sel ? '#facc15' : '#0f172a'} strokeWidth={sel ? 2.5 : 1} />
+        stroke={sel ? paint.selection : '#0f172a'} strokeWidth={sel ? 2.5 : 1} />
       {optic && <rect x={box.x + 2} y={box.y + 2} width={box.w - 4} height={3} fill={idColor(optic.id)} pointerEvents="none" />}
       {cable && <rect x={box.x + 2} y={box.y + box.h - 5} width={box.w - 4} height={3} fill={cable.color} pointerEvents="none" />}
       {pluggable ? (

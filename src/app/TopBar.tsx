@@ -1,6 +1,7 @@
 import { useAppStore } from '../state/store';
 import { MODULES } from './modules';
 import { ProjectMenu } from './ProjectMenu';
+import { ThemePicker } from './ThemePicker';
 
 export function TopBar() {
   const tab = useAppStore((s) => s.tab);
@@ -17,6 +18,7 @@ export function TopBar() {
       </nav>
       <div className="spacer" />
       <ProjectMenu />
+      <ThemePicker />
     </header>
   );
 }
