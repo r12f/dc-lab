@@ -13,6 +13,7 @@ export type DeviceCategory =
   | 'storage'
   | 'tester'
   | 'console-server'
+  | 'cdu'
   | 'other'
   | 'blanking-panel'
   | 'stiffener'

@@ -26,4 +26,8 @@ describe('device catalog', () => {
     expect(dev('console-server-48')?.category).toBe('console-server');
     expect(dev('power-shelf-controller-3u')).toBeUndefined();
   });
+  it('CDUs have their own category: in-rack 7kW and an in-row sidecar that fills a rack', () => {
+    expect(SHIPPED_CATALOG.devices.filter((d) => d.category === 'cdu').map((d) => d.id).sort()).toEqual(['cdu-in-rack-7kw', 'cdu-in-row-sidecar-110kw']);
+    expect(dev('cdu-in-row-sidecar-110kw')!.height).toEqual({ units: 40, system: 'RU' });
+  });
 });

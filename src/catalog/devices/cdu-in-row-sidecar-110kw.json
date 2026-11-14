@@ -1,0 +1,19 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "cdu-in-row-sidecar-110kw",
+  "name": "In-Row Liquid-to-Air CDU Sidecar 110kW",
+  "category": "cdu",
+  "height": {
+    "units": 40,
+    "system": "RU"
+  },
+  "depthMm": 1200,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [],
+  "breakoutProfiles": [],
+  "notes": "Occupies a whole rack position (40U). Weight and power TBD."
+}
