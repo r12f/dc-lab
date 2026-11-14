@@ -38,7 +38,7 @@ export function ConnectorBoxes({ box, conns, color }: Props) {
         const f = label.font;
         return (
           <g key={i}>
-            <rect x={x} y={y} width={w} height={h} rx={2} fill={fill} stroke="#f8fafc" strokeWidth={0.8} />
+            <rect x={x} y={y} width={w} height={h} rx={2} fill={fill} stroke="#334155" strokeWidth={0.8} />
             {label.text && <text x={x + w / 2} y={y + h / 2 + f * 0.36} fontSize={f} textAnchor="middle" fill={ink} fontWeight={600}>{label.text}</text>}
           </g>
         );

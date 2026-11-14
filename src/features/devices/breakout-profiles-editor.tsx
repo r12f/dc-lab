@@ -100,9 +100,9 @@ export function BreakoutProfilesEditor({ lib, device, readOnly, onChange, profil
       )}
       <div className="chips">
         {['1x', '2x', '4x', '8x'].map((f) => (
-          <span key={f} className="chip" style={{ background: modeColor(`${f}100G`), color: '#fff' }}>{f}</span>
+          <span key={f} className="chip" style={{ background: modeColor(`${f}100G`), color: '#0f172a' }}>{f}</span>
         ))}
-        <span className="chip">top bar = optic · bottom bar = cable</span>
+        <span className="chip">top bar = optic · bottom boxes = cable connectors</span>
       </div>
     </Section>
   );

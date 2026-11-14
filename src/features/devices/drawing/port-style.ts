@@ -1,21 +1,22 @@
 import type { PortRole, Phase } from '../../../domain/device/types';
 import { parseMode } from '../../../domain/device/breakout';
 
-const FANOUT_COLORS: Record<number, string> = { 1: '#475569', 2: '#2563eb', 4: '#16a34a', 8: '#d97706' };
+/** Light tints so port text (dark) stays readable; the hue only hints the fan-out. */
+const FANOUT_COLORS: Record<number, string> = { 1: '#e2e8f0', 2: '#dbeafe', 4: '#dcfce7', 8: '#fef3c7' };
 
 /** Fill for a data port, keyed by breakout fan-out. */
 export function modeColor(mode: string): string {
   const m = parseMode(mode);
-  return (m && FANOUT_COLORS[m.fanout]) ?? '#9333ea';
+  return (m && FANOUT_COLORS[m.fanout]) ?? '#f3e8ff';
 }
 
 export const ROLE_COLORS: Record<PortRole, string> = {
-  data: '#475569',
-  service: '#0891b2',
-  mgmt: '#65a30d',
-  console: '#a16207',
-  laser: '#be123c',
-  outlet: '#1f2937',
+  data: '#e2e8f0',
+  service: '#cffafe',
+  mgmt: '#ecfccb',
+  console: '#fef3c7',
+  laser: '#ffe4e6',
+  outlet: '#e5e7eb',
 };
 
 export const PHASE_COLORS: Record<Phase, string> = {

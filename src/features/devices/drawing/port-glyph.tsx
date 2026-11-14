@@ -53,14 +53,14 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
       {conns && <ConnectorBoxes box={box} conns={conns} color={cable?.color} />}
       {pluggable ? (
         <>
-          {t(19, 12, '#fff', String(box.index), true)}
-          {t(31, fitFont(iface, box.w, 10), '#f1f5f9', iface, true)}
-          {r?.reach && t(42, 9, '#fde68a', r.reach)}
+          {t(19, 12, '#0f172a', String(box.index), true)}
+          {t(31, fitFont(iface, box.w, 10), '#1e293b', iface, true)}
+          {r?.reach && t(42, 9, '#92400e', r.reach)}
         </>
       ) : (
         <>
-          {t(box.h / 2 - 2, 10, '#fff', box.group.count > 1 ? String(box.index) : box.group.label, true)}
-          {t(box.h / 2 + 10, fitFont(iface, box.w, 9), '#e2e8f0', iface)}
+          {t(box.h / 2 - 2, 10, '#0f172a', box.group.count > 1 ? String(box.index) : box.group.label, true)}
+          {t(box.h / 2 + 10, fitFont(iface, box.w, 9), '#334155', iface)}
         </>
       )}
     </g>
