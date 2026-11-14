@@ -72,7 +72,11 @@ function moveDirectOptics(p: Json): Json {
 /** Renamed reach classes: 100G single-lane DR is "DR1" (LC); 2 km 2xDR4 is "2xDR4+". (PSM4 and DR4 are one type.) */
 const REACH_RENAMES: Record<string, string> = { DR: 'DR1', '2xDR4-2': '2xDR4+' };
 /** Merged optics: old id -> the one that replaced it (800G OSFP 2xDR4 2 km = 2xDR4+). */
-const RENAMED_OPTICS: Record<string, string> = { 'osfp-800g-2xdr4-2km': 'osfp-800g-2xdr4' };
+const RENAMED_OPTICS: Record<string, string> = {
+  'osfp-800g-2xdr4-2km': 'osfp-800g-2xdr4',
+  // 800G 2xDR4 pigtail removed: settings pinned to it use the plain 2xDR4+ module.
+  'osfp-800g-2xdr4-pigtail': 'osfp-800g-2xdr4', 'osfp-800g-2xdr4-pigtail-ihs': 'osfp-800g-2xdr4-ihs',
+};
 
 function toSetting(v: unknown): unknown {
   const s = migrateDacSetting((typeof v === 'string' ? { mode: v } : v) as Json) as Json;
