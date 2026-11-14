@@ -10,7 +10,9 @@ A single JSON file (`*.dclab.json`):
   "name": "My project",
   "devices": [], "racks": [], "optics": [], "cableMedia": [],
   "rackDesigns": [], "layouts": [],
-  "hiddenBuiltins": []
+  "hiddenBuiltins": [],
+  "propertyDefs": [],
+  "builtinProperties": {}
 }
 ```
 
@@ -26,6 +28,26 @@ A single JSON file (`*.dclab.json`):
 - The working project is also autosaved to `localStorage`.
 
 `hiddenBuiltins` lists built-in item ids deleted in this project; they are excluded from every list.
+
+## Custom properties
+
+`propertyDefs[]` defines project-wide custom properties. A definition applies to every device and/or
+every rack template as soon as it exists:
+
+| Field | Meaning |
+|---|---|
+| `id`, `name` | Identity and display name, e.g. `"Lead time"` |
+| `appliesTo` | `["device"]`, `["rack"]` or both |
+| `type` | `text`, `number`, `boolean`, `select` |
+| `options` | Choices for `select` |
+| `unit` | Optional unit suffix for `number`, e.g. `"weeks"` |
+| `defaultValue` | Value used when an item has none |
+| `showInBom` | When true, the property is a BOM column (rack and DC BOM, CSV export) |
+
+Values live on the item: `device.properties[propertyId]` / `rack.properties[propertyId]`. Built-in items
+are read-only, so their values are stored in the project under `builtinProperties[itemId]` and merged in
+when the item is resolved. Values of a deleted definition are ignored. Exported device/rack JSON
+includes its values.
 
 ## Built-in catalog
 

@@ -6,7 +6,8 @@ Single-device definitions. One device = one JSON file (`schema: "dc-lab/device@1
 
 | Field | Meaning |
 |---|---|
-| `id`, `name`, `vendor`, `model` | Identity. `id` is unique across built-in + project. |
+| `id`, `name`, `vendor`, `model` | Identity. `id` is unique across built-in + project. `model` is shown as **Model / Vendor PN**. |
+| `properties` | Values of project-wide custom properties (see [05-project-file.md](05-project-file.md#custom-properties)) |
 | `category` | `switch`, `server`, `pdu`, `patch-panel`, `ocs`, `power-shelf`, `storage`, `other` |
 | `height` | `{ units, system: "RU" \| "OU" }`; `0` units = zero-U (vertical PDU, side-pod device) |
 | `depthMm`, `weightKg` | Physical metrics |
@@ -127,6 +128,6 @@ Drawing strategy is selected by device shape:
 - Delete works for project devices and built-in devices. Deleting a built-in hides it in this project
   (`hiddenBuiltins`); "Show hidden built-ins" restores them.
 - Canvas: click a port to select it, Ctrl/Shift-click to add to the selection.
-- Inspector: general fields, PSU / PDU input, port group editor (role, bank, phase), breakout profile
+- Inspector: general fields, custom properties (editable on built-ins too; manage definitions inline), PSU / PDU input, port group editor (role, bank, phase), breakout profile
   editor (group default and selected-ports setting: mode, optic, cable).
 - Export SVG of the drawing; export device JSON.

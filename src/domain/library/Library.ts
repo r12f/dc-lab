@@ -2,6 +2,7 @@ import type { CatalogItem, ItemSource, Sourced } from '../catalogItem';
 import type { DeviceDefinition } from '../device/types';
 import type { RackTemplate } from '../rack/types';
 import type { CableMedia, OpticDefinition } from '../optics/types';
+import type { HasProperties, PropertyValue } from '../properties/types';
 
 /** One collection of a kind: built-in items shadowed by project items with the same id. */
 export class ItemCollection<T extends CatalogItem> {
@@ -47,10 +48,18 @@ export class Library {
   readonly optics: ItemCollection<OpticDefinition>;
   readonly cableMedia: ItemCollection<CableMedia>;
 
-  constructor(builtin: CatalogSet, project: CatalogSet, hiddenBuiltins: readonly string[] = []) {
+  constructor(
+    builtin: CatalogSet,
+    project: CatalogSet,
+    hiddenBuiltins: readonly string[] = [],
+    builtinProperties: Readonly<Record<string, Record<string, PropertyValue>>> = {},
+  ) {
     const hidden = new Set(hiddenBuiltins);
-    this.devices = new ItemCollection(builtin.devices, project.devices, hidden);
-    this.racks = new ItemCollection(builtin.racks, project.racks, hidden);
+    /** Built-in items with the project's custom property values merged in. */
+    const withProps = <T extends HasProperties & CatalogItem>(items: readonly T[]): T[] =>
+      items.map((i) => (builtinProperties[i.id] ? { ...i, properties: { ...i.properties, ...builtinProperties[i.id] } } : i));
+    this.devices = new ItemCollection(withProps(builtin.devices), project.devices, hidden);
+    this.racks = new ItemCollection(withProps(builtin.racks), project.racks, hidden);
     this.optics = new ItemCollection(builtin.optics, project.optics, hidden);
     this.cableMedia = new ItemCollection(builtin.cableMedia, project.cableMedia, hidden);
   }

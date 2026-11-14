@@ -19,7 +19,7 @@ export function DeviceGeneralForm({ device: d, onChange }: Props) {
       <TextField label="Name" value={d.name} onChange={(name) => set({ name })} />
       <div className="row2">
         <TextField label="Vendor" value={d.vendor} onChange={(vendor) => set({ vendor })} />
-        <TextField label="Model" value={d.model} onChange={(model) => set({ model })} />
+        <TextField label="Model / Vendor PN" value={d.model} onChange={(model) => set({ model })} />
       </div>
       <SelectField<DeviceCategory> label="Category" value={d.category} options={categoryOptions}
         onChange={(category) => set({ category })} />

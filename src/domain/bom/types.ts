@@ -11,6 +11,8 @@ export interface BomLine {
   /** Cable length in metres (cables only). */
   lengthM?: number;
   notes: string[];
+  /** Custom property values (by property id) of the device or rack this line is for. */
+  properties?: Record<string, string | number | boolean>;
 }
 
 export function lineTotalW(line: BomLine): number {

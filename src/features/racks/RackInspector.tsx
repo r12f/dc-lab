@@ -6,6 +6,7 @@ import { ReadOnlyNotice } from '../../ui/ReadOnlyNotice';
 import { Button } from '../../ui/Button';
 import { downloadText } from '../../io/download';
 import { SideElementsEditor } from './SideElementsEditor';
+import { CustomPropertiesSection } from '../properties/CustomPropertiesSection';
 import { defaultSideElements } from '../../domain/rack/sideElements';
 
 interface Props {
@@ -66,6 +67,7 @@ export function RackInspector({ rack: r, readOnly, onChange, onDuplicate, select
         </Section>
         <SideElementsEditor rack={r} onChange={onChange} selectedId={selectedElementId} onSelect={onSelectElement} />
       </fieldset>
+      <CustomPropertiesSection target="rack" item={r} builtin={readOnly} onChange={(properties) => onChange({ ...r, properties })} />
       <Button onClick={() => downloadText(`${r.id}.json`, JSON.stringify({ schema: 'dc-lab/rack@1', ...r }, null, 2))}>
         Export rack JSON
       </Button>

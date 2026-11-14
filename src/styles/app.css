@@ -117,3 +117,7 @@ details.card > summary { cursor: pointer; font-weight: 600; }
 .splitter { position: relative; z-index: 5; width: 6px; margin: 0 -3px; cursor: col-resize; }
 .splitter:hover, body.resizing .splitter { background: color-mix(in srgb, var(--accent) 50%, transparent); }
 body.resizing { cursor: col-resize; user-select: none; }
+.checks { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0 8px; }
+.checks label { display: flex; align-items: center; gap: 4px; }
+.checks input { width: auto; }
+.table-scroll { overflow-x: auto; }

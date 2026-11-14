@@ -1,6 +1,8 @@
 import type { StateCreator } from 'zustand';
 import { emptyProject, type Project } from '../domain/project/types';
 import { mergeProjects } from '../domain/project/serializer';
+import type { PropertyDef, PropertyValue } from '../domain/properties/types';
+import { withValue } from '../domain/properties/properties';
 
 export type ListKey = 'devices' | 'racks' | 'optics' | 'cableMedia' | 'rackDesigns' | 'layouts';
 type ItemOf<K extends ListKey> = Project[K][number];
@@ -15,6 +17,10 @@ export interface ProjectSlice {
   remove(key: ListKey, id: string): void;
   hideBuiltin(id: string): void;
   restoreBuiltins(): void;
+  upsertPropertyDef(def: PropertyDef): void;
+  removePropertyDef(id: string): void;
+  /** Sets a custom property value on a built-in device/rack (stored in the project). */
+  setBuiltinProperty(itemId: string, propertyId: string, value: PropertyValue | undefined): void;
 }
 
 export const createProjectSlice: StateCreator<ProjectSlice, [], [], ProjectSlice> = (set) => ({
@@ -42,4 +48,19 @@ export const createProjectSlice: StateCreator<ProjectSlice, [], [], ProjectSlice
   hideBuiltin: (id) =>
     set((s) => ({ project: { ...s.project, hiddenBuiltins: [...new Set([...s.project.hiddenBuiltins, id])] } })),
   restoreBuiltins: () => set((s) => ({ project: { ...s.project, hiddenBuiltins: [] } })),
+  upsertPropertyDef: (def) =>
+    set((s) => {
+      const defs = s.project.propertyDefs;
+      const next = defs.some((d) => d.id === def.id) ? defs.map((d) => (d.id === def.id ? def : d)) : [...defs, def];
+      return { project: { ...s.project, propertyDefs: next } };
+    }),
+  removePropertyDef: (id) =>
+    set((s) => ({ project: { ...s.project, propertyDefs: s.project.propertyDefs.filter((d) => d.id !== id) } })),
+  setBuiltinProperty: (itemId, propertyId, value) =>
+    set((s) => ({
+      project: {
+        ...s.project,
+        builtinProperties: { ...s.project.builtinProperties, [itemId]: withValue(s.project.builtinProperties[itemId], propertyId, value) },
+      },
+    })),
 });

@@ -10,8 +10,9 @@ export function useLibrary(): Library {
   const optics = useAppStore((s) => s.project.optics);
   const cableMedia = useAppStore((s) => s.project.cableMedia);
   const hidden = useAppStore((s) => s.project.hiddenBuiltins);
+  const builtinProps = useAppStore((s) => s.project.builtinProperties);
   return useMemo(
-    () => new Library(BUILTIN_CATALOG, { devices, racks, optics, cableMedia }, hidden),
-    [devices, racks, optics, cableMedia, hidden],
+    () => new Library(BUILTIN_CATALOG, { devices, racks, optics, cableMedia }, hidden, builtinProps),
+    [devices, racks, optics, cableMedia, hidden, builtinProps],
   );
 }

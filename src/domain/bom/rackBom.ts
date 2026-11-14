@@ -11,13 +11,14 @@ export function buildRackBom(lib: Library, design: RackDesign): BomLine[] {
   const rack = lib.racks.get(design.templateId);
   if (rack) {
     bom.add({ key: `rack:${rack.id}`, kind: 'rack', item: rack.name, category: RACK_KINDS[rack.kind],
-      vendorModel: '', qty: 1, unitW: 0, notes: [] });
+      vendorModel: '', qty: 1, unitW: 0, notes: [], properties: rack.properties });
   }
   for (const p of design.placements) {
     const d = lib.devices.get(p.deviceId);
     if (!d) continue;
     bom.add({ key: `device:${d.id}`, kind: 'device', item: d.name, category: traitsOf(d.category).label,
-      vendorModel: [d.vendor, d.model].filter(Boolean).join(' '), qty: 1, unitW: d.power.typicalW, notes: [p.label] });
+      vendorModel: [d.vendor, d.model].filter(Boolean).join(' '), qty: 1, unitW: d.power.typicalW, notes: [p.label],
+      properties: d.properties });
     const counts = portItemCounts(lib, d, p);
     for (const [cableId, n] of counts.cables) {
       const media = lib.cableMedia.get(cableId);

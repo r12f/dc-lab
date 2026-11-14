@@ -30,7 +30,8 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   total weight (rack + side elements + devices), warnings (over power, over load, supply < max draw, overlaps).
 - **BOM**: rack template x1, devices by id, optics by id (instance > profile), port-attached cables from
   profiles (quantity), in-rack cable runs by media (quantity, total length).
-  Columns: Item, Category, Vendor/Model, Qty, Unit W, Total W, Notes.
+  Columns: Item, Category, Vendor / Model (PN), every custom property with `showInBom`, Qty, Unit W,
+  Total W, Notes.
 
 ## UI
 

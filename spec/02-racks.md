@@ -12,6 +12,7 @@ Rack templates. One template = one JSON file (`schema: "dc-lab/rack@1"`).
 | `maxPowerW` | Rated rack power |
 | `sideElements` | Boxes attached to the left/right of the rack body (see below) |
 | `notes` | Free text |
+| `properties` | Values of project-wide custom properties (see [05-project-file.md](05-project-file.md#custom-properties)) |
 
 ## Side elements
 
@@ -54,6 +55,6 @@ Empty slots are drawn as dashed boxes inside the element; slots exist only where
   New, Duplicate, Delete.
 - Canvas: front elevation with side elements drawn to scale (units numbered bottom-up), and a
   top-down footprint showing the rack body and side elements over floor tiles.
-- Inspector: all fields; side elements section with "+ Left" / "+ Right" (pick kind), per-element
+- Inspector: all fields; custom properties (editable on built-ins too; manage definitions inline); side elements section with "+ Left" / "+ Right" (pick kind), per-element
   editor, move toward/away from the rack, remove.
 - Export SVG.

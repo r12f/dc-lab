@@ -9,6 +9,7 @@ import { DeviceGeneralForm } from './DeviceGeneralForm';
 import { PowerInputForm } from './PowerInputForm';
 import { PortGroupsEditor } from './PortGroupsEditor';
 import { BreakoutProfilesEditor } from './BreakoutProfilesEditor';
+import { CustomPropertiesSection } from '../properties/CustomPropertiesSection';
 
 interface Props {
   lib: Library;
@@ -30,6 +31,10 @@ export function DeviceInspector(props: Props) {
       <WarningList warnings={validateDevice(device)} />
       <fieldset disabled={readOnly} className="plain">
         <DeviceGeneralForm device={device} onChange={onChange} />
+      </fieldset>
+      <CustomPropertiesSection target="device" item={device} builtin={readOnly}
+        onChange={(properties) => onChange({ ...device, properties })} />
+      <fieldset disabled={readOnly} className="plain">
         <PowerInputForm device={device} onChange={onChange} />
         <PortGroupsEditor device={device} onChange={onChange} />
       </fieldset>

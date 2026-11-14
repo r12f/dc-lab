@@ -43,6 +43,8 @@ export function normalizeProject(raw: Record<string, unknown>): Project {
   const p = emptyProject(typeof obj.name === 'string' ? obj.name : undefined);
   for (const k of LIST_KEYS) if (Array.isArray(obj[k])) (p[k] as unknown[]) = obj[k] as unknown[];
   p.hiddenBuiltins = (obj.hiddenBuiltins as string[]) ?? [];
+  p.propertyDefs = (obj.propertyDefs as Project['propertyDefs']) ?? [];
+  p.builtinProperties = (obj.builtinProperties as Project['builtinProperties']) ?? {};
   return p;
 }
 
@@ -56,5 +58,7 @@ export function mergeProjects(base: Project, incoming: Project): Project {
   const out = { ...base };
   for (const k of LIST_KEYS) (out[k] as { id: string }[]) = mergeById(base[k] as { id: string }[], incoming[k] as { id: string }[]);
   out.hiddenBuiltins = [...new Set([...base.hiddenBuiltins, ...incoming.hiddenBuiltins])];
+  out.propertyDefs = mergeById(base.propertyDefs, incoming.propertyDefs);
+  out.builtinProperties = { ...base.builtinProperties, ...incoming.builtinProperties };
   return out;
 }

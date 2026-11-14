@@ -15,7 +15,9 @@ export const RACK_KINDS: Record<RackKind, string> = {
   custom: 'Custom',
 };
 
-export interface RackTemplate extends CatalogItem {
+import type { HasProperties } from '../properties/types';
+
+export interface RackTemplate extends CatalogItem, HasProperties {
   schema?: typeof RACK_SCHEMA;
   kind: RackKind;
   units: number;
