@@ -97,8 +97,8 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .caret { width: 10px; color: var(--muted); font-size: 10px; }
 .sidebar-filter { padding: 6px 12px; border-bottom: 1px solid var(--border); }
 .pad { padding: 0 12px; }
-.menu { position: absolute; z-index: 10; top: 40px; right: 8px; width: 280px; background: var(--panel); border: 1px solid var(--dialog-border);
-  border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.35); padding: 4px; color: var(--dialog-text); }
+.menu { margin: 0 8px 8px; background: var(--panel); border: 1px solid var(--dialog-border);
+  border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.25); padding: 4px; color: var(--dialog-text); }
 .menu-item { padding: 6px 8px; border-radius: 4px; cursor: pointer; }
 .menu-item:hover { background: var(--dialog-selected-bg); color: var(--dialog-selected-fg); }
 .menu-item small { display: block; color: var(--dialog-muted); }
