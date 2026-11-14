@@ -3,11 +3,14 @@ import type { DrawingContext } from './types';
 import { idColor, modeColor, ROLE_COLORS, speedLabel } from './portStyle';
 import { ROLE_TRAITS } from '../../../domain/device/roles';
 import { formFactorSpec } from '../../../domain/ports/formFactors';
+import { portConnectors } from '../../../domain/ports/opticMatch';
+import { ConnectorBoxes } from './ConnectorBoxes';
 import { paint } from '../../../theme/paint';
 
 /**
  * One port. Data/service ports show index, speed ("400G" / "2x400G") and reach; a top strip marks the
- * module/reach and a bottom strip the attached cable. Other roles show their label or index.
+ * module/reach, and one sub-box per cable connector (e.g. 2xDR4 -> two MPO-12) sits at the bottom,
+ * filled with the attached cable's color. Other roles show their label or index.
  */
 export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
   const r = ctx.resolve(box.ref);
@@ -19,12 +22,14 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
   const fiberPort = formFactorSpec(box.group.formFactor).kind === 'fiber';
   const cx = box.x + box.w / 2;
   const speed = r ? speedLabel(r.mode) : '';
+  const conns = pluggable && r ? portConnectors(box.group, optic, r.reach) : undefined;
   const engine = box.group.opticalEngine ? ` · ${box.group.opticalEngine.toUpperCase()}` : '';
   const tip = [
     `${box.ref} · ${box.group.formFactor}${engine} · ${ROLE_TRAITS[box.group.role].label}`,
     speed ? `Speed ${speed}` : '',
     r?.reach ? `Reach ${r.reach}` : '',
     optic ? `Module ${optic.name}${r?.autoOptic ? ' (auto)' : ''}` : '',
+    conns ? `Connectors ${conns.count}x ${conns.connector}` : '',
     cable ? `Cable ${cable.name}` : '',
   ].filter(Boolean).join('\n');
   const markColor = optic ? idColor(optic.id) : r?.reach ? idColor(r.reach) : undefined;
@@ -38,12 +43,12 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
       <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={fiberPort ? 12 : 3} fill={fill}
         stroke={sel ? paint.selection : '#0f172a'} strokeWidth={sel ? 3 : 1} />
       {markColor && <rect x={box.x + 3} y={box.y + 3} width={box.w - 6} height={4} fill={markColor} pointerEvents="none" />}
-      {cable && <rect x={box.x + 3} y={box.y + box.h - 7} width={box.w - 6} height={4} fill={cable.color} pointerEvents="none" />}
+      {conns && <ConnectorBoxes box={box} conns={conns} color={cable?.color} />}
       {pluggable ? (
         <>
-          {t(18, 12, '#fff', String(box.index), true)}
-          {t(30, 10, '#f1f5f9', speed, true)}
-          {r?.reach && t(41, 9, '#fde68a', r.reach)}
+          {t(19, 12, '#fff', String(box.index), true)}
+          {t(31, 10, '#f1f5f9', speed, true)}
+          {r?.reach && t(42, 9, '#fde68a', r.reach)}
         </>
       ) : (
         t(box.h / 2 + 4, 10, '#fff', box.group.count > 1 ? String(box.index) : box.group.label, true)

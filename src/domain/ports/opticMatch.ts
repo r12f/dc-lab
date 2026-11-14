@@ -49,6 +49,22 @@ export function cableConnector(group: PortGroup, optic?: OpticDefinition): strin
   return optic.fiberConnector ? optic.fiberConnector.replace(/^\d+x\s*/i, '') : optic.formFactor;
 }
 
+/** Cable connectors on the face of one port: count x connector (e.g. 2x DR4 module -> 2 x MPO-12). */
+export interface PortConnectors {
+  count: number;
+  connector: string;
+}
+
+/**
+ * Physical cable connectors a port exposes: the module's fiber connector(s), or the port's own connector
+ * for CPO/NPO fiber ports (multiplied by the reach, e.g. 2xDR4). None for DAC/AOC/laser or an empty cage.
+ */
+export function portConnectors(group: PortGroup, optic?: OpticDefinition, reach?: string): PortConnectors | undefined {
+  const connector = isEnginePort(group) ? group.formFactor : optic?.fiberConnector.replace(/^\d+x\s*/i, '');
+  if (!connector) return undefined;
+  return { count: cablesPerPort(group, optic, reach), connector };
+}
+
 /**
  * Cables needed per port: the multiplier of the module's fiber connector ("2x MPO-12" -> 2), or of the
  * engine reach for CPO/NPO ports ("2xDR4" -> 2). Defaults to 1.

@@ -31,7 +31,7 @@ export interface FaceLayout {
 }
 
 /** Faceplate metrics in SVG units. Ports are sized so index, speed and reach stay legible at 100% zoom. */
-export const PORT = { w: 54, h: 46, gap: 5, groupGap: 26, pad: 14, label: 20, labelFont: 12 };
+export const PORT = { w: 66, h: 64, gap: 5, groupGap: 26, pad: 14, label: 20, labelFont: 12 };
 export const SMALL_PORT = { w: 50, h: 34 };
 export const PSU = { w: 76, h: 54, gap: 8 };
 const MIN_WIDTH = 240;

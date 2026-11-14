@@ -4,7 +4,7 @@ import { emptyProject } from '../project/types';
 import { BUILTIN_CATALOG_FOR_TESTS } from './catalogFixture';
 import { resolvePort } from '../device/portSettings';
 import { modesOf, findProfile } from '../device/breakout';
-import { compatibleCables, compatibleOptics, reachOptions } from '../ports/opticMatch';
+import { compatibleCables, compatibleOptics, portConnectors, reachOptions } from '../ports/opticMatch';
 import { moduleFits } from '../ports/formFactors';
 import { normalizeProject } from '../project/serializer';
 import { portItemCounts } from '../design/optics';
@@ -89,5 +89,17 @@ describe('migration', () => {
     });
     expect(p.devices[0].ports[0].formFactor).toBe('QSFP28');
     expect(p.optics[0]).toMatchObject({ formFactor: 'OSFP', reach: '2xDR4', fiberConnector: '2x MPO-12' });
+  });
+});
+
+describe('port connectors', () => {
+  it('2xDR4 = 2 x MPO-12, 2xFR4 = 2 x LC, DAC/empty = none, CPO 2xDR4 = 2 x port connector', () => {
+    const osfp = dev('switch-64x800g-osfp').ports.find((g) => g.id === 'osfp')!;
+    expect(portConnectors(osfp, lib.optics.get('osfp-800g-2xdr4'))).toEqual({ count: 2, connector: 'MPO-12' });
+    expect(portConnectors(osfp, lib.optics.get('osfp-800g-2xfr4'))).toEqual({ count: 2, connector: 'LC' });
+    expect(portConnectors(osfp, lib.optics.get('osfp-800g-dac'))).toBeUndefined();
+    expect(portConnectors(osfp)).toBeUndefined();
+    const cpo = lib.devices.items().flatMap((d) => d.ports).find((g) => g.opticalEngine)!;
+    expect(portConnectors(cpo, undefined, '2xDR4')).toEqual({ count: 2, connector: cpo.formFactor });
   });
 });
