@@ -36,8 +36,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       name: 'New switch', category: 'switch', psus: { count: 2, inlet: 'C14', ratedW: 1100 },
       ports: [
         group('data', 'OSFP', 'data', 'OSFP', 32, 800, { lanes: 8, rows: 2, breakoutModes: ['2x400G', '4x200G', '8x100G'] }),
+        group('service', 'SERVICE', 'service', 'SFP+', 2, 10, { rows: 2 }),
         ...mgmtAndConsole(),
-        group('service', 'SERVICE', 'service', 'SFP+', 2, 10),
       ],
     }),
   },

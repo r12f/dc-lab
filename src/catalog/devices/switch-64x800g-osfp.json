@@ -38,6 +38,18 @@
       ]
     },
     {
+      "id": "service",
+      "label": "SERVICE",
+      "role": "service",
+      "formFactor": "SFP+",
+      "count": 2,
+      "speedGbps": 10,
+      "lanes": 1,
+      "face": "front",
+      "rows": 2,
+      "breakoutModes": []
+    },
+    {
       "id": "mgmt",
       "label": "MGMT",
       "role": "mgmt",
@@ -56,18 +68,6 @@
       "formFactor": "RJ45",
       "count": 1,
       "speedGbps": 0,
-      "lanes": 1,
-      "face": "front",
-      "rows": 1,
-      "breakoutModes": []
-    },
-    {
-      "id": "service",
-      "label": "SERVICE",
-      "role": "service",
-      "formFactor": "SFP+",
-      "count": 2,
-      "speedGbps": 10,
       "lanes": 1,
       "face": "front",
       "rows": 1,
