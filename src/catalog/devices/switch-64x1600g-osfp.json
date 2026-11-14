@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/device@1",
   "id": "switch-64x1600g-osfp",
-  "name": "64x1.6T OSFP Switch",
+  "name": "64x1.6T OSFP LC Switch (liquid-cooled)",
   "category": "switch",
   "height": {
     "units": 2,
@@ -79,6 +79,14 @@
       "breakoutModes": []
     }
   ],
-  "breakoutProfiles": [],
-  "notes": "Powered from the rack busbar (no AC PSUs/inlets)."
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default",
+      "groupDefaults": {},
+      "overrides": {}
+    }
+  ],
+  "notes": "Powered from the rack busbar (no AC PSUs/inlets).",
+  "defaultProfileId": "default"
 }

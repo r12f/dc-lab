@@ -10,6 +10,7 @@ import { resolvePlacedPort } from '../../domain/design/optics';
 import { variantLabel } from '../../domain/items/variants';
 import type { DesignEditor } from './use-design-editor';
 import { isResizable } from '../../domain/device/categories';
+import { findProfile } from '../../domain/device/breakout';
 import { sizedDevice } from '../../domain/design/sizing';
 import { GroupOpticsEditor } from './group-optics-editor';
 import { PortConfigEditor } from './port-config-editor';
@@ -64,7 +65,7 @@ export function PlacementPanel({ lib, placement: p, templateId, editor, onRemove
         <SelectField
           label="Breakout profile"
           value={p.breakoutProfileId ?? ''}
-          options={[{ value: '', label: '(native)' }, ...device.breakoutProfiles.map((x) => ({ value: x.id, label: x.name }))]}
+          options={[{ value: '', label: `Device default (${findProfile(device)?.name ?? 'native'})` }, ...device.breakoutProfiles.map((x) => ({ value: x.id, label: x.name }))]}
           onChange={(v) => update((x) => ({ ...x, breakoutProfileId: v || undefined }))}
         />
       </Section>

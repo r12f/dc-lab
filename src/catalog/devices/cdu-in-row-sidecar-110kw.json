@@ -14,10 +14,18 @@
     "maxW": 0
   },
   "ports": [],
-  "breakoutProfiles": [],
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default",
+      "groupDefaults": {},
+      "overrides": {}
+    }
+  ],
   "notes": "Full-height in-row sidecar: fills a 48RU CDU rack. Cooling 110 kW; pump power, weight TBD.",
   "cooling": {
     "capacityKw": 110,
     "pumpW": 0
-  }
+  },
+  "defaultProfileId": "default"
 }

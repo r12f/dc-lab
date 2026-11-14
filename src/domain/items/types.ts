@@ -17,6 +17,14 @@ export interface ItemVariant extends CatalogItem, HasProperties {
   model: string;
   /** The item type's default item (used when a placement or BOM line does not pick one). */
   isDefault?: boolean;
+  /** Device items: this product's own power / weight; unset fields inherit the item type's values. */
+  specs?: ItemSpecs;
+}
+
+export interface ItemSpecs {
+  typicalW?: number;
+  maxW?: number;
+  weightKg?: number;
 }
 
 export const GENERIC_SUFFIX = '--generic';

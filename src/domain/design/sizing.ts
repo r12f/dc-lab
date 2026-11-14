@@ -3,6 +3,7 @@ import { isResizable } from '../device/categories';
 import type { Library } from '../library/library';
 import type { RackTemplate } from '../rack/types';
 import { formatHeight } from '../units';
+import { withItemSpecs } from '../items/variants';
 import type { Placement, RackDesign } from './types';
 
 /**
@@ -21,7 +22,7 @@ export function sizedDevice(device: DeviceDefinition, rack: RackTemplate | undef
 /** The device of a placement as placed: size-adjustable fillers at the placement's height. */
 export function placedDevice(lib: Library, design: RackDesign, p: Placement): DeviceDefinition | undefined {
   const d = lib.devices.get(p.deviceId);
-  return d && sizedDevice(d, lib.racks.get(design.templateId), p.units);
+  return d && sizedDevice(withItemSpecs(d, lib.variants.resolve(d.id, p.variantId)), lib.racks.get(design.templateId), p.units);
 }
 
 /** BOM key suffix: each size of a size-adjustable filler is its own line ("@2RU"). */

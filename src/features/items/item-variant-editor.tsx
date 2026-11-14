@@ -1,7 +1,7 @@
-import type { ItemVariant } from '../../domain/items/types';
+import type { ItemSpecs, ItemVariant } from '../../domain/items/types';
 import type { Library } from '../../domain/library/library';
 import { Button } from '../../ui/button';
-import { Section, TextField } from '../../ui/fields';
+import { Field, Section, TextField } from '../../ui/fields';
 import { CustomPropertiesSection } from '../properties/custom-properties-section';
 import type { ItemVariantCommands } from './use-item-variants';
 
@@ -11,6 +11,40 @@ interface Props {
   itemTypeName: string;
   readOnly: boolean;
   commands: ItemVariantCommands;
+}
+
+/** Override field: empty = inherit the item type's value (shown as the placeholder). */
+function OverrideField({ label, value, inherited, onChange }: { label: string; value?: number; inherited: number; onChange(v: number | undefined): void }) {
+  return (
+    <Field label={label}>
+      <input type="number" min={0} value={value ?? ''} placeholder={`${inherited} (item type)`}
+        onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+    </Field>
+  );
+}
+
+/** Power and weight of a device item; empty fields inherit the item type. */
+function DeviceSpecs({ lib, v, set, disabled }: { lib: Library; v: ItemVariant; set(p: Partial<ItemVariant>): void; disabled: boolean }) {
+  const d = lib.devices.get(v.itemId);
+  if (!d) return null;
+  const s = v.specs ?? {};
+  const put = (k: keyof ItemSpecs, x: number | undefined) => {
+    const next: ItemSpecs = { ...s, [k]: x };
+    if (x === undefined) delete next[k];
+    set({ specs: Object.keys(next).length ? next : undefined });
+  };
+  return (
+    <Section title="Power & weight">
+      <p className="muted">Empty = item type value. Set a value to override it for this product.</p>
+      <fieldset disabled={disabled} className="plain">
+        <div className="row3">
+          <OverrideField label="Typical W" value={s.typicalW} inherited={d.power.typicalW} onChange={(x) => put('typicalW', x)} />
+          <OverrideField label="Max W" value={s.maxW} inherited={d.power.maxW} onChange={(x) => put('maxW', x)} />
+          <OverrideField label="Weight kg" value={s.weightKg} inherited={d.weightKg} onChange={(x) => put('weightKg', x)} />
+        </div>
+      </fieldset>
+    </Section>
+  );
 }
 
 /** Item (vendor product) editor: vendor, model / vendor PN, default flag, custom properties. */
@@ -30,6 +64,7 @@ export function ItemVariantEditor({ lib, variant: v, itemTypeName, readOnly, com
         </fieldset>
         {!isDefault && <Button onClick={() => commands.makeDefault(v)}>Make default</Button>}
       </Section>
+      {v.target === 'device' && <DeviceSpecs lib={lib} v={v} set={set} disabled={readOnly} />}
       <CustomPropertiesSection target={v.target} item={v} builtin={readOnly} onChange={(properties) => set({ properties })} />
     </>
   );

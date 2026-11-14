@@ -47,10 +47,6 @@ export function DeviceGeneralForm({ device: d, onChange }: Props) {
             onChange={(pumpW) => set({ cooling: { capacityKw: d.cooling?.capacityKw ?? 0, pumpW } })} />
         </div>
       )}
-      {d.category === 'bbu' && (
-        <NumberField label="Backup capacity kW" value={d.bbu?.capacityKw ?? 0} min={0}
-          onChange={(capacityKw) => set({ bbu: { capacityKw } })} />
-      )}
       {traitsOf(d.category).suppliesPower && (
         <NumberField label="Supply capacity W" value={d.power.capacityW ?? 0} min={0}
           onChange={(capacityW) => set({ power: { ...d.power, capacityW } })} />

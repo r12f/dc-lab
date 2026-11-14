@@ -128,7 +128,12 @@ Drawing strategy is selected by device shape:
   widest face (ports + PSUs) sets the box width, so small devices draw narrow.
 - **CDU** (category `cdu`): `cooling: { capacityKw, pumpW }` — heat it removes and pump draw (added to its
   power). Built-ins: In-Rack 7 kW (4U), In-Row Sidecar 110 kW (48RU, fills a CDU rack).
-- **BBU shelf** (category `bbu`): `bbu: { capacityKw }` — backup capacity. Built-in: generic 1RU BBU Shelf.
+- **Default breakout profile** (`defaultProfileId`): every device has one (built-ins: "Default" = native modes,
+  64x800G switch: all 2x400G 2xDR4). Placements that pick no profile and the Devices canvas use it; "Make
+  default" in the profile editor; the default cannot be deleted. Projects get a "Default" profile on load.
+- **Items tab**: the Devices inspector has **Item type** | **Items (n)** tabs. A device item can override the item
+  type's **typical / max power and weight** (`specs`); empty fields inherit. Rack metrics and the BOM use the
+  placed item's values.
 - **Variable height** (`resizable`): any device can be marked "Variable height" in the Devices inspector; its
   height is then set per placement in Rack Designer and `height` is the default size. Fillers (below) default to it.
 - **PSU arrangement** (`psus.layout`): `split` (default, half on each rear edge) or `row` (one row side by side,

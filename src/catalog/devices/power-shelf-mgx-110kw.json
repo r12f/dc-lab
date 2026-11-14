@@ -21,5 +21,13 @@
     "layout": "row"
   },
   "ports": [],
-  "breakoutProfiles": []
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default",
+      "groupDefaults": {},
+      "overrides": {}
+    }
+  ],
+  "defaultProfileId": "default"
 }

@@ -14,10 +14,18 @@
     "maxW": 0
   },
   "ports": [],
-  "breakoutProfiles": [],
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default",
+      "groupDefaults": {},
+      "overrides": {}
+    }
+  ],
   "cooling": {
     "capacityKw": 7,
     "pumpW": 0
   },
-  "notes": "Cooling 7 kW; pump power TBD."
+  "notes": "Cooling 7 kW; pump power TBD.",
+  "defaultProfileId": "default"
 }

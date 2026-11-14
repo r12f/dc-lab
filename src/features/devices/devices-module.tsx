@@ -101,10 +101,16 @@ export function DevicesModule() {
             lib={lib}
             device={device}
             header={variant
-              ? <ItemVariantEditor lib={lib} variant={variant} itemTypeName={device.name} commands={variants}
-                  readOnly={variants.isReadOnly(variant, typeReadOnly)} />
+              ? <>
+                  <button type="button" className="link" onClick={() => select(device.id)}>← All items</button>
+                  <ItemVariantEditor lib={lib} variant={variant} itemTypeName={device.name} commands={variants}
+                    readOnly={variants.isReadOnly(variant, typeReadOnly)} />
+                </>
               : <ItemsSection lib={lib} target="device" itemId={device.id} commands={variants}
                   onSelect={(id) => select(toItemKey(id))} />}
+            itemCount={lib.variants.of(device.id).length}
+            itemSelected={!!variant}
+            onLeaveItem={() => variant && select(device.id)}
             readOnly={typeReadOnly}
             onChange={ed.save}
             onDuplicate={() => ed.duplicate(device.id)}

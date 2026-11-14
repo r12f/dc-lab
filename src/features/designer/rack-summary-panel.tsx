@@ -22,7 +22,6 @@ export function RackSummaryPanel({ lib, design }: { lib: Library; design: RackDe
         { label: 'Max power', value: formatPower(m.maxW), warn: m.maxW > m.rackMaxPowerW },
         { label: 'Supply capacity', value: formatPower(m.supplyCapacityW), warn: m.supplyCapacityW > 0 && m.maxW > m.supplyCapacityW },
         ...(m.coolingCapacityKw ? [{ label: 'Cooling capacity', value: `${m.coolingCapacityKw} kW` }] : []),
-        ...(m.bbuCapacityKw ? [{ label: 'BBU capacity', value: `${m.bbuCapacityKw} kW` }] : []),
         { label: 'Rack rating', value: formatPower(m.rackMaxPowerW) },
         { label: 'Total weight', value: formatWeight(m.totalWeightKg) },
         { label: 'Payload / limit', value: `${m.deviceWeightKg.toFixed(0)} / ${m.maxLoadKg} kg`, warn: m.deviceWeightKg > m.maxLoadKg },

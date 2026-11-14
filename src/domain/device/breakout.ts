@@ -57,8 +57,24 @@ export function isModeAllowed(group: PortGroup, mode: string): boolean {
   return modesOf(group).includes(mode) && isModeFeasible(group, mode);
 }
 
+/** The named profile, else the device's default profile (none = native modes). */
 export function findProfile(device: DeviceDefinition, id?: string): BreakoutProfile | undefined {
-  return id ? device.breakoutProfiles.find((p) => p.id === id) : undefined;
+  const byId = (x?: string) => (x ? device.breakoutProfiles.find((p) => p.id === x) : undefined);
+  return byId(id) ?? byId(device.defaultProfileId);
+}
+
+/** Id of the default profile: the declared one, else "default". */
+export const DEFAULT_PROFILE_ID = 'default';
+
+/**
+ * Ensures a device has a default breakout profile: keeps a declared one that exists; otherwise adds an empty
+ * "Default" profile (native modes) unless one with that id exists, and points `defaultProfileId` at it.
+ */
+export function withDefaultProfile(device: DeviceDefinition): DeviceDefinition {
+  if (device.defaultProfileId && device.breakoutProfiles.some((p) => p.id === device.defaultProfileId)) return device;
+  const has = device.breakoutProfiles.some((p) => p.id === DEFAULT_PROFILE_ID);
+  const profiles = has ? device.breakoutProfiles : [{ id: DEFAULT_PROFILE_ID, name: 'Default', groupDefaults: {}, overrides: {} }, ...device.breakoutProfiles];
+  return { ...device, breakoutProfiles: profiles, defaultProfileId: DEFAULT_PROFILE_ID };
 }
 
 /** Effective breakout mode of one port (see resolvePort for the priority order). */

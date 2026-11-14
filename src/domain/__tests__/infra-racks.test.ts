@@ -21,7 +21,7 @@ const rackAt = (u: number) => ({ kind: 'rack' as const, position: u, face: 'fron
 const it30 = newDesign('it', 'IT', 'mgx-48ru');
 it30.placements.push(newPlacement('l', 'load-30kw', 'L1', rackAt(1)));
 const pwr = newDesign('pw', 'Power', 'power-rack-48ru');
-pwr.placements.push(newPlacement('s', 'power-shelf-mgx-110kw', 'PS1', rackAt(1)), newPlacement('b', 'bbu-shelf-1ru', 'BBU1', rackAt(2)));
+pwr.placements.push(newPlacement('s', 'power-shelf-mgx-110kw', 'PS1', rackAt(1)));
 const cdu = newDesign('cd', 'CDU', 'cdu-rack-sidecar');
 cdu.placements.push(newPlacement('c', 'cdu-in-row-sidecar-110kw', 'CDU1', rackAt(1)));
 const all: RackDesign[] = [it30, pwr, cdu];
@@ -33,7 +33,7 @@ const at = (id: string, designId: string, startTile: number, extra: Partial<Rack
 const layoutWith = (assignments: RackAssignment[]) => ({ rows: [row], assignments } as unknown as DcLayout);
 
 describe('power / CDU racks', () => {
-  it('rack designs: power rack holds a power shelf + BBU, CDU rack one full-height CDU (frame weight 0)', () => {
+  it('rack designs: power rack holds a power shelf, CDU rack one full-height CDU (frame weight 0)', () => {
     const p = computeRackMetrics(lib, pwr);
     expect(p.supplyCapacityW).toBe(109800);
     expect(p.warnings).toEqual([]);

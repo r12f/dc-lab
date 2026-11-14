@@ -23,6 +23,7 @@ export function ItemsSection({ lib, target, itemId, commands, onSelect }: Props)
       {items.map((v) => (
         <div key={v.id} className="sidebar-item" onClick={() => onSelect(v.id)}>
           <span className="sidebar-item-name">{variantLabel(v) || '(no vendor / model)'}</span>
+          {v.specs && <span className="badge" title="Overrides power / weight">{[v.specs.typicalW !== undefined && `${v.specs.typicalW} W`, v.specs.weightKg !== undefined && `${v.specs.weightKg} kg`].filter(Boolean).join(' · ') || 'specs'}</span>}
           {v.id === def?.id && <span className="badge">default</span>}
         </div>
       ))}

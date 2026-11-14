@@ -12,7 +12,8 @@ export function newDevice(id: string): DeviceDefinition {
     weightKg: 10,
     power: { typicalW: 300, maxW: 500 },
     ports: [],
-    breakoutProfiles: [],
+    breakoutProfiles: [newProfile('default', 'Default')],
+    defaultProfileId: 'default',
   };
 }
 

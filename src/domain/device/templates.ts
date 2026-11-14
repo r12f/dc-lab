@@ -23,7 +23,7 @@ function base(id: string, patch: Partial<DeviceDefinition>): DeviceDefinition {
   return {
     schema: DEVICE_SCHEMA, id, name: 'New device', category: 'other',
     height: { units: 1, system: 'RU' }, depthMm: 600, weightKg: 10, power: { typicalW: 300, maxW: 500 },
-    ports: [], breakoutProfiles: [], ...patch,
+    ports: [], breakoutProfiles: [{ id: 'default', name: 'Default', groupDefaults: {}, overrides: {} }], defaultProfileId: 'default', ...patch,
   };
 }
 

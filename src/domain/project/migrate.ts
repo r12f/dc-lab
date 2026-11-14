@@ -89,7 +89,13 @@ export function migrateDevice(d: Json): Json {
     groupDefaults: mapValues(p.groupDefaults, toSetting),
     overrides: mapValues(p.overrides, toSetting),
   }));
-  return { ...d, ports, breakoutProfiles };
+  const out = { ...d, ports, breakoutProfiles } as Json;
+  // Every device has a default breakout profile.
+  const def = out.defaultProfileId as string | undefined;
+  const ids = breakoutProfiles.map((p) => (p as Json).id);
+  if (def && ids.includes(def)) return out;
+  // Appended so existing profiles keep their positions.
+  return { ...out, defaultProfileId: 'default', breakoutProfiles: ids.includes('default') ? breakoutProfiles : [...breakoutProfiles, { id: 'default', name: 'Default', groupDefaults: {}, overrides: {} }] };
 }
 
 export function migratePlacement(p: Json): Json {

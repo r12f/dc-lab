@@ -19,8 +19,6 @@ export interface RackMetrics {
   deviceCount: number;
   /** Sum of CDU cooling capacity (kW). */
   coolingCapacityKw: number;
-  /** Sum of BBU shelf backup capacity (kW). */
-  bbuCapacityKw: number;
   warnings: string[];
 }
 
@@ -38,7 +36,6 @@ export function computeRackMetrics(lib: Library, design: RackDesign): RackMetric
     maxLoadKg: rack?.maxLoadKg ?? 0,
     deviceCount: design.placements.length,
     coolingCapacityKw: 0,
-    bbuCapacityKw: 0,
     warnings: [],
   };
   if (!rack) m.warnings.push(`Unknown rack template "${design.templateId}"`);
@@ -54,7 +51,6 @@ export function computeRackMetrics(lib: Library, design: RackDesign): RackMetric
     m.typicalW += device.power.typicalW + pumpW;
     m.maxW += device.power.maxW + pumpW;
     m.coolingCapacityKw += device.cooling?.capacityKw ?? 0;
-    m.bbuCapacityKw += device.bbu?.capacityKw ?? 0;
     m.deviceWeightKg += device.weightKg;
     if (traitsOf(device.category).suppliesPower) m.supplyCapacityW += device.power.capacityW ?? 0;
     for (const [opticId, n] of opticCounts(lib, device, p)) {

@@ -4,6 +4,7 @@ import { findGroup, parsePortRef } from '../../domain/device/ports';
 import { resolvePort, withSetting } from '../../domain/device/port-settings';
 import { ROLE_TRAITS } from '../../domain/device/roles';
 import { newProfile } from '../../domain/device/factory';
+import { findProfile } from '../../domain/device/breakout';
 import { uniqueId } from '../../domain/ids';
 import { Button } from '../../ui/button';
 import { Section, SelectField, TextField } from '../../ui/fields';
@@ -24,7 +25,9 @@ interface Props {
 
 /** Profile list + per-group defaults + per-port settings for the selected ports. */
 export function BreakoutProfilesEditor({ lib, device, readOnly, onChange, profileId, onProfileChange, selectedPorts, onSelectPorts }: Props) {
-  const profile = device.breakoutProfiles.find((p) => p.id === profileId);
+  // No explicit pick = the device's default profile (what placements use when they pick none).
+  const profile = findProfile(device, profileId);
+  const isDefault = profile?.id === device.defaultProfileId;
   const setProfile = (p: BreakoutProfile) =>
     onChange({ ...device, breakoutProfiles: device.breakoutProfiles.map((x) => (x.id === p.id ? p : x)) });
   const add = () => {
@@ -58,9 +61,12 @@ export function BreakoutProfilesEditor({ lib, device, readOnly, onChange, profil
 
   return (
     <Section title="Breakout profiles" actions={!readOnly && <Button onClick={add}>+ Profile</Button>}>
-      <SelectField label="Profile shown on canvas" value={profileId ?? ''}
-        options={[{ value: '', label: '(native — no breakout)' }, ...device.breakoutProfiles.map((p) => ({ value: p.id, label: p.name }))]}
+      <SelectField label="Profile shown on canvas" value={profile?.id ?? ''}
+        options={device.breakoutProfiles.map((p) => ({ value: p.id, label: `${p.name}${p.id === device.defaultProfileId ? ' (default)' : ''}` }))}
         onChange={(v) => onProfileChange(v || undefined)} />
+      {profile && !readOnly && !isDefault && (
+        <Button onClick={() => onChange({ ...device, defaultProfileId: profile.id })}>Make default</Button>
+      )}
       {profile && (
         <fieldset disabled={readOnly} className="plain">
           <TextField label="Profile name" value={profile.name} onChange={(name) => setProfile({ ...profile, name })} />
@@ -92,10 +98,12 @@ export function BreakoutProfilesEditor({ lib, device, readOnly, onChange, profil
             ))}
           </details>
           <ProfileOverridesList lib={lib} profile={profile} onSelect={(r) => onSelectPorts([r])} />
-          <Button variant="danger" onClick={() => {
-            onChange({ ...device, breakoutProfiles: device.breakoutProfiles.filter((x) => x.id !== profile.id) });
-            onProfileChange(undefined);
-          }}>Delete profile</Button>
+          {isDefault
+            ? <p className="muted">Default profile: used by placements that pick none. Make another profile default to delete it.</p>
+            : <Button variant="danger" onClick={() => {
+              onChange({ ...device, breakoutProfiles: device.breakoutProfiles.filter((x) => x.id !== profile.id) });
+              onProfileChange(undefined);
+            }}>Delete profile</Button>}
         </fieldset>
       )}
       <div className="chips">

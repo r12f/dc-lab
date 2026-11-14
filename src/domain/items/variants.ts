@@ -70,6 +70,17 @@ export class VariantIndex {
   }
 }
 
+/** The device as this item: the item's power / weight where set, the item type's otherwise. */
+export function withItemSpecs<T extends { power: { typicalW: number; maxW: number }; weightKg: number }>(device: T, item: ItemVariant | undefined): T {
+  const s = item?.specs;
+  if (!s) return device;
+  return {
+    ...device,
+    power: { ...device.power, typicalW: s.typicalW ?? device.power.typicalW, maxW: s.maxW ?? device.power.maxW },
+    weightKg: s.weightKg ?? device.weightKg,
+  };
+}
+
 /** "Acme SW-6400", or just the model when the vendor is generic. */
 export function variantLabel(v: ItemVariant | undefined): string {
   if (!v) return '';

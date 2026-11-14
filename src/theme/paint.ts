@@ -37,7 +37,6 @@ const CATEGORY_COLORS: Record<DeviceCategory, string> = {
   tester: '#5B5F97',
   'console-server': '#4A7A8C',
   cdu: '#2E6F8E',
-  bbu: '#55606E',
   other: '#64748B',
   'blanking-panel': '#1F2937',
   stiffener: '#64748B',

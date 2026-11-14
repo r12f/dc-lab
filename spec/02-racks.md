@@ -41,7 +41,7 @@ Defaults by rack kind (built-in templates follow these):
 DC Layout instead of drawing an IT load. Each has its own size, footprint and frame weight. A sidecar whose
 enclosure *is* the device (in-row CDU) sets frame weight, load limit and power rating to **0** — "not rated";
 the full-height device carries weight and power. Built-ins: **Power Rack 48RU** (`power-rack-48ru`, MGX frame;
-holds power shelves + BBU shelves) and **CDU Sidecar Rack** (`cdu-rack-sidecar`, 48RU, 1 tile; holds one
+holds power shelves) and **CDU Sidecar Rack** (`cdu-rack-sidecar`, 48RU, 1 tile; holds one
 full-height CDU).
 | `mgx` variant **MGX Rack 48RU (PDU+SidePods)** | same side elements as `network` (PDU bay + sidepod each side, 3 tiles wide); listed under MGX |
 

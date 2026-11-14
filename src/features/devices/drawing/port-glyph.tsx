@@ -45,12 +45,12 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
     cable ? `Cable ${cable.name}` : '',
   ].filter(Boolean).join('\n');
   const markColor = optic ? idColor(optic.id) : r?.reach ? idColor(r.reach) : undefined;
-  // Text never spills into the next port: squeezed to the port width when still too long at the minimum font.
+  // Text never spills into the next port: the font shrinks to fit (never stretched or squeezed).
   const t = (y: number, size: number, fill: string, text: string, bold = false) => {
-    const tooWide = text.length * size * (bold ? 0.68 : 0.6) > box.w - 6;
+    const em = bold ? 0.68 : 0.6;
+    const fit = Math.min(size, (box.w - 6) / Math.max(1, text.length * em));
     return (
-      <text x={cx} y={box.y + y} fontSize={size} textAnchor="middle" fill={fill} fontWeight={bold ? 700 : 500} pointerEvents="none"
-        textLength={tooWide ? box.w - 6 : undefined} lengthAdjust={tooWide ? 'spacingAndGlyphs' : undefined}>{text}</text>
+      <text x={cx} y={box.y + y} fontSize={Math.max(5, fit)} textAnchor="middle" fill={fill} fontWeight={bold ? 700 : 500} pointerEvents="none">{text}</text>
     );
   };
   return (
