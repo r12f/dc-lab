@@ -75,3 +75,7 @@ Empty slots are drawn as dashed boxes inside the element; slots exist only where
 - Inspector: all fields; custom properties (editable on built-ins too; manage definitions inline); side elements section with "+ Left" / "+ Right" (pick kind), per-element
   editor, move toward/away from the rack, remove.
 - Export SVG.
+
+**Deleted built-in templates come back**: deleting a built-in rack template only hides it in the project
+(`hiddenBuiltins`). The sidebar footer then shows "Show n hidden built-in items", which restores this module's
+hidden built-ins (Devices and Optics and Cables have the same footer, each restoring only its own).

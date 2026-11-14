@@ -16,7 +16,8 @@ export interface ProjectSlice {
   update<K extends ListKey>(key: K, id: string, fn: (item: ItemOf<K>) => ItemOf<K>): void;
   remove(key: ListKey, id: string): void;
   hideBuiltin(id: string): void;
-  restoreBuiltins(): void;
+  /** Un-hides built-in items: the given ids, or all. */
+  restoreBuiltins(ids?: readonly string[]): void;
   upsertPropertyDef(def: PropertyDef): void;
   removePropertyDef(id: string): void;
   /** Sets a custom property value on a built-in device/rack (stored in the project). */
@@ -49,7 +50,9 @@ export const createProjectSlice: StateCreator<ProjectSlice, [], [], ProjectSlice
     })),
   hideBuiltin: (id) =>
     set((s) => ({ project: { ...s.project, hiddenBuiltins: [...new Set([...s.project.hiddenBuiltins, id])] } })),
-  restoreBuiltins: () => set((s) => ({ project: { ...s.project, hiddenBuiltins: [] } })),
+  restoreBuiltins: (ids) => set((s) => ({
+    project: { ...s.project, hiddenBuiltins: ids ? s.project.hiddenBuiltins.filter((h) => !ids.includes(h)) : [] },
+  })),
   upsertPropertyDef: (def) =>
     set((s) => {
       const defs = s.project.propertyDefs;

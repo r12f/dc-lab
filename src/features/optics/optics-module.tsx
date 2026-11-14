@@ -18,12 +18,14 @@ import { variantChildren, variantKeywords } from '../items/variant-children';
 import { ItemVariantEditor } from '../items/item-variant-editor';
 import { ItemsSection } from '../items/items-section';
 import { ItemTabs } from '../items/item-tabs';
+import { HiddenBuiltinsFooter } from '../catalog/hidden-builtins-footer';
+import { BUILTIN_CATALOG } from '../../catalog';
+
+const BUILTIN_OPTICS_IDS = [...BUILTIN_CATALOG.optics, ...BUILTIN_CATALOG.cableMedia].map((x) => x.id);
 
 export function OpticsModule() {
   const lib = useLibrary();
   const cat = useOpticsCatalog(lib);
-  const hiddenCount = useAppStore((s) => s.project.hiddenBuiltins.length);
-  const restoreBuiltins = useAppStore((s) => s.restoreBuiltins);
   const [menuOpen, setMenuOpen] = useState(false);
   const mark = (src: string) => (src === 'project' ? ' *' : '');
 
@@ -79,9 +81,7 @@ export function OpticsModule() {
           onDuplicate={(k) => (variant ? chooseItem(variants.duplicate(variant)) : withRef(k, cat.duplicate))}
           onDelete={(k) => { if (variant) { variants.del(variant); cat.choose(ref); } else withRef(k, cat.del); }}
           header={menuOpen && <NewOpticsMenu onClose={() => setMenuOpen(false)} onPick={(c) => cat.create(c.catalog, c.baseId, c.build)} />}
-          footer={hiddenCount > 0 && (
-            <button type="button" className="link" onClick={restoreBuiltins}>{`Show ${hiddenCount} hidden built-in item(s)`}</button>
-          )}
+          footer={<HiddenBuiltinsFooter builtinIds={BUILTIN_OPTICS_IDS} />}
         />
       }
       canvas={

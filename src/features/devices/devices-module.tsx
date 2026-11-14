@@ -19,12 +19,14 @@ import { fromItemKey, toItemKey } from '../items/item-key';
 import { variantChildren, variantKeywords } from '../items/variant-children';
 import { ItemVariantEditor } from '../items/item-variant-editor';
 import { ItemsSection } from '../items/items-section';
+import { HiddenBuiltinsFooter } from '../catalog/hidden-builtins-footer';
+import { BUILTIN_CATALOG } from '../../catalog';
+
+const BUILTIN_DEVICE_IDS = BUILTIN_CATALOG.devices.map((d) => d.id);
 
 export function DevicesModule() {
   const lib = useLibrary();
   const ed = useCatalogEditor('devices', 'devices', lib.devices);
-  const hiddenCount = useAppStore((s) => s.project.hiddenBuiltins.length);
-  const restoreBuiltins = useAppStore((s) => s.restoreBuiltins);
   const setBuiltinProfiles = useAppStore((s) => s.setBuiltinProfiles);
   const builtinProfiles = useAppStore((s) => s.project.builtinProfiles);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -75,9 +77,7 @@ export function DevicesModule() {
           header={menuOpen && (
             <NewDeviceMenu onClose={() => setMenuOpen(false)} onPick={(t) => ed.create(`new-${t.id}`, t.build)} />
           )}
-          footer={hiddenCount > 0 && (
-            <button type="button" className="link" onClick={restoreBuiltins}>{`Show ${hiddenCount} hidden built-in item(s)`}</button>
-          )}
+          footer={<HiddenBuiltinsFooter builtinIds={BUILTIN_DEVICE_IDS} />}
         />
       }
       canvas={
