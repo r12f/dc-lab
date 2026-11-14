@@ -1,6 +1,6 @@
 {
   "id": "network-48ru-600",
-  "name": "Network Rack 48RU 600mm",
+  "name": "Network Rack 48RU",
   "kind": "network",
   "units": 48,
   "unitSystem": "RU",
