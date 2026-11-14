@@ -17,6 +17,10 @@ export function ProjectMenu() {
       if (k === 's') {
         e.preventDefault();
         void (e.shiftKey ? pf.saveAs() : pf.save());
+      } else if (k === 'r' && pf.canReload && !e.shiftKey) {
+        // Reload the project file instead of the page.
+        e.preventDefault();
+        void pf.reload();
       } else if (k === 'o') {
         e.preventDefault();
         void pf.open();
@@ -37,6 +41,8 @@ export function ProjectMenu() {
         <Button onClick={() => void pf.open()} title="Open a project file (Ctrl+O)">Open</Button>
         <RecentFilesMenu onOpen={(h) => void pf.openRecent(h)} />
       </span>
+      <Button className="btn-icon" disabled={!pf.canReload} onClick={() => void pf.reload()} aria-label="Reload"
+        title={pf.canReload ? `Reload ${pf.file?.name} from disk (Ctrl+R)` : 'Open a file first'}>⟳</Button>
       <Button variant="primary" onClick={() => void pf.save()} title="Save (Ctrl+S)">Save</Button>
       <Button onClick={() => void pf.saveAs()} title="Save As (Ctrl+Shift+S)">Save As</Button>
     </div>

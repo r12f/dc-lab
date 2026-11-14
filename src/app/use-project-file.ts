@@ -64,6 +64,13 @@ export function useProjectFile() {
     }
   };
 
+  /** Re-reads the open file from disk (after editing it outside the app): replaces the project, no prompt. */
+  const reload = async () => {
+    const h = handleOf(file);
+    if (!h) return;
+    await openRecent(h);
+  };
+
   /** Opens a previously used local file (from the recent list); Save then writes back to it. */
   const openRecent = async (handle: FileSystemFileHandle) => {
     try {
@@ -99,5 +106,5 @@ export function useProjectFile() {
     }
   };
 
-  return { file, dirty, newProject, open, openRecent, save, saveAs: () => saveAs() };
+  return { file, dirty, newProject, open, openRecent, reload, canReload: !!handleOf(file), save, saveAs: () => saveAs() };
 }

@@ -20,7 +20,9 @@ A single JSON file (`*.dclab.json`):
 - **Save** writes back to the remembered file. With no file yet (new project, or after a page reload)
   Save behaves like Save As.
 - **Save As** asks for a file location and name, writes there, and remembers it.
-- Ctrl+S = Save, Ctrl+Shift+S = Save As, Ctrl+O = Open. The current file name is shown in the top bar.
+- **⟳ Reload** (next to Open ▾, Ctrl+R): re-reads the open file from disk after editing it outside the app and
+  replaces the project with it (no prompt); disabled until a file is open.
+- Ctrl+S = Save, Ctrl+Shift+S = Save As, Ctrl+O = Open, Ctrl+R = Reload (Ctrl+Shift+R still reloads the page). The current file name is shown in the top bar.
 - File access uses the browser File System Access API (Chrome / Edge). Browsers without it
   (Firefox, Safari) fall back to opening with an upload dialog and saving as a download.
 - **Open** is a clean start: the current project (and its unsaved changes) is replaced by the file, with no
