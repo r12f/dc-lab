@@ -195,3 +195,9 @@ and module (the cage content) — no cable, and no DAC / AEC / AOC reach. Reach 
 empty: its cable connector is then the cage form factor itself (e.g. OSFP), so the Rack Designer cabling view
 offers exactly the DAC / AEC / AOC that fit that cage and speed. Profiles no longer store `cableId` (dropped on
 load); a placement can still set one in Rack Designer.
+
+**Port settings = Speed, then Module**: the Module list is "none — <cage>" plus the reach classes the cage
+takes at that speed, each shown with its connector ("2xDR4 — 2x MPO-12", "2xLR4 — 2x LC"). Speed + reach fix
+the module and so the cable connector, shown under the list; "none" leaves the cage empty and the connector is
+the cage form factor (e.g. OSFP). There is no separate module pick. Rack Designer port settings also list
+DAC / AEC / AOC and the Cable pick; breakout profiles do not.
