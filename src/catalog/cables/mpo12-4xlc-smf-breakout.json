@@ -4,7 +4,7 @@
   "name": "MPO-12F to 4x LC SMF breakout (8F, Type B)",
   "type": "fiber-sm",
   "fiberCount": 8,
-  "color": "#facc15",
+  "color": "#818cf8",
   "ends": {
     "a": {
       "count": 1,

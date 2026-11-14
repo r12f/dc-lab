@@ -51,7 +51,7 @@ export function OpticDrawing({ ref, optic: o }: Props) {
         const ly = 70 + i * LEG_GAP + LEG_GAP / 2;
         const sx = 40 + BODY_W;
         const ex = sx + PIGTAIL_RUN;
-        const color = o.pigtail!.fiberType === 'fiber-mm' ? '#22d3ee' : '#facc15';
+        const color = o.pigtail!.fiberType === 'fiber-mm' ? '#22d3ee' : '#3b82f6';
         return (
           <g key={i}>
             <path d={`M${sx},${cy} C${sx + 120},${cy} ${ex - 120},${ly} ${ex},${ly}`} fill="none" stroke="#0f172a" strokeWidth={7} />

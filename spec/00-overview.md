@@ -44,3 +44,8 @@ Verify every number against the vendor datasheet before using a design.
 **Maximize**: every canvas toolbar has **⤢ Max** (after Export SVG): hides the module tabs and both side panes,
 leaving only the canvas; **⤡ Restore** or Esc brings them back. Session only (not saved); panes stay mounted
 while hidden.
+
+**Color rule**: red, orange and yellow are reserved for **errors** (red) and **warnings** (yellow/orange). No
+drawing color — ports, roles, phases, cables, aisles, trays, facilities, infra racks — uses those hues (hot aisles
+are violet, power items slate). Enforced by `no-alert-colors.test.ts` over drawing sources and the cable catalog.
+Ports carry no color bar: index, form factor + breakout, connector / reach cells only.

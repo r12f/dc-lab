@@ -19,7 +19,7 @@ export function PduDrawing({ device, ctx }: { device: DeviceDefinition; ctx: Dra
   return (
     <g>
       <line x1={l.width / 2} x2={l.width / 2} y1={-8} y2={4} stroke="#111827" strokeWidth={8} />
-      <rect width={l.width} height={l.height} rx={6} fill="#1f2937" stroke="#f59e0b" strokeWidth={2} />
+      <rect width={l.width} height={l.height} rx={6} fill="#1f2937" stroke="#64748b" strokeWidth={2} />
       <text x={l.width / 2} y={24} fontSize={13} textAnchor="middle" fill="#fff" fontWeight={700}>INPUT</text>
       <text x={l.width / 2} y={42} fontSize={11} textAnchor="middle" fill="#cbd5e1">
         {input ? `${input.phases}Φ ${input.voltageV}V ${input.inputCurrentA}A` : ''}
@@ -35,7 +35,7 @@ export function PduDrawing({ device, ctx }: { device: DeviceDefinition; ctx: Dra
             <rect x={6} y={b.y} width={l.width - 12} height={b.h} rx={4} fill="#111827" stroke={phaseColor} strokeWidth={2} />
             <rect x={6} y={b.y} width={14} height={b.h} fill={phaseColor} />
             <text x={26} y={b.y + 18} fontSize={12} fill="#fff" fontWeight={700}>{`Bank ${b.bank}`}</text>
-            <text x={l.width - 12} y={b.y + 18} fontSize={11} textAnchor="end" fill="#fcd34d">
+            <text x={l.width - 12} y={b.y + 18} fontSize={11} textAnchor="end" fill="#93c5fd">
               {`${g?.phase ?? ''} ${g?.breakerA ? `${g.breakerA}A` : ''}`}
             </text>
             <text x={l.width + 14} y={b.y + b.h / 2 + 4} fontSize={13} fill={paint.inkMuted}>

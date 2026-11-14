@@ -3,7 +3,7 @@
   "id": "mpo12-smf",
   "name": "MPO-12F to MPO-12F SMF patch (12F, Type B)",
   "type": "fiber-sm",
-  "color": "#facc15",
+  "color": "#2563eb",
   "fiberCount": 12,
   "ends": {
     "a": {

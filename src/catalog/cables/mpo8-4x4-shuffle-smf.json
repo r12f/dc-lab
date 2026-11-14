@@ -6,7 +6,7 @@
   "fiberCount": 32,
   "mapping": "shuffle",
   "polarity": "B",
-  "color": "#f97316",
+  "color": "#7c3aed",
   "ends": {
     "a": {
       "count": 4,

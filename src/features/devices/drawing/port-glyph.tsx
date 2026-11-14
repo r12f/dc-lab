@@ -1,6 +1,6 @@
 import type { PortBox } from './faceplate-layout';
 import type { DrawingContext } from './types';
-import { idColor, modeColor, ROLE_COLORS, speedLabel } from './port-style';
+import { modeColor, ROLE_COLORS, speedLabel } from './port-style';
 import { ROLE_TRAITS } from '../../../domain/device/roles';
 import { formFactorSpec } from '../../../domain/ports/form-factors';
 import { portConnectors } from '../../../domain/ports/optic-match';
@@ -11,7 +11,7 @@ import { paint } from '../../../theme/paint';
 /**
  * One port of any device, three lines: index; form factor + breakout ("OSFP 8x100G"); then for data/service
  * ports one cell per cable connector, each "connector / reach" ("MPO-12 / DR4 | MPO-12 / DR4" for a 2xDR4
- * module). A top strip marks the module/reach.
+ * module).
  */
 /** Largest font (down to 6) at which bold `text` fits the port width (bold glyphs ≈ 0.68 em). */
 function fitFont(text: string, width: number, max: number): number {
@@ -45,7 +45,7 @@ function LegCells({ box, legs, cabled, color }: { box: PortBox; legs: PortLeg[];
           <g key={i}>
             {cabled && <rect x={x} y={y} width={w} height={h} rx={2} fill={fill} stroke="#334155" strokeWidth={0.8} />}
             {conn && <text x={x + w / 2} y={y + h * 0.42} fontSize={fit(conn, 8)} textAnchor="middle" fill={ink} fontWeight={700}>{conn}</text>}
-            {reach && <text x={x + w / 2} y={y + h * (conn ? 0.85 : 0.6)} fontSize={fit(reach, 8)} textAnchor="middle" fill={cabled ? ink : '#92400e'} fontWeight={500}>{reach}</text>}
+            {reach && <text x={x + w / 2} y={y + h * (conn ? 0.85 : 0.6)} fontSize={fit(reach, 8)} textAnchor="middle" fill={cabled ? ink : '#1e3a8a'} fontWeight={500}>{reach}</text>}
           </g>
         );
       })}
@@ -77,7 +77,6 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
     ...(multi ? legs.map((l) => `Connector ${l.index}: ${l.label}`) : [conns ? `Connectors ${conns.count}x ${conns.connector}` : '']),
     cable ? `Cable ${cable.name}` : '',
   ].filter(Boolean).join('\n');
-  const markColor = optic ? idColor(optic.id) : r?.reach ? idColor(r.reach) : undefined;
   // Text never spills into the next port: the font shrinks to fit (never stretched or squeezed).
   const t = (y: number, size: number, fill: string, text: string, bold = false) => {
     const em = bold ? 0.68 : 0.6;
@@ -92,7 +91,6 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
       {/* Fiber ports (CPO/NPO) are drawn rounded to set them apart from module cages. */}
       <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={fiberPort ? 12 : 3} fill={fill}
         stroke={sel ? paint.selection : '#0f172a'} strokeWidth={sel ? 3 : 1} />
-      {markColor && <rect x={box.x + 3} y={box.y + 3} width={box.w - 6} height={4} fill={markColor} pointerEvents="none" />}
       {pluggable ? (
         <>
           {t(15, 12, '#0f172a', String(box.index), true)}

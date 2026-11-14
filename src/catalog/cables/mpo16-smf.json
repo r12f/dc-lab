@@ -3,7 +3,7 @@
   "id": "mpo16-smf",
   "name": "MPO-16F to MPO-16F SMF patch (16F, Type B)",
   "type": "fiber-sm",
-  "color": "#eab308",
+  "color": "#1d4ed8",
   "fiberCount": 16,
   "ends": {
     "a": {

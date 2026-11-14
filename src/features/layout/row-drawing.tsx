@@ -11,7 +11,7 @@ import { useLabels } from './view-context';
 import { assignmentRole, servedRacks } from '../../domain/layout/infra';
 
 /** Fill of infrastructure racks: power amber, CDU cyan (as their facility colors); IT racks use the accent. */
-const INFRA_FILL = { power: '#D97706', cdu: '#06B6D4', chiller: '#0E7490' } as const;
+const INFRA_FILL = { power: '#475569', cdu: '#06B6D4', chiller: '#0E7490' } as const;
 
 interface Props {
   lib: Library;
@@ -61,9 +61,9 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
             fill={rowSelected ? paint.ink : paint.frameText}>{row.name}</text>
           {/* Power and budget on separate lines so both stay legible at full-room zoom. */}
           <text x={cx} y={headCy - 90} fontSize={Math.min(210, headW / 5.5)} textAnchor="middle" fontWeight={700}
-            fill={over ? '#EF4444' : rowSelected ? paint.ink : paint.frameText}>{formatPower(powerW)}</text>
+            fill={over ? paint.danger : rowSelected ? paint.ink : paint.frameText}>{formatPower(powerW)}</text>
           <text x={cx} y={headCy + 120} fontSize={Math.min(170, headW / 7)} textAnchor="middle"
-            fill={over ? '#EF4444' : rowSelected ? paint.ink : paint.frameText}>{`of ${formatPower(budgetW)}`}</text>
+            fill={over ? paint.danger : rowSelected ? paint.ink : paint.frameText}>{`of ${formatPower(budgetW)}`}</text>
           <text x={cx} y={headCy + 340} fontSize={Math.min(170, headW / 7)} textAnchor="middle"
             fill={rowSelected ? paint.ink : paint.frameText}>{`${used}/${row.tileCount} tiles`}</text>
         </g>
