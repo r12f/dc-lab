@@ -40,6 +40,13 @@ describe('cabling view assignment', () => {
     expect(direct.reversed).toBeFalsy();
     expect(planCable(lib, dd, [outlet], [inlet], 'power-c13-c14', 'left').reversed).toBe(true);
   });
+  it('power: one end selected lists the cords that fit it (C20 inlet -> C19-C20, C14 inlet -> C13-C14)', () => {
+    const big = newPlacement('big', 'switch-64x800g-osfp', 'SW9', { kind: 'rack', position: 30, face: 'front' });
+    const dd = { ...d, placements: [...d.placements, big] };
+    const only = (ep: { placementId: string; portRef: string }) => applicableCables(lib, dd, [ep], []).map((m) => m.id);
+    expect(only({ placementId: 'big', portRef: `${PSU_GROUP_ID}/1` })).toEqual(['power-c19-c20']);
+    expect(only({ placementId: 'a', portRef: `${PSU_GROUP_ID}/1` })).toEqual(['power-c13-c14']);
+  });
   it('repeats a cable: 10 A + 10 B connectors with a 1:1 cable = 10 runs paired in order', () => {
     const a = placementConnectors(lib, d, d.placements[0], 'front').slice(0, 10);
     const b = placementConnectors(lib, d, d.placements[1], 'front').slice(0, 10);

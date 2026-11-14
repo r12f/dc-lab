@@ -143,3 +143,7 @@ so the unit numbers on the rails stay visible; stubs leave each device near its 
 device — same item, height, breakout profile and port settings — with the next free label (SW1 -> SW2), mounted
 right above the source, else at the closest free unit (0U devices: first free side slot). Cables are not copied.
 The copy becomes the selection; with no room the toolbar reports it.
+
+**Cable list with one end selected**: while only one end is selected (one device's connectors), the Cable list
+shows every cable with an end that fits those connectors — a C20 PSU inlet lists the C19-C20 cord, a C14 inlet
+the C13-C14 cord — instead of going empty until the other end is picked.

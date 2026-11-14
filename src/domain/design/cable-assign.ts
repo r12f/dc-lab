@@ -145,6 +145,12 @@ export function planCable(lib: Library, design: RackDesign, a: CableEndpoint[], 
 export function applicableCables(lib: Library, design: RackDesign, a: CableEndpoint[], b: CableEndpoint[]): CableMedia[] {
   const all = lib.cableMedia.items();
   if (a.length === 0 && b.length === 0) return all;
+  // One end selected so far (e.g. a PSU inlet): cables with an end that fits it, so the list never goes empty
+  // before the other end is picked.
+  if (a.length === 0 || b.length === 0) {
+    const legs = [...a, ...b].map((e) => endpointLeg(lib, design, e));
+    return all.filter((m) => (['a', 'b'] as const).some((s) => legs.every((l) => endFits(m, s, l))));
+  }
   return all.filter((m) => !planCable(lib, design, a, b, m.id, 'left').error);
 }
 
