@@ -118,3 +118,6 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 block per connector leg side by side, each three lines: lanes / reach / connector (a 1x1.6T OSFP running
 8x200G on a 2xDR4 module = two blocks "4x200G · DR4 · MPO-8"). All ports of a group share the block size;
 the port's form factor and mode are in its tooltip.
+
+**Delete device**: the canvas toolbar has "✕ Delete <label>" next to Export SVG, enabled when a device is
+selected; the Delete / Backspace key does the same (ignored while typing in a field).

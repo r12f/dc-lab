@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '../../state/store';
 import { useLibrary } from '../../state/use-library';
 import { newDesign } from '../../domain/design/factory';
@@ -51,6 +51,25 @@ export function DesignerModule() {
     select('designer', copy.id);
   };
   const report = (error?: string) => setMessage(error);
+  const selectedPlacement = design?.placements.find((p) => p.id === placementId);
+  const deleteSelected = () => {
+    if (!selectedPlacement) return;
+    editor.removePlacement(selectedPlacement.id);
+    setPlacementId(undefined);
+  };
+  // Delete / Backspace removes the selected device (not while typing in a field).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))) return;
+      if (!selectedPlacement) return;
+      e.preventDefault();
+      deleteSelected();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   const items = designs.map((d) => ({
     id: d.id,
@@ -96,6 +115,11 @@ export function DesignerModule() {
                 <span className="toolbar-sep" />
                 <Button variant={face === 'front' ? 'primary' : 'default'} onClick={() => setFace('front')}>Front</Button>
                 <Button variant={face === 'rear' ? 'primary' : 'default'} onClick={() => setFace('rear')}>Rear</Button>
+                <span className="toolbar-sep" />
+                <Button variant="danger" disabled={!selectedPlacement} onClick={deleteSelected}
+                  title={selectedPlacement ? `Delete ${selectedPlacement.label} (Del)` : 'Select a device to delete it'}>
+                  {selectedPlacement ? `✕ Delete ${selectedPlacement.label}` : '✕ Delete device'}
+                </Button>
               </>
             }
           >
