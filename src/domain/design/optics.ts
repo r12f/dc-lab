@@ -27,7 +27,7 @@ export function portItemCounts(lib: Library, device: DeviceDefinition, placement
   for (const ref of allPortRefs(device)) {
     const r = resolvePlacedPort(lib, device, placement, ref);
     if (r?.optic) optics.set(r.optic.id, (optics.get(r.optic.id) ?? 0) + 1);
-    if (r?.cableId) cables.set(r.cableId, (cables.get(r.cableId) ?? 0) + cablesPerPort(r.group, r.optic, r.reach));
+    if (r?.cableId) cables.set(r.cableId, (cables.get(r.cableId) ?? 0) + cablesPerPort(r.group, r.optic));
   }
   return { optics, cables };
 }

@@ -39,7 +39,7 @@ The **form factor** of a port is fixed by the hardware. It comes from a registry
 | Kind | Examples | Meaning |
 |---|---|---|
 | `cage` | SFP28, SFP112, QSFP28, QSFP56, QSFP112, QSFP-DD, OSFP, OSFP-XD, ELSFP | Pluggable module cage |
-| `fiber` | LC, CS, SN, MPO-12, MPO-16, MMC | Fiber connector directly on the faceplate |
+| `fiber` | LC, CS, SN, MPO-12, MPO-16, MMC-16 | Fiber connector directly on the faceplate |
 | `copper` | RJ45 | Fixed copper port |
 | `power` | C13, C19 | Power outlet |
 
@@ -67,7 +67,7 @@ follows the connector multiplier: a `2xDR4` module (`2x MPO-12`) needs two trunk
 
 ### CPO and NPO ports
 
-Co-packaged (CPO) and near-packaged (NPO) optics switches expose **fiber connectors** (MPO-16, MMC,
+Co-packaged (CPO) and near-packaged (NPO) optics switches expose **fiber connectors** (MMC-16, MPO-16,
 LC…) instead of cages. Such a group sets `opticalEngine: "cpo" | "npo"` and `reaches` (the optical
 interfaces the engine supports, e.g. `["DR4", "2xDR4"]`). There is no module to choose: reach is
 picked from `reaches`, the engine power is part of the device power, and cables must match the
@@ -114,7 +114,8 @@ its interface type and mode as one label, e.g. `OSFP 800G`, `OSFP 2x400G`, `RJ45
 Each data/service port also shows, along its bottom edge, one sub-box per **cable connector** (leg) on
 the port face: the module's fiber connectors
 (`2xDR4` module with `2x MPO-12` → two MPO-12 boxes, `2xFR4` → two LC boxes, pigtail → one per leg) or,
-for CPO/NPO fiber ports, the port connector times the reach multiplier. Boxes are filled with the
+for CPO/NPO fiber ports, the port's own connector — always one box: an MMC-16 port carries `2xDR4` on its
+16 fibers, split downstream with a Y-cable (MMC-16 → 2x MPO-8). Boxes are filled with the
 attached cable's color (dark when no cable); DAC/AOC and empty cages show none.
 
 ## Drawing

@@ -11,7 +11,7 @@ export function endpointLegs(lib: Library, design: RackDesign, placementId: stri
   const d = p && lib.devices.get(p.deviceId);
   if (!p || !d || !portRef) return undefined;
   const r = resolvePlacedPort(lib, d, p, portRef);
-  return r ? portConnectors(r.group, r.optic, r.reach) : undefined;
+  return r ? portConnectors(r.group, r.optic) : undefined;
 }
 
 /** True when the endpoint's port takes a transceiver (module receptacles are pinned). */

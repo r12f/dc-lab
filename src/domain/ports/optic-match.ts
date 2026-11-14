@@ -57,21 +57,23 @@ export interface PortConnectors {
 }
 
 /**
- * Physical cable connectors a port exposes: the module's fiber connector(s), or the port's own connector
- * for CPO/NPO fiber ports (multiplied by the reach, e.g. 2xDR4). None for DAC/AOC/laser or an empty cage.
+ * Physical cable connectors a port exposes: the module's fiber connector(s), or — for CPO/NPO fiber ports —
+ * the port itself, which is one connector whatever the reach (an MMC-16 carries 2xDR4 on its 16 fibers;
+ * split it with a Y-cable). None for DAC/AOC/laser or an empty cage.
  */
-export function portConnectors(group: PortGroup, optic?: OpticDefinition, reach?: string): PortConnectors | undefined {
+export function portConnectors(group: PortGroup, optic?: OpticDefinition): PortConnectors | undefined {
   const connector = isEnginePort(group) ? group.formFactor : optic?.fiberConnector.replace(/^\d+x\s*/i, '');
   if (!connector) return undefined;
-  return { count: cablesPerPort(group, optic, reach), connector };
+  return { count: cablesPerPort(group, optic), connector };
 }
 
 /**
- * Cables needed per port: the multiplier of the module's fiber connector ("2x MPO-12" -> 2), or of the
- * engine reach for CPO/NPO ports ("2xDR4" -> 2). Defaults to 1.
+ * Cables needed per port: the multiplier of the module's fiber connector ("2x MPO-12" -> 2).
+ * CPO/NPO fiber ports are a single connector: 1.
  */
-export function cablesPerPort(group: PortGroup, optic?: OpticDefinition, reach?: string): number {
-  const text = isEnginePort(group) ? reach : optic?.fiberConnector;
+export function cablesPerPort(group: PortGroup, optic?: OpticDefinition): number {
+  if (isEnginePort(group)) return 1;
+  const text = optic?.fiberConnector;
   const n = Number(/^(\d+)x/i.exec(text ?? '')?.[1]);
   return n > 0 ? n : 1;
 }

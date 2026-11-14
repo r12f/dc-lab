@@ -13,9 +13,9 @@ import { paint } from '../../../theme/paint';
  * "C13"). Data/service ports add the reach, a top strip for the module/reach, and one sub-box per cable
  * connector (e.g. 2xDR4 -> two MPO-12) at the bottom, filled with the attached cable's color.
  */
-/** Largest font (down to 6) at which `text` fits the port width. */
+/** Largest font (down to 6) at which bold `text` fits the port width (bold glyphs ≈ 0.68 em). */
 function fitFont(text: string, width: number, max: number): number {
-  return Math.max(6, Math.min(max, (width - 4) / (text.length * 0.58)));
+  return Math.max(6, Math.min(max, (width - 6) / (text.length * 0.68)));
 }
 
 export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
@@ -29,7 +29,7 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
   const cx = box.x + box.w / 2;
   const speed = r ? speedLabel(r.mode) : '';
   const iface = portLabel(box.group, r?.mode);
-  const conns = pluggable && r ? portConnectors(box.group, optic, r.reach) : undefined;
+  const conns = pluggable && r ? portConnectors(box.group, optic) : undefined;
   const engine = box.group.opticalEngine ? ` · ${box.group.opticalEngine.toUpperCase()}` : '';
   const tip = [
     `${box.ref} · ${box.group.formFactor}${engine} · ${ROLE_TRAITS[box.group.role].label}`,
@@ -40,9 +40,14 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
     cable ? `Cable ${cable.name}` : '',
   ].filter(Boolean).join('\n');
   const markColor = optic ? idColor(optic.id) : r?.reach ? idColor(r.reach) : undefined;
-  const t = (y: number, size: number, fill: string, text: string, bold = false) => (
-    <text x={cx} y={box.y + y} fontSize={size} textAnchor="middle" fill={fill} fontWeight={bold ? 700 : 500} pointerEvents="none">{text}</text>
-  );
+  // Text never spills into the next port: squeezed to the port width when still too long at the minimum font.
+  const t = (y: number, size: number, fill: string, text: string, bold = false) => {
+    const tooWide = text.length * size * (bold ? 0.68 : 0.6) > box.w - 6;
+    return (
+      <text x={cx} y={box.y + y} fontSize={size} textAnchor="middle" fill={fill} fontWeight={bold ? 700 : 500} pointerEvents="none"
+        textLength={tooWide ? box.w - 6 : undefined} lengthAdjust={tooWide ? 'spacingAndGlyphs' : undefined}>{text}</text>
+    );
+  };
   return (
     <g style={{ cursor: 'pointer' }} onClick={(e) => ctx.onPortClick?.(box.ref, e.ctrlKey || e.metaKey || e.shiftKey)}>
       <title>{tip}</title>

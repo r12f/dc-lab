@@ -42,12 +42,12 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     }),
   },
   {
-    id: 'switch-cpo', label: 'CPO switch', description: 'MPO-16 fiber ports on co-packaged optics + ELSFP laser cages',
+    id: 'switch-cpo', label: 'CPO switch', description: 'MMC-16 fiber ports on co-packaged optics + ELSFP laser cages',
     build: (id) => base(id, {
       name: 'New CPO switch', category: 'switch', height: { units: 4, system: 'RU' }, psus: { count: 4, inlet: 'C20', ratedW: 3000 },
       power: { typicalW: 2600, maxW: 3200 },
       ports: [
-        group('data', 'MPO-16', 'data', 'MPO-16', 128, 800, { lanes: 8, rows: 4, breakoutModes: ['2x400G', '8x100G'], opticalEngine: 'cpo', reaches: ['DR8', '2xDR4'] }),
+        group('data', 'MMC-16', 'data', 'MMC-16', 128, 800, { lanes: 8, rows: 4, breakoutModes: ['2x400G', '8x100G'], opticalEngine: 'cpo', reaches: ['DR8', '2xDR4'] }),
         group('els', 'ELSFP', 'laser', 'ELSFP', 16, 0, { rows: 2 }),
         ...mgmtAndConsole(),
       ],

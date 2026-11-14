@@ -58,9 +58,10 @@ describe('CPO / NPO fiber ports', () => {
   it('have engine reaches, no modules, cables match the port connector', () => {
     expect(reachOptions(lib, g, '1x800G')).toEqual(['DR8', '2xDR4']);
     expect(compatibleOptics(lib, g, '1x800G')).toEqual([]);
-    expect(compatibleCables(lib, g).every((c) => c.ends.a.connector === 'MPO-16' || c.ends.b.connector === 'MPO-16')).toBe(true);
+    expect(compatibleCables(lib, g).map((c) => c.id)).toContain('mmc-smf');
+    expect(compatibleCables(lib, g).every((c) => /^MMC/.test(c.ends.a.connector) || /^MMC/.test(c.ends.b.connector))).toBe(true);
     const r = resolvePort(lib, cpo, 'mpo/1', findProfile(cpo, 'all-2x400g-dr4'));
-    expect(r).toMatchObject({ mode: '2x400G', reach: '2xDR4', cableId: 'mpo16-smf' });
+    expect(r).toMatchObject({ mode: '2x400G', reach: '2xDR4', cableId: 'mmc-smf' });
     expect(r?.optic).toBeUndefined();
   });
   it('ELSFP laser cages count as modules in the BOM', () => {
@@ -92,14 +93,14 @@ describe('migration', () => {
 });
 
 describe('port connectors', () => {
-  it('2xDR4 = 2 x MPO-12, 2xFR4 = 2 x LC, DAC/empty = none, CPO 2xDR4 = 2 x port connector', () => {
+  it('2xDR4 = 2 x MPO-12, 2xFR4 = 2 x LC, DAC/empty = none, CPO 2xDR4 = 1 x port connector', () => {
     const osfp = dev('switch-64x800g-osfp').ports.find((g) => g.id === 'osfp')!;
     expect(portConnectors(osfp, lib.optics.get('osfp-800g-2xdr4'))).toEqual({ count: 2, connector: 'MPO-12' });
     expect(portConnectors(osfp, lib.optics.get('osfp-800g-2xfr4'))).toEqual({ count: 2, connector: 'LC' });
     expect(portConnectors(osfp, lib.optics.get('osfp-800g-dac'))).toBeUndefined();
     expect(portConnectors(osfp)).toBeUndefined();
     const cpo = lib.devices.items().flatMap((d) => d.ports).find((g) => g.opticalEngine)!;
-    expect(portConnectors(cpo, undefined, '2xDR4')).toEqual({ count: 2, connector: cpo.formFactor });
+    expect(portConnectors(cpo)).toEqual({ count: 1, connector: 'MMC-16' });
   });
 });
 

@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/device@1",
   "id": "switch-cpo-128x800g-mpo",
-  "name": "128x800G CPO Switch (MPO-16)",
+  "name": "128x800G CPO Switch (MMC-16)",
   "category": "switch",
   "height": {
     "units": 4,
@@ -21,9 +21,9 @@
   "ports": [
     {
       "id": "mpo",
-      "label": "MPO-16",
+      "label": "MMC-16",
       "role": "data",
-      "formFactor": "MPO-16",
+      "formFactor": "MMC-16",
       "count": 128,
       "speedGbps": 800,
       "lanes": 8,
@@ -97,7 +97,7 @@
         "mpo": {
           "mode": "2x400G",
           "reach": "2xDR4",
-          "cableId": "mpo16-smf"
+          "cableId": "mmc-smf"
         },
         "els": {
           "opticId": "elsfp-laser"
