@@ -1,9 +1,9 @@
 {
   "schema": "dc-lab/device@1",
-  "id": "switch-32x800g-qsfpdd800",
-  "name": "32x800G QSFP-DD800 Switch",
+  "id": "switch-32x800g-qsfpdd",
+  "name": "32x800G QSFP-DD Switch",
   "vendor": "Generic",
-  "model": "32x800G QSFP-DD800 Switch",
+  "model": "32x800G QSFP-DD Switch",
   "category": "switch",
   "height": {
     "units": 1,
@@ -23,9 +23,9 @@
   "ports": [
     {
       "id": "qdd",
-      "label": "QSFP-DD800",
+      "label": "QSFP-DD",
       "role": "data",
-      "formFactor": "QSFP-DD800",
+      "formFactor": "QSFP-DD",
       "count": 32,
       "speedGbps": 800,
       "lanes": 8,

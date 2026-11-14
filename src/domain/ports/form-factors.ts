@@ -24,7 +24,6 @@ export const FORM_FACTORS: FormFactorSpec[] = [
   spec('QSFP56', 'cage', 200, ['QSFP28', 'QSFP+']),
   spec('QSFP112', 'cage', 400, ['QSFP56', 'QSFP28', 'QSFP+']),
   spec('QSFP-DD', 'cage', 400, ['QSFP56', 'QSFP28', 'QSFP+']),
-  spec('QSFP-DD800', 'cage', 800, ['QSFP-DD', 'QSFP112', 'QSFP56', 'QSFP28', 'QSFP+']),
   spec('OSFP', 'cage', 800),
   spec('OSFP-XD', 'cage', 1600),
   spec('ELSFP', 'cage'),

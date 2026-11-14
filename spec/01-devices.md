@@ -37,7 +37,7 @@ The **form factor** of a port is fixed by the hardware. It comes from a registry
 
 | Kind | Examples | Meaning |
 |---|---|---|
-| `cage` | SFP28, SFP112, QSFP28, QSFP56, QSFP112, QSFP-DD, QSFP-DD800, OSFP, OSFP-XD, ELSFP | Pluggable module cage |
+| `cage` | SFP28, SFP112, QSFP28, QSFP56, QSFP112, QSFP-DD, OSFP, OSFP-XD, ELSFP | Pluggable module cage |
 | `fiber` | LC, CS, SN, MPO-12, MPO-16, MMC | Fiber connector directly on the faceplate |
 | `copper` | RJ45 | Fixed copper port |
 | `power` | C13, C19 | Power outlet |

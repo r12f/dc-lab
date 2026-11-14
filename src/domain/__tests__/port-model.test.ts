@@ -15,12 +15,11 @@ const dev = (id: string) => lib.devices.get(id)!;
 describe('form factor compatibility', () => {
   it('QSFP-DD accepts QSFP28, OSFP accepts only OSFP', () => {
     expect(moduleFits('QSFP-DD', 'QSFP28')).toBe(true);
-    expect(moduleFits('QSFP-DD800', 'QSFP-DD')).toBe(true);
     expect(moduleFits('OSFP', 'QSFP-DD')).toBe(false);
     expect(moduleFits('QSFP28', 'QSFP-DD')).toBe(false);
   });
   it('cage offers native speeds of compatible older modules', () => {
-    const g = dev('switch-32x800g-qsfpdd800').ports[0];
+    const g = dev('switch-32x800g-qsfpdd').ports[0];
     expect(modesOf(g)).toEqual(expect.arrayContaining(['1x800G', '2x400G', '1x400G', '1x200G', '1x100G', '1x40G']));
   });
 });
@@ -37,8 +36,8 @@ describe('speed and reach are independent', () => {
     expect(r?.optic?.id).toBe('osfp-800g-2xfr4');
     expect(r?.autoOptic).toBe(true);
   });
-  it('QSFP28 LR4 module goes into a QSFP-DD800 cage at 100G', () => {
-    const q = dev('switch-32x800g-qsfpdd800');
+  it('QSFP28 LR4 module goes into an 800G QSFP-DD cage at 100G', () => {
+    const q = dev('switch-32x800g-qsfpdd');
     const r = resolvePort(lib, q, 'qdd/1', findProfile(q, 'mixed-compat'));
     expect(r?.mode).toBe('1x100G');
     expect(r?.optic?.id).toBe('qsfp28-100g-lr4');
@@ -101,5 +100,21 @@ describe('port connectors', () => {
     expect(portConnectors(osfp)).toBeUndefined();
     const cpo = lib.devices.items().flatMap((d) => d.ports).find((g) => g.opticalEngine)!;
     expect(portConnectors(cpo, undefined, '2xDR4')).toEqual({ count: 2, connector: cpo.formFactor });
+  });
+});
+
+describe('QSFP-DD800 removal', () => {
+  it('migrates the form factor and the old built-in device id', () => {
+    const p = normalizeProject({
+      devices: [{ id: 'x', ports: [{ id: 'q', label: 'QSFP-DD800', formFactor: 'QSFP-DD800', role: 'data' }], breakoutProfiles: [] }],
+      optics: [{ id: 'o', formFactor: 'QSFP-DD800', packaging: 'module' }],
+      rackDesigns: [{ id: 'd', placements: [{ id: 'p', deviceId: 'switch-32x800g-qsfpdd800' }], cables: [] }],
+      hiddenBuiltins: ['switch-32x800g-qsfpdd800'], builtinProperties: { 'switch-32x800g-qsfpdd800': { a: 1 } },
+    });
+    expect(p.devices[0].ports[0]).toMatchObject({ formFactor: 'QSFP-DD', label: 'QSFP-DD' });
+    expect(p.optics[0].formFactor).toBe('QSFP-DD');
+    expect(p.rackDesigns[0].placements[0].deviceId).toBe('switch-32x800g-qsfpdd');
+    expect(p.hiddenBuiltins).toEqual(['switch-32x800g-qsfpdd']);
+    expect(p.builtinProperties).toEqual({ 'switch-32x800g-qsfpdd': { a: 1 } });
   });
 });

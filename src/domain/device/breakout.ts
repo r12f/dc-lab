@@ -30,10 +30,12 @@ export function nativeMode(group: PortGroup): string {
   return formatMode({ fanout: 1, speedGbps: group.speedGbps });
 }
 
-/** Native speed of each backward-compatible module form factor below the cage's own speed. */
+/**
+ * Native speed of each module form factor the cage accepts (itself included) below the port speed,
+ * e.g. an 800G QSFP-DD port also runs 400G QSFP-DD, 200G QSFP56, 100G QSFP28 and 40G QSFP+ modules.
+ */
 function compatModes(group: PortGroup): string[] {
   return acceptedModules(group.formFactor)
-    .slice(1)
     .map((f) => formFactorSpec(f).nativeGbps)
     .filter((g): g is number => !!g && g < group.speedGbps)
     .map((g) => formatMode({ fanout: 1, speedGbps: g }));
