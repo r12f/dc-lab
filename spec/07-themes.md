@@ -58,7 +58,7 @@ Exact values live in `src/theme/presets/<id>.ts`, one file per theme.
 
 ## Selection and persistence
 
-- Theme picker in the top bar; first option is **System**, then every built-in theme. Each option shows
+- Theme picker in the top bar, ordered **Light**, **Dark**, **System**, a separator, then the style themes. Each option shows
   its description as a tooltip.
 - **Default = System**: the app uses `light` or `dark` according to the OS/browser `prefers-color-scheme`
   and switches live when the OS setting changes.
