@@ -125,6 +125,27 @@ function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: Port
 }
 
 /**
+ * Lines of the assigned cables: each run joins every A connector to every B connector (a 1:1 cable is one line,
+ * a breakout fans out). Curves bow sideways so lines between ports of one row stay visible.
+ */
+function cableLines(design: RackDesign, devices: DeviceLayout[]) {
+  const at = new Map<string, { x: number; y: number }>();
+  for (const d of devices) for (const l of d.legs) at.set(endpointKey(l.ep), { x: l.x + l.w / 2, y: l.y + l.h / 2 });
+  return design.cables.flatMap((c) => c.from.flatMap((f, i) => c.to.map((t, j) => {
+    const a = at.get(endpointKey(f));
+    const b = at.get(endpointKey(t));
+    if (!a || !b) return undefined;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const bow = Math.max(24, Math.hypot(dx, dy) * 0.25);
+    // Control points pushed perpendicular-ish: down for same-row links, sideways otherwise.
+    const [ox, oy] = Math.abs(dy) < 8 ? [0, bow] : [bow * Math.sign(dx || 1), 0];
+    const d = `M${a.x},${a.y} C${a.x + ox},${a.y + oy} ${b.x + ox},${b.y + oy} ${b.x},${b.y}`;
+    return { key: `${c.id}:${i}:${j}`, runId: c.id, d, title: `${endpointLabel(design, f)} ↔ ${endpointLabel(design, t)}` };
+  }))).filter((x): x is NonNullable<typeof x> => !!x);
+}
+
+/**
  * Cabling view: every device's face drawn like its faceplate, each port split into its connector legs with
  * what runs on them. Press on a connector and drag to select several (dragging from a selected one deselects).
  * The selection splits into A (first device) and B (other devices); only cables that fit both ends are offered,
@@ -306,6 +327,15 @@ export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) 
             </g>
           );
         })}
+        {/* Assigned cables: one line per A–B connector pair, in the cable's colour; drawn last (on top). */}
+        <g>
+          {cableLines(design, devices).map((ln) => (
+            <path key={ln.key} d={ln.d} fill="none" stroke={runColor.get(ln.runId)} strokeWidth={2} strokeOpacity={0.85}
+              strokeLinecap="round" style={{ cursor: 'pointer' }} onClick={() => onSelectCable(ln.runId)}>
+              <title>{ln.title}</title>
+            </path>
+          ))}
+        </g>
       </svg>
     </div>
   );
