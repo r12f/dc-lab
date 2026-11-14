@@ -25,6 +25,8 @@ export function DevicesModule() {
   const ed = useCatalogEditor('devices', 'devices', lib.devices);
   const hiddenCount = useAppStore((s) => s.project.hiddenBuiltins.length);
   const restoreBuiltins = useAppStore((s) => s.restoreBuiltins);
+  const setBuiltinProfiles = useAppStore((s) => s.setBuiltinProfiles);
+  const builtinProfiles = useAppStore((s) => s.project.builtinProfiles);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileId, setProfileId] = useState<string>();
   const ports = usePortSelection();
@@ -114,6 +116,8 @@ export function DevicesModule() {
             onLeaveItem={() => variant && select(device.id)}
             readOnly={typeReadOnly}
             onChange={ed.save}
+            onProfilesChange={typeReadOnly ? (d) => setBuiltinProfiles(d.id, { breakoutProfiles: d.breakoutProfiles, defaultProfileId: d.defaultProfileId }) : undefined}
+            onResetProfiles={typeReadOnly && builtinProfiles[device.id] ? () => setBuiltinProfiles(device.id, undefined) : undefined}
             onDuplicate={() => ed.duplicate(device.id)}
             profileId={profileId}
             onProfileChange={setProfileId}

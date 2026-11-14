@@ -74,8 +74,12 @@
   "breakoutProfiles": [
     {
       "id": "default",
-      "name": "Default",
-      "groupDefaults": {},
+      "name": "Default (native speed, DR)",
+      "groupDefaults": {
+        "qsfp28": {
+          "reach": "DR"
+        }
+      },
       "overrides": {}
     }
   ],

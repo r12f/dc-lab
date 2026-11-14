@@ -12,8 +12,9 @@ export function useLibrary(): Library {
   const variants = useAppStore((s) => s.project.variants);
   const hidden = useAppStore((s) => s.project.hiddenBuiltins);
   const builtinProps = useAppStore((s) => s.project.builtinProperties);
+  const builtinProfiles = useAppStore((s) => s.project.builtinProfiles);
   return useMemo(
-    () => new Library(BUILTIN_CATALOG, { devices, racks, optics, cableMedia, variants }, hidden, builtinProps),
-    [devices, racks, optics, cableMedia, variants, hidden, builtinProps],
+    () => new Library(BUILTIN_CATALOG, { devices, racks, optics, cableMedia, variants }, hidden, builtinProps, builtinProfiles),
+    [devices, racks, optics, cableMedia, variants, hidden, builtinProps, builtinProfiles],
   );
 }

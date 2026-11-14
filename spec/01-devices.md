@@ -131,9 +131,14 @@ Drawing strategy is selected by device shape:
 - **DC PDU** (`dc-pdu`): room-level PDU item, picked by PDU facilities in DC Layout (supply capacity = their
   default max power); hidden from the Rack Designer palette.
 - **In-Row Chiller** (`chiller`): full-height device with cooling capacity / pump power; fills a chiller rack.
-- **Default breakout profile** (`defaultProfileId`): every device has one (built-ins: "Default" = native modes,
-  64x800G switch: all 2x400G 2xDR4). Placements that pick no profile and the Devices canvas use it; "Make
-  default" in the profile editor; the default cannot be deleted. Projects get a "Default" profile on load.
+- **Default breakout profile** (`defaultProfileId`): every device has one. Built-ins ship "Default (native speed,
+  DR)": every data / service cage at its native (maximum) speed with the DR-class module of that speed —
+  2xDR4 on 800G / 1.6T OSFP, DR4 on 400G, DR on 100G (no default reach where no DR module exists). Placements
+  that pick no profile and the Devices canvas use it; "Make default" in the profile editor; the default cannot
+  be deleted. Projects get a "Default" profile on load.
+- **Profiles on built-in devices**: a built-in device stays read-only, but its breakout profiles are editable
+  (add / edit / delete / make default). The edits are stored in the project (`builtinProfiles[deviceId]`,
+  replacing the shipped list) and survive save / load; "Reset to built-in profiles" discards them.
 - **Items tab**: the Devices inspector has **Item type** | **Items (n)** tabs. A device item can override the item
   type's **typical / max power and weight** (`specs`); empty fields inherit. Rack metrics and the BOM use the
   placed item's values. Each item in the list has a ✕ delete button, and an opened item has "✕ Delete item"

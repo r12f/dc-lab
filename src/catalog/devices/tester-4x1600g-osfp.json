@@ -64,8 +64,12 @@
   "breakoutProfiles": [
     {
       "id": "default",
-      "name": "Default",
-      "groupDefaults": {},
+      "name": "Default (native speed, DR)",
+      "groupDefaults": {
+        "osfp": {
+          "reach": "2xDR4"
+        }
+      },
       "overrides": {}
     }
   ],

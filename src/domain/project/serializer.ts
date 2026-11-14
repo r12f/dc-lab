@@ -47,6 +47,7 @@ export function normalizeProject(raw: Record<string, unknown>): Project {
   p.hiddenBuiltins = (obj.hiddenBuiltins as string[]) ?? [];
   p.propertyDefs = (obj.propertyDefs as Project['propertyDefs']) ?? [];
   p.builtinProperties = (obj.builtinProperties as Project['builtinProperties']) ?? {};
+  p.builtinProfiles = (obj.builtinProfiles as Project['builtinProfiles']) ?? {};
   return p;
 }
 
@@ -62,5 +63,6 @@ export function mergeProjects(base: Project, incoming: Project): Project {
   out.hiddenBuiltins = [...new Set([...base.hiddenBuiltins, ...incoming.hiddenBuiltins])];
   out.propertyDefs = mergeById(base.propertyDefs, incoming.propertyDefs);
   out.builtinProperties = { ...base.builtinProperties, ...incoming.builtinProperties };
+  out.builtinProfiles = { ...base.builtinProfiles, ...incoming.builtinProfiles };
   return out;
 }

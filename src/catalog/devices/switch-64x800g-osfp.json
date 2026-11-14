@@ -74,8 +74,18 @@
   ],
   "breakoutProfiles": [
     {
+      "id": "default",
+      "name": "Default (native speed, DR)",
+      "groupDefaults": {
+        "osfp": {
+          "reach": "2xDR4"
+        }
+      },
+      "overrides": {}
+    },
+    {
       "id": "all-2x400g",
-      "name": "Default: all 2x400G, 2xDR4",
+      "name": "All 2x400G, 2xDR4",
       "groupDefaults": {
         "osfp": {
           "mode": "2x400G",
@@ -103,5 +113,5 @@
       }
     }
   ],
-  "defaultProfileId": "all-2x400g"
+  "defaultProfileId": "default"
 }

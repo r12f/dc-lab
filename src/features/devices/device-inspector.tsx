@@ -29,6 +29,9 @@ interface Props {
   itemSelected?: boolean;
   /** Back to the item type (deselects the item). */
   onLeaveItem?(): void;
+  /** Built-in device: saves profile edits to the project. */
+  onProfilesChange?(device: DeviceDefinition): void;
+  onResetProfiles?(): void;
 }
 
 export function DeviceInspector(props: Props) {

@@ -16,7 +16,8 @@ describe('default breakout profile', () => {
       expect(d.breakoutProfiles.some((p) => p.id === d.defaultProfileId), d.id).toBe(true);
     }
     const sw = SHIPPED_CATALOG.devices.find((d) => d.id === 'switch-64x800g-osfp')!;
-    expect(findProfile(sw)?.id).toBe('all-2x400g');
+    expect(findProfile(sw)?.id).toBe('default');
+    expect(findProfile(sw, 'all-2x400g')?.id).toBe('all-2x400g');
     expect(findProfile(sw, 'mixed')?.id).toBe('mixed');
   });
   it('project devices without one get a "Default" profile on load', () => {

@@ -17,6 +17,10 @@ interface Props {
   device: DeviceDefinition;
   readOnly: boolean;
   onChange(device: DeviceDefinition): void;
+  /** Built-in device: profiles are still editable, saved through this (only profile fields change). */
+  onProfilesChange?(device: DeviceDefinition): void;
+  /** Built-in device whose profiles were edited: puts the shipped ones back. */
+  onResetProfiles?(): void;
   profileId?: string;
   onProfileChange(id: string | undefined): void;
   selectedPorts: ReadonlySet<string>;
@@ -24,7 +28,11 @@ interface Props {
 }
 
 /** Profile list + per-group defaults + per-port settings for the selected ports. */
-export function BreakoutProfilesEditor({ lib, device, readOnly, onChange, profileId, onProfileChange, selectedPorts, onSelectPorts }: Props) {
+export function BreakoutProfilesEditor(props: Props) {
+  const { lib, device, profileId, onProfileChange, selectedPorts, onSelectPorts, onResetProfiles } = props;
+  // Profiles of a built-in device are editable even though the device itself is read-only.
+  const onChange = props.onProfilesChange ?? props.onChange;
+  const readOnly = props.readOnly && !props.onProfilesChange;
   // No explicit pick = the device's default profile (what placements use when they pick none).
   const profile = findProfile(device, profileId);
   const isDefault = profile?.id === device.defaultProfileId;
@@ -67,6 +75,7 @@ export function BreakoutProfilesEditor({ lib, device, readOnly, onChange, profil
       {profile && !readOnly && !isDefault && (
         <Button onClick={() => onChange({ ...device, defaultProfileId: profile.id })}>Make default</Button>
       )}
+      {onResetProfiles && <Button onClick={onResetProfiles} title="Discard this project's profile edits">Reset to built-in profiles</Button>}
       {profile && (
         <fieldset disabled={readOnly} className="plain">
           <TextField label="Profile name" value={profile.name} onChange={(name) => setProfile({ ...profile, name })} />

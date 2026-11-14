@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand';
-import { emptyProject, type Project } from '../domain/project/types';
+import { emptyProject, type BuiltinProfiles, type Project } from '../domain/project/types';
 import { mergeProjects } from '../domain/project/serializer';
 import type { PropertyDef, PropertyValue } from '../domain/properties/types';
 import { withValue } from '../domain/properties/properties';
@@ -21,6 +21,8 @@ export interface ProjectSlice {
   removePropertyDef(id: string): void;
   /** Sets a custom property value on a built-in device/rack (stored in the project). */
   setBuiltinProperty(itemId: string, propertyId: string, value: PropertyValue | undefined): void;
+  /** Saves the breakout profiles of a built-in device (undefined = back to the built-in ones). */
+  setBuiltinProfiles(deviceId: string, profiles: BuiltinProfiles | undefined): void;
 }
 
 export const createProjectSlice: StateCreator<ProjectSlice, [], [], ProjectSlice> = (set) => ({
@@ -63,4 +65,10 @@ export const createProjectSlice: StateCreator<ProjectSlice, [], [], ProjectSlice
         builtinProperties: { ...s.project.builtinProperties, [itemId]: withValue(s.project.builtinProperties[itemId], propertyId, value) },
       },
     })),
+  setBuiltinProfiles: (deviceId, profiles) =>
+    set((s) => {
+      const next = { ...s.project.builtinProfiles };
+      if (profiles) next[deviceId] = profiles; else delete next[deviceId];
+      return { project: { ...s.project, builtinProfiles: next } };
+    }),
 });
