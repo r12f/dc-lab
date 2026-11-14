@@ -1,11 +1,11 @@
 import type { PointerEvent } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { DcLayout, Rect, Row } from '../../domain/layout/types';
-import { tileWidthOf, type DesignLookup } from '../../domain/layout/tiles';
+import { occupiedTiles, tileWidthOf, type DesignLookup } from '../../domain/layout/tiles';
 import { tileRect } from '../../domain/layout/floor-plan';
 import { computeRackMetrics } from '../../domain/design/metrics';
 import { formatPower } from '../../domain/units';
-import type { LayoutSelection } from './selection';
+import { isSelected, type LayoutSelection } from './selection';
 import { paint } from '../../theme/paint';
 
 interface Props {
@@ -23,7 +23,7 @@ interface Props {
   onRackHover(assignmentId: string | undefined, e?: { clientX: number; clientY: number }): void;
 }
 
-const HEADER_H = 820;
+const HEADER_H = 1040;
 
 /**
  * One vertical row: header (name + power / budget, drag handle), tiles from north to south,
@@ -34,16 +34,16 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
   const assignments = layout.assignments.filter((a) => a.rowId === row.id);
   const length = row.tileCount * row.tileWidthMm;
   const frontX = row.frontFacing === 'east' ? rect.x + rect.widthMm : rect.x;
-  const rowSelected = selection?.kind === 'row' && selection.id === row.id;
+  const rowSelected = isSelected(selection, 'row', row.id);
+  const used = new Set(assignments.flatMap((a) => occupiedTiles(lib, designs, a))).size;
   const budgetW = row.powerBudgetKw * 1000;
   const over = powerW > budgetW;
   const cx = rect.x + rect.widthMm / 2;
-  const selectRow = (e: { stopPropagation(): void }) => { e.stopPropagation(); onSelect({ kind: 'row', id: row.id }); };
 
   return (
     <g>
-      <g style={{ cursor: 'move' }} onPointerDown={onHeaderPointerDown} onClick={selectRow}>
-        <title>{`${row.name} — drag sideways to reorder`}</title>
+      <g style={{ cursor: 'move' }} onPointerDown={onHeaderPointerDown} onClick={(e) => e.stopPropagation()}>
+        <title>{`${row.name} · ${used}/${row.tileCount} rack tiles — drag sideways to reorder, Ctrl-click to multi-select`}</title>
         <rect x={rect.x} y={rect.y - HEADER_H} width={row.tileDepthMm} height={HEADER_H - 40} rx={60}
           fill={rowSelected ? paint.selection : paint.frame} fillOpacity={rowSelected ? 0.35 : 1} />
         <text x={cx} y={rect.y - HEADER_H + 250} fontSize={Math.min(230, row.tileDepthMm / 4.5)} textAnchor="middle" fontWeight={700}
@@ -53,6 +53,8 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
           fill={over ? '#EF4444' : rowSelected ? paint.ink : paint.frameText}>{formatPower(powerW)}</text>
         <text x={cx} y={rect.y - HEADER_H + 700} fontSize={Math.min(170, row.tileDepthMm / 7)} textAnchor="middle"
           fill={over ? '#EF4444' : rowSelected ? paint.ink : paint.frameText}>{`of ${formatPower(budgetW)}`}</text>
+        <text x={cx} y={rect.y - HEADER_H + 920} fontSize={Math.min(170, row.tileDepthMm / 7)} textAnchor="middle"
+          fill={rowSelected ? paint.ink : paint.frameText}>{`${used}/${row.tileCount} tiles`}</text>
       </g>
       {tiles.map((t) => {
         const r = tileRect(rect, row, t);

@@ -4,6 +4,7 @@ import { newAisle, newFacility, newRow, newTray } from '../../domain/layout/fact
 import { assignmentProblem, type DesignLookup } from '../../domain/layout/tiles';
 import { clampToRoom, snap } from '../../domain/layout/geometry';
 import { reorderTo } from '../../domain/layout/floor-plan';
+import { duplicateElements, type DuplicableKind } from '../../domain/layout/duplicate';
 import { uniqueId } from '../../domain/ids';
 import { useAppStore } from '../../state/store';
 
@@ -39,15 +40,27 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
   });
 
   function updateElement<T extends Element>(list: ListName, id: string, patch: Partial<T>) {
-    mutate((l) => ({ ...l, [list]: (l[list] as Element[]).map((e) => (e.id === id ? { ...e, ...patch } : e)) }));
+    updateElements<T>(list, [id], patch);
   }
-  const removeElement = (list: ListName, id: string) =>
+  /** Applies the same patch to several elements (batch edit). */
+  function updateElements<T extends Element>(list: ListName, ids: string[], patch: Partial<T>) {
+    mutate((l) => ({ ...l, [list]: (l[list] as Element[]).map((e) => (ids.includes(e.id) ? { ...e, ...patch } : e)) }));
+  }
+  /** Copies elements; returns the copies' ids (selected afterwards). */
+  const duplicate = (kind: DuplicableKind, ids: string[]): string[] => {
+    if (!layout) return [];
+    const r = duplicateElements(layout, kind, ids);
+    mutate(() => r.layout);
+    return r.ids;
+  };
+  const removeElement = (list: ListName, id: string) => removeElements(list, [id]);
+  const removeElements = (list: ListName, ids: string[]) =>
     mutate((l) => ({
       ...l,
-      [list]: (l[list] as Element[]).filter((e) => e.id !== id),
-      sequence: l.sequence.filter((x) => x !== id),
-      trays: list === 'aisles' ? l.trays.filter((t) => t.aisleId !== id) : list === 'trays' ? l.trays.filter((t) => t.id !== id) : l.trays,
-      assignments: list === 'rows' ? l.assignments.filter((a) => a.rowId !== id) : l.assignments,
+      [list]: (l[list] as Element[]).filter((e) => !ids.includes(e.id)),
+      sequence: l.sequence.filter((x) => !ids.includes(x)),
+      trays: l.trays.filter((t) => !ids.includes(t.id) && !(list === 'aisles' && ids.includes(t.aisleId))),
+      assignments: list === 'rows' ? l.assignments.filter((a) => !ids.includes(a.rowId)) : l.assignments,
     }));
 
   /** Re-orders a row/aisle so its band centre lands nearest `centerX`. */
@@ -81,7 +94,7 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
   const rename = (name: string) => mutate((l) => ({ ...l, name }));
 
   return {
-    addRow, addAisle, addTray, addFacility, updateElement, removeElement, reorder, moveTray, moveFacility,
+    addRow, addAisle, addTray, addFacility, updateElement, updateElements, duplicate, removeElement, removeElements, reorder, moveTray, moveFacility,
     assign, unassign, relabel, setRoom, setWhitespace, rename,
   };
 }

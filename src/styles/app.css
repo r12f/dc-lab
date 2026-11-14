@@ -122,3 +122,5 @@ body.resizing { cursor: col-resize; user-select: none; }
 .checks input { width: auto; }
 .table-scroll { overflow-x: auto; }
 p.warn { color: var(--danger); margin: 4px 0; font-size: 12px; }
+.toolbar-group { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.toolbar-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }

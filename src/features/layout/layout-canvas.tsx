@@ -4,7 +4,7 @@ import type { DcLayout } from '../../domain/layout/types';
 import type { DesignLookup } from '../../domain/layout/tiles';
 import { computeDcMetrics } from '../../domain/layout/metrics';
 import { computeFloorPlan, trayRect } from '../../domain/layout/floor-plan';
-import type { DragKind, LayoutSelection } from './selection';
+import { clickSelect, isSelected, type DragKind, type ElementKind, type LayoutSelection } from './selection';
 import type { LayoutEditor } from './use-layout-editor';
 import { RowDrawing } from './row-drawing';
 import { AreaDrawing } from './area-drawing';
@@ -40,10 +40,13 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
   // Fit the room width to the pane; taller rooms scroll vertically.
   const pxPerMm = Math.min(1100 / widthMm, 0.1);
   const rowPower = new Map(computeDcMetrics(lib, designs, layout).rows.map((r) => [r.rowId, r.typicalW]));
-  const isSel = (kind: LayoutSelection['kind'], id: string) => selection?.kind === kind && 'id' in selection && selection.id === id;
+  const isSel = (kind: ElementKind, id: string) => isSelected(selection, kind, id);
+  // Selection happens on pointer-down: the SVG captures the pointer for dragging, so element clicks never fire.
   const startDrag = (kind: DragKind, id: string) => (e: Parameters<ReturnType<typeof drag.start>>[0]) => {
     e.stopPropagation();
-    onSelect({ kind, id });
+    const additive = e.ctrlKey || e.metaKey || e.shiftKey;
+    // Pressing an already-selected element keeps the multi-selection (so it can be dragged).
+    if (additive || !isSelected(selection, kind, id)) onSelect(clickSelect(selection, kind, id, additive));
     setHover(undefined);
     drag.start(kind, id)(e);
   };
@@ -69,7 +72,7 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
           <g key={f.id} opacity={ghost(f.id)}>
             <AreaDrawing rect={f} fill={FACILITY_COLORS[f.kind]} opacity={0.45}
               label={`${f.name}${f.capacityKw ? ` ${f.capacityKw} kW` : ''}`}
-              selected={isSel('facility', f.id)} onClick={() => onSelect({ kind: 'facility', id: f.id })}
+              selected={isSel('facility', f.id)}
               onPointerDown={startDrag('facility', f.id)} />
           </g>
         ))}
@@ -78,7 +81,7 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
           return (
             <g key={a.id} opacity={ghost(a.id)}>
               <AreaDrawing rect={b.rect} fill={AISLE_COLORS[a.kind]} label={`${a.kind} aisle`} cursor="ew-resize"
-                selected={isSel('aisle', a.id)} onClick={() => onSelect({ kind: 'aisle', id: a.id })}
+                selected={isSel('aisle', a.id)}
                 onPointerDown={startDrag('aisle', a.id)} />
             </g>
           );
@@ -98,7 +101,7 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
           return rect && (
             <g key={t.id} opacity={ghost(t.id)}>
               <AreaDrawing rect={rect} fill={TRAY_COLORS[t.kind]} opacity={0.35} label={`${t.kind} tray (overhead)`} dashed labelAt={0.8}
-                cursor="ew-resize" selected={isSel('tray', t.id)} onClick={() => onSelect({ kind: 'tray', id: t.id })}
+                cursor="ew-resize" selected={isSel('tray', t.id)}
                 onPointerDown={startDrag('tray', t.id)} />
             </g>
           );

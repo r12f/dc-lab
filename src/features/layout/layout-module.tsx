@@ -9,6 +9,8 @@ import { Sidebar } from '../../ui/sidebar';
 import { CanvasFrame, EmptyCanvas } from '../../ui/canvas-frame';
 import { LayoutCanvas } from './layout-canvas';
 import { LayoutInspector } from './layout-inspector';
+import { LayoutToolbar } from './layout-toolbar';
+import { useLayoutShortcuts } from './use-layout-shortcuts';
 import { useLayoutEditor } from './use-layout-editor';
 import type { LayoutSelection } from './selection';
 
@@ -24,6 +26,7 @@ export function LayoutModule() {
 
   const layout = layouts.find((l) => l.id === selectedId);
   const editor = useLayoutEditor(lib, designs, layout);
+  useLayoutShortcuts(editor, sel, setSel, !!layout);
 
   const create = () => {
     const l = newLayout(uniqueId(slugify('dc layout'), layouts.map((x) => x.id)), 'New DC layout');
@@ -58,7 +61,8 @@ export function LayoutModule() {
       }
       canvas={
         layout ? (
-          <CanvasFrame title={layout.name} exportName={layout.id}>
+          <CanvasFrame title={layout.name} exportName={layout.id}
+            toolbar={<LayoutToolbar editor={editor} selection={sel} onSelect={setSel} />}>
             {(ref) => <LayoutCanvas ref={ref} lib={lib} designs={designs} layout={layout} editor={editor} selection={sel} onSelect={setSel} />}
           </CanvasFrame>
         ) : (

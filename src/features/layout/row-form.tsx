@@ -1,25 +1,24 @@
 import type { RowFront, Row } from '../../domain/layout/types';
-import { Button } from '../../ui/button';
-import { NumberField, SelectField, TextField } from '../../ui/fields';
 import type { LayoutEditor } from './use-layout-editor';
+import { BatchNumber, BatchSelect, BatchText, common } from './batch-fields';
 
-const facing = [{ value: 'west' as RowFront, label: 'West (left)' }, { value: 'east' as RowFront, label: 'East (right)' }];
+const facing: { value: RowFront; label: string }[] = [{ value: 'west', label: 'West (left)' }, { value: 'east', label: 'East (right)' }];
 
-export function RowForm({ row, editor, onRemoved }: { row: Row; editor: LayoutEditor; onRemoved(): void }) {
-  const set = (patch: Partial<Row>) => editor.updateElement<Row>('rows', row.id, patch);
+/** Edits one or several rows; a field changed here is applied to every selected row. */
+export function RowForm({ rows, editor }: { rows: Row[]; editor: LayoutEditor }) {
+  const set = (patch: Partial<Row>) => editor.updateElements<Row>('rows', rows.map((r) => r.id), patch);
   return (
-    <div className="card">
-      <TextField label="Row name" value={row.name} onChange={(name) => set({ name })} />
+    <>
+      {rows.length === 1 && <BatchText label="Row name" value={rows[0].name} onChange={(name) => set({ name })} />}
       <div className="row3">
-        <NumberField label="Tiles" value={row.tileCount} min={1} onChange={(tileCount) => set({ tileCount })} />
-        <NumberField label="Tile pitch mm" value={row.tileWidthMm} onChange={(tileWidthMm) => set({ tileWidthMm })} />
-        <NumberField label="Row depth mm" value={row.tileDepthMm} onChange={(tileDepthMm) => set({ tileDepthMm })} />
+        <BatchNumber label="Tiles" value={common(rows, 'tileCount')} min={1} onChange={(tileCount) => set({ tileCount })} />
+        <BatchNumber label="Tile pitch mm" value={common(rows, 'tileWidthMm')} onChange={(tileWidthMm) => set({ tileWidthMm })} />
+        <BatchNumber label="Row depth mm" value={common(rows, 'tileDepthMm')} onChange={(tileDepthMm) => set({ tileDepthMm })} />
       </div>
       <div className="row2">
-        <NumberField label="Power budget kW" value={row.powerBudgetKw} onChange={(powerBudgetKw) => set({ powerBudgetKw })} />
-        <SelectField<RowFront> label="Front (cold aisle)" value={row.frontFacing} options={facing} onChange={(frontFacing) => set({ frontFacing })} />
+        <BatchNumber label="Power budget kW" value={common(rows, 'powerBudgetKw')} onChange={(powerBudgetKw) => set({ powerBudgetKw })} />
+        <BatchSelect<RowFront> label="Front (cold aisle)" value={common(rows, 'frontFacing')} options={facing} onChange={(frontFacing) => set({ frontFacing })} />
       </div>
-      <Button variant="danger" onClick={() => { editor.removeElement('rows', row.id); onRemoved(); }}>Remove row</Button>
-    </div>
+    </>
   );
 }

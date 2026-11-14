@@ -49,14 +49,23 @@ south (down), units are millimetres.
   - room, rack area (dashed outline), facilities (PDU amber, cooling cyan, other grey), aisles (blue
     cold / red hot), vertical rows of tiles with a front-side marker, assigned racks, trays on top
     (semi-transparent, so the aisle stays visible under them).
+  - Title bar (next to Export SVG): **+ Row**, **+ Aisle**, **+ Tray** (over the selected aisle, else
+    the first), **+ PDU**, **+ Cooling**, **Duplicate** (Ctrl+D) and **Delete** (Del) for the selection.
+  - **Selection**: click a row header, aisle, tray or facility; Ctrl/Shift-click adds or removes elements
+    of the same kind. The inspector also offers group selections (all rows, cold aisles, hot aisles, all
+    trays, facilities). With several selected, the inspector edits them together: a changed field is
+    applied to all; fields that differ show "mixed".
+  - **Duplicate**: a row copy (with its racks, relabelled) and an aisle copy are inserted right after the
+    original; a tray copy goes over the next aisle east that has no tray of that kind; a facility copy is
+    offset 200 mm.
   - **Drag** a row (by its header) or an aisle sideways to **reorder** it in the sequence; the plan
     re-packs live while dragging. **Drag** a tray onto another aisle to move it there. **Drag** a
     facility to move it freely (snapped to 100 mm, kept inside the room). A click without movement
     just selects.
-  - Each row header shows `name` and `power / budget` (red when over budget).
+  - Each row header shows `name`, `power / budget` (red when over budget) and `used/total tiles`.
   - **Hover** a rack: tooltip with label, design, rack template, tiles, units used, devices, typical and
     max power, weight, warnings.
   - Click a tile to select it, click a rack to select the assignment.
-- Inspector: room and rack-area fields, add row/aisle/tray/facility, selected element editor, tile
-  assignment, layout warnings, DC BOM.
+- Inspector: room and rack-area fields, layout warnings, group selections, selected element(s) editor,
+  tile assignment, DC BOM.
 - Export SVG (tooltip and drag previews are not exported).
