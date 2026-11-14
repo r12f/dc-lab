@@ -112,10 +112,8 @@ export function DesignerModule() {
                 <Button variant={view === 'elevation' ? 'primary' : 'default'} onClick={() => setView('elevation')}>Elevation</Button>
                 <Button variant={view === 'cabling' ? 'primary' : 'default'} onClick={() => setView('cabling')}>Cabling</Button>
                 {view === 'elevation' && (
-                  <label className="checkbox" title="Show cable runs on the elevation">
-                    <input type="checkbox" checked={showCables} onChange={(e) => setShowCables(e.target.checked)} />
-                    {' Cables'}
-                  </label>
+                  <Button variant={showCables ? 'primary' : 'default'} aria-pressed={showCables}
+                    title={showCables ? 'Hide cable runs' : 'Show cable runs'} onClick={() => setShowCables(!showCables)}>Cables</Button>
                 )}
                 <span className="toolbar-sep" />
                 <Button variant="danger" disabled={!selectedPlacement} onClick={deleteSelected}
