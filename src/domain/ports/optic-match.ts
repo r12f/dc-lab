@@ -4,6 +4,7 @@ import type { CableMedia, OpticDefinition } from '../optics/types';
 import { parseMode } from '../device/breakout';
 import { formFactorSpec, moduleFits } from './form-factors';
 import { connectorsMate } from '../optics/connectors';
+import { isDirectAttach } from '../optics/cable-types';
 
 /** Total port speed of a breakout mode ("2x400G" -> 800). */
 export function modeTotalGbps(mode: string): number {
@@ -25,10 +26,31 @@ export function compatibleOptics(lib: Library, group: PortGroup, mode: string): 
   return lib.optics.items().filter((o) => moduleFits(group.formFactor, o.formFactor) && o.speedGbps === total);
 }
 
-/** Reach classes available for a port at a mode: engine reaches for CPO/NPO, module reaches otherwise. */
+/** Reach classes that are direct-attach cables, not transceivers. */
+const DIRECT_REACH: Record<string, CableMedia['type']> = { DAC: 'copper-dac', AEC: 'aec', AOC: 'aoc' };
+
+/** The direct-attach cable type a reach class stands for ("DAC" -> copper-dac), if any. */
+export function directAttachType(reach: string | undefined): CableMedia['type'] | undefined {
+  return reach ? DIRECT_REACH[reach.toUpperCase()] : undefined;
+}
+
+/** DAC / AEC / AOC cables whose plug fits the cage and whose speed matches the mode. */
+export function directAttachCables(lib: Library, group: PortGroup, mode: string, reach?: string): CableMedia[] {
+  if (isEnginePort(group) || group.role === 'laser') return [];
+  const total = modeTotalGbps(mode);
+  const type = directAttachType(reach);
+  return lib.cableMedia.items().filter((c) => isDirectAttach(c.type) && (!type || c.type === type)
+    && c.speedGbps === total && moduleFits(group.formFactor, c.ends.a.connector));
+}
+
+/**
+ * Reach classes available for a port at a mode: engine reaches for CPO/NPO; otherwise module reaches
+ * plus DAC / AEC / AOC when a direct-attach cable of that kind fits the cage at that speed.
+ */
 export function reachOptions(lib: Library, group: PortGroup, mode: string): string[] {
   if (isEnginePort(group)) return group.reaches ?? [];
-  return [...new Set(compatibleOptics(lib, group, mode).map((o) => o.reach))];
+  const direct = Object.keys(DIRECT_REACH).filter((r) => directAttachCables(lib, group, mode, r).length);
+  return [...new Set([...direct, ...compatibleOptics(lib, group, mode).map((o) => o.reach)])];
 }
 
 /**
@@ -39,7 +61,8 @@ export function pickOptic(lib: Library, group: PortGroup, mode: string, reach?: 
   const options = compatibleOptics(lib, group, mode);
   const pinned = opticId ? options.find((o) => o.id === opticId) : undefined;
   if (pinned) return pinned;
-  if (!reach) return undefined;
+  // DAC / AEC / AOC: the cable plugs into the cage itself, no transceiver.
+  if (!reach || directAttachType(reach)) return undefined;
   return options.find((o) => o.reach === reach);
 }
 
@@ -80,16 +103,17 @@ export function cablesPerPort(group: PortGroup, optic?: OpticDefinition): number
 
 /** Fiber type a reach class needs: SR/VR = multimode, every other optical reach = single-mode. */
 export function fiberTypeFor(reach: string | undefined): CableMedia['type'] | undefined {
-  if (!reach || /DAC|AOC|ELS/i.test(reach)) return undefined;
+  if (!reach || /DAC|AEC|AOC|ELS/i.test(reach)) return undefined;
   return /SR|VR/i.test(reach) ? 'fiber-mm' : 'fiber-sm';
 }
 
 /** Cables whose connector matches the port/module and whose fiber type matches the reach. */
-export function compatibleCables(lib: Library, group: PortGroup, optic?: OpticDefinition, reach?: string): CableMedia[] {
+export function compatibleCables(lib: Library, group: PortGroup, optic?: OpticDefinition, reach?: string, mode?: string): CableMedia[] {
+  if (!optic && directAttachType(reach)) return directAttachCables(lib, group, mode ?? `1x${group.speedGbps}G`, reach);
   const connector = cableConnector(group, optic);
   const fiber = fiberTypeFor(optic?.reach ?? reach);
   return lib.cableMedia.items().filter((c) =>
-    c.type !== 'power'
+    c.type !== 'power' && !isDirectAttach(c.type)
     && (!connector || connectorsMate(c.ends.a.connector, connector) || connectorsMate(c.ends.b.connector, connector))
     && (!fiber || !c.type.startsWith('fiber') || c.type === fiber));
 }

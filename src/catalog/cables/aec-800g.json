@@ -1,0 +1,21 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "aec-800g",
+  "name": "800G OSFP AEC",
+  "type": "aec",
+  "color": "#a78bfa",
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "OSFP"
+    },
+    "b": {
+      "count": 1,
+      "connector": "OSFP"
+    }
+  },
+  "mapping": "straight",
+  "speedGbps": 800,
+  "powerWPerEnd": 0,
+  "maxLengthM": 7
+}

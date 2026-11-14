@@ -14,5 +14,7 @@
       "connector": "QSFP28"
     }
   },
-  "mapping": "straight"
+  "mapping": "straight",
+  "speedGbps": 100,
+  "maxLengthM": 3
 }

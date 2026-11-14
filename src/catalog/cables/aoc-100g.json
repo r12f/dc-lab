@@ -1,0 +1,21 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "aoc-100g",
+  "name": "100G QSFP28 AOC",
+  "type": "aoc",
+  "color": "#f472b6",
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "QSFP28"
+    },
+    "b": {
+      "count": 1,
+      "connector": "QSFP28"
+    }
+  },
+  "mapping": "straight",
+  "speedGbps": 100,
+  "powerWPerEnd": 0,
+  "maxLengthM": 100
+}

@@ -1,0 +1,20 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "dac-400g-qsfpdd",
+  "name": "400G QSFP-DD DAC",
+  "type": "copper-dac",
+  "color": "#94a3b8",
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "QSFP-DD"
+    },
+    "b": {
+      "count": 1,
+      "connector": "QSFP-DD"
+    }
+  },
+  "mapping": "straight",
+  "speedGbps": 400,
+  "maxLengthM": 2.5
+}

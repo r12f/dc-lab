@@ -33,7 +33,7 @@ export function buildRackBom(lib: Library, design: RackDesign): BomLine[] {
       const media = lib.cableMedia.get(cableId);
       const cv = item(cableId);
       bom.add({ key: `portcable:${cableId}`, kind: 'cable', item: media?.name ?? cableId, category: 'Cable',
-        vendorModel: variantLabel(cv), qty: n, unitW: 0, notes: ['port-attached'], properties: cv?.properties });
+        vendorModel: variantLabel(cv), qty: n, unitW: media?.powerWPerEnd ?? 0, notes: ['port-attached'], properties: cv?.properties });
     }
     for (const [opticId, n] of counts.optics) {
       const o = lib.optics.get(opticId);

@@ -3,6 +3,7 @@ import type { CableMedia } from '../../domain/optics/types';
 import { CABLE_TYPES, isFiber } from '../../domain/optics/cable-types';
 import { describeEnd, fiberMap } from '../../domain/optics/fiber-map';
 import { genderedConnector } from '../../domain/optics/connectors';
+import { formatGbps } from '../../domain/units';
 import { paint } from '../../theme/paint';
 import { ConnectorGlyph, CONNECTOR_H, CONNECTOR_W } from './connector-glyph';
 import { connectorSlots, type ConnectorSlot } from '../../domain/optics/connector-slots';
@@ -48,6 +49,9 @@ export function CableDrawing({ ref, cable: c }: Props) {
   const facts = [
     CABLE_TYPES[c.type] ?? c.type,
     isFiber(c.type) && c.fiberCount ? `${c.fiberCount}F cable` : '',
+    c.speedGbps ? formatGbps(c.speedGbps) : '',
+    c.powerWPerEnd ? `${c.powerWPerEnd} W per end` : '',
+    c.maxLengthM ? `≤ ${c.maxLengthM} m` : '',
     `A ${describeEnd(c.ends.a)} → B ${describeEnd(c.ends.b)}`,
     c.mapping,
     c.polarity ? `polarity ${c.polarity}` : '',

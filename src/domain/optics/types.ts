@@ -37,7 +37,7 @@ export interface OpticDefinition extends CatalogItem {
   weightKg?: number;
 }
 
-export type CableType = 'fiber-sm' | 'fiber-mm' | 'copper-dac' | 'aoc' | 'power' | 'other';
+export type CableType = 'fiber-sm' | 'fiber-mm' | 'copper-dac' | 'aec' | 'aoc' | 'power' | 'other';
 
 export type ConnectorGender = 'male' | 'female';
 
@@ -69,4 +69,11 @@ export interface CableMedia extends CatalogItem {
   polarity?: Polarity;
   maxLengthM?: number;
   color: string;
+  /**
+   * Direct-attach cables (DAC, AEC, AOC): their ends are module plugs (e.g. "OSFP") that go straight
+   * into cages, no transceiver. `speedGbps` is the link speed; `powerWPerEnd` the draw of each active
+   * end (AEC retimers, AOC optics; 0 for passive DAC).
+   */
+  speedGbps?: number;
+  powerWPerEnd?: number;
 }

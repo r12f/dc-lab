@@ -1,0 +1,21 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "aoc-400g-qsfpdd",
+  "name": "400G QSFP-DD AOC",
+  "type": "aoc",
+  "color": "#f472b6",
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "QSFP-DD"
+    },
+    "b": {
+      "count": 1,
+      "connector": "QSFP-DD"
+    }
+  },
+  "mapping": "straight",
+  "speedGbps": 400,
+  "powerWPerEnd": 0,
+  "maxLengthM": 100
+}

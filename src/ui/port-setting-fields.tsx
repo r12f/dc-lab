@@ -3,7 +3,7 @@ import type { PortGroup, PortSetting } from '../domain/device/types';
 import type { ResolvedPort } from '../domain/device/port-settings';
 import { modesOf, speedLabel } from '../domain/device/breakout';
 import { ROLE_TRAITS } from '../domain/device/roles';
-import { compatibleCables, compatibleOptics, isEnginePort, reachOptions } from '../domain/ports/optic-match';
+import { compatibleCables, compatibleOptics, directAttachType, isEnginePort, reachOptions } from '../domain/ports/optic-match';
 import { SelectField } from './fields';
 
 const INHERIT = '__inherit';
@@ -37,7 +37,8 @@ export function PortSettingFields({ lib, group, value, onChange, effective, inhe
   const mode = effective?.mode ?? value.mode ?? modesOf(group)[0];
   const reaches = reachOptions(lib, group, mode);
   const modules = compatibleOptics(lib, group, mode).filter((o) => !effective?.reach || o.reach === effective.reach);
-  const cables = compatibleCables(lib, group, effective?.optic, effective?.reach);
+  const cables = compatibleCables(lib, group, effective?.optic, effective?.reach, mode);
+  const direct = !engine && !!directAttachType(effective?.reach);
   const set = (patch: PortSetting) => onChange({ ...value, ...patch });
   const inh = (s?: string) => `inherit (${s ?? 'none'})`;
 
@@ -53,7 +54,7 @@ export function PortSettingFields({ lib, group, value, onChange, effective, inhe
           ...reaches.map((r) => ({ value: r, label: r })),
         ]}
         onChange={(v) => set({ reach: unfield(v), opticId: undefined })} />
-      {!engine && (
+      {!engine && !direct && (
         <SelectField label={`Module (${group.formFactor} cage)`} value={field(value.opticId)}
           options={[
             { value: INHERIT, label: effective?.optic && effective.autoOptic ? `auto: ${effective.optic.name}` : inh(inherited?.optic?.name) },
@@ -69,7 +70,8 @@ export function PortSettingFields({ lib, group, value, onChange, effective, inhe
           ...cables.map((c) => ({ value: c.id, label: c.name })),
         ]}
         onChange={(v) => set({ cableId: unfield(v) })} />
-      {!engine && modes(lib, group, mode, effective) && <p className="muted">{modes(lib, group, mode, effective)}</p>}
+      {direct && <p className="muted">{`${effective?.reach} cable plugs into the ${group.formFactor} cage directly — no transceiver.`}</p>}
+      {!engine && !direct && modes(lib, group, mode, effective) && <p className="muted">{modes(lib, group, mode, effective)}</p>}
     </>
   );
 }

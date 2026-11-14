@@ -29,7 +29,7 @@ export function OpticDrawing({ ref, optic: o }: Props) {
   // Module receptacles for multi-fiber connectors are pinned (male): "2x MPO-12" -> "2x MPO-12M".
   const faceConnector = o.fiberConnector
     ? o.fiberConnector.replace(/^(\d+x\s*)?(.+)$/i, (_, n = '', conn: string) => `${n}${genderedConnector(conn, MODULE_FACE_GENDER)}`)
-    : (o.reach === 'DAC' ? 'Copper (DAC)' : '—');
+    : '—';
   return (
     <svg ref={ref} viewBox={`0 0 ${width} ${height}`} width={width} className="drawing">
       <rect width={width} height={height} fill={paint.paper} />

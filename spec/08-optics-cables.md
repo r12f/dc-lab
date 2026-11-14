@@ -31,7 +31,7 @@ per item (`src/catalog/optics/`, `src/catalog/cables/`); project items are store
 | `vendor`, `model` | Vendor and model / vendor PN |
 | `formFactor` | Host-side form factor (cage it plugs into, e.g. `OSFP`), or the engine/port form factor for a pigtail on a CPO/NPO port |
 | `speedGbps`, `reach`, `reachM` | Total speed, reach class (`DR4`, `2xFR4`, `SR4`, `DAC`…), max reach in metres |
-| `fiberConnector` | Connector a cable must mate with: module face (`MPO-12`, `2x MPO-12`, `LC`) or the pigtail end connector; empty for DAC/AOC |
+| `fiberConnector` | Connector a cable must mate with: module face (`MPO-12`, `2x MPO-12`, `LC`) or the pigtail end connector |
 | `pigtail` | Pigtail only: `{ count, connector, fiberType, lengthM }` — number of fiber legs, end connector, `fiber-sm`/`fiber-mm`, leg length |
 | `powerW`, `weightKg` | Power and weight per optic |
 
@@ -46,7 +46,8 @@ patch cords, breakouts, Y-cables, shuffles, multi-leg trunks and asymmetric cabl
 
 | Field | Meaning |
 |---|---|
-| `type` | `fiber-sm`, `fiber-mm`, `copper-dac`, `aoc`, `power`, `other` |
+| `type` | `fiber-sm`, `fiber-mm`, `copper-dac` (DAC), `aec` (active electrical, retimed copper), `aoc` (active optical), `power`, `other` |
+| `speedGbps`, `powerWPerEnd` | Direct-attach cables (DAC / AEC / AOC) only: link speed, and draw of each active plug (0 for passive DAC) |
 | `ends.a`, `ends.b` | `{ count, connector, fibers, gender }` — number of connectors on that end, connector type (`LC`, `MPO-8`, `MPO-12`, `MPO-16`, `MMC-16`, `OSFP`…), fibers **used** per connector, `male` (pinned) / `female` (unpinned); gender only for MPO/MMC |
 | `fiberCount` | Fibers in the cable body (e.g. 160 for a 160F trunk) |
 | `mapping` | `straight` — fibers run in order (A fiber 1 → B fiber 1 across connectors); `shuffle` — every A connector's fibers are split evenly over all B connectors (4x4, 2x2, 2xMMC-16 → 4xMPO-8) |
@@ -95,6 +96,18 @@ Examples (all built-in):
   ("⋮ 13 more"), so the last connector number (e.g. A20 of a 160F MPO-8 trunk) stays visible.
 
 Lengths are per use (rack cable runs choose or estimate them), not per cable media.
+
+## Direct-attach cables (DAC, AEC, AOC)
+
+DAC, AEC and AOC are **cables, not optics**: each end is a module plug (`OSFP`, `QSFP-DD`, `QSFP28`…) that
+goes straight into a cage, with no transceiver. On a port, the reach list offers `DAC` / `AEC` / `AOC`
+when the catalog has such a cable whose plug fits the cage and whose `speedGbps` equals the port mode's
+total speed; picking one hides the Module field and the Cable list shows only cables of that kind. Active
+plugs (AEC retimers, AOC optics) add `powerWPerEnd` per port to rack power and appear in the BOM with
+that unit power. Fiber cable lists never offer direct-attach cables. Built-ins: DAC 100G QSFP28 /
+400G QSFP-DD / 800G OSFP; AEC 400G QSFP-DD / 800G OSFP / 1.6T OSFP; AOC 100G QSFP28 / 400G QSFP-DD /
+800G OSFP (illustrative lengths and power). The former DAC "optics" were removed; project port settings
+that pinned them now set reach `DAC` and the matching DAC cable.
 
 ## Custom properties
 

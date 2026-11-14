@@ -14,5 +14,7 @@
       "connector": "OSFP"
     }
   },
-  "mapping": "straight"
+  "mapping": "straight",
+  "speedGbps": 800,
+  "maxLengthM": 2
 }

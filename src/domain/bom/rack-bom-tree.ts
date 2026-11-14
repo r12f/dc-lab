@@ -64,7 +64,7 @@ export function buildRackBomTree(lib: Library, design: RackDesign): BomNode | un
         const media = lib.cableMedia.get(cableId);
         const cv = item(cableId);
         g.parts.add({ key: `${key}:cable:${cableId}`, kind: 'cable', item: media?.name ?? cableId, category: 'Cable',
-          vendorModel: variantLabel(cv), qty: n, unitW: 0, notes: ['port-attached'], properties: cv?.properties });
+          vendorModel: variantLabel(cv), qty: n, unitW: media?.powerWPerEnd ?? 0, notes: ['port-attached'], properties: cv?.properties });
       }
     }
     return [...groups.values()]

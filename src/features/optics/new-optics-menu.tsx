@@ -12,9 +12,9 @@ interface Choice {
 }
 
 const CHOICES: Choice[] = [
-  { label: 'Optic module', description: 'Pluggable transceiver, DAC/AOC end or laser source', catalog: 'optic', baseId: 'new-optic', build: (id) => newOptic(id, 'module') },
+  { label: 'Optic module', description: 'Pluggable transceiver or laser source', catalog: 'optic', baseId: 'new-optic', build: (id) => newOptic(id, 'module') },
   { label: 'Pigtail optic', description: 'Optic with permanently attached fiber legs', catalog: 'optic', baseId: 'new-pigtail-optic', build: (id) => newOptic(id, 'pigtail') },
-  { label: 'Cable', description: 'Fiber, DAC, AOC, copper or power cable media', catalog: 'cable', baseId: 'new-cable', build: newCable },
+  { label: 'Cable', description: 'Fiber, DAC, AEC, AOC, copper or power cable', catalog: 'cable', baseId: 'new-cable', build: newCable },
 ];
 
 /** Picker opened by "+ New". */

@@ -1,0 +1,21 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "aec-400g-qsfpdd",
+  "name": "400G QSFP-DD AEC",
+  "type": "aec",
+  "color": "#a78bfa",
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "QSFP-DD"
+    },
+    "b": {
+      "count": 1,
+      "connector": "QSFP-DD"
+    }
+  },
+  "mapping": "straight",
+  "speedGbps": 400,
+  "powerWPerEnd": 0,
+  "maxLengthM": 7
+}

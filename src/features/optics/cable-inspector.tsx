@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { CableMedia, CableType, FiberMapping, Polarity } from '../../domain/optics/types';
 import { CABLE_SCHEMA } from '../../domain/optics/types';
-import { CABLE_TYPES, isFiber } from '../../domain/optics/cable-types';
+import { CABLE_TYPE_DESCRIPTIONS, CABLE_TYPES, isActiveCable, isDirectAttach, isFiber } from '../../domain/optics/cable-types';
 import { Field, NumberField, Section, SelectField, TextField } from '../../ui/fields';
 import { ReadOnlyNotice } from '../../ui/read-only-notice';
 import { ExportJsonButton } from './export-json-button';
@@ -47,7 +47,17 @@ export function CableInspector({ cable: c, header, readOnly, onChange, onDuplica
             {fiber && <NumberField label="Cable fibers" value={c.fiberCount ?? 0} min={0} onChange={(fiberCount) => set({ fiberCount: fiberCount || undefined })} />}
             <Field label="Color"><input type="color" value={c.color} onChange={(e) => set({ color: e.target.value })} /></Field>
           </div>
-          <NumberField label="Max length m" value={c.maxLengthM ?? 0} min={0} onChange={(maxLengthM) => set({ maxLengthM: maxLengthM || undefined })} />
+          <p className="muted">{CABLE_TYPE_DESCRIPTIONS[c.type]}</p>
+          <NumberField label="Max length m" value={c.maxLengthM ?? 0} min={0} step={0.5} onChange={(maxLengthM) => set({ maxLengthM: maxLengthM || undefined })} />
+          {isDirectAttach(c.type) && (
+            <div className="row2">
+              <NumberField label="Link speed Gbps" value={c.speedGbps ?? 0} min={0} onChange={(speedGbps) => set({ speedGbps: speedGbps || undefined })} />
+              {isActiveCable(c.type) && (
+                <NumberField label="Power per end W" value={c.powerWPerEnd ?? 0} min={0} step={0.5}
+                  onChange={(powerWPerEnd) => set({ powerWPerEnd: powerWPerEnd || undefined })} />
+              )}
+            </div>
+          )}
         </Section>
         <CableEndFields title="A end" end={c.ends.a} fiber={fiber} onChange={(a) => set({ ends: { ...c.ends, a } })} />
         <CableEndFields title="B end" end={c.ends.b} fiber={fiber} onChange={(b) => set({ ends: { ...c.ends, b } })} />

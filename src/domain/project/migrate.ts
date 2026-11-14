@@ -17,8 +17,20 @@ function inferRole(g: Json): PortRole {
   return 'data';
 }
 
+/** Built-in DAC "optics" became direct-attach cables: optic id -> cable id. */
+const DAC_OPTIC_TO_CABLE: Record<string, string> = { 'osfp-800g-dac': 'dac-800g', 'qsfp28-100g-dac': 'dac-100g' };
+
+/** A port setting that pinned a DAC "optic" now sets reach DAC and the DAC cable instead. */
+function migrateDacSetting(s: Json): Json {
+  const cable = DAC_OPTIC_TO_CABLE[String(s.opticId)];
+  if (!cable) return s;
+  const { opticId: _o, ...rest } = s;
+  void _o;
+  return { ...rest, reach: 'DAC', cableId: rest.cableId ?? cable };
+}
+
 function toSetting(v: unknown): unknown {
-  return typeof v === 'string' ? { mode: v } : v;
+  return migrateDacSetting((typeof v === 'string' ? { mode: v } : v) as Json);
 }
 
 function mapValues(obj: unknown, fn: (v: unknown) => unknown): Json {
@@ -41,12 +53,14 @@ export function migrateDevice(d: Json): Json {
 }
 
 export function migratePlacement(p: Json): Json {
-  if (p.portSettings && p.groupSettings) return p;
+  if (p.portSettings && p.groupSettings) {
+    return { ...p, portSettings: mapValues(p.portSettings, toSetting), groupSettings: mapValues(p.groupSettings, toSetting) };
+  }
   const portSettings = mapValues(p.portConfig, (v) => {
     const c = v as Json;
-    return Object.fromEntries(Object.entries({ mode: c.breakout, opticId: c.opticId }).filter(([, x]) => x !== undefined));
+    return migrateDacSetting(Object.fromEntries(Object.entries({ mode: c.breakout, opticId: c.opticId }).filter(([, x]) => x !== undefined)));
   });
-  const groupSettings = mapValues(p.groupOptics, (v) => ({ opticId: v }));
+  const groupSettings = mapValues(p.groupOptics, (v) => migrateDacSetting({ opticId: v }));
   const { portConfig: _a, groupOptics: _b, ...rest } = p;
   void _a; void _b;
   return { ...rest, portSettings, groupSettings };

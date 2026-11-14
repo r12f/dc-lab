@@ -2,7 +2,7 @@ import { traitsOf } from '../device/categories';
 import type { Library } from '../library/library';
 import { unitsIn } from '../units';
 import type { RackDesign } from './types';
-import { opticCounts } from './optics';
+import { activeCableW, opticCounts } from './optics';
 import { placementProblem } from './placement';
 
 export interface RackMetrics {
@@ -54,6 +54,9 @@ export function computeRackMetrics(lib: Library, design: RackDesign): RackMetric
       m.maxW += optic.powerW * n;
       m.deviceWeightKg += (optic.weightKg ?? 0) * n;
     }
+    const cableW = activeCableW(lib, device, p);
+    m.typicalW += cableW;
+    m.maxW += cableW;
     const problem = placementProblem(lib, design, device, p.mount, p.id);
     if (problem) m.warnings.push(`${p.label}: ${problem}`);
   }

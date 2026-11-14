@@ -97,7 +97,6 @@ describe('port connectors', () => {
     const osfp = dev('switch-64x800g-osfp').ports.find((g) => g.id === 'osfp')!;
     expect(portConnectors(osfp, lib.optics.get('osfp-800g-2xdr4'))).toEqual({ count: 2, connector: 'MPO-12' });
     expect(portConnectors(osfp, lib.optics.get('osfp-800g-2xfr4'))).toEqual({ count: 2, connector: 'LC' });
-    expect(portConnectors(osfp, lib.optics.get('osfp-800g-dac'))).toBeUndefined();
     expect(portConnectors(osfp)).toBeUndefined();
     const cpo = lib.devices.items().flatMap((d) => d.ports).find((g) => g.opticalEngine)!;
     expect(portConnectors(cpo)).toEqual({ count: 1, connector: 'MMC-16' });

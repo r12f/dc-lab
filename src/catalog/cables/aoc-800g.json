@@ -1,0 +1,21 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "aoc-800g",
+  "name": "800G OSFP AOC",
+  "type": "aoc",
+  "color": "#f472b6",
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "OSFP"
+    },
+    "b": {
+      "count": 1,
+      "connector": "OSFP"
+    }
+  },
+  "mapping": "straight",
+  "speedGbps": 800,
+  "powerWPerEnd": 0,
+  "maxLengthM": 100
+}
