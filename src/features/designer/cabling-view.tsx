@@ -24,15 +24,21 @@ interface Props {
   onSelectCable(id: string | undefined): void;
 }
 
-/** Port box: header line (index + mode) above one stacked row per connector leg. */
-const PORT_W = 128;
-const PORT_HEAD = 16;
-const LEG_H = 26;
-const GAP = 6;
-const GROUP_GAP = 22;
-const PAD = 10;
-const LABEL_W = 170;
-const TITLE_H = 16;
+/**
+ * Port block: the port number on top, its connector legs side by side below, each a three-line cable block
+ * (lanes / reach / connector, e.g. "4x200G", "DR4", "MPO-8"). Sized to stay compact so a 64-port face fits.
+ */
+const PORT_HEAD = 11;
+const LEG_W = 36;
+const LEG_H = 32;
+const LEG_GAP = 2;
+const PORT_PAD = 2;
+
+const GAP = 3;
+const GROUP_GAP = 14;
+const PAD = 6;
+const LABEL_W = 120;
+const TITLE_H = 13;
 
 interface LegBox { ep: CableEndpoint; leg: PortLeg; x: number; y: number; w: number; h: number }
 interface PortBox { group: PortGroup; index: number; mode: string; x: number; y: number; w: number; h: number }
@@ -69,24 +75,27 @@ function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: Port
     const resolved = Array.from({ length: g.count }, (_, i) => resolvePlacedPort(lib, device, p, formatPortRef({ groupId: g.id, index: i + 1 })));
     const legList = resolved.map((r) => portLegs(g, r));
     const maxLegs = Math.max(1, ...legList.map((l) => l.length));
-    const h = PORT_HEAD + maxLegs * LEG_H + 4;
+    // Every port of a group gets the same block size (the widest port's), so columns line up.
+    const portW = PORT_PAD * 2 + maxLegs * LEG_W + (maxLegs - 1) * LEG_GAP;
+    const h = PORT_HEAD + LEG_H + PORT_PAD;
     const rows = Math.max(1, g.rows);
     const cols = Math.ceil(g.count / rows);
     const top = y0 + PAD + TITLE_H;
-    titles.push({ text: groupTitle(g), x, y: y0 + PAD + 11 });
+    titles.push({ text: groupTitle(g), x, y: y0 + PAD + 9 });
     for (let i = 0; i < g.count; i++) {
-      const px = x + Math.floor(i / rows) * (PORT_W + GAP);
+      const px = x + Math.floor(i / rows) * (portW + GAP);
       const py = top + (i % rows) * (h + GAP);
       const portRef = formatPortRef({ groupId: g.id, index: i + 1 });
-      ports.push({ group: g, index: i + 1, mode: resolved[i]?.mode ?? '', x: px, y: py, w: PORT_W, h });
+      ports.push({ group: g, index: i + 1, mode: resolved[i]?.mode ?? '', x: px, y: py, w: portW, h });
       legList[i].forEach((leg, k) => {
-        legs.push({ ep: { placementId: p.id, portRef, connector: leg.index }, leg, x: px + 3, y: py + PORT_HEAD + k * LEG_H, w: PORT_W - 6, h: LEG_H - 3 });
+        legs.push({ ep: { placementId: p.id, portRef, connector: leg.index }, leg,
+          x: px + PORT_PAD + k * (LEG_W + LEG_GAP), y: py + PORT_HEAD, w: LEG_W, h: LEG_H });
       });
       bottom = Math.max(bottom, py + h);
     }
-    x += Math.max(cols * (PORT_W + GAP) - GAP, groupTitle(g).length * 7) + GROUP_GAP;
+    x += Math.max(cols * (portW + GAP) - GAP, groupTitle(g).length * 5.5) + GROUP_GAP;
   }
-  return { p, device, y: y0, h: Math.max(bottom - y0 + PAD, 54), w: x, ports, legs, titles };
+  return { p, device, y: y0, h: Math.max(bottom - y0 + PAD, 40), w: x, ports, legs, titles };
 }
 
 /**
@@ -116,7 +125,7 @@ export function CablingView({ ref, lib, design, editor, face, onSelectCable }: P
     const l = layoutDevice(lib, design, p, face, y);
     if (!l) continue;
     devices.push(l);
-    y += l.h + 6;
+    y += l.h + 4;
   }
   const order = new Map(devices.flatMap((d) => d.legs.map((l, i) => [endpointKey(l.ep), i] as const)));
   const selected = new Set(selection.map(endpointKey));
@@ -190,15 +199,18 @@ export function CablingView({ ref, lib, design, editor, face, onSelectCable }: P
           return (
             <g key={d.p.id}>
               <rect x={2} y={d.y} width={width - 4} height={d.h} rx={4} fill="#1e293b" stroke={side ? paint.selection : '#475569'} strokeWidth={side ? 2 : 1} />
-              <text x={10} y={d.y + 20} fontSize={13} fontWeight={700} fill="#f8fafc">{`${side ? `[${side}] ` : ''}${d.p.label}`}</text>
-              <text x={10} y={d.y + 36} fontSize={10} fill="#cbd5e1">{d.device.name}</text>
-              {d.legs.length === 0 && <text x={LABEL_W} y={d.y + 30} fontSize={10} fill="#94a3b8">{`no ${face}-side ports`}</text>}
-              {d.titles.map((t) => <text key={`${t.x}`} x={t.x} y={t.y} fontSize={10} fontWeight={600} fill="#e2e8f0">{t.text}</text>)}
+              <text x={8} y={d.y + 17} fontSize={12} fontWeight={700} fill="#f8fafc">{`${side ? `[${side}] ` : ''}${d.p.label}`}</text>
+              <text x={8} y={d.y + 30} fontSize={9} fill="#cbd5e1">
+                <title>{d.device.name}</title>
+                {d.device.name.length > 24 ? `${d.device.name.slice(0, 23)}…` : d.device.name}
+              </text>
+              {d.legs.length === 0 && <text x={LABEL_W} y={d.y + 24} fontSize={10} fill="#94a3b8">{`no ${face}-side ports`}</text>}
+              {d.titles.map((t) => <text key={`${t.x}`} x={t.x} y={t.y} fontSize={9} fontWeight={600} fill="#e2e8f0">{t.text}</text>)}
               {d.ports.map((pt) => (
                 <g key={`${pt.group.id}/${pt.index}`}>
-                  <rect x={pt.x} y={pt.y} width={pt.w} height={pt.h} rx={3} fill="#0f172a" stroke="#475569" />
-                  <text x={pt.x + 4} y={pt.y + 12} fontSize={10} fontWeight={700} fill="#e2e8f0">{pt.index}</text>
-                  <text x={pt.x + pt.w - 4} y={pt.y + 12} fontSize={9} textAnchor="end" fill="#94a3b8">{`${pt.group.formFactor} ${pt.mode}`}</text>
+                  <title>{`${pt.group.formFactor} ${pt.index} · ${pt.mode}`}</title>
+                  <rect x={pt.x} y={pt.y} width={pt.w} height={pt.h} rx={2} fill="#0f172a" stroke="#475569" />
+                  <text x={pt.x + pt.w / 2} y={pt.y + 9} fontSize={9} fontWeight={700} textAnchor="middle" fill="#e2e8f0">{pt.index}</text>
                 </g>
               ))}
               {d.legs.map(({ ep, leg, x, y: ly, w, h }) => {
@@ -207,15 +219,21 @@ export function CablingView({ ref, lib, design, editor, face, onSelectCable }: P
                 const sel = selected.has(key);
                 const fill = runId ? runColor.get(runId) : sel ? paint.selection : '#334155';
                 const ink = runId || sel ? '#0f172a' : '#e2e8f0';
-                const top = [leg.mode, leg.reach].filter(Boolean).join(' ');
+                // Three lines: lanes, reach, connector; missing lines are skipped, the rest stay centred.
+                const lines = [leg.mode, leg.reach, leg.connector].filter((s): s is string => !!s);
+                const cx = x + w / 2;
+                const y0 = ly + h / 2 - ((lines.length - 1) * 9) / 2 + 3;
                 return (
                   <g key={key} style={{ cursor: runId ? 'pointer' : 'cell' }} onPointerDown={(e) => down(ep, e)} onPointerEnter={() => enter(ep)}>
                     <title>{`${endpointLabel(design, ep)} · ${leg.label}${runId ? ' · cabled (click to open run)' : ''}`}</title>
-                    <rect x={x} y={ly} width={w} height={h} rx={2} fill={fill} stroke={sel ? '#fff' : '#0f172a'} strokeWidth={sel ? 2 : 1} />
-                    <text x={x + 4} y={ly + 10} fontSize={8.5} fontWeight={700} fill={ink} pointerEvents="none">
-                      {`${leg.index ? `${leg.index} · ` : ''}${top || leg.connector}`}
-                    </text>
-                    {top && <text x={x + 4} y={ly + 20} fontSize={8} fill={ink} opacity={0.85} pointerEvents="none">{leg.connector}</text>}
+                    <rect x={x} y={ly} width={w} height={h} rx={2} fill={fill} stroke={sel ? '#fff' : '#0f172a'} strokeWidth={sel ? 1.5 : 1} />
+                    {lines.map((s, k) => {
+                      const size = Math.min(8, (w - 4) / Math.max(1, s.length * 0.58));
+                      return (
+                        <text key={k} x={cx} y={y0 + k * 9} fontSize={size} fontWeight={k === 0 ? 700 : 500} textAnchor="middle"
+                          fill={ink} opacity={k === 0 ? 1 : 0.85} pointerEvents="none">{s}</text>
+                      );
+                    })}
                   </g>
                 );
               })}
