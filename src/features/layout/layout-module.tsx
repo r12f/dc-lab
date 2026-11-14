@@ -62,7 +62,7 @@ export function LayoutModule() {
       canvas={
         layout ? (
           <CanvasFrame title={layout.name} exportName={layout.id}
-            toolbar={<LayoutToolbar editor={editor} selection={sel} onSelect={setSel} />}>
+            toolbar={<LayoutToolbar layout={layout} editor={editor} selection={sel} onSelect={setSel} />}>
             {(ref) => <LayoutCanvas ref={ref} lib={lib} designs={designs} layout={layout} editor={editor} selection={sel} onSelect={setSel} />}
           </CanvasFrame>
         ) : (

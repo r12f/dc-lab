@@ -1,6 +1,6 @@
 import type { Library } from '../../domain/library/library';
 import type { Aisle, CableTray, DcLayout, Facility, FacilityKind, Rect, Row } from '../../domain/layout/types';
-import { newAisle, newFacility, newRow, newTray } from '../../domain/layout/factory';
+import { addAisleAfter, addFacilityNear, addRowAfter, addTrayOver, type InsertAnchor } from '../../domain/layout/insert';
 import { assignmentProblem, type DesignLookup } from '../../domain/layout/tiles';
 import { clampToRoom, snap } from '../../domain/layout/geometry';
 import { reorderTo } from '../../domain/layout/floor-plan';
@@ -15,29 +15,19 @@ type Element = Row | Aisle | CableTray | Facility;
 export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcLayout | undefined) {
   const update = useAppStore((s) => s.update);
   const mutate = (fn: (l: DcLayout) => DcLayout) => layout && update('layouts', layout.id, fn);
-  const allIds = (l: DcLayout) => [...l.rows, ...l.aisles].map((x) => x.id);
 
-  // Rows and aisles append at the east end of the sequence, so row/aisle/row builds an aisle sequence.
-  const addRow = () => mutate((l) => {
-    const id = uniqueId('row', allIds(l));
-    return { ...l, rows: [...l.rows, newRow(id, `Row ${l.rows.length + 1}`)], sequence: [...l.sequence, id] };
-  });
-  const addAisle = () => mutate((l) => {
-    const id = uniqueId('aisle', allIds(l));
-    return { ...l, aisles: [...l.aisles, newAisle(id)], sequence: [...l.sequence, id] };
-  });
-  /** Adds a tray over `aisleId`, or over the first aisle. */
-  const addTray = (aisleId?: string) => mutate((l) => {
-    const target = aisleId ?? l.sequence.find((id) => l.aisles.some((a) => a.id === id));
-    if (!target) return l;
-    return { ...l, trays: [...l.trays, newTray(uniqueId('tray', l.trays.map((t) => t.id)), target)] };
-  });
-  /** Adds a facility along the north wall, after the existing ones (drag it into place). */
-  const addFacility = (kind: FacilityKind) => mutate((l) => {
-    const x = Math.max(200, ...l.facilities.filter((f) => f.y < 1000).map((f) => f.x + f.widthMm + 200));
-    const f = newFacility(uniqueId(kind, l.facilities.map((x) => x.id)), kind, 0, 200);
-    return { ...l, facilities: [...l.facilities, { ...f, ...clampToRoom(l, x, 200, f.widthMm, f.depthMm) }] };
-  });
+  /** Applies a pure "add" to the layout and returns the new element's id (selected afterwards). */
+  const add = (fn: (l: DcLayout) => { layout: DcLayout; id?: string }): string | undefined => {
+    if (!layout) return undefined;
+    const r = fn(layout);
+    mutate(() => r.layout);
+    return r.id;
+  };
+  // New rows/aisles go right after the anchor (the selection) in the sequence, else at the east end.
+  const addRow = (anchor: InsertAnchor = {}) => add((l) => addRowAfter(l, anchor.after));
+  const addAisle = (anchor: InsertAnchor = {}) => add((l) => addAisleAfter(l, anchor.after));
+  const addTray = (anchor: InsertAnchor = {}) => add((l) => addTrayOver(l, anchor.aisleId));
+  const addFacility = (kind: FacilityKind, anchor: InsertAnchor = {}) => add((l) => addFacilityNear(l, kind, anchor.facilityId));
 
   function updateElement<T extends Element>(list: ListName, id: string, patch: Partial<T>) {
     updateElements<T>(list, [id], patch);

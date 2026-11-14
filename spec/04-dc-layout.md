@@ -52,8 +52,13 @@ south (down), units are millimetres.
   - room, rack area (dashed outline), facilities (PDU amber, cooling cyan, other grey), aisles (blue
     cold / red hot), vertical rows of tiles with a front-side marker, assigned racks, trays on top
     (semi-transparent, so the aisle stays visible under them).
-  - Title bar (next to Export SVG): **+ Row**, **+ Aisle**, **+ Tray** (over the selected aisle, else
-    the first), **+ PDU**, **+ Cooling**, **Duplicate** (Ctrl+D) and **Delete** (Del) for the selection.
+  - Title bar (next to Export SVG): **+ Row**, **+ Aisle**, **+ Tray**, **+ PDU**, **+ Cooling**,
+    **Duplicate** (Ctrl+D) and **Delete** (Del) for the selection.
+  - **Add after the selection**: + Row / + Aisle insert right after the selected row or aisle (the
+    easternmost when several; a selected tile/rack counts as its row, a tray as its aisle), else at the
+    east end. + Tray goes over the selected aisle, else the next aisle east of the selection, else the first
+    aisle without a tray. + PDU / + Cooling go right of the selected facility. The new element becomes
+    the selection, so repeated clicks build row / aisle / row… in place.
   - **Selection**: click a row header, aisle, tray or facility; Ctrl/Shift-click adds or removes elements
     of the same kind. The inspector also offers group selections (all rows, cold aisles, hot aisles, all
     trays, facilities). With several selected, the inspector edits them together: a changed field is
