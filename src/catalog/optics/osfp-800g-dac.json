@@ -2,6 +2,7 @@
   "schema": "dc-lab/optic@1",
   "id": "osfp-800g-dac",
   "name": "800G OSFP DAC",
+  "packaging": "module",
   "vendor": "Generic",
   "formFactor": "OSFP",
   "speedGbps": 800,

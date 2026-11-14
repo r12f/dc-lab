@@ -4,7 +4,7 @@ import { slugify, uniqueId } from '../domain/ids';
 import { useAppStore } from './store';
 import type { ModuleTab } from './uiSlice';
 
-type CatalogKey = 'devices' | 'racks';
+type CatalogKey = 'devices' | 'racks' | 'optics' | 'cableMedia';
 
 /**
  * Selection + CRUD for a catalog kind (built-in shadowed by project items).

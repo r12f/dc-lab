@@ -76,12 +76,12 @@ function migrateSideMount(p: Json): Json {
 
 /** Optic `connector`/`media` -> `formFactor`/`reach` (+ fiber connector guessed from the reach). */
 export function migrateOptic(o: Json): Json {
-  if (o.formFactor) return o;
+  if (o.formFactor) return o.packaging ? o : { ...o, packaging: 'module' };
   const { connector, media, ...rest } = o;
   const reach = String(media ?? '');
   const fiber = /SR|DR|PSM/i.test(reach) ? 'MPO-12' : /FR|LR|ER/i.test(reach) ? 'LC' : '';
   const n = /^(\d+)x/i.exec(reach)?.[1];
-  return { ...rest, formFactor: connector, reach, fiberConnector: n && fiber ? `${n}x ${fiber}` : fiber };
+  return { ...rest, packaging: 'module', formFactor: connector, reach, fiberConnector: n && fiber ? `${n}x ${fiber}` : fiber };
 }
 
 /**

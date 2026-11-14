@@ -2,6 +2,7 @@
   "schema": "dc-lab/optic@1",
   "id": "sfpp-10g-sr",
   "name": "10G SFP+ SR",
+  "packaging": "module",
   "vendor": "Generic",
   "formFactor": "SFP+",
   "speedGbps": 10,

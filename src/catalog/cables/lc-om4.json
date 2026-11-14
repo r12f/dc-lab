@@ -4,5 +4,6 @@
   "type": "fiber-mm",
   "connector": "LC",
   "color": "#22d3ee",
-  "schema": "dc-lab/cable@1"
+  "schema": "dc-lab/cable@1",
+  "fiberCount": 2
 }

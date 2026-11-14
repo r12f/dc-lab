@@ -4,5 +4,6 @@
   "type": "fiber-sm",
   "connector": "MMC",
   "color": "#a3e635",
-  "schema": "dc-lab/cable@1"
+  "schema": "dc-lab/cable@1",
+  "fiberCount": 16
 }

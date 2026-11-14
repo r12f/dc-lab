@@ -10,13 +10,12 @@ export interface BomColumn {
   cell(line: BomLine): string | number;
 }
 
-/** Custom properties marked `showInBom`, shown for device and rack lines. */
+/** Custom properties marked `showInBom`; each line shows values for its own kind. */
 function propertyColumns(defs: readonly PropertyDef[]): BomColumn[] {
   return defs.filter((d) => d.showInBom).map((def) => ({
     header: def.name,
     cell: (l: BomLine) => {
-      const target = l.kind === 'rack' ? 'rack' : l.kind === 'device' ? 'device' : undefined;
-      return target && def.appliesTo.includes(target) ? formatValue(def, valueOf(l, def)) : '';
+      return def.appliesTo.includes(l.kind) ? formatValue(def, valueOf(l, def)) : '';
     },
   }));
 }

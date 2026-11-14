@@ -2,6 +2,7 @@
   "schema": "dc-lab/optic@1",
   "id": "qsfpdd-800g-2xfr4",
   "name": "800G QSFP-DD800 2xFR4",
+  "packaging": "module",
   "vendor": "Generic",
   "formFactor": "QSFP-DD800",
   "speedGbps": 800,

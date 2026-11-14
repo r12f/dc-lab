@@ -6,6 +6,12 @@ import { RACK_KINDS } from '../rack/types';
 import { effectiveLengthM } from '../design/cabling';
 import { BomBuilder } from './BomBuilder';
 import type { BomLine } from './types';
+import type { CableMedia } from '../optics/types';
+
+function cableVendorModel(media: CableMedia | undefined, id: string): string {
+  if (!media) return id;
+  return [media.vendor, media.model ?? media.connector].filter(Boolean).join(' ');
+}
 
 export function buildRackBom(lib: Library, design: RackDesign): BomLine[] {
   const bom = new BomBuilder();
@@ -24,21 +30,24 @@ export function buildRackBom(lib: Library, design: RackDesign): BomLine[] {
     for (const [cableId, n] of counts.cables) {
       const media = lib.cableMedia.get(cableId);
       bom.add({ key: `portcable:${cableId}`, kind: 'cable', item: media?.name ?? cableId, category: 'Cable',
-        vendorModel: media?.connector ?? '', qty: n, unitW: 0, notes: ['port-attached'] });
+        vendorModel: cableVendorModel(media, cableId), qty: n, unitW: 0, notes: ['port-attached'],
+        properties: media?.properties });
     }
     for (const [opticId, n] of counts.optics) {
       const o = lib.optics.get(opticId);
       if (!o) continue;
       bom.add({ key: `optic:${o.id}`, kind: 'optic', item: o.name, category: 'Optic',
-        vendorModel: [o.vendor, o.formFactor, o.reach].filter(Boolean).join(' '), qty: n, unitW: o.powerW, notes: [] });
+        vendorModel: [o.vendor, o.model ?? `${o.formFactor} ${o.reach}`].filter(Boolean).join(' '), qty: n, unitW: o.powerW,
+        notes: o.packaging === 'pigtail' && o.pigtail ? [`pigtail ${o.pigtail.count}x ${o.pigtail.connector} ${o.pigtail.lengthM} m`] : [],
+        properties: o.properties });
     }
   }
   for (const c of design.cables) {
     const media = lib.cableMedia.get(c.mediaId);
     const len = effectiveLengthM(lib, design, c);
     bom.add({ key: `cable:${c.mediaId}:${len}`, kind: 'cable', item: `${media?.name ?? c.mediaId} ${len} m`,
-      category: 'Cable', vendorModel: media?.connector ?? '', qty: c.quantity, unitW: 0,
-      lengthM: len * c.quantity, notes: [] });
+      category: 'Cable', vendorModel: cableVendorModel(media, c.mediaId), qty: c.quantity, unitW: 0,
+      lengthM: len * c.quantity, notes: [], properties: media?.properties });
   }
   return bom.build();
 }

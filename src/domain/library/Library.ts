@@ -60,7 +60,7 @@ export class Library {
       items.map((i) => (builtinProperties[i.id] ? { ...i, properties: { ...i.properties, ...builtinProperties[i.id] } } : i));
     this.devices = new ItemCollection(withProps(builtin.devices), project.devices, hidden);
     this.racks = new ItemCollection(withProps(builtin.racks), project.racks, hidden);
-    this.optics = new ItemCollection(builtin.optics, project.optics, hidden);
-    this.cableMedia = new ItemCollection(builtin.cableMedia, project.cableMedia, hidden);
+    this.optics = new ItemCollection(withProps(builtin.optics), project.optics, hidden);
+    this.cableMedia = new ItemCollection(withProps(builtin.cableMedia), project.cableMedia, hidden);
   }
 }

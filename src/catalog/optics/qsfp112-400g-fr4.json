@@ -2,6 +2,7 @@
   "schema": "dc-lab/optic@1",
   "id": "qsfp112-400g-fr4",
   "name": "400G QSFP112 FR4",
+  "packaging": "module",
   "vendor": "Generic",
   "formFactor": "QSFP112",
   "speedGbps": 400,

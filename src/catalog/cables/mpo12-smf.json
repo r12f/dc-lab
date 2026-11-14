@@ -4,5 +4,6 @@
   "type": "fiber-sm",
   "connector": "MPO-12",
   "color": "#facc15",
-  "schema": "dc-lab/cable@1"
+  "schema": "dc-lab/cable@1",
+  "fiberCount": 12
 }

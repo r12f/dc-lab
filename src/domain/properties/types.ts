@@ -1,5 +1,10 @@
 /** Item kinds a custom property can apply to. */
-export type PropertyTarget = 'device' | 'rack';
+export type PropertyTarget = 'device' | 'rack' | 'optic' | 'cable';
+
+export const PROPERTY_TARGETS: { id: PropertyTarget; label: string }[] = [
+  { id: 'device', label: 'Devices' }, { id: 'rack', label: 'Racks' },
+  { id: 'optic', label: 'Optics' }, { id: 'cable', label: 'Cables' },
+];
 
 export type PropertyType = 'text' | 'number' | 'boolean' | 'select';
 

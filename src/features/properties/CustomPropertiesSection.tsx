@@ -55,7 +55,7 @@ export function CustomPropertiesSection({ target, item, builtin, onChange }: Pro
       ))}
       {managing && (
         <div className="card">
-          <p className="muted">Definitions are project-wide: they apply to every device and/or rack.</p>
+          <p className="muted">Definitions are project-wide: they apply to every item of the kinds they target.</p>
           {defs.map((d) => (
             <PropertyDefEditor key={d.id} def={d} onChange={upsertDef} onRemove={() => removeDef(d.id)} />
           ))}

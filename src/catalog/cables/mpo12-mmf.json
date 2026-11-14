@@ -4,5 +4,6 @@
   "name": "MPO-12 OM4 trunk",
   "type": "fiber-mm",
   "connector": "MPO-12",
-  "color": "#2dd4bf"
+  "color": "#2dd4bf",
+  "fiberCount": 12
 }

@@ -2,6 +2,7 @@
   "schema": "dc-lab/optic@1",
   "id": "osfp-400g-dr4",
   "name": "400G OSFP DR4",
+  "packaging": "module",
   "vendor": "Generic",
   "formFactor": "OSFP",
   "speedGbps": 400,

@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
 
-export type ModuleTab = 'devices' | 'racks' | 'designer' | 'layout';
+export type ModuleTab = 'devices' | 'racks' | 'optics' | 'designer' | 'layout';
 
 export interface UiSlice {
   tab: ModuleTab;
@@ -11,7 +11,7 @@ export interface UiSlice {
 
 export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set) => ({
   tab: 'devices',
-  selected: { devices: undefined, racks: undefined, designer: undefined, layout: undefined },
+  selected: { devices: undefined, racks: undefined, optics: undefined, designer: undefined, layout: undefined },
   setTab: (tab) => set({ tab }),
   select: (tab, id) => set((s) => ({ selected: { ...s.selected, [tab]: id } })),
 });

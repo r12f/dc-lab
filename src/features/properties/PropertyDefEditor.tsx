@@ -1,4 +1,4 @@
-import type { PropertyDef, PropertyTarget, PropertyType } from '../../domain/properties/types';
+import { PROPERTY_TARGETS, type PropertyDef, type PropertyTarget, type PropertyType } from '../../domain/properties/types';
 import { coerce } from '../../domain/properties/properties';
 import { Button } from '../../ui/Button';
 import { SelectField, TextField } from '../../ui/fields';
@@ -37,11 +37,11 @@ export function PropertyDefEditor({ def, onChange, onRemove }: Props) {
           onChange={(v) => set({ defaultValue: coerce(def, v) })} />
       </div>
       <div className="checks">
-        {(['device', 'rack'] as const).map((t) => (
-          <label key={t}>
-            <input type="checkbox" checked={def.appliesTo.includes(t)}
-              onChange={(e) => set({ appliesTo: toggle(def.appliesTo, t, e.target.checked) })} />
-            {t === 'device' ? 'Devices' : 'Racks'}
+        {PROPERTY_TARGETS.map((t) => (
+          <label key={t.id}>
+            <input type="checkbox" checked={def.appliesTo.includes(t.id)}
+              onChange={(e) => set({ appliesTo: toggle(def.appliesTo, t.id, e.target.checked) })} />
+            {t.label}
           </label>
         ))}
         <label>

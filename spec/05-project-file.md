@@ -52,7 +52,7 @@ includes its values.
 ## Built-in catalog
 
 `src/catalog/<kind>/<id>.json`, one item per file, loaded at build time. Kinds: `devices`, `racks`,
-`optics`, `cables`.
+`optics`, `cables` (see [08-optics-cables.md](08-optics-cables.md)).
 
 ## Item ids
 
