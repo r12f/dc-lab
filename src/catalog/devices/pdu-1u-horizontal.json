@@ -16,12 +16,46 @@
     "maxW": 0,
     "capacityW": 7400
   },
+  "pdu": {
+    "phases": 1,
+    "voltageV": 230,
+    "inputCurrentA": 32,
+    "inputPlug": "IEC 60309 2P+E 32A"
+  },
   "ports": [
     {
       "id": "c13",
       "label": "C13",
+      "role": "outlet",
       "connector": "C13",
       "count": 16,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "rear",
+      "rows": 1,
+      "breakoutModes": [],
+      "bank": "A",
+      "phase": "L1",
+      "breakerA": 16
+    },
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "role": "mgmt",
+      "connector": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "rear",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "connector": "RJ45",
+      "count": 1,
       "speedGbps": 0,
       "lanes": 1,
       "face": "rear",

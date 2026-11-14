@@ -1,7 +1,7 @@
 import { traitsOf } from '../device/categories';
 import type { Library } from '../library/Library';
 import type { RackDesign } from '../design/types';
-import { opticCounts } from '../design/optics';
+import { portItemCounts } from '../design/optics';
 import { RACK_KINDS } from '../rack/types';
 import { BomBuilder } from './BomBuilder';
 import type { BomLine } from './types';
@@ -18,7 +18,13 @@ export function buildRackBom(lib: Library, design: RackDesign): BomLine[] {
     if (!d) continue;
     bom.add({ key: `device:${d.id}`, kind: 'device', item: d.name, category: traitsOf(d.category).label,
       vendorModel: [d.vendor, d.model].filter(Boolean).join(' '), qty: 1, unitW: d.power.typicalW, notes: [p.label] });
-    for (const [opticId, n] of opticCounts(d, p)) {
+    const counts = portItemCounts(d, p);
+    for (const [cableId, n] of counts.cables) {
+      const media = lib.cableMedia.get(cableId);
+      bom.add({ key: `portcable:${cableId}`, kind: 'cable', item: media?.name ?? cableId, category: 'Cable',
+        vendorModel: media?.connector ?? '', qty: n, unitW: 0, notes: ['port-attached'] });
+    }
+    for (const [opticId, n] of counts.optics) {
       const o = lib.optics.get(opticId);
       if (!o) continue;
       bom.add({ key: `optic:${o.id}`, kind: 'optic', item: o.name, category: 'Optic',

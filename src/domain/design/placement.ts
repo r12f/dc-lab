@@ -81,7 +81,7 @@ export function nextLabel(design: RackDesign, prefix: string): string {
 }
 
 export function newPlacement(id: string, deviceId: string, label: string, mount: Mount): Placement {
-  return { id, deviceId, label, mount, portConfig: {}, groupOptics: {} };
+  return { id, deviceId, label, mount, portSettings: {}, groupSettings: {} };
 }
 
 /** First free side-pod slot (left then right), if any. */

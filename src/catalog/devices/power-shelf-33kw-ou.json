@@ -16,6 +16,11 @@
     "maxW": 0,
     "capacityW": 33000
   },
+  "psus": {
+    "count": 6,
+    "inlet": "Busbar",
+    "ratedW": 0
+  },
   "ports": [],
   "breakoutProfiles": []
 }

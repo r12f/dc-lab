@@ -15,15 +15,21 @@
     "typicalW": 0,
     "maxW": 0
   },
+  "psus": {
+    "count": 4,
+    "inlet": "C20",
+    "ratedW": 0
+  },
   "ports": [
     {
       "id": "nic",
       "label": "NIC OSFP",
+      "role": "data",
       "connector": "OSFP",
       "count": 8,
       "speedGbps": 400,
       "lanes": 4,
-      "face": "rear",
+      "face": "front",
       "rows": 1,
       "breakoutModes": [
         "2x200G"
@@ -32,11 +38,12 @@
     {
       "id": "fe",
       "label": "Frontend",
+      "role": "data",
       "connector": "QSFP112",
       "count": 2,
       "speedGbps": 400,
       "lanes": 4,
-      "face": "rear",
+      "face": "front",
       "rows": 1,
       "breakoutModes": [
         "4x100G"
@@ -45,11 +52,12 @@
     {
       "id": "bmc",
       "label": "BMC",
+      "role": "mgmt",
       "connector": "RJ45",
       "count": 1,
       "speedGbps": 1,
       "lanes": 1,
-      "face": "rear",
+      "face": "front",
       "rows": 1,
       "breakoutModes": []
     }

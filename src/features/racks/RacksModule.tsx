@@ -9,19 +9,19 @@ import { RackInspector } from './RackInspector';
 
 export function RacksModule() {
   const lib = useLibrary();
-  const ed = useCatalogEditor('racks', 'racks', lib.racks, newRack);
+  const ed = useCatalogEditor('racks', 'racks', lib.racks);
   const rack = ed.selected;
   const items = lib.racks.all().map(({ item, source }) => ({
     id: item.id,
     name: item.name,
-    group: RACK_KINDS[item.kind] ?? item.kind,
+    path: [RACK_KINDS[item.kind] ?? item.kind],
+    keywords: item.kind,
     badge: `${item.units}${item.unitSystem}${source === 'project' ? ' *' : ''}`,
-    readOnly: source === 'builtin',
   }));
   return (
     <ModuleLayout
       sidebar={<Sidebar title="Rack templates" items={items} selectedId={ed.selectedId} onSelect={ed.select}
-        onNew={ed.create} onDuplicate={ed.duplicate} onDelete={ed.del} />}
+        onNew={() => ed.create('new-rack', newRack)} onDuplicate={ed.duplicate} onDelete={ed.del} />}
       canvas={rack ? (
         <CanvasFrame title={rack.name} exportName={rack.id}>
           {(ref) => <RackTemplateDrawing ref={ref} rack={rack} />}

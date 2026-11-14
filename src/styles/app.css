@@ -84,3 +84,19 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .subtabs button.active { border-bottom-color: var(--accent); color: var(--accent); }
 .mini-faceplate { overflow: auto; border: 1px solid var(--border); border-radius: 4px; }
 .mini-faceplate .drawing { width: 100%; height: auto; box-shadow: none; }
+
+.tree-folder { display: flex; align-items: center; gap: 4px; padding: 4px 12px; cursor: pointer; font-weight: 600; color: #334155; }
+.tree-folder:hover { background: #f1f5f9; }
+.caret { width: 10px; color: var(--muted); font-size: 10px; }
+.sidebar-filter { padding: 6px 12px; border-bottom: 1px solid var(--border); }
+.pad { padding: 0 12px; }
+.menu { position: absolute; z-index: 10; top: 40px; right: 8px; width: 280px; background: #fff; border: 1px solid var(--border);
+  border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.15); padding: 4px; }
+.menu-item { padding: 6px 8px; border-radius: 4px; cursor: pointer; }
+.menu-item:hover { background: #eff6ff; }
+.menu-item small { display: block; color: var(--muted); }
+.sidebar-inner { position: relative; }
+.link { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 6px 12px; font: inherit; text-align: left; }
+
+details.card > summary { cursor: pointer; font-weight: 600; }
+.subcard { border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 6px; }

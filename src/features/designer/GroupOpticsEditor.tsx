@@ -1,8 +1,11 @@
 import type { Library } from '../../domain/library/Library';
 import type { DeviceDefinition } from '../../domain/device/types';
 import type { Placement } from '../../domain/design/types';
-import { Section, SelectField } from '../../ui/fields';
-import { opticOptions } from './opticOptions';
+import { findProfile } from '../../domain/device/breakout';
+import { resolvePort, withSetting } from '../../domain/device/portSettings';
+import { ROLE_TRAITS } from '../../domain/device/roles';
+import { Section } from '../../ui/fields';
+import { PortSettingFields } from '../../ui/PortSettingFields';
 
 interface Props {
   lib: Library;
@@ -11,24 +14,24 @@ interface Props {
   onChange(fn: (p: Placement) => Placement): void;
 }
 
-/** Default optic per port group (applies to every port without an explicit optic). */
+/** Instance-level setting per port group (overrides the profile for every port of the group). */
 export function GroupOpticsEditor({ lib, device, placement, onChange }: Props) {
-  const groups = device.ports.filter((g) => opticOptions(lib, g.connector).length > 1);
+  const profile = findProfile(device, placement.breakoutProfileId);
+  const groups = device.ports.filter((g) => ROLE_TRAITS[g.role].pluggable);
   if (groups.length === 0) return null;
-  const set = (groupId: string, opticId: string) =>
-    onChange((p) => {
-      const groupOptics = { ...p.groupOptics };
-      if (opticId) groupOptics[groupId] = opticId;
-      else delete groupOptics[groupId];
-      return { ...p, groupOptics };
-    });
   return (
-    <Section title="Optics by port group">
-      {groups.map((g) => (
-        <SelectField key={g.id} label={`${g.label} (${g.count}x ${g.connector})`}
-          value={placement.groupOptics[g.id] ?? ''} options={opticOptions(lib, g.connector)}
-          onChange={(v) => set(g.id, v)} />
-      ))}
+    <Section title="Port groups (this instance)">
+      {groups.map((g) => {
+        const inh = resolvePort(device, `${g.id}/1`, profile && { ...profile, overrides: {} });
+        return (
+          <details key={g.id} className="card">
+            <summary>{`${g.label} (${g.count}x ${g.connector})`}</summary>
+            <PortSettingFields lib={lib} group={g} value={placement.groupSettings[g.id] ?? {}}
+              inherited={{ mode: inh?.mode, optic: lib.optics.get(inh?.opticId)?.name, cable: lib.cableMedia.get(inh?.cableId)?.name }}
+              onChange={(s) => onChange((p) => ({ ...p, groupSettings: withSetting(p.groupSettings, g.id, s) }))} />
+          </details>
+        );
+      })}
     </Section>
   );
 }

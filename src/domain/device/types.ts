@@ -15,10 +15,15 @@ export type DeviceCategory =
 
 export type PortFace = 'front' | 'rear';
 
+export type PortRole = 'data' | 'mgmt' | 'console' | 'service' | 'outlet';
+
+export type Phase = 'L1' | 'L2' | 'L3' | 'L1-L2' | 'L2-L3' | 'L3-L1';
+
 /** A run of identical port cages on one face. */
 export interface PortGroup {
   id: string;
   label: string;
+  role: PortRole;
   connector: string;
   count: number;
   speedGbps: number;
@@ -27,16 +32,28 @@ export interface PortGroup {
   rows: number;
   /** Allowed breakout modes, e.g. "4x200G". Native "1x<speed>G" is implicit. */
   breakoutModes: string[];
+  /** PDU outlet groups: breaker bank and phase. */
+  bank?: string;
+  phase?: Phase;
+  /** PDU outlet groups: bank breaker rating in amps. */
+  breakerA?: number;
 }
 
-/** A named per-port breakout layout. */
+/** Configuration of one port: breakout mode, pluggable optic, attached cable. */
+export interface PortSetting {
+  mode?: string;
+  opticId?: string;
+  cableId?: string;
+}
+
+/** A named per-port configuration layout. */
 export interface BreakoutProfile {
   id: string;
   name: string;
-  /** groupId -> default mode for every port of the group. */
-  groupDefaults: Record<string, string>;
-  /** portRef ("group/index") -> mode. */
-  overrides: Record<string, string>;
+  /** groupId -> setting for every port of the group. */
+  groupDefaults: Record<string, PortSetting>;
+  /** portRef ("group/index") -> setting. */
+  overrides: Record<string, PortSetting>;
 }
 
 export interface DevicePower {
@@ -44,6 +61,21 @@ export interface DevicePower {
   maxW: number;
   /** Supply capacity for PDUs / power shelves. */
   capacityW?: number;
+}
+
+/** Hot-swap PSUs on the rear face, split evenly left/right. */
+export interface PsuSpec {
+  count: number;
+  inlet: string;
+  ratedW: number;
+}
+
+/** PDU input feed. */
+export interface PduInput {
+  phases: 1 | 3;
+  voltageV: number;
+  inputCurrentA: number;
+  inputPlug: string;
 }
 
 export interface DeviceDefinition extends CatalogItem {
@@ -55,6 +87,8 @@ export interface DeviceDefinition extends CatalogItem {
   depthMm: number;
   weightKg: number;
   power: DevicePower;
+  psus?: PsuSpec;
+  pdu?: PduInput;
   ports: PortGroup[];
   breakoutProfiles: BreakoutProfile[];
   notes?: string;

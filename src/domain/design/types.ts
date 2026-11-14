@@ -1,4 +1,4 @@
-import type { PortFace } from '../device/types';
+import type { PortFace, PortSetting } from '../device/types';
 
 export const DESIGN_SCHEMA = 'dc-lab/rack-design@1';
 
@@ -8,19 +8,16 @@ export type Mount =
   | { kind: 'rack'; position: number; face: PortFace }
   | { kind: 'side'; side: SideName; slot: number };
 
-export interface PortConfig {
-  breakout?: string;
-  opticId?: string;
-}
-
 export interface Placement {
   id: string;
   deviceId: string;
   label: string;
   mount: Mount;
   breakoutProfileId?: string;
-  portConfig: Record<string, PortConfig>;
-  groupOptics: Record<string, string>;
+  /** portRef -> instance setting (overrides profile). */
+  portSettings: Record<string, PortSetting>;
+  /** groupId -> instance setting for the whole group. */
+  groupSettings: Record<string, PortSetting>;
 }
 
 export interface CableEndpoint {

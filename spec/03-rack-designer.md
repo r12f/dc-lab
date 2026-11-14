@@ -8,7 +8,7 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 - `placements[]` — a device instance:
   - `deviceId`, `label` (instance id, e.g. `T0-1`)
   - `mount`: `{ kind: "rack", position, face }` (bottom unit, 1-based) or `{ kind: "side", side, slot }`
-  - `breakoutProfileId` — one of the device's profiles (optional)
+  - `breakoutProfileId` — one of the device's profiles (optional); supplies default mode/optic/cable per port
   - `portConfig[portRef]` — per-port `breakout` override and `opticId`
   - `groupOptics[groupId]` — default optic for every port in a group
 - `cables[]` — in-rack cable runs: `from`/`to` endpoints (`placementId`, `portRef`), `mediaId`,
@@ -26,7 +26,8 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 
 - **Metrics**: used/total units, typical/max power (devices + optics), supply capacity (PDUs/shelves),
   total weight (rack + devices), warnings (over power, over load, supply < max draw, overlaps).
-- **BOM**: rack template x1, devices by id, optics by id, cables by media (quantity, total length).
+- **BOM**: rack template x1, devices by id, optics by id (instance > profile), port-attached cables from
+  profiles (quantity), in-rack cable runs by media (quantity, total length).
   Columns: Item, Category, Vendor/Model, Qty, Unit W, Total W, Notes.
 
 ## UI

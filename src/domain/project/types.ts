@@ -9,11 +9,13 @@ export interface Project extends CatalogSet {
   name: string;
   rackDesigns: RackDesign[];
   layouts: DcLayout[];
+  /** Built-in item ids deleted in this project. */
+  hiddenBuiltins: string[];
 }
 
 export function emptyProject(name = 'Untitled project'): Project {
   return {
     schema: PROJECT_SCHEMA, name,
-    devices: [], racks: [], optics: [], cableMedia: [], rackDesigns: [], layouts: [],
+    devices: [], racks: [], optics: [], cableMedia: [], rackDesigns: [], layouts: [], hiddenBuiltins: [],
   };
 }

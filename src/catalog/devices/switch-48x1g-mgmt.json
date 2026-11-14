@@ -15,10 +15,16 @@
     "typicalW": 0,
     "maxW": 0
   },
+  "psus": {
+    "count": 2,
+    "inlet": "C14",
+    "ratedW": 0
+  },
   "ports": [
     {
       "id": "rj45",
       "label": "RJ45",
+      "role": "data",
       "connector": "RJ45",
       "count": 48,
       "speedGbps": 1,
@@ -30,15 +36,40 @@
     {
       "id": "sfp",
       "label": "SFP28",
+      "role": "data",
       "connector": "SFP28",
       "count": 4,
       "speedGbps": 25,
       "lanes": 1,
       "face": "front",
-      "rows": 1,
+      "rows": 2,
       "breakoutModes": [
         "1x10G"
       ]
+    },
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "role": "mgmt",
+      "connector": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "connector": "RJ45",
+      "count": 1,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
     }
   ],
   "breakoutProfiles": []

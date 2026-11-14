@@ -24,7 +24,7 @@ const lib = new Library(builtin, emptyProject());
 describe('rack design', () => {
   const design = newDesign('d', 'D', rack.id);
   const p1 = newPlacement('p1', sw.id, 'SW1', { kind: 'rack', position: 1, face: 'front' });
-  p1.groupOptics = { osfp: optic.id };
+  p1.groupSettings = { osfp: { opticId: optic.id } };
   design.placements.push(p1, newPlacement('p2', pdu.id, 'PDU1', { kind: 'side', side: 'left', slot: 1 }));
 
   it('detects overlap and finds the next free unit', () => {

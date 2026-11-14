@@ -49,7 +49,7 @@ export function DesignerModule() {
   const items = designs.map((d) => ({
     id: d.id,
     name: d.name,
-    group: lib.racks.get(d.templateId)?.name ?? d.templateId,
+    path: [lib.racks.get(d.templateId)?.name ?? d.templateId],
     badge: formatPower(computeRackMetrics(lib, d).typicalW),
   }));
 

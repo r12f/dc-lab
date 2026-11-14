@@ -38,10 +38,7 @@ export function findProfile(device: DeviceDefinition, id?: string): BreakoutProf
   return id ? device.breakoutProfiles.find((p) => p.id === id) : undefined;
 }
 
-/**
- * Effective breakout mode for one port, resolved in priority order:
- * instance override > profile override > profile group default > native.
- */
+/** Effective breakout mode of one port (see resolvePort for the priority order). */
 export function effectiveMode(
   device: DeviceDefinition,
   portRef: string,
@@ -51,23 +48,23 @@ export function effectiveMode(
   const ref = parsePortRef(portRef);
   const group = ref && findGroup(device, ref.groupId);
   if (!group) return '';
-  const candidates = [instanceOverride, profile?.overrides[portRef], profile?.groupDefaults[group.id]];
+  const candidates = [instanceOverride, profile?.overrides[portRef]?.mode, profile?.groupDefaults[group.id]?.mode];
   return candidates.find((m): m is string => !!m && isModeAllowed(group, m)) ?? nativeMode(group);
 }
 
 /** Problems with a profile against its device. */
 export function validateProfile(device: DeviceDefinition, profile: BreakoutProfile): string[] {
   const errors: string[] = [];
-  for (const [groupId, mode] of Object.entries(profile.groupDefaults)) {
+  for (const [groupId, setting] of Object.entries(profile.groupDefaults)) {
     const g = findGroup(device, groupId);
     if (!g) errors.push(`Unknown port group "${groupId}"`);
-    else if (!isModeAllowed(g, mode)) errors.push(`${mode} not allowed on ${g.label}`);
+    else if (setting.mode && !isModeAllowed(g, setting.mode)) errors.push(`${setting.mode} not allowed on ${g.label}`);
   }
-  for (const [portRef, mode] of Object.entries(profile.overrides)) {
+  for (const [portRef, setting] of Object.entries(profile.overrides)) {
     const ref = parsePortRef(portRef);
     const g = ref && findGroup(device, ref.groupId);
     if (!g || !ref || ref.index < 1 || ref.index > g.count) errors.push(`Unknown port "${portRef}"`);
-    else if (!isModeAllowed(g, mode)) errors.push(`${mode} not allowed on ${portRef}`);
+    else if (setting.mode && !isModeAllowed(g, setting.mode)) errors.push(`${setting.mode} not allowed on ${portRef}`);
   }
   return errors;
 }

@@ -1,31 +1,29 @@
-import type { BreakoutProfile, DeviceDefinition } from '../../domain/device/types';
-import { modesOf } from '../../domain/device/breakout';
+import type { BreakoutProfile, DeviceDefinition, PortSetting } from '../../domain/device/types';
+import type { Library } from '../../domain/library/Library';
 import { findGroup, parsePortRef } from '../../domain/device/ports';
+import { resolvePort, withSetting } from '../../domain/device/portSettings';
+import { ROLE_TRAITS } from '../../domain/device/roles';
 import { newProfile } from '../../domain/device/factory';
 import { uniqueId } from '../../domain/ids';
 import { Button } from '../../ui/Button';
 import { Section, SelectField, TextField } from '../../ui/fields';
-import { modeColor } from './modeColors';
+import { PortSettingFields } from '../../ui/PortSettingFields';
+import { modeColor } from './drawing/portStyle';
+import { ProfileOverridesList } from './ProfileOverridesList';
 
 interface Props {
+  lib: Library;
   device: DeviceDefinition;
   readOnly: boolean;
   onChange(device: DeviceDefinition): void;
   profileId?: string;
   onProfileChange(id: string | undefined): void;
-  selectedPort?: string;
+  selectedPorts: ReadonlySet<string>;
+  onSelectPorts(refs: string[]): void;
 }
 
-const INHERIT = '';
-
-function withEntry(map: Record<string, string>, key: string, value: string): Record<string, string> {
-  const next = { ...map };
-  if (value === INHERIT) delete next[key];
-  else next[key] = value;
-  return next;
-}
-
-export function BreakoutProfilesEditor({ device, readOnly, onChange, profileId, onProfileChange, selectedPort }: Props) {
+/** Profile list + per-group defaults + per-port settings for the selected ports. */
+export function BreakoutProfilesEditor({ lib, device, readOnly, onChange, profileId, onProfileChange, selectedPorts, onSelectPorts }: Props) {
   const profile = device.breakoutProfiles.find((p) => p.id === profileId);
   const setProfile = (p: BreakoutProfile) =>
     onChange({ ...device, breakoutProfiles: device.breakoutProfiles.map((x) => (x.id === p.id ? p : x)) });
@@ -34,66 +32,75 @@ export function BreakoutProfilesEditor({ device, readOnly, onChange, profileId, 
     onChange({ ...device, breakoutProfiles: [...device.breakoutProfiles, p] });
     onProfileChange(p.id);
   };
-  const removeProfile = () => {
-    if (!profile) return;
-    onChange({ ...device, breakoutProfiles: device.breakoutProfiles.filter((x) => x.id !== profile.id) });
-    onProfileChange(undefined);
-  };
 
-  const portRef = selectedPort && parsePortRef(selectedPort);
-  const portGroup = portRef ? findGroup(device, portRef.groupId) : undefined;
+  const refs = [...selectedPorts];
+  const groups = [...new Set(refs.map((r) => parsePortRef(r)?.groupId))];
+  const selGroup = groups.length === 1 && groups[0] ? findGroup(device, groups[0]) : undefined;
+  /** Shared value across selected ports for each field (undefined when they differ). */
+  const shared: PortSetting = {};
+  if (profile && refs.length) {
+    for (const key of ['mode', 'opticId', 'cableId'] as const) {
+      const vals = new Set(refs.map((r) => profile.overrides[r]?.[key]));
+      if (vals.size === 1) shared[key] = [...vals][0];
+    }
+  }
+  const inheritedFor = (ref: string) => {
+    const r = resolvePort(device, ref, profile && { ...profile, overrides: {} });
+    return { mode: r?.mode, optic: lib.optics.get(r?.opticId)?.name, cable: lib.cableMedia.get(r?.cableId)?.name };
+  };
+  const applyToSelected = (setting: PortSetting) => {
+    if (!profile) return;
+    let overrides = profile.overrides;
+    for (const r of refs) overrides = withSetting(overrides, r, setting);
+    setProfile({ ...profile, overrides });
+  };
 
   return (
     <Section title="Breakout profiles" actions={!readOnly && <Button onClick={add}>+ Profile</Button>}>
-      <SelectField
-        label="Profile shown on canvas"
-        value={profileId ?? INHERIT}
-        options={[{ value: INHERIT, label: '(native — no breakout)' }, ...device.breakoutProfiles.map((p) => ({ value: p.id, label: p.name }))]}
-        onChange={(v) => onProfileChange(v || undefined)}
-      />
+      <SelectField label="Profile shown on canvas" value={profileId ?? ''}
+        options={[{ value: '', label: '(native — no breakout)' }, ...device.breakoutProfiles.map((p) => ({ value: p.id, label: p.name }))]}
+        onChange={(v) => onProfileChange(v || undefined)} />
       {profile && (
         <fieldset disabled={readOnly} className="plain">
           <TextField label="Profile name" value={profile.name} onChange={(name) => setProfile({ ...profile, name })} />
-          {device.ports.map((g) => (
-            <SelectField
-              key={g.id}
-              label={`${g.label} default`}
-              value={profile.groupDefaults[g.id] ?? INHERIT}
-              options={[{ value: INHERIT, label: 'native' }, ...modesOf(g).map((m) => ({ value: m, label: m }))]}
-              onChange={(v) => setProfile({ ...profile, groupDefaults: withEntry(profile.groupDefaults, g.id, v) })}
-            />
-          ))}
-          {selectedPort && portGroup ? (
-            <SelectField
-              label={`Port ${selectedPort} override`}
-              value={profile.overrides[selectedPort] ?? INHERIT}
-              options={[{ value: INHERIT, label: 'group default' }, ...modesOf(portGroup).map((m) => ({ value: m, label: m }))]}
-              onChange={(v) => setProfile({ ...profile, overrides: withEntry(profile.overrides, selectedPort, v) })}
-            />
-          ) : (
-            <p className="muted">Click a port on the canvas to override its breakout.</p>
-          )}
-          {Object.keys(profile.overrides).length > 0 && (
-            <div className="chips">
-              {Object.entries(profile.overrides).map(([ref, mode]) => (
-                <span key={ref} className="chip" style={{ borderColor: modeColor(mode) }}>{ref}: {mode}</span>
-              ))}
+          {refs.length > 0 && selGroup ? (
+            <div className="card">
+              <strong>{refs.length === 1 ? `Port ${refs[0]}` : `${refs.length} ports in ${selGroup.label}`}</strong>
+              <PortSettingFields lib={lib} group={selGroup} value={shared} inherited={inheritedFor(refs[0])}
+                onChange={applyToSelected} />
+              <div className="row2">
+                <Button onClick={() => onSelectPorts(Array.from({ length: selGroup.count }, (_, i) => `${selGroup.id}/${i + 1}`))}>
+                  Select whole group
+                </Button>
+                <Button onClick={() => applyToSelected({})}>Clear overrides</Button>
+              </div>
             </div>
+          ) : (
+            <p className="muted">{refs.length ? 'Select ports from a single group.' : 'Click ports on the canvas to configure them.'}</p>
           )}
-          <Button variant="danger" onClick={removeProfile}>Delete profile</Button>
+          <details className="card">
+            <summary>Group defaults</summary>
+            {device.ports.filter((g) => ROLE_TRAITS[g.role].pluggable).map((g) => (
+              <div key={g.id} className="subcard">
+                <strong>{g.label}</strong>
+                <PortSettingFields lib={lib} group={g} value={profile.groupDefaults[g.id] ?? {}}
+                  onChange={(s) => setProfile({ ...profile, groupDefaults: withSetting(profile.groupDefaults, g.id, s) })} />
+              </div>
+            ))}
+          </details>
+          <ProfileOverridesList lib={lib} profile={profile} onSelect={(r) => onSelectPorts([r])} />
+          <Button variant="danger" onClick={() => {
+            onChange({ ...device, breakoutProfiles: device.breakoutProfiles.filter((x) => x.id !== profile.id) });
+            onProfileChange(undefined);
+          }}>Delete profile</Button>
         </fieldset>
       )}
-      <Legend />
+      <div className="chips">
+        {['1x', '2x', '4x', '8x'].map((f) => (
+          <span key={f} className="chip" style={{ background: modeColor(`${f}100G`), color: '#fff' }}>{f}</span>
+        ))}
+        <span className="chip">top bar = optic · bottom bar = cable</span>
+      </div>
     </Section>
-  );
-}
-
-function Legend() {
-  return (
-    <div className="chips">
-      {['1x', '2x', '4x', '8x'].map((f) => (
-        <span key={f} className="chip" style={{ background: modeColor(`${f}100G`), color: '#fff' }}>{f}</span>
-      ))}
-    </div>
   );
 }

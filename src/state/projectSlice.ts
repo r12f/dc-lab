@@ -13,6 +13,8 @@ export interface ProjectSlice {
   upsert<K extends ListKey>(key: K, item: ItemOf<K>): void;
   update<K extends ListKey>(key: K, id: string, fn: (item: ItemOf<K>) => ItemOf<K>): void;
   remove(key: ListKey, id: string): void;
+  hideBuiltin(id: string): void;
+  restoreBuiltins(): void;
 }
 
 export const createProjectSlice: StateCreator<ProjectSlice, [], [], ProjectSlice> = (set) => ({
@@ -37,4 +39,7 @@ export const createProjectSlice: StateCreator<ProjectSlice, [], [], ProjectSlice
     set((s) => ({
       project: { ...s.project, [key]: (s.project[key] as { id: string }[]).filter((i) => i.id !== id) },
     })),
+  hideBuiltin: (id) =>
+    set((s) => ({ project: { ...s.project, hiddenBuiltins: [...new Set([...s.project.hiddenBuiltins, id])] } })),
+  restoreBuiltins: () => set((s) => ({ project: { ...s.project, hiddenBuiltins: [] } })),
 });

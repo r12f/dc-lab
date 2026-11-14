@@ -2,11 +2,11 @@ import { useState } from 'react';
 import type { Library } from '../../domain/library/Library';
 import type { Placement } from '../../domain/design/types';
 import type { PortFace } from '../../domain/device/types';
-import { findProfile } from '../../domain/device/breakout';
 import { formatHeight, formatPower } from '../../domain/units';
 import { Button } from '../../ui/Button';
 import { NumberField, Section, SelectField, TextField } from '../../ui/fields';
-import { DeviceFaceplate } from '../devices/DeviceFaceplate';
+import { DeviceDrawing } from '../devices/drawing/DeviceDrawing';
+import { resolvePlacedPort } from '../../domain/design/optics';
 import type { DesignEditor } from './useDesignEditor';
 import { GroupOpticsEditor } from './GroupOpticsEditor';
 import { PortConfigEditor } from './PortConfigEditor';
@@ -25,7 +25,6 @@ export function PlacementPanel({ lib, placement: p, editor, onRemoved }: Props) 
   const device = lib.devices.get(p.deviceId);
   if (!device) return <p className="muted">Unknown device {p.deviceId}</p>;
   const update = (fn: (x: Placement) => Placement) => editor.updatePlacement(p.id, fn);
-  const profile = findProfile(device, p.breakoutProfileId);
   const mount = p.mount;
 
   return (
@@ -53,8 +52,12 @@ export function PlacementPanel({ lib, placement: p, editor, onRemoved }: Props) 
       <GroupOpticsEditor lib={lib} device={device} placement={p} onChange={update} />
       <Section title="Ports">
         <div className="mini-faceplate">
-          <DeviceFaceplate device={device} profile={profile} selectedPort={port} onSelectPort={setPort}
-            instanceModes={Object.fromEntries(Object.entries(p.portConfig).map(([k, v]) => [k, v.breakout]))} />
+          <DeviceDrawing device={device} compact ctx={{
+            lib,
+            resolve: (r) => resolvePlacedPort(device, p, r),
+            selectedPorts: new Set(port ? [port] : []),
+            onPortClick: (r) => setPort(r),
+          }} />
         </div>
         {port ? (
           <PortConfigEditor lib={lib} device={device} placement={p} portRef={port} onChange={update} />
