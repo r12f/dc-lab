@@ -1,4 +1,4 @@
-# Racks (L11)
+# Racks
 
 Rack templates. One template = one JSON file (`schema: "dc-lab/rack@1"`).
 

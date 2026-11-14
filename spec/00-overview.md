@@ -6,7 +6,7 @@ It is organized as four modules that build on each other:
 | Module | Level | Purpose | Spec |
 |---|---|---|---|
 | Devices | L10 | Define single devices: ports, breakout profiles, power, size, weight | [01-devices.md](01-devices.md) |
-| Racks | L11 | Define rack templates: units, dimensions, footprint tiles, limits | [02-racks.md](02-racks.md) |
+| Racks | — | Define rack templates: units, dimensions, footprint tiles, limits | [02-racks.md](02-racks.md) |
 | Rack Designer | L11 | Populate a rack template with devices, optics, cables; BOM + metrics | [03-rack-designer.md](03-rack-designer.md) |
 | DC Layout | L12 | Rows, tiles, aisles, trays; assign rack designs to tiles; DC BOM | [04-dc-layout.md](04-dc-layout.md) |
 

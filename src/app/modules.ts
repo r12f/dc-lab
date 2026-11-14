@@ -14,7 +14,7 @@ export interface ModuleDef {
 /** Module registry: tab order and the component rendered for each. */
 export const MODULES: ModuleDef[] = [
   { id: 'devices', label: 'Devices (L10)', component: DevicesModule },
-  { id: 'racks', label: 'Racks (L11)', component: RacksModule },
-  { id: 'designer', label: 'Rack Designer', component: DesignerModule },
+  { id: 'racks', label: 'Racks', component: RacksModule },
+  { id: 'designer', label: 'Rack Designer (L11)', component: DesignerModule },
   { id: 'layout', label: 'DC Layout', component: LayoutModule },
 ];
