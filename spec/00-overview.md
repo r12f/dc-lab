@@ -40,3 +40,7 @@ Built-in items ship with the app as one JSON file per item under `src/catalog/`.
 
 Built-in catalog values are illustrative placeholders for generic devices, not vendor datasheet values.
 Verify every number against the vendor datasheet before using a design.
+
+**Maximize**: every canvas toolbar has **⤢ Max** (after Export SVG): hides the module tabs and both side panes,
+leaving only the canvas; **⤡ Restore** or Esc brings them back. Session only (not saved); panes stay mounted
+while hidden.
