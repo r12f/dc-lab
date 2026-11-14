@@ -1,0 +1,24 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "mmc16-to-mpo8-smf",
+  "name": "MMC-16 to MPO-8 SMF (8F used)",
+  "type": "fiber-sm",
+  "fiberCount": 8,
+  "mapping": "straight",
+  "polarity": "B",
+  "color": "#65a30d",
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "MMC-16",
+      "fibers": 16,
+      "gender": "female"
+    },
+    "b": {
+      "count": 1,
+      "connector": "MPO-8",
+      "fibers": 8,
+      "gender": "female"
+    }
+  }
+}

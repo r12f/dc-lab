@@ -25,7 +25,7 @@ describe('optics catalog', () => {
   });
   it('pigtail optic: cables match the end connector and count per leg', () => {
     const p = lib.optics.get('osfp-800g-2xdr4-pigtail')!;
-    expect(compatibleCables(lib, osfp, p).every((c) => c.connector === 'MPO-12' && c.type === 'fiber-sm')).toBe(true);
+    expect(compatibleCables(lib, osfp, p).every((c) => c.type === 'fiber-sm' && [c.ends.a.connector, c.ends.b.connector].some((x) => /MPO-(8|12)/.test(x)))).toBe(true);
     expect(cablesPerPort(osfp, p)).toBe(2);
   });
   it('legacy optics become modules', () => {

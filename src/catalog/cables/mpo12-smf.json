@@ -1,9 +1,24 @@
 {
+  "schema": "dc-lab/cable@1",
   "id": "mpo12-smf",
   "name": "MPO-12 SMF trunk",
   "type": "fiber-sm",
-  "connector": "MPO-12",
   "color": "#facc15",
-  "schema": "dc-lab/cable@1",
-  "fiberCount": 12
+  "fiberCount": 12,
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "MPO-12",
+      "fibers": 12,
+      "gender": "female"
+    },
+    "b": {
+      "count": 1,
+      "connector": "MPO-12",
+      "fibers": 12,
+      "gender": "female"
+    }
+  },
+  "mapping": "straight",
+  "polarity": "B"
 }

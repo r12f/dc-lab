@@ -42,11 +42,12 @@ function endpointPos(lib: Library, design: RackDesign, rack: RackTemplate, ep: C
 export function estimateLengthM(lib: Library, design: RackDesign, run: Pick<CableRun, 'from' | 'to' | 'route'>): number | undefined {
   const rack = lib.racks.get(design.templateId);
   if (!rack) return undefined;
-  const a = endpointPos(lib, design, rack, run.from);
+  const as = run.from.map((ep) => endpointPos(lib, design, rack, ep));
   const bs = run.to.map((ep) => endpointPos(lib, design, rack, ep));
-  if (!a || bs.length === 0 || bs.some((b) => !b)) return undefined;
-  // A breakout cable is as long as its farthest leg.
-  const mm = Math.max(...bs.map((b) => a.toChannelMm[run.route] + b!.toChannelMm[run.route] + Math.abs(a.heightMm - b!.heightMm)));
+  if (as.length === 0 || bs.length === 0 || [...as, ...bs].some((x) => !x)) return undefined;
+  // A multi-connector cable is as long as its farthest A-B pair.
+  const route = run.route;
+  const mm = Math.max(...as.flatMap((a) => bs.map((b) => a!.toChannelMm[route] + b!.toChannelMm[route] + Math.abs(a!.heightMm - b!.heightMm))));
   return Math.ceil((mm / 1000 + SLACK_M) / ROUND_M) * ROUND_M;
 }
 

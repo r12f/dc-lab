@@ -20,10 +20,10 @@ export function CableRoutesDrawing({ lib, routes, selectedId, onSelect }: Props)
         const sel = run.id === selectedId;
         const color = media?.color ?? paint.ink;
         const ds = paths.map((pts) => pts.map(([x, y]) => `${x},${y}`).join(' '));
-        const ends = [paths[0][0], ...paths.map((pts) => pts[pts.length - 1])];
+        const ends = paths.slice(1).map((pts) => pts[0]);
         return (
           <g key={run.id} style={{ cursor: 'pointer' }} onPointerDown={(e) => { e.stopPropagation(); onSelect(run.id); }}>
-            <title>{`${media?.name ?? run.mediaId} ×${run.quantity} · ${run.route} side${paths.length > 1 ? ` · ${paths.length} legs` : ''}`}</title>
+            <title>{`${media?.name ?? run.mediaId} ×${run.quantity} · ${run.route} side · ${run.from.length} A / ${run.to.length} B`}</title>
             {/* Wide transparent stroke = easier hit target. */}
             {ds.map((d, i) => <polyline key={`h${i}`} points={d} fill="none" stroke="transparent" strokeWidth={8} />)}
             {/* Casing keeps any media color visible on the dark rail and on device fills. */}

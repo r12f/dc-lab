@@ -1,9 +1,24 @@
 {
+  "schema": "dc-lab/cable@1",
   "id": "mmc-smf",
   "name": "MMC SMF trunk",
   "type": "fiber-sm",
-  "connector": "MMC",
   "color": "#a3e635",
-  "schema": "dc-lab/cable@1",
-  "fiberCount": 16
+  "fiberCount": 16,
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "MMC-16",
+      "fibers": 16,
+      "gender": "female"
+    },
+    "b": {
+      "count": 1,
+      "connector": "MMC-16",
+      "fibers": 16,
+      "gender": "female"
+    }
+  },
+  "mapping": "straight",
+  "polarity": "B"
 }

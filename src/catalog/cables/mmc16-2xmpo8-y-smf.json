@@ -1,0 +1,24 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "mmc16-2xmpo8-y-smf",
+  "name": "Y-cable MMC-16 to 2x MPO-8 SMF",
+  "type": "fiber-sm",
+  "fiberCount": 16,
+  "mapping": "straight",
+  "polarity": "B",
+  "color": "#84cc16",
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "MMC-16",
+      "fibers": 16,
+      "gender": "female"
+    },
+    "b": {
+      "count": 2,
+      "connector": "MPO-8",
+      "fibers": 8,
+      "gender": "female"
+    }
+  }
+}

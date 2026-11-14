@@ -45,8 +45,8 @@ describe('speed and reach are independent', () => {
   });
   it('cables follow the module fiber connector', () => {
     const fr4 = lib.optics.get('osfp-800g-2xfr4');
-    expect(compatibleCables(lib, g, fr4).map((c) => c.connector)).toEqual(expect.arrayContaining(['LC']));
-    expect(compatibleCables(lib, g, fr4).every((c) => c.connector === 'LC' && c.type === 'fiber-sm')).toBe(true);
+    expect(compatibleCables(lib, g, fr4).map((c) => c.ends.a.connector)).toEqual(expect.arrayContaining(['LC']));
+    expect(compatibleCables(lib, g, fr4).every((c) => (c.ends.a.connector === 'LC' || c.ends.b.connector === 'LC') && c.type === 'fiber-sm')).toBe(true);
     const sr4 = lib.optics.get('qsfp28-100g-sr4');
     expect(compatibleCables(lib, g, sr4).map((c) => c.id)).toEqual(['mpo12-mmf']);
   });
@@ -58,7 +58,7 @@ describe('CPO / NPO fiber ports', () => {
   it('have engine reaches, no modules, cables match the port connector', () => {
     expect(reachOptions(lib, g, '1x800G')).toEqual(['DR8', '2xDR4']);
     expect(compatibleOptics(lib, g, '1x800G')).toEqual([]);
-    expect(compatibleCables(lib, g).every((c) => c.connector === 'MPO-16')).toBe(true);
+    expect(compatibleCables(lib, g).every((c) => c.ends.a.connector === 'MPO-16' || c.ends.b.connector === 'MPO-16')).toBe(true);
     const r = resolvePort(lib, cpo, 'mpo/1', findProfile(cpo, 'all-2x400g-dr4'));
     expect(r).toMatchObject({ mode: '2x400G', reach: '2xDR4', cableId: 'mpo16-smf' });
     expect(r?.optic).toBeUndefined();

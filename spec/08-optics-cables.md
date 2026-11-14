@@ -40,15 +40,52 @@ the pigtail end connector, and a 2-leg pigtail needs two cables per port.
 
 ## Cable
 
+A cable has two **ends**, A and B. Each end is a set of identical connectors, so one model covers
+patch cords, breakouts, Y-cables, shuffles, multi-leg trunks and asymmetric cables.
+
 | Field | Meaning |
 |---|---|
 | `type` | `fiber-sm`, `fiber-mm`, `copper-dac`, `aoc`, `power`, `other` |
-| `connector` | Connector at the A end, and at both ends of a straight cable (`LC`, `MPO-12`, `MPO-16`, `MMC`, `OSFP` for DAC…) |
+| `ends.a`, `ends.b` | `{ count, connector, fibers, gender }` — number of connectors on that end, connector type (`LC`, `MPO-8`, `MPO-12`, `MPO-16`, `MMC-16`, `OSFP`…), fibers **used** per connector, `male` (pinned) / `female` (unpinned); gender only for MPO/MMC |
+| `fiberCount` | Fibers in the cable body (e.g. 160 for a 160F trunk) |
+| `mapping` | `straight` — fibers run in order (A fiber 1 → B fiber 1 across connectors); `shuffle` — every A connector's fibers are split evenly over all B connectors (4x4, 2x2, 2xMMC-16 → 4xMPO-8) |
+| `polarity` | MPO/MMC only: `A` (key-up to key-down, straight-through), `B` (key-up to key-up, fiber positions reversed), `C` (pair-wise flip) |
 | `vendor`, `model` | Optional vendor and model / vendor PN |
-| `fiberCount` | Fibers per cable (fiber types) |
-| `maxLengthM` | Longest supported length (optional) |
-| `color` | Drawing color (rack cable runs, port glyphs) |
-| `breakout` | Breakout cables only: `{ count, connector }` — the B end fans out into `count` legs, each ending in `connector` (e.g. MPO-12 with 8 fibers → 4x LC duplex). The A end uses `connector`. |
+| `maxLengthM`, `color` | Longest supported length (optional); drawing color |
+
+Examples (all built-in):
+
+| Cable | A end | B end | Mapping |
+|---|---|---|---|
+| LC duplex patch | 1x LC (2F) | 1x LC (2F) | straight |
+| MPO-12 → 4x LC breakout | 1x MPO-12 (8F) | 4x LC (2F) | straight |
+| Y-cable MMC-16 → 2x MPO-8 | 1x MMC-16 (16F) | 2x MPO-8 (8F) | straight |
+| 4x4 shuffle | 4x MPO-8 | 4x MPO-8 | shuffle (2F from each A to each B) |
+| 2x2 shuffle | 2x MPO-8 | 2x MPO-8 | shuffle (4F from each A to each B) |
+| 2x MMC-16 → 4x MPO-8 shuffle | 2x MMC-16 | 4x MPO-8 | shuffle (4F from each A to each B) |
+| 160F MPO-8 trunk | 20x MPO-8 (male) | 20x MPO-8 (male) | straight |
+| Asymmetric MMC-16 → MPO-8 | 1x MMC-16 (16F) | 1x MPO-8 (8F) | straight, 8 A fibers unused |
+| Asymmetric 2x MMC-16 → 2x MPO-8 | 2x MMC-16 | 2x MPO-8 | straight, 8 fibers unused per A connector |
+
+### Derived
+
+- **Fiber map**: list of `(A connector, fiber) → (B connector, fiber)` for the used fibers. Fibers used =
+  min(A total, B total); the rest of the larger end is reported as **unused**. With `straight`, fibers are
+  numbered across connectors in order; with `shuffle`, A connector *i* sends its group *j* to B connector
+  *j*, landing at position group *i*. Polarity `B` reverses fiber positions within each connector on the
+  B side; `C` swaps adjacent pairs.
+- **Connector mating**: MPO-8 and MPO-12 share the 12-position ferrule and mate with each other; `MMC`
+  and `MMC-16` are the same connector. Other connectors mate only with themselves.
+- **Gender**: transceiver fiber receptacles are pinned (male), so a male cable end on a module port is
+  flagged (pinned-to-pinned).
+
+### UI
+
+- Inspector: General, Media (type, fiber count, color), **A end** and **B end** (count, connector,
+  fibers per connector, gender), **Mapping** (straight/shuffle, polarity) with the derived used/unused
+  fiber summary.
+- Canvas: A connectors on the left, B connectors on the right, one line per connected A→B connector
+  pair labelled with its fiber count; shuffle lines cross; unused fibers listed under the drawing.
 
 Lengths are per use (rack cable runs choose or estimate them), not per cable media.
 

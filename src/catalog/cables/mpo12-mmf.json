@@ -3,7 +3,22 @@
   "id": "mpo12-mmf",
   "name": "MPO-12 OM4 trunk",
   "type": "fiber-mm",
-  "connector": "MPO-12",
   "color": "#2dd4bf",
-  "fiberCount": 12
+  "fiberCount": 12,
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "MPO-12",
+      "fibers": 12,
+      "gender": "female"
+    },
+    "b": {
+      "count": 1,
+      "connector": "MPO-12",
+      "fibers": 12,
+      "gender": "female"
+    }
+  },
+  "mapping": "straight",
+  "polarity": "B"
 }

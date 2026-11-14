@@ -168,10 +168,25 @@ function migrateRenames(p: Json): Json {
   };
 }
 
+/** Old cable `{ connector, breakout? }` -> `{ ends: { a, b }, mapping }`. */
+export function migrateCable(c: Json): Json {
+  if (c.ends) return c;
+  const { connector, breakout, ...rest } = c;
+  const bo = breakout as Json | undefined;
+  const conn = String(connector ?? '');
+  const fibers = c.fiberCount === undefined ? undefined : Number(c.fiberCount);
+  const a = { count: 1, connector: conn, ...(fibers ? { fibers } : {}) };
+  const b = bo
+    ? { count: Number(bo.count ?? 1), connector: String(bo.connector ?? conn), ...(fibers ? { fibers: Math.floor(fibers / Number(bo.count ?? 1)) } : {}) }
+    : { ...a };
+  return { ...rest, ends: { a, b }, mapping: 'straight' };
+}
+
 export function migrateProjectJson(raw: Json): Json {
   const p = migrateRenames(raw);
   return {
     ...p,
+    cableMedia: ((p.cableMedia as Json[]) ?? []).map(migrateCable),
     layouts: ((p.layouts as Json[]) ?? []).map(migrateLayout),
     optics: ((p.optics as Json[]) ?? []).map(migrateOptic),
     devices: ((p.devices as Json[]) ?? []).map(migrateDevice),
@@ -179,7 +194,11 @@ export function migrateProjectJson(raw: Json): Json {
     rackDesigns: ((p.rackDesigns as Json[]) ?? []).map((d) => ({
       ...d,
       placements: ((d.placements as Json[]) ?? []).map(migratePlacement).map(migrateSideMount),
-      cables: ((d.cables as Json[]) ?? []).map((c) => ({ route: 'left', ...c, to: Array.isArray(c.to) ? c.to : c.to ? [c.to] : [] })),
+      cables: ((d.cables as Json[]) ?? []).map((c) => ({
+        route: 'left', ...c,
+        from: Array.isArray(c.from) ? c.from : c.from ? [c.from] : [],
+        to: Array.isArray(c.to) ? c.to : c.to ? [c.to] : [],
+      })),
     })),
     hiddenBuiltins: p.hiddenBuiltins ?? [],
   };

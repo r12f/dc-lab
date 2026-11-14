@@ -1,9 +1,21 @@
 {
+  "schema": "dc-lab/cable@1",
   "id": "lc-om4",
   "name": "LC-LC OM4 duplex",
   "type": "fiber-mm",
-  "connector": "LC",
   "color": "#22d3ee",
-  "schema": "dc-lab/cable@1",
-  "fiberCount": 2
+  "fiberCount": 2,
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "LC",
+      "fibers": 2
+    },
+    "b": {
+      "count": 1,
+      "connector": "LC",
+      "fibers": 2
+    }
+  },
+  "mapping": "straight"
 }

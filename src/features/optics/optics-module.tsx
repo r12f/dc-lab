@@ -6,6 +6,7 @@ import { Sidebar, type SidebarItem } from '../../ui/sidebar';
 import { CanvasFrame, EmptyCanvas } from '../../ui/canvas-frame';
 import { CABLE_TYPES } from '../../domain/optics/cable-types';
 import { opticTreePlacement } from '../../domain/optics/grouping';
+import { cableSummary } from '../../domain/optics/fiber-map';
 import { fromKey, toKey } from './catalog-ref';
 import { useOpticsCatalog } from './use-optics-catalog';
 import { NewOpticsMenu } from './new-optics-menu';
@@ -33,8 +34,8 @@ export function OpticsModule() {
       id: toKey({ catalog: 'cable', id: item.id }), name: item.name,
       path: ['Cables', CABLE_TYPES[item.type] ?? item.type],
       pathOrder: [1],
-      keywords: `${item.vendor ?? ''} ${item.model ?? ''} ${item.connector} ${item.type}`,
-      badge: `${item.connector}${mark(source)}`,
+      keywords: `${item.vendor ?? ''} ${item.model ?? ''} ${item.ends.a.connector} ${item.ends.b.connector} ${item.type} ${item.mapping}`,
+      badge: `${cableSummary(item)}${mark(source)}`,
     })),
   ];
   const ref = cat.ref;

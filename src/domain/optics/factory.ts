@@ -28,5 +28,8 @@ export function newOptic(id: string, packaging: OpticPackaging): OpticDefinition
 }
 
 export function newCable(id: string): CableMedia {
-  return { id, name: 'New cable', type: 'fiber-sm', connector: 'LC', fiberCount: 2, color: '#fde047' };
+  return {
+    id, name: 'New cable', type: 'fiber-sm', fiberCount: 2, mapping: 'straight', color: '#fde047',
+    ends: { a: { count: 1, connector: 'LC', fibers: 2 }, b: { count: 1, connector: 'LC', fibers: 2 } },
+  };
 }

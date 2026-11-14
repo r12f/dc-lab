@@ -40,7 +40,7 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
     mutate((d) => ({
       ...d,
       placements: d.placements.filter((p) => p.id !== id),
-      cables: d.cables.filter((c) => c.from.placementId !== id && c.to.every((t) => t.placementId !== id)),
+      cables: d.cables.filter((c) => [...c.from, ...c.to].every((t) => t.placementId !== id)),
     }));
 
   /** Adds a run and returns its id. */

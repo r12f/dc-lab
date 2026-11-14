@@ -1,0 +1,24 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "mpo8-160f-trunk-smf",
+  "name": "160F MPO-8 trunk SMF (20x MPO-8)",
+  "type": "fiber-sm",
+  "fiberCount": 160,
+  "mapping": "straight",
+  "polarity": "B",
+  "color": "#ca8a04",
+  "ends": {
+    "a": {
+      "count": 20,
+      "connector": "MPO-8",
+      "fibers": 8,
+      "gender": "male"
+    },
+    "b": {
+      "count": 20,
+      "connector": "MPO-8",
+      "fibers": 8,
+      "gender": "male"
+    }
+  }
+}

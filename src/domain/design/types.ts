@@ -33,9 +33,9 @@ export type CableRoute = 'left' | 'right';
 
 export interface CableRun {
   id: string;
-  /** A end. */
-  from: CableEndpoint;
-  /** B end(s): one for a straight cable, up to the breakout leg count for a breakout cable. */
+  /** A-end connectors (up to the cable's A connector count). */
+  from: CableEndpoint[];
+  /** B-end connectors (up to the cable's B connector count). */
   to: CableEndpoint[];
   /** Side cable channel the run uses. */
   route: CableRoute;

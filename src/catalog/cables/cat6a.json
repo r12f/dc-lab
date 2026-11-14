@@ -1,8 +1,18 @@
 {
+  "schema": "dc-lab/cable@1",
   "id": "cat6a",
   "name": "Cat6A patch",
   "type": "other",
-  "connector": "RJ45",
   "color": "#60a5fa",
-  "schema": "dc-lab/cable@1"
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "RJ45"
+    },
+    "b": {
+      "count": 1,
+      "connector": "RJ45"
+    }
+  },
+  "mapping": "straight"
 }

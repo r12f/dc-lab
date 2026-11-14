@@ -24,26 +24,27 @@ describe('connector-to-connector cabling', () => {
     expect(endpointLegs(lib, d, 'sw', 'osfp/1')).toEqual({ count: 2, connector: 'MPO-12' });
   });
   it('both legs of one port can carry separate runs; reusing a leg is flagged', () => {
-    const r1: CableRun = { id: 'a', from: ep('sw', 'osfp/1', 1), to: [ep('sw', 'osfp/2', 1)], route: 'left', mediaId: 'mpo12-smf', quantity: 1 };
-    const r2: CableRun = { id: 'b', from: ep('sw', 'osfp/1', 2), to: [ep('sw', 'osfp/2', 2)], route: 'left', mediaId: 'mpo12-smf', quantity: 1 };
-    const r3: CableRun = { id: 'c', from: ep('sw', 'osfp/1', 2), to: [ep('sw', 'osfp/3', 1)], route: 'left', mediaId: 'mpo12-smf', quantity: 1 };
+    const r1: CableRun = { id: 'a', from: [ep('sw', 'osfp/1', 1)], to: [ep('sw', 'osfp/2', 1)], route: 'left', mediaId: 'mpo12-smf', quantity: 1 };
+    const r2: CableRun = { id: 'b', from: [ep('sw', 'osfp/1', 2)], to: [ep('sw', 'osfp/2', 2)], route: 'left', mediaId: 'mpo12-smf', quantity: 1 };
+    const r3: CableRun = { id: 'c', from: [ep('sw', 'osfp/1', 2)], to: [ep('sw', 'osfp/3', 1)], route: 'left', mediaId: 'mpo12-smf', quantity: 1 };
     const design = { ...d, cables: [r1, r2, r3] };
     expect(cableIssues(lib, design, r1)).toEqual([]);
     expect(cableIssues(lib, design, r3)).toContain('SW1 osfp/1.2 is already connected');
   });
   it('breakout MPO-12 -> 4x LC: A must be MPO-12, B legs LC, at most 4', () => {
-    const run: CableRun = { id: 'x', from: ep('sw', 'osfp/1', 1), mediaId: 'mpo12-4xlc-smf-breakout', route: 'right', quantity: 1,
+    const run: CableRun = { id: 'x', from: [ep('sw', 'osfp/1', 1)], mediaId: 'mpo12-4xlc-smf-breakout', route: 'right', quantity: 1,
       to: [ep('sv', 'osfp/1', 1), ep('sv', 'osfp/1', 2), ep('sv', 'osfp/2', 1), ep('sv', 'osfp/2', 2)] };
     expect(cableIssues(lib, { ...d, cables: [run] }, run)).toEqual([]);
-    const bad = { ...run, to: [...run.to, ep('sv', 'osfp/3', 1)], from: ep('sv', 'osfp/4', 1) };
+    const bad = { ...run, to: [...run.to, ep('sv', 'osfp/3', 1)], from: [ep('sv', 'osfp/4', 1)] };
     const issues = cableIssues(lib, { ...d, cables: [bad] }, bad);
-    expect(issues).toContain('A SW2 osfp/4.1 is LC, cable needs MPO-12');
-    expect(issues).toContain('5 B ends but cable has 4 leg(s)');
+    expect(issues).toContain('A SW2 osfp/4.1 is LC, cable end is MPO-12');
+    expect(issues).toContain('5 B ends but cable has 4 B connector(s)');
     expect(estimateLengthM(lib, d, run)).toBeGreaterThan(0);
   });
   it('legacy single `to` becomes a list', () => {
     const p = normalizeProject({ rackDesigns: [{ id: 'd', placements: [], cables: [{ id: 'c', from: ep('a', ''), to: ep('b', '') }] }] });
     expect(p.rackDesigns[0].cables[0].to).toEqual([ep('b', '')]);
+    expect(p.rackDesigns[0].cables[0].from).toEqual([ep('a', '')]);
   });
   it('port labels name interface and mode for every port type', () => {
     const g = (formFactor: string, speedGbps: number) => ({ formFactor, speedGbps }) as never;

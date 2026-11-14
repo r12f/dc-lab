@@ -12,8 +12,9 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   - `breakoutProfileId` — one of the device's profiles (optional); supplies default mode/optic/cable per port
   - `portSettings[portRef]` / `groupSettings[groupId]` — instance `{ mode, opticId, cableId }` overriding the profile
 - `cables[]` — in-rack cable runs:
-  - `from` — A end; `to[]` — B end(s): one for a straight cable, up to the cable's breakout leg count
-    for a breakout cable (e.g. MPO-12 → 4x LC)
+  - `from[]` — A-end connectors, up to `ends.a.count`; `to[]` — B-end connectors, up to `ends.b.count`
+    (one each for a patch cord; 1 + 4 for an MPO → 4x LC breakout; 4 + 4 for a 4x4 shuffle; 20 + 20 for
+    a 160F MPO-8 trunk)
   - endpoint = `placementId` + `portRef` (empty = any port) + `connector` (1-based **leg** of the port:
     a `2xDR4` module has legs 1 and 2, each an MPO-12). Runs connect **connector to connector**, not
     port to port: one physical port may terminate several runs, one per leg.
@@ -42,11 +43,12 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   its lane in the chosen side's rail channel, along the channel, into the end device. Each side's runs get
   separate nested lanes (longest run outermost) so runs on one side never cross. Lines use the cable media
   color; the selected run is highlighted; clicking a run selects it.
-- Endpoints are drawn at the device's vertical centre; port-level position is not drawn. A breakout
-  run is drawn as one trunk from the A end with one branch per B leg in the same lane.
-- **Checks** (shown on the run): the A end must mate with the cable's A connector, each B end with the
-  cable's B connector (the breakout leg connector, or the A connector for a straight cable); a leg may
-  not be used by two runs; a breakout cable may not have more B ends than legs.
+- Endpoints are drawn at the device's vertical centre; port-level position is not drawn. Multi-connector
+  runs are drawn as one stub per endpoint joined by a spine in the run's lane.
+- **Checks** (shown on the run): every A endpoint must mate with the cable's A connector and every B
+  endpoint with the B connector (MPO-8 ≡ MPO-12 ferrule); no more endpoints than the end has connectors;
+  a male (pinned) cable end on a transceiver port is pinned-to-pinned; a port leg may not be used by two
+  runs. The editor shows the cable's used/unused fibers.
 
 ## Derived data (recomputed on every change)
 

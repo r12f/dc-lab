@@ -40,11 +40,24 @@ export interface OpticDefinition extends CatalogItem, HasProperties {
 
 export type CableType = 'fiber-sm' | 'fiber-mm' | 'copper-dac' | 'aoc' | 'power' | 'other';
 
-/** B end of a breakout cable, e.g. 4 legs of LC on an MPO-12 trunk. */
-export interface CableBreakout {
+export type ConnectorGender = 'male' | 'female';
+
+/** One end of a cable: `count` identical connectors, each using `fibers` fibers. */
+export interface CableEnd {
   count: number;
+  /** Connector type, e.g. "LC", "MPO-8", "MPO-12", "MMC-16", "OSFP" (DAC). */
   connector: string;
+  /** Fibers used per connector (fiber cables). */
+  fibers?: number;
+  /** MPO/MMC only: male = pinned, female = unpinned. */
+  gender?: ConnectorGender;
 }
+
+/** How fibers run from A to B: in order, or every A connector split evenly over all B connectors. */
+export type FiberMapping = 'straight' | 'shuffle';
+
+/** MPO polarity: A = key-up to key-down straight-through, B = reversed, C = pair-flipped. */
+export type Polarity = 'A' | 'B' | 'C';
 
 export interface CableMedia extends CatalogItem, HasProperties {
   schema?: typeof CABLE_SCHEMA;
@@ -52,12 +65,11 @@ export interface CableMedia extends CatalogItem, HasProperties {
   vendor?: string;
   /** Model / vendor PN. */
   model?: string;
-  /** Fibers per cable (fiber types). */
+  ends: { a: CableEnd; b: CableEnd };
+  /** Fibers in the cable body (e.g. 160 for a 160F trunk). */
   fiberCount?: number;
+  mapping: FiberMapping;
+  polarity?: Polarity;
   maxLengthM?: number;
-  /** Breakout cables only: the B end fans out into `count` legs ending in `connector`. */
-  breakout?: CableBreakout;
-  /** Connector at the cable ends, e.g. "MPO-12", "LC", "MMC", "OSFP" (DAC). */
-  connector: string;
   color: string;
 }

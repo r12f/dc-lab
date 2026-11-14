@@ -1,0 +1,24 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "mpo8-2x2-shuffle-smf",
+  "name": "2x MPO-8 2x2 shuffle SMF",
+  "type": "fiber-sm",
+  "fiberCount": 16,
+  "mapping": "shuffle",
+  "polarity": "B",
+  "color": "#fb923c",
+  "ends": {
+    "a": {
+      "count": 2,
+      "connector": "MPO-8",
+      "fibers": 8,
+      "gender": "female"
+    },
+    "b": {
+      "count": 2,
+      "connector": "MPO-8",
+      "fibers": 8,
+      "gender": "female"
+    }
+  }
+}

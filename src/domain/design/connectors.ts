@@ -1,6 +1,7 @@
 import type { Library } from '../library/library';
-import type { CableMedia } from '../optics/types';
 import { portConnectors } from '../ports/optic-match';
+import { connectorsMate, isMultiFiber } from '../optics/connectors';
+import { formFactorSpec } from '../ports/form-factors';
 import { resolvePlacedPort } from './optics';
 import type { CableEndpoint, CableRun, RackDesign } from './types';
 
@@ -13,9 +14,12 @@ export function endpointLegs(lib: Library, design: RackDesign, placementId: stri
   return r ? portConnectors(r.group, r.optic, r.reach) : undefined;
 }
 
-/** Connector at the A end and at each B end of a cable. */
-export function cableEnds(media: CableMedia): { a: string; b: string; bLegs: number } {
-  return { a: media.connector, b: media.breakout?.connector ?? media.connector, bLegs: media.breakout?.count ?? 1 };
+/** True when the endpoint's port takes a transceiver (module receptacles are pinned). */
+function isModulePort(lib: Library, design: RackDesign, ep: CableEndpoint): boolean {
+  const p = design.placements.find((x) => x.id === ep.placementId);
+  const d = p && lib.devices.get(p.deviceId);
+  const r = p && d && ep.portRef ? resolvePlacedPort(lib, d, p, ep.portRef) : undefined;
+  return !!r?.optic && formFactorSpec(r.group.formFactor).kind === 'cage';
 }
 
 const sameEnd = (x: CableEndpoint, y: CableEndpoint) =>
@@ -28,23 +32,28 @@ export function endpointLabel(design: RackDesign, ep: CableEndpoint): string {
   return `${p?.label ?? '?'}${port}`;
 }
 
-/** Problems with a run: connector mismatch, too many B ends, legs used twice. */
+/** Problems with a run: connector mismatch, too many endpoints, pinned-to-pinned, legs used twice. */
 export function cableIssues(lib: Library, design: RackDesign, run: CableRun): string[] {
   const media = lib.cableMedia.get(run.mediaId);
   if (!media) return [`Unknown cable ${run.mediaId}`];
-  const ends = cableEnds(media);
   const issues: string[] = [];
-  const check = (ep: CableEndpoint, want: string, side: string) => {
+  const check = (ep: CableEndpoint, side: 'A' | 'B') => {
+    const end = side === 'A' ? media.ends.a : media.ends.b;
     const legs = endpointLegs(lib, design, ep.placementId, ep.portRef);
     if (!ep.portRef || !legs) return;
-    if (legs.connector.toLowerCase() !== want.toLowerCase()) issues.push(`${side} ${endpointLabel(design, ep)} is ${legs.connector}, cable needs ${want}`);
-    if (ep.connector && ep.connector > legs.count) issues.push(`${side} ${endpointLabel(design, ep)}: port has ${legs.count} connector(s)`);
+    const label = `${side} ${endpointLabel(design, ep)}`;
+    if (!connectorsMate(legs.connector, end.connector)) issues.push(`${label} is ${legs.connector}, cable end is ${end.connector}`);
+    if (ep.connector && ep.connector > legs.count) issues.push(`${label}: port has ${legs.count} connector(s)`);
+    if (end.gender === 'male' && isMultiFiber(end.connector) && isModulePort(lib, design, ep)) {
+      issues.push(`${label}: male (pinned) cable end on a pinned transceiver`);
+    }
   };
-  check(run.from, ends.a, 'A');
-  run.to.forEach((ep) => check(ep, ends.b, 'B'));
-  if (run.to.length > ends.bLegs) issues.push(`${run.to.length} B ends but cable has ${ends.bLegs} leg(s)`);
-  const mine = [run.from, ...run.to];
-  const others = design.cables.filter((c) => c.id !== run.id).flatMap((c) => [c.from, ...c.to]);
+  run.from.forEach((ep) => check(ep, 'A'));
+  run.to.forEach((ep) => check(ep, 'B'));
+  if (run.from.length > media.ends.a.count) issues.push(`${run.from.length} A ends but cable has ${media.ends.a.count} A connector(s)`);
+  if (run.to.length > media.ends.b.count) issues.push(`${run.to.length} B ends but cable has ${media.ends.b.count} B connector(s)`);
+  const mine = [...run.from, ...run.to];
+  const others = design.cables.filter((c) => c.id !== run.id).flatMap((c) => [...c.from, ...c.to]);
   for (const ep of mine) {
     if (others.some((o) => sameEnd(o, ep)) || mine.filter((m) => sameEnd(m, ep)).length > 1) {
       issues.push(`${endpointLabel(design, ep)} is already connected`);

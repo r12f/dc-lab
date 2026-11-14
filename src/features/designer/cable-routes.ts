@@ -6,8 +6,10 @@ import { placementRect } from './placed-device';
 
 export interface RoutedCable {
   run: CableRun;
-  /** One polyline per B end; all share the A end and the lane. */
+  /** Spine in the lane first, then one stub per endpoint (A ends, then B ends). */
   paths: [number, number][][];
+  /** Number of A-end stubs (paths[1..starts]). */
+  starts: number;
 }
 
 /** Where a cable leaves a device toward the channel on `route`: the device edge on that side, at its centre height. */
@@ -32,11 +34,12 @@ function exitPoint(lib: Library, rack: RackTemplate, geo: RackGeometry, p: Place
 export function routeCables(lib: Library, design: RackDesign, rack: RackTemplate, geo: RackGeometry): RoutedCable[] {
   const find = (id: string) => design.placements.find((p) => p.id === id);
   const ends = design.cables.map((run) => {
-    const a = find(run.from.placementId);
-    const s = a && exitPoint(lib, rack, geo, a, run.route);
-    const es = run.to.map((t) => { const b = find(t.placementId); return b && exitPoint(lib, rack, geo, b, run.route); })
-      .filter((e): e is [number, number] => !!e);
-    return s && es.length ? { run, s, es, span: Math.max(...es.map((e) => Math.abs(s[1] - e[1]))) } : undefined;
+    const point = (ep: { placementId: string }) => { const p = find(ep.placementId); return p && exitPoint(lib, rack, geo, p, run.route); };
+    const ss = run.from.map(point).filter((e): e is [number, number] => !!e);
+    const es = run.to.map(point).filter((e): e is [number, number] => !!e);
+    if (!ss.length || !es.length) return undefined;
+    const ys = [...ss, ...es].map((p) => p[1]);
+    return { run, ss, es, span: Math.max(...ys) - Math.min(...ys) };
   }).filter((x): x is NonNullable<typeof x> => !!x);
 
   const out: RoutedCable[] = [];
@@ -44,10 +47,14 @@ export function routeCables(lib: Library, design: RackDesign, rack: RackTemplate
     const runs = ends.filter((x) => x.run.route === side).sort((a, b) => a.span - b.span); // shortest = innermost
     const step = Math.min(6, (geo.railW - 8) / Math.max(1, runs.length));
     const bodyEdge = side === 'left' ? geo.originX + geo.railW : geo.originX + geo.railW + geo.bodyW;
-    runs.forEach(({ run, s, es }, i) => {
+    runs.forEach(({ run, ss, es }, i) => {
       const off = 4 + i * step;
       const lane = side === 'left' ? bodyEdge - off : bodyEdge + off;
-      out.push({ run, paths: es.map((e) => [s, [lane, s[1]], [lane, e[1]], e]) });
+      // One stub per endpoint into the lane, plus a spine joining them all.
+      const ends = [...ss, ...es];
+      const ys = ends.map((p) => p[1]);
+      const spine: [number, number][] = [[lane, Math.min(...ys)], [lane, Math.max(...ys)]];
+      out.push({ run, starts: ss.length, paths: [spine, ...ends.map((p): [number, number][] => [p, [lane, p[1]]])] });
     });
   }
   return out;

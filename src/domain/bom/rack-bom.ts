@@ -7,10 +7,11 @@ import { effectiveLengthM } from '../design/cabling';
 import { BomBuilder } from './bom-builder';
 import type { BomLine } from './types';
 import type { CableMedia } from '../optics/types';
+import { cableSummary } from '../optics/fiber-map';
 
 function cableVendorModel(media: CableMedia | undefined, id: string): string {
   if (!media) return id;
-  return [media.vendor, media.model ?? media.connector].filter(Boolean).join(' ');
+  return [media.vendor, media.model ?? cableSummary(media)].filter(Boolean).join(' ');
 }
 
 export function buildRackBom(lib: Library, design: RackDesign): BomLine[] {

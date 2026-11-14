@@ -1,8 +1,18 @@
 {
+  "schema": "dc-lab/cable@1",
   "id": "power-c13-c14",
   "name": "C13-C14 power cord",
   "type": "power",
-  "connector": "C13",
   "color": "#111827",
-  "schema": "dc-lab/cable@1"
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "C13"
+    },
+    "b": {
+      "count": 1,
+      "connector": "C13"
+    }
+  },
+  "mapping": "straight"
 }

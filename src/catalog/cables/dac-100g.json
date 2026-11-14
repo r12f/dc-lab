@@ -1,8 +1,18 @@
 {
+  "schema": "dc-lab/cable@1",
   "id": "dac-100g",
   "name": "100G QSFP28 DAC",
   "type": "copper-dac",
-  "connector": "QSFP28",
   "color": "#94a3b8",
-  "schema": "dc-lab/cable@1"
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "QSFP28"
+    },
+    "b": {
+      "count": 1,
+      "connector": "QSFP28"
+    }
+  },
+  "mapping": "straight"
 }

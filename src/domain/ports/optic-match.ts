@@ -3,6 +3,7 @@ import type { PortGroup } from '../device/types';
 import type { CableMedia, OpticDefinition } from '../optics/types';
 import { parseMode } from '../device/breakout';
 import { formFactorSpec, moduleFits } from './form-factors';
+import { connectorsMate } from '../optics/connectors';
 
 /** Total port speed of a breakout mode ("2x400G" -> 800). */
 export function modeTotalGbps(mode: string): number {
@@ -87,6 +88,6 @@ export function compatibleCables(lib: Library, group: PortGroup, optic?: OpticDe
   const fiber = fiberTypeFor(optic?.reach ?? reach);
   return lib.cableMedia.items().filter((c) =>
     c.type !== 'power'
-    && (!connector || c.connector.toLowerCase() === connector.toLowerCase())
+    && (!connector || connectorsMate(c.ends.a.connector, connector) || connectorsMate(c.ends.b.connector, connector))
     && (!fiber || !c.type.startsWith('fiber') || c.type === fiber));
 }

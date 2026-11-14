@@ -1,7 +1,9 @@
 import type { Library } from '../../domain/library/library';
 import type { CableEndpoint, CableRoute, CableRun, RackDesign } from '../../domain/design/types';
+import type { CableEnd } from '../../domain/optics/types';
 import { estimateLengthM } from '../../domain/design/cabling';
-import { cableEnds, cableIssues } from '../../domain/design/connectors';
+import { cableIssues } from '../../domain/design/connectors';
+import { cableSummary, describeEnd, fiberMap } from '../../domain/optics/fiber-map';
 import { Button } from '../../ui/button';
 import { NumberField, SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
@@ -18,30 +20,45 @@ interface Props {
   c: CableRun;
 }
 
-/** Editor for one run: media, A end, B end(s), route, length, quantity, and connector checks. */
+/** Endpoints of one cable end; connectors can be added up to the end's connector count. */
+function EndList({ lib, design, side, end, eps, onChange }: {
+  lib: Library; design: RackDesign; side: 'A' | 'B'; end: CableEnd | undefined; eps: CableEndpoint[]; onChange(eps: CableEndpoint[]): void;
+}) {
+  const max = end?.count ?? 1;
+  const add = () => onChange([...eps, { ...(eps[eps.length - 1] ?? { placementId: design.placements[0]?.id ?? '', portRef: '' }), connector: undefined }]);
+  return (
+    <>
+      {eps.map((ep, i) => (
+        <div key={i}>
+          <EndpointEditor lib={lib} design={design} label={max > 1 ? `${side}${i + 1}` : side} value={ep}
+            onChange={(v) => onChange(eps.map((x, j) => (j === i ? v : x)))} />
+          {eps.length > 1 && <Button onClick={() => onChange(eps.filter((_, j) => j !== i))}>{`Remove ${side}${i + 1}`}</Button>}
+        </div>
+      ))}
+      {eps.length < max && <Button onClick={add}>{`+ ${side} connector (${eps.length}/${max})`}</Button>}
+    </>
+  );
+}
+
+/** Editor for one run: cable, A and B connectors, route, length, quantity, and checks. */
 export function CableEditor({ lib, design, editor, c }: Props) {
   const media = lib.cableMedia.items().filter((m) => m.type !== 'power');
   const set = (patch: Partial<CableRun>) => editor.updateCable(c.id, (x) => ({ ...x, ...patch }));
   const m = lib.cableMedia.get(c.mediaId);
-  const ends = m ? cableEnds(m) : { a: '?', b: '?', bLegs: 1 };
+  const fm = m && fiberMap(m);
   const estimate = estimateLengthM(lib, design, c);
   const issues = cableIssues(lib, design, c);
-  const setTo = (i: number, ep: CableEndpoint) => set({ to: c.to.map((t, j) => (j === i ? ep : t)) });
-  const addLeg = () => set({ to: [...c.to, { ...c.to[c.to.length - 1] ?? c.from, connector: undefined }] });
   return (
     <>
       <SelectField label="Cable" value={c.mediaId}
-        options={media.map((x) => ({ value: x.id, label: x.breakout ? `${x.name} (breakout ${x.breakout.count}x ${x.breakout.connector})` : x.name }))}
+        options={media.map((x) => ({ value: x.id, label: `${x.name} · ${cableSummary(x)}` }))}
         onChange={(mediaId) => set({ mediaId })} />
-      <p className="muted">{`A end ${ends.a}${ends.bLegs > 1 ? ` · B end ${ends.bLegs}x ${ends.b}` : ''}`}</p>
-      <EndpointEditor lib={lib} design={design} label="A" value={c.from} onChange={(from) => set({ from })} />
-      {c.to.map((t, i) => (
-        <div key={i}>
-          <EndpointEditor lib={lib} design={design} label={ends.bLegs > 1 ? `B leg ${i + 1}` : 'B'} value={t} onChange={(ep) => setTo(i, ep)} />
-          {c.to.length > 1 && <Button onClick={() => set({ to: c.to.filter((_, j) => j !== i) })}>Remove leg</Button>}
-        </div>
-      ))}
-      {c.to.length < ends.bLegs && <Button onClick={addLeg}>{`+ B leg (${c.to.length}/${ends.bLegs})`}</Button>}
+      {m && fm && (
+        <p className="muted">{`A ${describeEnd(m.ends.a)} · B ${describeEnd(m.ends.b)} · ${m.mapping} · ${fm.links.length}F used`
+          + `${fm.unusedA ? ` · ${fm.unusedA}F unused on A` : ''}${fm.unusedB ? ` · ${fm.unusedB}F unused on B` : ''}`}</p>
+      )}
+      <EndList lib={lib} design={design} side="A" end={m?.ends.a} eps={c.from} onChange={(from) => set({ from })} />
+      <EndList lib={lib} design={design} side="B" end={m?.ends.b} eps={c.to} onChange={(to) => set({ to })} />
       <div className="row2">
         <SelectField<CableRoute> label="Route" value={c.route} options={routeOptions} onChange={(route) => set({ route })} />
         <NumberField label="Quantity" value={c.quantity} min={1} onChange={(quantity) => set({ quantity })} />

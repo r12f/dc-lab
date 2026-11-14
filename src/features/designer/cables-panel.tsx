@@ -17,8 +17,8 @@ interface Props {
 }
 
 function runTitle(design: RackDesign, c: CableRun): string {
-  const b = c.to.map((t) => endpointLabel(design, t)).join(', ');
-  return `${endpointLabel(design, c.from)} → ${b} · ${c.route}`;
+  const list = (eps: CableRun['from']) => eps.map((t) => endpointLabel(design, t)).join(', ') || '—';
+  return `${list(c.from)} → ${list(c.to)} · ${c.route}`;
 }
 
 /** In-rack cable runs, connector to connector; breakout cables have several B ends. */
@@ -30,7 +30,7 @@ export function CablesPanel({ lib, design, editor, selectedId, onSelect, startPl
     const to = placements.find((p) => p.id !== from?.id) ?? from;
     if (!from || !to) return;
     const id = editor.addCable({
-      from: { placementId: from.id, portRef: '' }, to: [{ placementId: to.id, portRef: '' }],
+      from: [{ placementId: from.id, portRef: '' }], to: [{ placementId: to.id, portRef: '' }],
       route: 'left', mediaId: media[0]?.id ?? '', quantity: 1,
     });
     onSelect(id);

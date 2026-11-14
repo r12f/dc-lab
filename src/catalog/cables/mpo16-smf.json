@@ -1,9 +1,24 @@
 {
+  "schema": "dc-lab/cable@1",
   "id": "mpo16-smf",
   "name": "MPO-16 SMF trunk",
   "type": "fiber-sm",
-  "connector": "MPO-16",
   "color": "#eab308",
-  "schema": "dc-lab/cable@1",
-  "fiberCount": 16
+  "fiberCount": 16,
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "MPO-16",
+      "fibers": 16,
+      "gender": "female"
+    },
+    "b": {
+      "count": 1,
+      "connector": "MPO-16",
+      "fibers": 16,
+      "gender": "female"
+    }
+  },
+  "mapping": "straight",
+  "polarity": "B"
 }
