@@ -1,13 +1,13 @@
 {
   "schema": "dc-lab/device@1",
   "id": "switch-48x1g-mgmt",
-  "name": "48x1GbE Management Switch",
+  "name": "48x1G RJ45 + 4x10G SFP+ Management Switch",
   "category": "switch",
   "height": {
     "units": 1,
     "system": "RU"
   },
-  "depthMm": 300,
+  "depthMm": 254,
   "weightKg": 0,
   "power": {
     "typicalW": 0,
@@ -32,18 +32,16 @@
       "breakoutModes": []
     },
     {
-      "id": "sfp",
-      "label": "SFP28",
+      "id": "sfpp",
+      "label": "SFP+",
       "role": "data",
-      "formFactor": "SFP28",
+      "formFactor": "SFP+",
       "count": 4,
-      "speedGbps": 25,
+      "speedGbps": 10,
       "lanes": 1,
       "face": "front",
       "rows": 2,
-      "breakoutModes": [
-        "1x10G"
-      ]
+      "breakoutModes": []
     },
     {
       "id": "mgmt",

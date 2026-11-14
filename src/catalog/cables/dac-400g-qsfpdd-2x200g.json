@@ -1,0 +1,20 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "dac-400g-qsfpdd-2x200g",
+  "name": "400G QSFP-DD to 2x 200G QSFP56 breakout DAC",
+  "type": "copper-dac",
+  "color": "#94a3b8",
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "QSFP-DD"
+    },
+    "b": {
+      "count": 2,
+      "connector": "QSFP56"
+    }
+  },
+  "mapping": "straight",
+  "speedGbps": 400,
+  "maxLengthM": 2.5
+}

@@ -1,0 +1,64 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "tester-8x800g-osfp",
+  "name": "8x800G OSFP Traffic Generator",
+  "category": "other",
+  "height": {
+    "units": 2,
+    "system": "RU"
+  },
+  "depthMm": 700,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "psus": {
+    "count": 2,
+    "inlet": "C20",
+    "ratedW": 0
+  },
+  "ports": [
+    {
+      "id": "osfp",
+      "label": "OSFP",
+      "role": "data",
+      "formFactor": "OSFP",
+      "count": 8,
+      "speedGbps": 800,
+      "lanes": 8,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": [
+        "2x400G",
+        "4x200G",
+        "8x100G"
+      ]
+    },
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": []
+}

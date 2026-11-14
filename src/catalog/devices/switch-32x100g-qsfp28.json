@@ -1,0 +1,64 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "switch-32x100g-qsfp28",
+  "name": "32x100G QSFP28 Switch",
+  "category": "switch",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 406,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "psus": {
+    "count": 2,
+    "inlet": "C14",
+    "ratedW": 0
+  },
+  "ports": [
+    {
+      "id": "qsfp28",
+      "label": "QSFP28",
+      "role": "data",
+      "formFactor": "QSFP28",
+      "count": 32,
+      "speedGbps": 100,
+      "lanes": 4,
+      "face": "front",
+      "rows": 2,
+      "breakoutModes": [
+        "4x25G",
+        "2x50G",
+        "4x10G"
+      ]
+    },
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": []
+}

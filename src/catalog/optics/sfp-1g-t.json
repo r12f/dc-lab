@@ -1,0 +1,12 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "sfp-1g-t",
+  "name": "1G SFP 1000BASE-T (RJ45)",
+  "packaging": "module",
+  "formFactor": "SFP",
+  "speedGbps": 1,
+  "reach": "1000BASE-T",
+  "fiberConnector": "RJ45",
+  "reachM": 100,
+  "powerW": 0
+}

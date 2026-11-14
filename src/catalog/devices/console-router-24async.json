@@ -1,0 +1,72 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "console-router-24async",
+  "name": "24-port Async Console Router",
+  "category": "other",
+  "height": {
+    "units": 2,
+    "system": "RU"
+  },
+  "depthMm": 438,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "psus": {
+    "count": 1,
+    "inlet": "C14",
+    "ratedW": 0
+  },
+  "ports": [
+    {
+      "id": "async",
+      "label": "ASYNC 68-pin",
+      "role": "console",
+      "formFactor": "68-pin",
+      "count": 3,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "ge",
+      "label": "GE",
+      "role": "data",
+      "formFactor": "RJ45",
+      "count": 3,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "sfp",
+      "label": "SFP",
+      "role": "data",
+      "formFactor": "SFP",
+      "count": 3,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": []
+}

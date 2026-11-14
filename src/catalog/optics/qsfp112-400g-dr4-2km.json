@@ -1,0 +1,12 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "qsfp112-400g-dr4-2km",
+  "name": "400G QSFP112 DR4 2km",
+  "packaging": "module",
+  "formFactor": "QSFP112",
+  "speedGbps": 400,
+  "reach": "DR4-2",
+  "fiberConnector": "MPO-12",
+  "reachM": 2000,
+  "powerW": 0
+}

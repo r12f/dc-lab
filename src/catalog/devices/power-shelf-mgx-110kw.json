@@ -1,0 +1,24 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "power-shelf-mgx-110kw",
+  "name": "110kW Power Shelf",
+  "category": "power-shelf",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 800,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0,
+    "capacityW": 109800
+  },
+  "psus": {
+    "count": 6,
+    "inlet": "Busbar",
+    "ratedW": 0
+  },
+  "ports": [],
+  "breakoutProfiles": []
+}

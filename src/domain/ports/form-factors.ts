@@ -15,8 +15,9 @@ const spec = (id: string, kind: FormFactorKind, nativeGbps?: number, accepts?: s
 
 /** Registry of known form factors. Unknown ids are treated as cages that accept only themselves. */
 export const FORM_FACTORS: FormFactorSpec[] = [
-  spec('SFP+', 'cage', 10),
-  spec('SFP28', 'cage', 25, ['SFP+']),
+  spec('SFP', 'cage', 1),
+  spec('SFP+', 'cage', 10, ['SFP']),
+  spec('SFP28', 'cage', 25, ['SFP+', 'SFP']),
   spec('SFP56', 'cage', 50, ['SFP28', 'SFP+']),
   spec('SFP112', 'cage', 100, ['SFP56', 'SFP28', 'SFP+']),
   spec('QSFP+', 'cage', 40),

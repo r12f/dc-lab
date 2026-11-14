@@ -7,14 +7,14 @@
     "units": 2,
     "system": "RU"
   },
-  "depthMm": 700,
+  "depthMm": 627,
   "weightKg": 0,
   "power": {
     "typicalW": 0,
     "maxW": 0
   },
   "psus": {
-    "count": 4,
+    "count": 2,
     "inlet": "C20",
     "ratedW": 0
   },
@@ -39,12 +39,12 @@
       "id": "service",
       "label": "SERVICE",
       "role": "service",
-      "formFactor": "SFP+",
-      "count": 2,
-      "speedGbps": 10,
+      "formFactor": "SFP28",
+      "count": 1,
+      "speedGbps": 25,
       "lanes": 1,
       "face": "front",
-      "rows": 2,
+      "rows": 1,
       "breakoutModes": []
     },
     {
@@ -74,6 +74,18 @@
   ],
   "breakoutProfiles": [
     {
+      "id": "all-2x400g",
+      "name": "All 2x400G, 2xDR4",
+      "groupDefaults": {
+        "osfp": {
+          "mode": "2x400G",
+          "cableId": "mpo12-smf",
+          "reach": "2xDR4"
+        }
+      },
+      "overrides": {}
+    },
+    {
       "id": "mixed",
       "name": "Port 1 8x100G, port 2 4x200G",
       "groupDefaults": {
@@ -89,18 +101,6 @@
           "mode": "4x200G"
         }
       }
-    },
-    {
-      "id": "all-2x400g",
-      "name": "All 2x400G, 2xDR4",
-      "groupDefaults": {
-        "osfp": {
-          "mode": "2x400G",
-          "cableId": "mpo12-smf",
-          "reach": "2xDR4"
-        }
-      },
-      "overrides": {}
     }
   ]
 }

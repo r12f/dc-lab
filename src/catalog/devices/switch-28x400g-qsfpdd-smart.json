@@ -1,0 +1,63 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "switch-28x400g-qsfpdd-smart",
+  "name": "28x400G QSFP-DD Smart Switch (DPU)",
+  "category": "switch",
+  "height": {
+    "units": 2,
+    "system": "RU"
+  },
+  "depthMm": 600,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "psus": {
+    "count": 2,
+    "inlet": "C14",
+    "ratedW": 0
+  },
+  "ports": [
+    {
+      "id": "qsfpdd",
+      "label": "QSFP-DD",
+      "role": "data",
+      "formFactor": "QSFP-DD",
+      "count": 28,
+      "speedGbps": 400,
+      "lanes": 8,
+      "face": "front",
+      "rows": 2,
+      "breakoutModes": [
+        "2x200G",
+        "4x100G"
+      ]
+    },
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": []
+}

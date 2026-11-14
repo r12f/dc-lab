@@ -1,0 +1,19 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "power-shelf-15kw-3u",
+  "name": "15kW Power Shelf",
+  "category": "power-shelf",
+  "height": {
+    "units": 3,
+    "system": "RU"
+  },
+  "depthMm": 700,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0,
+    "capacityW": 15000
+  },
+  "ports": [],
+  "breakoutProfiles": []
+}

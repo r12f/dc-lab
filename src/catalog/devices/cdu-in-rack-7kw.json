@@ -1,0 +1,18 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "cdu-in-rack-7kw",
+  "name": "In-Rack Liquid-to-Air CDU 7kW",
+  "category": "other",
+  "height": {
+    "units": 4,
+    "system": "RU"
+  },
+  "depthMm": 800,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [],
+  "breakoutProfiles": []
+}

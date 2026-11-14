@@ -1,0 +1,56 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "pdu-vertical-1ph-9kw",
+  "name": "0U Single-Phase PDU 9kW 240V",
+  "category": "pdu",
+  "height": {
+    "units": 0,
+    "system": "RU"
+  },
+  "depthMm": 60,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0,
+    "capacityW": 9000
+  },
+  "pdu": {
+    "phases": 1,
+    "voltageV": 240,
+    "inputCurrentA": 24,
+    "inputPlug": "NEMA L6-30P"
+  },
+  "ports": [
+    {
+      "id": "bank-a-c13",
+      "label": "Bank A C13",
+      "role": "outlet",
+      "formFactor": "C13",
+      "count": 12,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": [],
+      "bank": "A",
+      "phase": "L1",
+      "breakerA": 20
+    },
+    {
+      "id": "bank-b-c13",
+      "label": "Bank B C13",
+      "role": "outlet",
+      "formFactor": "C13",
+      "count": 12,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": [],
+      "bank": "B",
+      "phase": "L1",
+      "breakerA": 20
+    }
+  ],
+  "breakoutProfiles": []
+}

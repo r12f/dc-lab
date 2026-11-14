@@ -1,0 +1,20 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "dac-25g-sfp28",
+  "name": "25G SFP28 DAC",
+  "type": "copper-dac",
+  "color": "#94a3b8",
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "SFP28"
+    },
+    "b": {
+      "count": 1,
+      "connector": "SFP28"
+    }
+  },
+  "mapping": "straight",
+  "speedGbps": 25,
+  "maxLengthM": 3
+}

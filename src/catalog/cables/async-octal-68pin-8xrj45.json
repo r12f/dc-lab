@@ -1,0 +1,18 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "async-octal-68pin-8xrj45",
+  "name": "68-pin to 8x RJ45 octal async console cable",
+  "type": "other",
+  "color": "#60a5fa",
+  "ends": {
+    "a": {
+      "count": 1,
+      "connector": "68-pin"
+    },
+    "b": {
+      "count": 8,
+      "connector": "RJ45"
+    }
+  },
+  "mapping": "straight"
+}

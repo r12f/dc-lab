@@ -29,7 +29,8 @@ describe('speed and reach are independent', () => {
   const g = osfp.ports[0];
   it('reach options depend on speed', () => {
     expect(reachOptions(lib, g, '1x800G')).toEqual(expect.arrayContaining(['2xDR4', '2xFR4', 'DR8', 'DAC']));
-    expect(reachOptions(lib, g, '1x800G')).not.toContain('FR4');
+    expect(reachOptions(lib, g, '1x800G')).not.toContain('SR4');
+    expect(reachOptions(lib, g, '1x400G')).toContain('SR4');
   });
   it('module is auto-picked from cage + speed + reach', () => {
     const r = resolvePort(lib, osfp, 'osfp/5', { id: 'p', name: 'p', groupDefaults: { osfp: { reach: '2xFR4' } }, overrides: {} });

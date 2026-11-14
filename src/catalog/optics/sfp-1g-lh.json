@@ -1,0 +1,12 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "sfp-1g-lh",
+  "name": "1G SFP LH",
+  "packaging": "module",
+  "formFactor": "SFP",
+  "speedGbps": 1,
+  "reach": "LH",
+  "fiberConnector": "LC",
+  "reachM": 10000,
+  "powerW": 0
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "power-shelf-controller-3u",
+  "name": "Power Shelf Controller",
+  "category": "other",
+  "height": {
+    "units": 3,
+    "system": "RU"
+  },
+  "depthMm": 500,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": []
+}

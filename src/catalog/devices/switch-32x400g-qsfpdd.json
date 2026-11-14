@@ -7,7 +7,7 @@
     "units": 1,
     "system": "RU"
   },
-  "depthMm": 600,
+  "depthMm": 569,
   "weightKg": 0,
   "power": {
     "typicalW": 0,
@@ -60,17 +60,5 @@
       "breakoutModes": []
     }
   ],
-  "breakoutProfiles": [
-    {
-      "id": "leaf-4x100g",
-      "name": "All 4x100G",
-      "groupDefaults": {
-        "qsfpdd": {
-          "mode": "4x100G",
-          "opticId": "qsfpdd-400g-dr4"
-        }
-      },
-      "overrides": {}
-    }
-  ]
+  "breakoutProfiles": []
 }

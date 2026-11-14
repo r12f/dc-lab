@@ -1,0 +1,64 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "switch-64x1600g-osfp",
+  "name": "64x1.6T OSFP Switch",
+  "category": "switch",
+  "height": {
+    "units": 2,
+    "system": "RU"
+  },
+  "depthMm": 582,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "psus": {
+    "count": 2,
+    "inlet": "C20",
+    "ratedW": 0
+  },
+  "ports": [
+    {
+      "id": "osfp",
+      "label": "OSFP",
+      "role": "data",
+      "formFactor": "OSFP",
+      "count": 64,
+      "speedGbps": 1600,
+      "lanes": 8,
+      "face": "front",
+      "rows": 4,
+      "breakoutModes": [
+        "2x800G",
+        "4x400G",
+        "8x200G"
+      ]
+    },
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": []
+}
