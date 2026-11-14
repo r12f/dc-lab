@@ -107,6 +107,35 @@ export function newPlacement(id: string, deviceId: string, label: string, mount:
   return { id, deviceId, label, mount, portSettings: {}, groupSettings: {} };
 }
 
+/**
+ * A copy of a placement: same item, height, profile and port settings; next free label; mounted at the nearest
+ * free spot — right above the source, else the closest free unit (side devices: first free side slot).
+ * Cables are not copied. Undefined when the rack has no room.
+ */
+export function duplicatePlacement(lib: Library, design: RackDesign, id: string, newId: string): Placement | undefined {
+  const src = design.placements.find((p) => p.id === id);
+  const device = src && lib.devices.get(src.deviceId);
+  const rack = lib.racks.get(design.templateId);
+  if (!src || !device || !rack) return undefined;
+  let mount: Mount | undefined;
+  if (src.mount.kind === 'rack') {
+    const face = src.mount.face;
+    const h = src.units ?? device.height.units;
+    const fits = (pos: number) => pos >= 1 && pos <= rack.units
+      && !placementProblem(lib, design, device, { kind: 'rack', position: pos, face }, undefined, src.units);
+    const from = src.mount.position;
+    const order = [from + h, ...Array.from({ length: rack.units }, (_, i) => i + 1)
+      .sort((a, b) => Math.abs(a - from) - Math.abs(b - from) || b - a)];
+    const pos = order.find(fits);
+    if (pos !== undefined) mount = { kind: 'rack', position: pos, face };
+  } else {
+    mount = firstFreeSideSlot(lib, design, device);
+  }
+  if (!mount) return undefined;
+  const label = nextLabel(design, src.label.replace(/\d+$/, '') || traitsOf(device.category).labelPrefix);
+  return { ...structuredClone(src), id: newId, label, mount };
+}
+
 /** First free side-element slot that accepts the device; dedicated kinds (e.g. PDU bay) first. */
 export function firstFreeSideSlot(lib: Library, design: RackDesign, device: DeviceDefinition): Mount | undefined {
   const rack = lib.racks.get(design.templateId);

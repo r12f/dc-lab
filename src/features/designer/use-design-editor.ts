@@ -1,7 +1,7 @@
 import { traitsOf } from '../../domain/device/categories';
 import type { Library } from '../../domain/library/library';
 import type { CableRun, Mount, Placement, RackDesign } from '../../domain/design/types';
-import { defaultMount, nextLabel, newPlacement, placementProblem } from '../../domain/design/placement';
+import { defaultMount, duplicatePlacement, nextLabel, newPlacement, placementProblem } from '../../domain/design/placement';
 import { uniqueId } from '../../domain/ids';
 import { cleanAbbr } from '../../domain/design/abbr';
 import { useAppStore } from '../../state/store';
@@ -48,6 +48,15 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
   const updatePlacement = (id: string, fn: (p: Placement) => Placement) =>
     mutate((d) => ({ ...d, placements: d.placements.map((p) => (p.id === id ? fn(p) : p)) }));
 
+  /** Copies a placement next to it; returns an error message or the new placement id. */
+  const duplicatePlacementCmd = (id: string): { error?: string; id?: string } => {
+    if (!design) return { error: 'No design' };
+    const copy = duplicatePlacement(lib, design, id, uniqueId('p', design.placements.map((p) => p.id)));
+    if (!copy) return { error: 'No free space in rack for a copy' };
+    mutate((d) => ({ ...d, placements: [...d.placements, copy] }));
+    return { id: copy.id };
+  };
+
   const removePlacement = (id: string) =>
     mutate((d) => ({
       ...d,
@@ -76,7 +85,7 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
   const rename = (name: string) => mutate((d) => ({ ...d, name }));
   const setAbbr = (text: string) => mutate((d) => ({ ...d, abbr: cleanAbbr(text) }));
 
-  return { addDevice, moveTo, resize, updatePlacement, removePlacement, addCable, addCables, updateCable, removeCable, rename, setAbbr };
+  return { addDevice, moveTo, resize, updatePlacement, duplicatePlacement: duplicatePlacementCmd, removePlacement, addCable, addCables, updateCable, removeCable, rename, setAbbr };
 }
 
 export type DesignEditor = ReturnType<typeof useDesignEditor>;

@@ -51,20 +51,28 @@ export function DesignerModule() {
   };
   const report = (error?: string) => setMessage(error);
   const selectedPlacement = design?.placements.find((p) => p.id === placementId);
+  const duplicateSelected = () => {
+    if (!selectedPlacement) return;
+    const r = editor.duplicatePlacement(selectedPlacement.id);
+    report(r.error);
+    if (r.id) setPlacementId(r.id);
+  };
   const deleteSelected = () => {
     if (!selectedPlacement) return;
     editor.removePlacement(selectedPlacement.id);
     setPlacementId(undefined);
   };
-  // Delete / Backspace removes the selected device (not while typing in a field).
+  // Delete / Backspace removes, Ctrl+D duplicates the selected device (not while typing in a field).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      const dup = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd';
+      if (!dup && e.key !== 'Delete' && e.key !== 'Backspace') return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))) return;
       if (!selectedPlacement) return;
       e.preventDefault();
-      deleteSelected();
+      if (dup) duplicateSelected();
+      else deleteSelected();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -116,6 +124,10 @@ export function DesignerModule() {
                     title={showCables ? 'Hide cable runs' : 'Show cable runs'} onClick={() => setShowCables(!showCables)}>Cables</Button>
                 )}
                 <span className="toolbar-sep" />
+                <Button disabled={!selectedPlacement} onClick={duplicateSelected}
+                  title={selectedPlacement ? `Duplicate ${selectedPlacement.label} (Ctrl+D)` : 'Select a device to duplicate it'}>
+                  {selectedPlacement ? `⧉ Duplicate ${selectedPlacement.label}` : '⧉ Duplicate device'}
+                </Button>
                 <Button variant="danger" disabled={!selectedPlacement} onClick={deleteSelected}
                   title={selectedPlacement ? `Delete ${selectedPlacement.label} (Del)` : 'Select a device to delete it'}>
                   {selectedPlacement ? `✕ Delete ${selectedPlacement.label}` : '✕ Delete device'}

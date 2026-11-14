@@ -138,3 +138,8 @@ PSU inlets is a small box).
 **Elevation cables**: a **Cables** latch button in the toolbar (highlighted = on) (elevation only) shows / hides the cable runs.
 Runs use a cable channel (gutter) outside the rails on each side, between the frame and the side elements,
 so the unit numbers on the rails stay visible; stubs leave each device near its top edge.
+
+**Duplicate device**: next to the toolbar's Delete button, "⧉ Duplicate <label>" (Ctrl+D) copies the selected
+device — same item, height, breakout profile and port settings — with the next free label (SW1 -> SW2), mounted
+right above the source, else at the closest free unit (0U devices: first free side slot). Cables are not copied.
+The copy becomes the selection; with no room the toolbar reports it.
