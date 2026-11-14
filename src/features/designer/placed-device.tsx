@@ -8,7 +8,7 @@ import { categoryPaint, paint } from '../../theme/paint';
 import { traitsOf } from '../../domain/device/categories';
 
 /** Blanking panels are dark, stiffeners steel grey; both visually recede behind active devices. */
-const FILLER_FILL = { blanking: '#1f2937', stiffener: '#64748b' } as const;
+const FILLER_FILL = { blanking: '#1f2937', stiffener: '#64748b', reserved: 'none' } as const;
 
 interface Props {
   placement: Placement;
@@ -37,17 +37,19 @@ export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dr
   const r = placementRect(placement, device, rack, geo);
   const filler = traitsOf(device.category).filler;
   const color = filler ? FILLER_FILL[filler] : categoryPaint(device.category);
+  const reserved = filler === 'reserved';
   const vertical = placement.mount.kind === 'side';
   const cx = r.x + r.w / 2;
   const cy = r.y + r.h / 2;
   return (
     <g onPointerDown={onPointerDown} style={{ cursor: 'grab' }} opacity={dragging ? 0.4 : 1}>
       <title>{`${placement.label} — ${device.name}`}</title>
+      {/* Reserved space: dashed outline on the empty slot fill, so it reads as "kept empty", not as a device. */}
       <rect x={r.x + 1} y={r.y + 1} width={r.w - 2} height={r.h - 2} rx={2}
-        fill={color} fillOpacity={ghost ? 0.25 : 0.9}
-        stroke={selected ? paint.selection : paint.ink} strokeWidth={selected ? 3 : 1}
-        strokeDasharray={ghost ? '4 2' : undefined} />
-      <text x={cx} y={cy + 4} fontSize={vertical ? 9 : 10} textAnchor="middle" fill={ghost ? paint.ink : '#F8FAFC'}
+        fill={reserved ? paint.slot : color} fillOpacity={ghost ? 0.25 : reserved ? 1 : 0.9}
+        stroke={selected ? paint.selection : reserved ? paint.inkMuted : paint.ink} strokeWidth={selected ? 3 : reserved ? 1.5 : 1}
+        strokeDasharray={ghost || reserved ? '4 2' : undefined} />
+      <text x={cx} y={cy + 4} fontSize={vertical ? 9 : 10} textAnchor="middle" fill={ghost || reserved ? paint.inkMuted : '#F8FAFC'}
         fontWeight={600} transform={vertical ? `rotate(-90 ${cx} ${cy})` : undefined} pointerEvents="none">
         {vertical ? placement.label : `${placement.label} · ${device.name}`}
       </text>

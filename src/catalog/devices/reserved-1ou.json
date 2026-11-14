@@ -1,0 +1,18 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "reserved-1ou",
+  "name": "1OU Empty (Reserved)",
+  "category": "reserved",
+  "height": {
+    "units": 1,
+    "system": "OU"
+  },
+  "depthMm": 0,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [],
+  "breakoutProfiles": []
+}

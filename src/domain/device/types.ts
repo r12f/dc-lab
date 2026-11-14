@@ -13,7 +13,8 @@ export type DeviceCategory =
   | 'storage'
   | 'other'
   | 'blanking-panel'
-  | 'stiffener';
+  | 'stiffener'
+  | 'reserved';
 
 export type PortFace = 'front' | 'rear';
 

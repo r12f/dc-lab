@@ -7,8 +7,11 @@ export interface CategoryTraits {
   labelPrefix: string;
   suppliesPower: boolean;
   allowsZeroU: boolean;
-  /** Passive rack hardware with no ports or power (blanking panels, stiffeners). */
-  filler?: 'blanking' | 'stiffener';
+  /**
+   * Units with no ports or power: blanking panels and stiffeners (hardware), or `reserved` —
+   * space deliberately left empty: it holds the units but is not hardware, so it has no BOM line.
+   */
+  filler?: 'blanking' | 'stiffener' | 'reserved';
 }
 
 export const CATEGORY_TRAITS: Record<DeviceCategory, CategoryTraits> = {
@@ -23,6 +26,7 @@ export const CATEGORY_TRAITS: Record<DeviceCategory, CategoryTraits> = {
   // Appended after 'other' so existing categories keep their palette colors.
   'blanking-panel': { label: 'Blanking Panel', labelPrefix: 'BP', suppliesPower: false, allowsZeroU: false, filler: 'blanking' },
   stiffener: { label: 'Stiffener', labelPrefix: 'STF', suppliesPower: false, allowsZeroU: false, filler: 'stiffener' },
+  reserved: { label: 'Empty (Reserved)', labelPrefix: 'RSV', suppliesPower: false, allowsZeroU: false, filler: 'reserved' },
 };
 
 export const DEVICE_CATEGORIES = Object.keys(CATEGORY_TRAITS) as DeviceCategory[];

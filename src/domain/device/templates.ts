@@ -130,5 +130,9 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     id: 'stiffener', label: 'Stiffener', description: 'Structural rack stiffener bar, no ports or power',
     build: (id) => base(id, { name: 'New stiffener', category: 'stiffener', height: { units: 1, system: 'OU' }, depthMm: 50, weightKg: 2, power: { typicalW: 0, maxW: 0 } }),
   },
+  {
+    id: 'reserved', label: 'Empty (Reserved)', description: 'Units deliberately left empty; not hardware, not in the BOM',
+    build: (id) => base(id, { name: 'New reserved space', category: 'reserved', depthMm: 0, weightKg: 0, power: { typicalW: 0, maxW: 0 } }),
+  },
   { id: 'blank', label: 'Blank', description: 'No ports', build: (id) => base(id, {}) },
 ];

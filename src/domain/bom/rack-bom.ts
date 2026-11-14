@@ -23,6 +23,8 @@ export function buildRackBom(lib: Library, design: RackDesign): BomLine[] {
   for (const p of design.placements) {
     const d = lib.devices.get(p.deviceId);
     if (!d) continue;
+    // Reserved space holds units but is not hardware: nothing to buy.
+    if (traitsOf(d.category).filler === 'reserved') continue;
     const v = item(d.id, p.variantId);
     bom.add({ key: `device:${v?.id ?? d.id}`, kind: 'device', item: d.name, category: traitsOf(d.category).label,
       vendorModel: variantLabel(v), qty: 1, unitW: d.power.typicalW, notes: [p.label], properties: v?.properties });

@@ -130,6 +130,10 @@ Drawing strategy is selected by device shape:
   no ports, PSUs or power): a single front panel at true scale (19" wide, height from RU/OU) with
   mounting ears; blanking panels dark, stiffeners steel grey with a rib. They occupy units in Rack
   Designer and count in the BOM and weight like any device.
+- **Empty (Reserved)** (category `reserved`): units **deliberately left empty** (future growth, airflow,
+  cable slack). Unlike a blanking panel it is not hardware: drawn as a dashed outline on the empty-slot
+  fill with "EMPTY (RESERVED)", it occupies units in Rack Designer (nothing else can be placed there) but
+  has no weight, power or BOM line. Built-ins: 1RU, 2RU, 4RU, 1OU.
 - **Vertical PDU** (category `pdu`, height 0): a tall strip with input cord at the top, outlets
   stacked by bank, each bank labelled with breaker/phase and colored by phase (L1/L2/L3).
 

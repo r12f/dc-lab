@@ -37,6 +37,7 @@ const CATEGORY_COLORS: Record<DeviceCategory, string> = {
   other: '#64748B',
   'blanking-panel': '#1F2937',
   stiffener: '#64748B',
+  reserved: '#94A3B8',
 };
 
 export function categoryPaint(category: DeviceCategory): string {
