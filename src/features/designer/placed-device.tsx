@@ -19,6 +19,8 @@ interface Props {
   /** Full-depth device mounted from the other face. */
   ghost: boolean;
   dragging: boolean;
+  /** Problems with this placement; marked in red. */
+  issues?: string[];
   onPointerDown(e: PointerEvent<SVGGElement>): void;
 }
 
@@ -33,7 +35,7 @@ export function placementRect(p: Placement, device: DeviceDefinition, rack: Rack
 }
 
 /** A device instance drawn in the elevation. */
-export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dragging, onPointerDown }: Props) {
+export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dragging, issues, onPointerDown }: Props) {
   const r = placementRect(placement, device, rack, geo);
   const filler = traitsOf(device.category).filler;
   const color = filler ? FILLER_FILL[filler] : categoryPaint(device.category);
@@ -43,7 +45,7 @@ export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dr
   const cy = r.y + r.h / 2;
   return (
     <g onPointerDown={onPointerDown} style={{ cursor: 'grab' }} opacity={dragging ? 0.4 : 1}>
-      <title>{`${placement.label} — ${device.name}`}</title>
+      <title>{[`${placement.label} — ${device.name}`, ...(issues ?? []).map((i) => `⚠ ${i}`)].join('\n')}</title>
       {/* Reserved space: dashed outline on the empty slot fill, so it reads as "kept empty", not as a device. */}
       <rect x={r.x + 1} y={r.y + 1} width={r.w - 2} height={r.h - 2} rx={2}
         fill={reserved ? paint.slot : color} fillOpacity={ghost ? 0.25 : reserved ? 1 : 0.9}
@@ -53,6 +55,15 @@ export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dr
         fontWeight={600} transform={vertical ? `rotate(-90 ${cx} ${cy})` : undefined} pointerEvents="none">
         {vertical ? placement.label : `${placement.label} · ${device.name}`}
       </text>
+      {/* Error: red outline over the device and a red badge; the selection outline stays inside it. */}
+      {issues && issues.length > 0 && (
+        <g pointerEvents="none">
+          <rect x={r.x - 1} y={r.y - 1} width={r.w + 2} height={r.h + 2} rx={3} fill={paint.danger} fillOpacity={0.12}
+            stroke={paint.danger} strokeWidth={2.5} />
+          <circle cx={r.x + r.w - 8} cy={r.y + Math.min(8, r.h / 2)} r={6.5} fill={paint.danger} stroke="#fff" strokeWidth={1} />
+          <text x={r.x + r.w - 8} y={r.y + Math.min(8, r.h / 2) + 3.5} fontSize={10} fontWeight={800} textAnchor="middle" fill="#fff">!</text>
+        </g>
+      )}
     </g>
   );
 }

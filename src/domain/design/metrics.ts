@@ -1,6 +1,6 @@
 import { traitsOf } from '../device/categories';
 import type { Library } from '../library/library';
-import { unitsIn } from '../units';
+import { formatPower, unitsIn } from '../units';
 import type { RackDesign } from './types';
 import { activeCableW, opticCounts } from './optics';
 import { placementProblem } from './placement';
@@ -62,9 +62,9 @@ export function computeRackMetrics(lib: Library, design: RackDesign): RackMetric
   }
   m.totalWeightKg += m.deviceWeightKg;
 
-  if (rack && m.maxW > rack.maxPowerW) m.warnings.push(`Max power ${m.maxW} W exceeds rack rating ${rack.maxPowerW} W`);
+  if (rack && m.maxW > rack.maxPowerW) m.warnings.push(`Max power ${formatPower(m.maxW)} exceeds rack rating ${formatPower(rack.maxPowerW)}`);
   if (m.supplyCapacityW > 0 && m.maxW > m.supplyCapacityW)
-    m.warnings.push(`Max power ${m.maxW} W exceeds supply capacity ${m.supplyCapacityW} W`);
+    m.warnings.push(`Max power ${formatPower(m.maxW)} exceeds supply capacity ${formatPower(m.supplyCapacityW)}`);
   if (rack && m.deviceWeightKg > rack.maxLoadKg)
     m.warnings.push(`Payload ${m.deviceWeightKg.toFixed(0)} kg exceeds rated load ${rack.maxLoadKg} kg`);
   return m;

@@ -10,6 +10,8 @@ import { RackFrame } from '../../drawing/rack-frame';
 import { rackGeometry, unitTopY } from '../../drawing/rack-geometry';
 import { toSvgPoint } from '../../io/svg-point';
 import { DEVICE_DRAG_TYPE } from './device-palette';
+import { designIssues } from '../../domain/design/issues';
+import { placementProblem } from '../../domain/design/placement';
 import { PlacedDevice, placementRect } from './placed-device';
 import { mountAt } from './mount-at';
 import { paint } from '../../theme/paint';
@@ -49,6 +51,7 @@ export function RackElevation({ ref, lib, design, face, selectedId, onSelect, se
   if (!rack) return <p className="muted">Unknown rack template {design.templateId}</p>;
   const geo = rackGeometry(rack);
   const metrics = computeRackMetrics(lib, design);
+  const issues = designIssues(lib, design);
   const visible = design.placements.filter((p) => {
     if (p.mount.kind === 'side' || p.mount.face === face) return true;
     const d = lib.devices.get(p.deviceId);
@@ -110,11 +113,15 @@ export function RackElevation({ ref, lib, design, face, selectedId, onSelect, se
   };
 
   const preview = drag?.moved ? dragMount() : undefined;
+  // Drop target in red when the device would not fit there.
+  const dragged = drag && design.placements.find((x) => x.id === drag.id);
+  const draggedDevice = dragged && lib.devices.get(dragged.deviceId);
+  const previewBad = !!(preview && draggedDevice && placementProblem(lib, design, draggedDevice, preview, drag?.id));
 
   return (
     <svg
       ref={ref}
-      viewBox={`-10 -10 ${geo.width + 20} ${geo.height + 20}`}
+      viewBox={`-10 -10 ${geo.width + 20} ${geo.height + 14 + issues.rack.length * 12}`}
       width={(geo.width + 20) * 1.4}
       className="drawing"
       onDragOver={(e) => e.preventDefault()}
@@ -122,7 +129,7 @@ export function RackElevation({ ref, lib, design, face, selectedId, onSelect, se
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >
-      <rect x={-10} y={-10} width={geo.width + 20} height={geo.height + 20} fill={paint.paper} onPointerDown={() => { onSelect(undefined); onSelectCable(undefined); }} />
+      <rect x={-10} y={-10} width={geo.width + 20} height={geo.height + 14 + issues.rack.length * 12} fill={paint.paper} onPointerDown={() => { onSelect(undefined); onSelectCable(undefined); }} />
       <RackFrame
         rack={rack}
         geo={geo}
@@ -135,13 +142,24 @@ export function RackElevation({ ref, lib, design, face, selectedId, onSelect, se
             <PlacedDevice key={p.id} placement={p} device={device} rack={rack} geo={geo}
               ghost={p.mount.kind === 'rack' && p.mount.face !== face}
               dragging={drag?.id === p.id && drag.moved}
-              selected={p.id === selectedId} onPointerDown={startDrag(p.id)} />
+              selected={p.id === selectedId} issues={issues.placements.get(p.id)} onPointerDown={startDrag(p.id)} />
           ) : null;
         })}
-        <CableRoutesDrawing lib={lib} routes={routeCables(lib, design, rack, geo)} selectedId={selectedCableId} onSelect={onSelectCable} />
+        <CableRoutesDrawing lib={lib} routes={routeCables(lib, design, rack, geo)} selectedId={selectedCableId}
+          errorIds={new Set(issues.cables.keys())} onSelect={onSelectCable} />
+        {/* Rack-wide problems: red frame around the rack body and the messages under the title. */}
+        {issues.rack.length > 0 && (
+          <g pointerEvents="none">
+            <rect x={geo.originX - 3} y={geo.originY - 7} width={geo.railW * 2 + geo.bodyW + 6} height={geo.bodyH + 14} rx={4}
+              fill="none" stroke={paint.danger} strokeWidth={3} />
+            {issues.rack.map((w, i) => (
+              <text key={w} x={geo.originX} y={geo.height + 4 + i * 12} fontSize={10} fontWeight={700} fill={paint.danger}>{`⚠ ${w}`}</text>
+            ))}
+          </g>
+        )}
         {preview?.kind === 'rack' && (
           <rect data-export="skip" x={geo.originX + geo.railW} y={unitTopY(geo, rack, preview.position)}
-            width={geo.bodyW} height={geo.unitPx} fill="none" stroke={paint.selection} strokeWidth={2} pointerEvents="none" />
+            width={geo.bodyW} height={geo.unitPx} fill="none" stroke={previewBad ? paint.danger : paint.selection} strokeWidth={2} pointerEvents="none" />
         )}
       </RackFrame>
     </svg>

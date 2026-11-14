@@ -15,6 +15,7 @@ import { DevicePalette } from './device-palette';
 import { RackElevation } from './rack-elevation';
 import { DesignInspector, type InspectorTab } from './design-inspector';
 import { useDesignEditor } from './use-design-editor';
+import { designIssues } from '../../domain/design/issues';
 
 export function DesignerModule() {
   const lib = useLibrary();
@@ -32,6 +33,7 @@ export function DesignerModule() {
 
   const design = designs.find((d) => d.id === selectedId);
   const editor = useDesignEditor(lib, design);
+  const issueCount = design ? designIssues(lib, design).count : 0;
 
   const create = (name: string, templateId: string, abbr: string) => {
     const d = newDesign(uniqueId(slugify(name), designs.map((x) => x.id)), name, templateId, abbr);
@@ -89,6 +91,7 @@ export function DesignerModule() {
             toolbar={
               <>
                 {message && <span className="toolbar-msg">{message}</span>}
+                {issueCount > 0 && <span className="toolbar-msg error" title="Marked in red on the rack">{`⚠ ${issueCount} problem${issueCount > 1 ? 's' : ''}`}</span>}
                 <Button variant={face === 'front' ? 'primary' : 'default'} onClick={() => setFace('front')}>Front</Button>
                 <Button variant={face === 'rear' ? 'primary' : 'default'} onClick={() => setFace('rear')}>Rear</Button>
               </>

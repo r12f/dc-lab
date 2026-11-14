@@ -80,4 +80,11 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   clicking ports on a faceplate preview), **Cables** (start/end device + port, route left/right, media,
   auto/manual length, quantity; selecting a device pre-fills new runs' start), **BOM** (metrics + BOM
   table, CSV export).
+- **Errors are marked in red on the rack** (theme danger color): a placement with a problem (overlap —
+  both devices —, does not fit, wrong unit system, side slot) gets a red outline, light red tint and a
+  "!" badge, its tooltip lists the problems; a cable run with issues (connector mismatch, too many ends,
+  pinned-to-pinned, leg used twice) gets a red casing; rack-wide problems (max power over rack rating or
+  supply, payload over load) frame the rack body in red with the messages in red under the drawing. The
+  drop target turns red while dragging to a place the device cannot go. The canvas title bar shows
+  "⚠ N problems".
 - Export SVG of the elevation.
