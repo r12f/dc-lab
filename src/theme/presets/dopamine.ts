@@ -17,6 +17,6 @@ export const dopamine = darkTheme({
   danger: '#FF6B9D',
   warn: '#FFD700',
   ok: '#4DA6FF',
-  selection: '#FFD700',
+  selection: '#4DA6FF',
   palette: ['#FF6B9D', '#FFD700', '#4DA6FF', '#B388FF', '#FF0000', '#A89098'],
 });

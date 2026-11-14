@@ -17,6 +17,6 @@ export const landmine = darkTheme({
   danger: '#E8577E',
   warn: '#F5A0C0',
   ok: '#D4A0B9',
-  selection: '#FF3366',
+  selection: '#7FB3FF',
   palette: ['#FF3366', '#F5A0C0', '#D4A0B9', '#E8577E', '#F5D0E0', '#8A6A7E'],
 });

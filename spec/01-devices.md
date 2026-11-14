@@ -19,7 +19,8 @@ Single-device definitions. One device = one JSON file (`schema: "dc-lab/device@1
 
 ### Category traits
 
-Each category has traits used by the rest of the app (color, whether it supplies power, whether it may
+Each category has traits used by the rest of the app (a fixed calm color — never red/amber, which mean
+warnings —, whether it supplies power, whether it may
 mount zero-U in a side pod). Suppliers' `typicalW/maxW` is their own loss; `capacityW` counts toward
 rack supply capacity.
 

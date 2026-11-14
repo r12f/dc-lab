@@ -17,6 +17,6 @@ export const maid = darkTheme({
   danger: '#C43060',
   warn: '#D4A050',
   ok: '#B0A8B9',
-  selection: '#C43060',
+  selection: '#3B82F6',
   palette: ['#F0EDE8', '#B0A8B9', '#C43060', '#8B2252', '#6880A0', '#6B6B80'],
 });

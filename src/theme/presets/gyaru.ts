@@ -17,6 +17,6 @@ export const gyaru = darkTheme({
   danger: '#FF69B4',
   warn: '#FFE040',
   ok: '#FFD700',
-  selection: '#FF2499',
+  selection: '#4DA6FF',
   palette: ['#FF2499', '#FFD700', '#C68642', '#FF69B4', '#FFE040', '#8B6914'],
 });

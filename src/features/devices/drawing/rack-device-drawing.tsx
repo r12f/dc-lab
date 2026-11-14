@@ -5,7 +5,7 @@ import { groupTitle } from './group-title';
 import { PORT } from './faceplate-layout';
 import { PsuGlyph } from './psu-glyph';
 import type { DrawingContext } from './types';
-import { categoryPaint, paint } from '../../../theme/paint';
+import { FACEPLATE_BORDER, paint } from '../../../theme/paint';
 
 export interface DrawingSize {
   width: number;
@@ -13,11 +13,10 @@ export interface DrawingSize {
 }
 
 function Face({ device, layout, ctx, y }: { device: DeviceDefinition; layout: FaceLayout; ctx: DrawingContext; y: number }) {
-  const color = categoryPaint(device.category);
   return (
     <g transform={`translate(0 ${y})`}>
       <text x={0} y={-8} fontSize={14} fill={paint.inkMuted} fontWeight={700}>{layout.face.toUpperCase()}</text>
-      <rect width={layout.width} height={layout.height} rx={4} fill="#1e293b" stroke={color} strokeWidth={2} />
+      <rect width={layout.width} height={layout.height} rx={4} fill="#1e293b" stroke={FACEPLATE_BORDER} strokeWidth={2} />
       {layout.labels.map((l) => (
         <text key={l.group.id} x={l.x} y={l.y} fontSize={PORT.labelFont} fontWeight={600} fill="#e2e8f0">{groupTitle(l.group)}</text>
       ))}

@@ -47,7 +47,7 @@ export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dr
         fill={color} fillOpacity={ghost ? 0.25 : 0.9}
         stroke={selected ? paint.selection : paint.ink} strokeWidth={selected ? 3 : 1}
         strokeDasharray={ghost ? '4 2' : undefined} />
-      <text x={cx} y={cy + 4} fontSize={vertical ? 9 : 10} textAnchor="middle" fill={ghost ? paint.ink : filler ? '#e2e8f0' : paint.paper}
+      <text x={cx} y={cy + 4} fontSize={vertical ? 9 : 10} textAnchor="middle" fill={ghost ? paint.ink : '#F8FAFC'}
         fontWeight={600} transform={vertical ? `rotate(-90 ${cx} ${cy})` : undefined} pointerEvents="none">
         {vertical ? placement.label : `${placement.label} · ${device.name}`}
       </text>

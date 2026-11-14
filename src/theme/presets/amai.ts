@@ -17,6 +17,6 @@ export const amai = darkTheme({
   danger: '#E85A7A',
   warn: '#FFE8A0',
   ok: '#C8A2C8',
-  selection: '#FF6B8A',
+  selection: '#4F8FE8',
   palette: ['#FF6B8A', '#FFC8D6', '#C8A2C8', '#98D8C8', '#6B8EC2', '#FFE8A0'],
 });

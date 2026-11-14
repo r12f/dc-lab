@@ -16,7 +16,7 @@ Theme
 ├── status                  # danger, warn, ok — warnings, errors, validation
 ├── dialog                  # border, title, text, muted, selected {fg,bg} — menus, cards, notices
 ├── canvas                  # paper, ink, inkMuted, grid, frame, frameText, slot, selection, onFill
-└── highlightPalette        # color rotation; device categories use palette[i % length]
+└── highlightPalette        # color rotation for user highlights
 ```
 
 Area mapping:
@@ -28,9 +28,9 @@ Area mapping:
 | `surface.selected` | Selected sidebar item, selected table row |
 | `canvas.paper/ink` | Drawing background and text |
 | `canvas.frame/frameText/slot` | Rack rails, unit numbers, empty unit fill |
-| `canvas.selection` | Selection outlines on every canvas |
+| `canvas.selection` | Selection outlines on every canvas. Always a blue: red/amber/yellow are reserved for warnings, so a selection must never look like an error. |
 | `canvas.onFill` | Text drawn on palette-colored fills (placed devices, assigned racks) |
-| `highlightPalette` | Device category colors (rack elevation, palette swatches, faceplate border) |
+| `highlightPalette` | User highlight colors. Not used for device categories: category colors are a fixed calm set (blues, teals, purples, greys) and faceplate borders are neutral grey, because red/amber are reserved for warnings. |
 
 Hot/cold aisle fills (blue/red) and device internals (faceplate metal, port cages, breakout fan-out colors, PDU phase colors, PSU
 modules) are physical/data encodings and stay fixed across themes.

@@ -17,6 +17,6 @@ export const dark = darkTheme({
   danger: '#FF6B6B',
   warn: '#FFD93D',
   ok: '#6BCB77',
-  selection: '#FFD93D',
+  selection: '#38BDF8',
   palette: ['#FF6B6B', '#6BCB77', '#4FC3F7', '#FFD93D', '#CE93D8', '#4DD0E1'],
 });

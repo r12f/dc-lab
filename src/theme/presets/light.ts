@@ -13,7 +13,7 @@ export const light: Theme = {
   dialog: { border: '#E2E8F0', title: '#0F172A', text: '#0F172A', muted: '#64748B', selected: { fg: '#0F172A', bg: '#EFF6FF' } },
   canvas: {
     paper: '#FFFFFF', ink: '#0F172A', inkMuted: '#475569', grid: '#E2E8F0',
-    frame: '#334155', frameText: '#E2E8F0', slot: '#F8FAFC', selection: '#EAB308',
+    frame: '#334155', frameText: '#E2E8F0', slot: '#F8FAFC', selection: '#2563EB',
   },
   highlightPalette: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#EF4444', '#14B8A6', '#64748B'],
 };
