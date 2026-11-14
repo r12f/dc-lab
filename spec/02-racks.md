@@ -35,6 +35,7 @@ Defaults by rack kind (built-in templates follow these):
 |---|---|
 | `network` | each side: PDU bay (100 mm, 1 slot, next to the body) + sidepod (300 mm, 1 slot, outside) |
 | `server`, `mgx`, `orv3`, `orw` | none |
+| `mgx` variant **MGX Rack 48RU (PDU+SidePods)** | same side elements as `network` (PDU bay + sidepod each side, 3 tiles wide); listed under MGX |
 
 Network racks are 600 mm wide. `footprintTiles.wide` of built-in network racks covers body + side elements
 (600 + 2×400 mm → 3 tiles). The former built-in `network-48ru-800` is now `network-48ru-600`; projects are migrated.
