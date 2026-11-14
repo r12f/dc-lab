@@ -146,7 +146,11 @@ export function migrateLayout(l: Json): Json {
 
 /** Removed form factor "QSFP-DD800" -> "QSFP-DD" (an 800G QSFP-DD cage); old built-in device id renamed. */
 const RENAMED_FORM_FACTORS: Record<string, string> = { 'QSFP-DD800': 'QSFP-DD' };
-const RENAMED_IDS: Record<string, string> = { 'switch-32x800g-qsfpdd800': 'switch-32x800g-qsfpdd' };
+const RENAMED_IDS: Record<string, string> = {
+  'switch-32x800g-qsfpdd800': 'switch-32x800g-qsfpdd',
+  // Network racks are 600 mm wide.
+  'network-48ru-800': 'network-48ru-600',
+};
 const renameFf = (x: Json): Json => {
   const ff = RENAMED_FORM_FACTORS[String(x.formFactor)];
   if (!ff) return x;
@@ -161,7 +165,8 @@ function migrateRenames(p: Json): Json {
     devices: ((p.devices as Json[]) ?? []).map((d) => ({ ...d, ports: ((d.ports as Json[]) ?? []).map(renameFf) })),
     optics: ((p.optics as Json[]) ?? []).map(renameFf),
     rackDesigns: ((p.rackDesigns as Json[]) ?? []).map((d) => ({
-      ...d, placements: ((d.placements as Json[]) ?? []).map((x) => ({ ...x, deviceId: renameId(x.deviceId) })),
+      ...d, templateId: renameId(d.templateId),
+      placements: ((d.placements as Json[]) ?? []).map((x) => ({ ...x, deviceId: renameId(x.deviceId) })),
     })),
     hiddenBuiltins: ((p.hiddenBuiltins as unknown[]) ?? []).map(renameId),
     builtinProperties: Object.fromEntries(Object.entries(props).map(([k, v]) => [renameId(k), v])),

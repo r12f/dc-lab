@@ -1,10 +1,10 @@
 {
-  "id": "network-48ru-800",
-  "name": "Network Rack 48RU 800mm",
+  "id": "network-48ru-600",
+  "name": "Network Rack 48RU 600mm",
   "kind": "network",
   "units": 48,
   "unitSystem": "RU",
-  "widthMm": 800,
+  "widthMm": 600,
   "depthMm": 1200,
   "heightMm": 2260,
   "footprintTiles": {
