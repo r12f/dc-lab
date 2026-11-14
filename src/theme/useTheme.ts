@@ -1,11 +1,18 @@
 import { useEffect } from 'react';
-import { useAppStore } from '../state/store';
+import { usePreferences } from '../state/preferences';
 import { applyTheme } from './cssVars';
-import { themeById } from './registry';
+import { findTheme, resolveTheme } from './registry';
+import { useSystemScheme } from './systemScheme';
 import type { Theme } from './types';
 
+/** Active theme: the stored choice, else the system light/dark theme (live). */
 export function useTheme(): Theme {
-  return themeById(useAppStore((s) => s.themeId));
+  return resolveTheme(usePreferences((s) => s.themeId), useSystemScheme());
+}
+
+/** True when the user has not picked a theme (following the system). */
+export function useFollowsSystem(): boolean {
+  return !findTheme(usePreferences((s) => s.themeId));
 }
 
 /** Applies the active theme's CSS variables to the document. Mount once at the app root. */

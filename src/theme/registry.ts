@@ -1,4 +1,5 @@
 import type { Theme } from './types';
+import type { Scheme } from './systemScheme';
 import { mizuiro } from './presets/mizuiro';
 import { landmine } from './presets/landmine';
 import { amai } from './presets/amai';
@@ -8,9 +9,16 @@ import { dopamine } from './presets/dopamine';
 import { light } from './presets/light';
 import { dark } from './presets/dark';
 
-export const THEMES: Theme[] = [mizuiro, landmine, amai, maid, gyaru, dopamine, light, dark];
-export const DEFAULT_THEME_ID = mizuiro.id;
+export const THEMES: Theme[] = [light, dark, mizuiro, landmine, amai, maid, gyaru, dopamine];
 
-export function themeById(id: string | undefined): Theme {
-  return THEMES.find((t) => t.id === id) ?? THEMES.find((t) => t.id === DEFAULT_THEME_ID)!;
+/** Theme used when following the system setting. */
+export const SYSTEM_THEMES: Record<Scheme, Theme> = { light, dark };
+
+export function findTheme(id: string | undefined): Theme | undefined {
+  return THEMES.find((t) => t.id === id);
+}
+
+/** The chosen theme, or the system light/dark theme when nothing (valid) is chosen. */
+export function resolveTheme(id: string | undefined, scheme: Scheme): Theme {
+  return findTheme(id) ?? SYSTEM_THEMES[scheme];
 }

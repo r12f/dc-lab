@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { THEMES, themeById, DEFAULT_THEME_ID } from '../registry';
+import { THEMES, resolveTheme } from '../registry';
 import { themeToCssVars } from '../cssVars';
 import { contrastRatio } from '../color';
 
@@ -15,8 +15,8 @@ describe('themes', () => {
     }
   });
   it('all themes expose the same variable names', () => {
-    const keys = (id: string) => Object.keys(themeToCssVars(themeById(id))).filter((k) => !k.startsWith('--palette-')).sort();
-    for (const t of THEMES) expect(keys(t.id)).toEqual(keys(DEFAULT_THEME_ID));
+    const keys = (id: string) => Object.keys(themeToCssVars(resolveTheme(id, 'light'))).filter((k) => !k.startsWith('--palette-')).sort();
+    for (const t of THEMES) expect(keys(t.id)).toEqual(keys('light'));
   });
   it('text on accent, panel text and focused tab text reach 4.5:1', () => {
     for (const t of THEMES) {
@@ -25,7 +25,10 @@ describe('themes', () => {
       expect(contrastRatio(t.tab.focused.fg, t.tab.focused.bg), `${t.id} tab`).toBeGreaterThanOrEqual(4.5);
     }
   });
-  it('falls back to the default for unknown ids', () => {
-    expect(themeById('nope').id).toBe('mizuiro');
+  it('follows the system scheme when nothing valid is chosen', () => {
+    expect(resolveTheme(undefined, 'dark').id).toBe('dark');
+    expect(resolveTheme(undefined, 'light').id).toBe('light');
+    expect(resolveTheme('nope', 'dark').id).toBe('dark');
+    expect(resolveTheme('amai', 'light').id).toBe('amai');
   });
 });

@@ -1,13 +1,19 @@
-import { useAppStore } from '../state/store';
+import { usePreferences } from '../state/preferences';
 import { THEMES } from '../theme/registry';
-import { useTheme } from '../theme/useTheme';
+import { useFollowsSystem, useTheme } from '../theme/useTheme';
 
-/** Top-bar theme selector; the description shows as a tooltip. */
+const SYSTEM = '__system';
+
+/** Top-bar theme selector: System (follow OS light/dark) or a stored theme choice. */
 export function ThemePicker() {
   const theme = useTheme();
-  const setTheme = useAppStore((s) => s.setTheme);
+  const followsSystem = useFollowsSystem();
+  const setTheme = usePreferences((s) => s.setTheme);
   return (
-    <select className="theme-picker" value={theme.id} title={theme.description} onChange={(e) => setTheme(e.target.value)}>
+    <select className="theme-picker" value={followsSystem ? SYSTEM : theme.id}
+      title={followsSystem ? `System (${theme.name})` : theme.description}
+      onChange={(e) => setTheme(e.target.value === SYSTEM ? undefined : e.target.value)}>
+      <option value={SYSTEM} title="Follow the OS light/dark setting">{`System (${followsSystem ? theme.name : 'auto'})`}</option>
       {THEMES.map((t) => (
         <option key={t.id} value={t.id} title={t.description}>{t.name}</option>
       ))}

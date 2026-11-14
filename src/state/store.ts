@@ -17,7 +17,7 @@ export const useAppStore = create<AppState>()(
         const s = persisted as { project?: Record<string, unknown> };
         return { ...s, project: s.project ? normalizeProject(s.project) : undefined } as never;
       },
-      partialize: (s) => ({ project: s.project, tab: s.tab, selected: s.selected, themeId: s.themeId }),
+      partialize: (s) => ({ project: s.project, tab: s.tab, selected: s.selected }),
     },
   ),
 );

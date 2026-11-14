@@ -45,7 +45,7 @@ the theme's text and base colors. A unit test enforces these ratios for every th
 
 | Id | Description |
 |---|---|
-| `mizuiro` | Clear aqua: deep navy base with water blue and sky blue (default) |
+| `mizuiro` | Clear aqua: deep navy base with water blue and sky blue |
 | `landmine` | Jirai Kei: black base with pink and red accents |
 | `amai` | Sweet Lolita: dark rose base with candy pink and lavender |
 | `maid` | Classic maid: black and white high contrast with wine red |
@@ -58,9 +58,14 @@ Exact values live in `src/theme/presets/<id>.ts`, one file per theme.
 
 ## Selection and persistence
 
-- Theme picker in the top bar; each option shows the description as a tooltip.
-- The chosen theme id is stored in browser storage (an app preference, not part of the project file).
-- Unknown/removed ids fall back to the default (`mizuiro`).
+- Theme picker in the top bar; first option is **System**, then every built-in theme. Each option shows
+  its description as a tooltip.
+- **Default = System**: the app uses `light` or `dark` according to the OS/browser `prefers-color-scheme`
+  and switches live when the OS setting changes.
+- Picking a theme stores its id in browser storage (`dc-lab:prefs`, an app preference — not part of the
+  project file and not affected by New/Open). The next launch uses the same theme. Picking **System**
+  clears the stored choice.
+- Unknown/removed stored ids fall back to System.
 
 ## SVG export
 
