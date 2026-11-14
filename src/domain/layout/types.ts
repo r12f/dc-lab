@@ -77,6 +77,8 @@ export interface RackAssignment {
   startTile: number;
   designId: string;
   label: string;
+  /** Power / CDU racks only: ids of the IT racks this rack serves (default: the adjacent IT racks in its row). */
+  serves?: string[];
 }
 
 export interface DcLayout {

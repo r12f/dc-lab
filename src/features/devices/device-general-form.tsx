@@ -39,6 +39,18 @@ export function DeviceGeneralForm({ device: d, onChange }: Props) {
         <NumberField label="Max W" value={d.power.maxW} min={0}
           onChange={(maxW) => set({ power: { ...d.power, maxW } })} />
       </div>
+      {d.category === 'cdu' && (
+        <div className="row2">
+          <NumberField label="Cooling capacity kW" value={d.cooling?.capacityKw ?? 0} min={0}
+            onChange={(capacityKw) => set({ cooling: { pumpW: d.cooling?.pumpW ?? 0, capacityKw } })} />
+          <NumberField label="Pump power W" value={d.cooling?.pumpW ?? 0} min={0}
+            onChange={(pumpW) => set({ cooling: { capacityKw: d.cooling?.capacityKw ?? 0, pumpW } })} />
+        </div>
+      )}
+      {d.category === 'bbu' && (
+        <NumberField label="Backup capacity kW" value={d.bbu?.capacityKw ?? 0} min={0}
+          onChange={(capacityKw) => set({ bbu: { capacityKw } })} />
+      )}
       {traitsOf(d.category).suppliesPower && (
         <NumberField label="Supply capacity W" value={d.power.capacityW ?? 0} min={0}
           onChange={(capacityW) => set({ power: { ...d.power, capacityW } })} />

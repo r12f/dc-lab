@@ -6,6 +6,7 @@ import type { BomLine } from '../bom/types';
 import type { DcLayout } from './types';
 import { tileWidthOf, type DesignLookup } from './tiles';
 import { feedWarnings, rowSupplyKw } from './power-feeds';
+import { infraWarnings } from './infra';
 
 export interface RowMetrics {
   rowId: string;
@@ -53,6 +54,7 @@ export function computeDcMetrics(lib: Library, designs: DesignLookup, layout: Dc
     m.rows.push(r);
   }
   m.warnings.push(...feedWarnings(layout, new Map(m.rows.map((r) => [r.rowId, r.typicalW]))));
+  m.warnings.push(...infraWarnings(lib, designs, layout));
   return m;
 }
 

@@ -1,0 +1,20 @@
+{
+  "id": "cdu-rack-sidecar",
+  "name": "CDU Sidecar Rack (in-row)",
+  "kind": "cdu",
+  "units": 40,
+  "unitSystem": "RU",
+  "widthMm": 600,
+  "depthMm": 1200,
+  "heightMm": 2000,
+  "footprintTiles": {
+    "wide": 1,
+    "deep": 2
+  },
+  "emptyWeightKg": 0,
+  "maxLoadKg": 0,
+  "maxPowerW": 0,
+  "schema": "dc-lab/rack@1",
+  "sideElements": [],
+  "notes": "Sidecar enclosure is the CDU itself: frame weight 0 and no rating; the full-height CDU device carries weight and power."
+}

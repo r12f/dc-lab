@@ -126,6 +126,9 @@ Drawing strategy is selected by device shape:
   native speed and count (`QSFP-DD 400G ×32`); each data port shows its index, speed (`400G` unsplit,
   `2x400G` breakout — never `1x…`) and reach. Ports are ≥ 54x46 units, text ≥ 9 units, drawn 1:1. Width follows content — the
   widest face (ports + PSUs) sets the box width, so small devices draw narrow.
+- **CDU** (category `cdu`): `cooling: { capacityKw, pumpW }` — heat it removes and pump draw (added to its
+  power). Built-ins: In-Rack 7 kW (4U), In-Row Sidecar 110 kW (40U, fills a CDU rack).
+- **BBU shelf** (category `bbu`): `bbu: { capacityKw }` — backup capacity. Built-in: generic 1RU BBU Shelf.
 - **Variable height** (`resizable`): any device can be marked "Variable height" in the Devices inspector; its
   height is then set per placement in Rack Designer and `height` is the default size. Fillers (below) default to it.
 - **PSU arrangement** (`psus.layout`): `split` (default, half on each rear edge) or `row` (one row side by side,

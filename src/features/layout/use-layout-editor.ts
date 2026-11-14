@@ -86,7 +86,13 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
     });
     return undefined;
   };
-  const unassign = (id: string) => mutate((l) => ({ ...l, assignments: l.assignments.filter((a) => a.id !== id) }));
+  const unassign = (id: string) => mutate((l) => ({
+    ...l,
+    assignments: l.assignments.filter((a) => a.id !== id).map((a) => (a.serves?.includes(id) ? { ...a, serves: a.serves.filter((x) => x !== id) } : a)),
+  }));
+  /** Sets which IT racks a power / CDU rack serves; undefined = the adjacent IT racks (default). */
+  const setServes = (id: string, serves: string[] | undefined) =>
+    mutate((l) => ({ ...l, assignments: l.assignments.map((a) => (a.id === id ? { ...a, serves } : a)) }));
   const relabel = (id: string, label: string) =>
     mutate((l) => ({ ...l, assignments: l.assignments.map((a) => (a.id === id ? { ...a, label } : a)) }));
 
@@ -98,7 +104,7 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
 
   return {
     addRow, addAisle, addTray, addFacility, updateElement, updateElements, duplicate, removeElement, removeElements, reorder, moveTray, moveFacility,
-    assign, unassign, relabel, setRoom, setWhitespace, rename, setPowerFeed, rotateView, addDoor: addDoorTo, moveDoor,
+    assign, unassign, relabel, setServes, setRoom, setWhitespace, rename, setPowerFeed, rotateView, addDoor: addDoorTo, moveDoor,
   };
 }
 

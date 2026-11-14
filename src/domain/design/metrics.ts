@@ -17,6 +17,10 @@ export interface RackMetrics {
   totalWeightKg: number;
   maxLoadKg: number;
   deviceCount: number;
+  /** Sum of CDU cooling capacity (kW). */
+  coolingCapacityKw: number;
+  /** Sum of BBU shelf backup capacity (kW). */
+  bbuCapacityKw: number;
   warnings: string[];
 }
 
@@ -33,6 +37,8 @@ export function computeRackMetrics(lib: Library, design: RackDesign): RackMetric
     totalWeightKg: (rack?.emptyWeightKg ?? 0) + (rack?.sideElements.reduce((n, e) => n + e.weightKg, 0) ?? 0),
     maxLoadKg: rack?.maxLoadKg ?? 0,
     deviceCount: design.placements.length,
+    coolingCapacityKw: 0,
+    bbuCapacityKw: 0,
     warnings: [],
   };
   if (!rack) m.warnings.push(`Unknown rack template "${design.templateId}"`);
@@ -44,8 +50,11 @@ export function computeRackMetrics(lib: Library, design: RackDesign): RackMetric
       continue;
     }
     if (rack && p.mount.kind === 'rack') m.usedUnits += Math.max(1, unitsIn(device.height, rack.unitSystem));
-    m.typicalW += device.power.typicalW;
-    m.maxW += device.power.maxW;
+    const pumpW = device.cooling?.pumpW ?? 0;
+    m.typicalW += device.power.typicalW + pumpW;
+    m.maxW += device.power.maxW + pumpW;
+    m.coolingCapacityKw += device.cooling?.capacityKw ?? 0;
+    m.bbuCapacityKw += device.bbu?.capacityKw ?? 0;
     m.deviceWeightKg += device.weightKg;
     if (traitsOf(device.category).suppliesPower) m.supplyCapacityW += device.power.capacityW ?? 0;
     for (const [opticId, n] of opticCounts(lib, device, p)) {
@@ -63,10 +72,11 @@ export function computeRackMetrics(lib: Library, design: RackDesign): RackMetric
   }
   m.totalWeightKg += m.deviceWeightKg;
 
-  if (rack && m.maxW > rack.maxPowerW) m.warnings.push(`Max power ${formatPower(m.maxW)} exceeds rack rating ${formatPower(rack.maxPowerW)}`);
+  // A 0 rating / load limit means "not rated" (e.g. a sidecar frame whose device carries everything).
+  if (rack && rack.maxPowerW > 0 && m.maxW > rack.maxPowerW) m.warnings.push(`Max power ${formatPower(m.maxW)} exceeds rack rating ${formatPower(rack.maxPowerW)}`);
   if (m.supplyCapacityW > 0 && m.maxW > m.supplyCapacityW)
     m.warnings.push(`Max power ${formatPower(m.maxW)} exceeds supply capacity ${formatPower(m.supplyCapacityW)}`);
-  if (rack && m.deviceWeightKg > rack.maxLoadKg)
+  if (rack && rack.maxLoadKg > 0 && m.deviceWeightKg > rack.maxLoadKg)
     m.warnings.push(`Payload ${m.deviceWeightKg.toFixed(0)} kg exceeds rated load ${rack.maxLoadKg} kg`);
   return m;
 }

@@ -1,0 +1,20 @@
+{
+  "id": "power-rack-48ru",
+  "name": "Power Rack 48RU",
+  "kind": "power",
+  "units": 48,
+  "unitSystem": "RU",
+  "widthMm": 600,
+  "depthMm": 1200,
+  "heightMm": 2260,
+  "footprintTiles": {
+    "wide": 1,
+    "deep": 2
+  },
+  "emptyWeightKg": 170,
+  "maxLoadKg": 1500,
+  "maxPowerW": 40000,
+  "schema": "dc-lab/rack@1",
+  "sideElements": [],
+  "notes": "Frame values copied from the MGX 48RU template (power racks in the MGX design use the same frame)."
+}

@@ -15,5 +15,9 @@
   },
   "ports": [],
   "breakoutProfiles": [],
-  "notes": "Occupies a whole rack position (40U). Weight and power TBD."
+  "notes": "Full-height in-row sidecar: fills a CDU rack (40U). Cooling 110 kW; pump power, weight TBD.",
+  "cooling": {
+    "capacityKw": 110,
+    "pumpW": 0
+  }
 }

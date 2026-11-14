@@ -9,6 +9,43 @@ import { Button } from '../../ui/button';
 import { SelectField, TextField } from '../../ui/fields';
 import type { LayoutEditor } from './use-layout-editor';
 import type { LayoutSelection } from './selection';
+import type { RackAssignment } from '../../domain/layout/types';
+import { assignmentRole, infraGroups, servedRacks } from '../../domain/layout/infra';
+
+/** Which IT racks a power / CDU rack serves (default: adjacent), and its group's capacity vs load. */
+function ServesEditor({ lib, designs, layout, editor, infra }: {
+  lib: Library; designs: DesignLookup; layout: DcLayout; editor: LayoutEditor; infra: RackAssignment;
+}) {
+  const role = assignmentRole(lib, designs, infra);
+  if (role === 'it') return null;
+  const served = new Set(servedRacks(lib, designs, layout, infra).map((a) => a.id));
+  const it = layout.assignments.filter((a) => assignmentRole(lib, designs, a) === 'it');
+  const g = infraGroups(lib, designs, layout, role).find((x) => x.infraIds.includes(infra.id));
+  const rowName = (id: string) => layout.rows.find((r) => r.id === id)?.name ?? '';
+  const toggle = (id: string) => {
+    const next = new Set(served);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    editor.setServes(infra.id, [...next]);
+  };
+  return (
+    <div className="card">
+      <strong>{`Serves (${role === 'power' ? 'power' : 'cooling'})`}</strong>
+      <p className="muted">{infra.serves ? 'Picked by hand.' : 'Default: the adjacent IT racks in this row.'}</p>
+      {it.map((a) => (
+        <label key={a.id} className="checkbox" style={{ display: 'block' }}>
+          <input type="checkbox" checked={served.has(a.id)} onChange={() => toggle(a.id)} />
+          {` ${a.label} · ${rowName(a.rowId)}`}
+        </label>
+      ))}
+      {infra.serves && <Button onClick={() => editor.setServes(infra.id, undefined)}>Use adjacent racks</Button>}
+      {g && (
+        <p className={g.ok ? 'muted' : 'error'}>
+          {`Group ${g.infraIds.length > 1 ? `(${g.infraIds.length} racks) ` : ''}${role === 'power' ? 'supply' : 'cooling'} ${g.capacityKw.toFixed(1)} kW vs IT max ${g.loadKw.toFixed(1)} kW`}
+        </p>
+      )}
+    </div>
+  );
+}
 
 interface Props {
   lib: Library;
@@ -36,6 +73,9 @@ export function TilePanel({ lib, designs, layout, editor, selection, onSelect }:
       <div className="card">
         <TextField label="Rack label" value={assignment.label} onChange={(v) => editor.relabel(assignment.id, v)} />
         <p className="muted">{`${d ? `${d.abbr} · ${d.name}` : assignment.designId} · tiles ${formatTiles(assignment.startTile + 1)}–${formatTiles(assignment.startTile + tileWidthOf(lib, d))} · ${m ? formatPower(m.typicalW) : ''}`}</p>
+        {assignmentRole(lib, designs, assignment) !== 'it' && (
+          <ServesEditor lib={lib} designs={designs} layout={layout} editor={editor} infra={assignment} />
+        )}
         <Button variant="danger" onClick={() => { editor.unassign(assignment.id); onSelect(undefined); }}>Remove rack</Button>
       </div>
     );

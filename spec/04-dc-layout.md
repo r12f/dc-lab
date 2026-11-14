@@ -22,7 +22,8 @@ south (down), units are millimetres.
 - `sequence`: ids of rows and aisles from west to east.
 - `trays[]`: overhead cable trays — `kind` (data/power), `aisleId`, `widthMm`. A tray **floats above an
   aisle**: centred on it, running its full length, drawn on top of everything.
-- `assignments[]`: `rowId`, `startTile` (0-based, from the north end), `designId`, `label`.
+- `assignments[]`: `rowId`, `startTile` (0-based, from the north end), `designId`, `label`; power / CDU racks
+  optionally `serves[]` — ids of the IT racks they serve.
 
 ## Arrangement (derived, never stored)
 
@@ -42,6 +43,15 @@ south (down), units are millimetres.
   "Tiles used" sums the widths (e.g. `4.5/12 tiles`).
 - It must stay inside the row and must not overlap another assignment.
 - Row power = sum of assigned designs' typical power; warn when above `powerBudgetKw`.
+- **Power / CDU racks** (designs on a `power` or `cdu` rack template) take tiles like any rack. Each serves IT
+  racks: by default the **adjacent IT racks in its row** — walking out both ways over touching racks, past
+  infrastructure racks of the other kind, stopping at a gap or at another rack of the same kind; or an explicit
+  `serves` list picked in the inspector. Power/CDU racks that serve a common IT rack are pooled into one group.
+  **Check per group**: supply (power shelves' capacity) and cooling (CDUs' capacity) must be ≥ the summed
+  **max** power of the IT racks served (heat removed = power drawn). Under-sized groups and sidecars that serve
+  nothing are warnings.
+- Canvas: power racks amber, CDU racks cyan (labelled POWER / CDU); selecting one marks the IT racks it serves
+  with a dashed ring. Inspector: "Serves" checklist + group capacity vs IT max; DC totals list every group.
 
 ## Derived data
 

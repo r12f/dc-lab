@@ -4,7 +4,7 @@ import type { SideElement } from './side-elements';
 
 export const RACK_SCHEMA = 'dc-lab/rack@1';
 
-export type RackKind = 'network' | 'server' | 'mgx' | 'orv3' | 'orw' | 'custom';
+export type RackKind = 'network' | 'server' | 'mgx' | 'orv3' | 'orw' | 'power' | 'cdu' | 'custom';
 
 export const RACK_KINDS: Record<RackKind, string> = {
   network: 'Network rack',
@@ -12,10 +12,19 @@ export const RACK_KINDS: Record<RackKind, string> = {
   mgx: 'MGX rack',
   orv3: 'ORv3 rack',
   orw: 'ORW rack',
+  power: 'Power rack',
+  cdu: 'CDU rack',
   custom: 'Custom',
 };
 
 import type { HasProperties } from '../properties/types';
+
+/** What a rack does in the DC: IT (draws power, makes heat) or infrastructure serving neighbouring IT racks. */
+export type RackRole = 'it' | 'power' | 'cdu';
+
+export function rackRole(kind: RackKind): RackRole {
+  return kind === 'power' ? 'power' : kind === 'cdu' ? 'cdu' : 'it';
+}
 
 export interface RackTemplate extends CatalogItem, HasProperties {
   schema?: typeof RACK_SCHEMA;

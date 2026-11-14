@@ -35,6 +35,14 @@ Defaults by rack kind (built-in templates follow these):
 |---|---|
 | `network` | each side: PDU bay (100 mm, 1 slot, next to the body) + sidepod (300 mm, 1 slot, outside) |
 | `server`, `mgx`, `orv3`, `orw` | none |
+| `power`, `cdu` | none |
+
+**Power and CDU racks** (`kind: power` / `cdu`) are infrastructure racks: they serve neighbouring IT racks in
+DC Layout instead of drawing an IT load. Each has its own size, footprint and frame weight. A sidecar whose
+enclosure *is* the device (in-row CDU) sets frame weight, load limit and power rating to **0** — "not rated";
+the full-height device carries weight and power. Built-ins: **Power Rack 48RU** (`power-rack-48ru`, MGX frame;
+holds power shelves + BBU shelves) and **CDU Sidecar Rack** (`cdu-rack-sidecar`, 40U, 1 tile; holds one
+full-height CDU).
 | `mgx` variant **MGX Rack 48RU (PDU+SidePods)** | same side elements as `network` (PDU bay + sidepod each side, 3 tiles wide); listed under MGX |
 
 Network racks are 600 mm wide. **PDU bays sit inside the rack enclosure** (between the rails and the side

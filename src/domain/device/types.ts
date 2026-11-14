@@ -14,6 +14,7 @@ export type DeviceCategory =
   | 'tester'
   | 'console-server'
   | 'cdu'
+  | 'bbu'
   | 'other'
   | 'blanking-panel'
   | 'stiffener'
@@ -108,6 +109,10 @@ export interface DeviceDefinition extends CatalogItem {
   ports: PortGroup[];
   breakoutProfiles: BreakoutProfile[];
   notes?: string;
+  /** CDUs: cooling capacity (kW of heat removed) and pump draw (W, added to the device's power). */
+  cooling?: { capacityKw: number; pumpW: number };
+  /** BBU shelves: backup power capacity (kW). */
+  bbu?: { capacityKw: number };
   /** Height is chosen per placement (1..n units in the rack's unit system); `height` is the default size. Defaults per category (fillers). */
   resizable?: boolean;
 }
