@@ -23,7 +23,7 @@
       "side": "left",
       "widthMm": 100,
       "depthMm": 1200,
-      "slots": 2,
+      "slots": 1,
       "weightKg": 5
     },
     {
@@ -33,7 +33,7 @@
       "side": "left",
       "widthMm": 300,
       "depthMm": 1200,
-      "slots": 2,
+      "slots": 1,
       "weightKg": 40
     },
     {
@@ -43,7 +43,7 @@
       "side": "right",
       "widthMm": 100,
       "depthMm": 1200,
-      "slots": 2,
+      "slots": 1,
       "weightKg": 5
     },
     {
@@ -53,7 +53,7 @@
       "side": "right",
       "widthMm": 300,
       "depthMm": 1200,
-      "slots": 2,
+      "slots": 1,
       "weightKg": 40
     }
   ]

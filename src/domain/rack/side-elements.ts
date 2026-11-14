@@ -32,11 +32,11 @@ export interface SideKindTraits {
 export const SIDE_KINDS: Record<SideElementKind, SideKindTraits> = {
   sidepod: {
     label: 'Sidepod', dashed: true, hatched: false, accepts: () => true, priority: 3,
-    defaults: { widthMm: 300, slots: 2, weightKg: 40 },
+    defaults: { widthMm: 300, slots: 1, weightKg: 40 },
   },
   'pdu-bay': {
     label: 'PDU bay', dashed: false, hatched: false, accepts: (d) => d.category === 'pdu', priority: 1,
-    defaults: { widthMm: 100, slots: 2, weightKg: 5 },
+    defaults: { widthMm: 100, slots: 1, weightKg: 5 },
   },
   'cable-manager': {
     label: 'Cable manager', dashed: false, hatched: true, accepts: () => false, priority: 9,

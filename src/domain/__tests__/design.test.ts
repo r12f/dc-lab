@@ -34,13 +34,13 @@ describe('rack design', () => {
     expect(placementProblem(lib, design, d, { kind: 'rack', position: 42, face: 'front' })).toMatch(/Does not fit/);
   });
   it('defaults zero-U devices to a free side slot', () => {
-    expect(defaultMount(lib, design, lib.devices.get(pdu.id)!)).toEqual({ kind: 'side', elementId: 'pdu-bay-l', slot: 2 });
+    expect(defaultMount(lib, design, lib.devices.get(pdu.id)!)).toEqual({ kind: 'side', elementId: 'pdu-bay-r', slot: 1 });
   });
   it('rejects occupied and missing side slots', () => {
     const s = lib.devices.get(sw.id)!;
     expect(placementProblem(lib, design, s, { kind: 'side', elementId: 'pdu-bay-l', slot: 1 })).toMatch(/does not accept/);
     expect(placementProblem(lib, design, lib.devices.get(pdu.id)!, { kind: 'side', elementId: 'pdu-bay-l', slot: 1 })).toMatch(/occupied/);
-    expect(placementProblem(lib, design, s, { kind: 'side', elementId: 'sidepod-r', slot: 3 })).toMatch(/no slot/);
+    expect(placementProblem(lib, design, s, { kind: 'side', elementId: 'sidepod-r', slot: 2 })).toMatch(/no slot/);
   });
   it('sums power including optics', () => {
     const m = computeRackMetrics(lib, design);

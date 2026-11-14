@@ -33,7 +33,7 @@ Defaults by rack kind (built-in templates follow these):
 
 | Rack kind | Side elements |
 |---|---|
-| `network` | each side: PDU bay (100 mm, next to the body) + sidepod (300 mm, outside) |
+| `network` | each side: PDU bay (100 mm, 1 slot, next to the body) + sidepod (300 mm, 1 slot, outside) |
 | `server`, `mgx`, `orv3`, `orw` | none |
 
 `footprintTiles.wide` of built-in network racks covers body + side elements (600 + 2×400 mm → 3 tiles).
