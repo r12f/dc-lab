@@ -8,14 +8,14 @@ export function downloadText(filename: string, text: string, mime = 'application
 }
 
 /** Opens a file picker and resolves with the chosen file's text. */
-export function pickTextFile(accept = '.json'): Promise<string | undefined> {
+export function pickTextFile(accept = '.json'): Promise<{ name: string; text: string } | undefined> {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = accept;
     input.onchange = () => {
       const file = input.files?.[0];
-      if (file) void file.text().then(resolve);
+      if (file) void file.text().then((text) => resolve({ name: file.name, text }));
       else resolve(undefined);
     };
     input.click();

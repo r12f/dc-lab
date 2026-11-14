@@ -1,34 +1,41 @@
+import { useEffect } from 'react';
 import { useAppStore } from '../state/store';
-import { emptyProject } from '../domain/project/types';
-import { parseProjectFile, serializeProject } from '../domain/project/serializer';
-import { slugify } from '../domain/ids';
-import { downloadText, pickTextFile } from '../io/download';
 import { Button } from '../ui/Button';
+import { useProjectFile } from './useProjectFile';
 
-/** New / Open / Import / Save for the single-file project. */
+/** Project name, bound file, and New / Open / Import / Save / Save As. */
 export function ProjectMenu() {
-  const project = useAppStore((s) => s.project);
-  const setProject = useAppStore((s) => s.setProject);
-  const importProject = useAppStore((s) => s.importProject);
+  const name = useAppStore((s) => s.project.name);
   const renameProject = useAppStore((s) => s.renameProject);
+  const pf = useProjectFile();
 
-  const load = async (apply: (p: ReturnType<typeof parseProjectFile>) => void) => {
-    const text = await pickTextFile();
-    if (!text) return;
-    try {
-      apply(parseProjectFile(text));
-    } catch (e) {
-      alert(`Could not read file: ${(e as Error).message}`);
-    }
-  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === 's') {
+        e.preventDefault();
+        void (e.shiftKey ? pf.saveAs() : pf.save());
+      } else if (k === 'o') {
+        e.preventDefault();
+        void pf.open();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   return (
     <div className="project-menu">
-      <input className="project-name" value={project.name} onChange={(e) => renameProject(e.target.value)} title="Project name" />
-      <Button onClick={() => confirm('Discard the current project?') && setProject(emptyProject())}>New</Button>
-      <Button onClick={() => void load(setProject)} title="Replace the current project">Open</Button>
-      <Button onClick={() => void load(importProject)} title="Merge a project or single device/rack file">Import</Button>
-      <Button variant="primary" onClick={() => downloadText(`${slugify(project.name)}.dclab.json`, serializeProject(project))}>Save</Button>
+      <input className="project-name" value={name} onChange={(e) => renameProject(e.target.value)} title="Project name" />
+      <span className="file-name" title={pf.file ? 'Save writes to this file' : 'Not saved to a file yet'}>
+        {`${pf.file?.name ?? 'unsaved'}${pf.dirty ? ' •' : ''}`}
+      </span>
+      <Button onClick={pf.newProject}>New</Button>
+      <Button onClick={() => void pf.open()} title="Open a project file (Ctrl+O)">Open</Button>
+      <Button onClick={() => void pf.importFile()} title="Merge a project or single device/rack file">Import</Button>
+      <Button variant="primary" onClick={() => void pf.save()} title="Save (Ctrl+S)">Save</Button>
+      <Button onClick={() => void pf.saveAs()} title="Save As (Ctrl+Shift+S)">Save As</Button>
     </div>
   );
 }

@@ -3,12 +3,13 @@ import { persist } from 'zustand/middleware';
 import { createProjectSlice, type ProjectSlice } from './projectSlice';
 import { normalizeProject } from '../domain/project/serializer';
 import { createUiSlice, type UiSlice } from './uiSlice';
+import { createFileSlice, type FileSlice } from './fileSlice';
 
-export type AppState = ProjectSlice & UiSlice;
+export type AppState = ProjectSlice & UiSlice & FileSlice;
 
 export const useAppStore = create<AppState>()(
   persist(
-    (...a) => ({ ...createProjectSlice(...a), ...createUiSlice(...a) }),
+    (...a) => ({ ...createProjectSlice(...a), ...createUiSlice(...a), ...createFileSlice(...a) }),
     {
       name: 'dc-lab:autosave',
       version: 2,
