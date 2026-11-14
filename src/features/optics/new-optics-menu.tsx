@@ -1,3 +1,4 @@
+import { FloatingMenu } from '../../ui/floating-menu';
 import type { CatalogItem } from '../../domain/catalog-item';
 import { newCable, newOptic } from '../../domain/optics/factory';
 import type { OpticsCatalog } from './catalog-ref';
@@ -19,13 +20,13 @@ const CHOICES: Choice[] = [
 /** Picker opened by "+ New". */
 export function NewOpticsMenu({ onPick, onClose }: { onPick(c: Choice): void; onClose(): void }) {
   return (
-    <div className="menu" onMouseLeave={onClose}>
+    <FloatingMenu onClose={onClose}>
       {CHOICES.map((c) => (
         <div key={c.label} className="menu-item" onClick={() => { onPick(c); onClose(); }}>
           {c.label}
           <small>{c.description}</small>
         </div>
       ))}
-    </div>
+    </FloatingMenu>
   );
 }

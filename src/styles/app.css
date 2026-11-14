@@ -97,8 +97,10 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .caret { width: 10px; color: var(--muted); font-size: 10px; }
 .sidebar-filter { padding: 6px 12px; border-bottom: 1px solid var(--border); }
 .pad { padding: 0 12px; }
-.menu { margin: 0 8px 8px; background: var(--panel); border: 1px solid var(--dialog-border);
-  border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.25); padding: 4px; color: var(--dialog-text); }
+/* Floats over the list (anchored under the sidebar header) instead of pushing it down. */
+.menu { position: absolute; top: 44px; left: 8px; right: 8px; z-index: 20; max-height: calc(100% - 52px); overflow: auto;
+  background: var(--panel); border: 1px solid var(--dialog-border);
+  border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.3); padding: 4px; color: var(--dialog-text); }
 .menu-item { padding: 6px 8px; border-radius: 4px; cursor: pointer; }
 .menu-item:hover { background: var(--dialog-selected-bg); color: var(--dialog-selected-fg); }
 .menu-item small { display: block; color: var(--dialog-muted); }
