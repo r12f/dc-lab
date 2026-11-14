@@ -12,6 +12,8 @@ import { DEVICE_DRAG_TYPE } from './DevicePalette';
 import { PlacedDevice, placementRect } from './PlacedDevice';
 import { mountAt } from './mountAt';
 import { paint } from '../../theme/paint';
+import { routeCables } from './cableRoutes';
+import { CableRoutesDrawing } from './CableRoutesDrawing';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -20,6 +22,8 @@ interface Props {
   face: PortFace;
   selectedId?: string;
   onSelect(id: string | undefined): void;
+  selectedCableId?: string;
+  onSelectCable(id: string | undefined): void;
   onDropDevice(deviceId: string, mount: Mount): void;
   onMove(placementId: string, mount: Mount): void;
 }
@@ -38,7 +42,7 @@ interface DragState {
  * Rack elevation canvas. Palette devices are dropped via HTML drag-and-drop;
  * placed devices are moved with pointer events (SVG has no native drag).
  */
-export function RackElevation({ ref, lib, design, face, selectedId, onSelect, onDropDevice, onMove }: Props) {
+export function RackElevation({ ref, lib, design, face, selectedId, onSelect, selectedCableId, onSelectCable, onDropDevice, onMove }: Props) {
   const [drag, setDrag] = useState<DragState>();
   const rack = lib.racks.get(design.templateId);
   if (!rack) return <p className="muted">Unknown rack template {design.templateId}</p>;
@@ -109,7 +113,7 @@ export function RackElevation({ ref, lib, design, face, selectedId, onSelect, on
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >
-      <rect x={-10} y={-10} width={geo.width + 20} height={geo.height + 20} fill={paint.paper} onPointerDown={() => onSelect(undefined)} />
+      <rect x={-10} y={-10} width={geo.width + 20} height={geo.height + 20} fill={paint.paper} onPointerDown={() => { onSelect(undefined); onSelectCable(undefined); }} />
       <RackFrame
         rack={rack}
         geo={geo}
@@ -125,6 +129,7 @@ export function RackElevation({ ref, lib, design, face, selectedId, onSelect, on
               selected={p.id === selectedId} onPointerDown={startDrag(p.id)} />
           ) : null;
         })}
+        <CableRoutesDrawing lib={lib} routes={routeCables(lib, design, rack, geo)} selectedId={selectedCableId} onSelect={onSelectCable} />
         {preview?.kind === 'rack' && (
           <rect data-export="skip" x={geo.originX + geo.railW} y={unitTopY(geo, rack, preview.position)}
             width={geo.bodyW} height={geo.unitPx} fill="none" stroke={paint.selection} strokeWidth={2} pointerEvents="none" />

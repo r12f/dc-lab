@@ -11,8 +11,11 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
     (slot in a rack side element, 1 = top)
   - `breakoutProfileId` — one of the device's profiles (optional); supplies default mode/optic/cable per port
   - `portSettings[portRef]` / `groupSettings[groupId]` — instance `{ mode, opticId, cableId }` overriding the profile
-- `cables[]` — in-rack cable runs: `from`/`to` endpoints (`placementId`, `portRef`), `mediaId`,
-  `lengthM`, `quantity`.
+- `cables[]` — in-rack cable runs:
+  - `from` / `to` — start and end endpoint: `placementId` + optional `portRef` (empty = any port)
+  - `route` — `left` | `right`: which side cable channel the run uses
+  - `mediaId`, `quantity`
+  - `lengthM` — manual length; omitted = **auto** (estimated, see below)
 
 ## Rules
 
@@ -23,6 +26,19 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   Zero-U devices default to the first free accepting slot, dedicated kinds first (PDU bay, other,
   then sidepod).
 - Optic connector must match the port group connector.
+
+## In-rack cabling
+
+- **Estimated length** (auto mode): horizontal run from each endpoint to the chosen side channel
+  (half the rack body width for rack-mounted devices; for side-mounted devices the distance through the
+  side elements to the body edge, plus the full body width when they sit on the opposite side), plus the
+  vertical distance between the endpoints' heights (RU/OU centre or side-slot centre), plus 0.5 m slack;
+  rounded up to the next 0.5 m. A manual length overrides it.
+- **Drawing**: every run is drawn on the elevation as one polyline per cable: out of the start device to
+  its lane in the chosen side's rail channel, along the channel, into the end device. Each side's runs get
+  separate nested lanes (longest run outermost) so runs on one side never cross. Lines use the cable media
+  color; the selected run is highlighted; clicking a run selects it.
+- Endpoints are drawn at the device's vertical centre; port-level position is not drawn.
 
 ## Derived data (recomputed on every change)
 
@@ -40,5 +56,7 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 - Canvas: elevation (front/rear toggle) with side pods. Drag a device from the palette onto a unit or
   side slot; drag a placed device to move it; click to select.
 - Inspector tabs: **Placement** (label, position, face, profile, group optics, per-port overrides by
-  clicking ports on a faceplate preview), **Cables**, **BOM** (metrics + BOM table, CSV export).
+  clicking ports on a faceplate preview), **Cables** (start/end device + port, route left/right, media,
+  auto/manual length, quantity; selecting a device pre-fills new runs' start), **BOM** (metrics + BOM
+  table, CSV export).
 - Export SVG of the elevation.

@@ -25,12 +25,17 @@ export interface CableEndpoint {
   portRef: string;
 }
 
+export type CableRoute = 'left' | 'right';
+
 export interface CableRun {
   id: string;
   from: CableEndpoint;
   to: CableEndpoint;
+  /** Side cable channel the run uses. */
+  route: CableRoute;
   mediaId: string;
-  lengthM: number;
+  /** Manual length; undefined = auto (estimated from geometry). */
+  lengthM?: number;
   quantity: number;
 }
 

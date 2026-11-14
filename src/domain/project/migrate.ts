@@ -113,6 +113,7 @@ export function migrateProjectJson(p: Json): Json {
     rackDesigns: ((p.rackDesigns as Json[]) ?? []).map((d) => ({
       ...d,
       placements: ((d.placements as Json[]) ?? []).map(migratePlacement).map(migrateSideMount),
+      cables: ((d.cables as Json[]) ?? []).map((c) => ({ route: 'left', ...c })),
     })),
     hiddenBuiltins: p.hiddenBuiltins ?? [],
   };

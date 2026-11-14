@@ -46,8 +46,12 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
       cables: d.cables.filter((c) => c.from.placementId !== id && c.to.placementId !== id),
     }));
 
-  const addCable = (cable: Omit<CableRun, 'id'>) =>
-    mutate((d) => ({ ...d, cables: [...d.cables, { ...cable, id: uniqueId('c', d.cables.map((c) => c.id)) }] }));
+  /** Adds a run and returns its id. */
+  const addCable = (cable: Omit<CableRun, 'id'>): string => {
+    const id = uniqueId('c', design?.cables.map((c) => c.id) ?? []);
+    mutate((d) => ({ ...d, cables: [...d.cables, { ...cable, id }] }));
+    return id;
+  };
   const updateCable = (id: string, fn: (c: CableRun) => CableRun) =>
     mutate((d) => ({ ...d, cables: d.cables.map((c) => (c.id === id ? fn(c) : c)) }));
   const removeCable = (id: string) => mutate((d) => ({ ...d, cables: d.cables.filter((c) => c.id !== id) }));

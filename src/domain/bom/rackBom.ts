@@ -3,6 +3,7 @@ import type { Library } from '../library/Library';
 import type { RackDesign } from '../design/types';
 import { portItemCounts } from '../design/optics';
 import { RACK_KINDS } from '../rack/types';
+import { effectiveLengthM } from '../design/cabling';
 import { BomBuilder } from './BomBuilder';
 import type { BomLine } from './types';
 
@@ -34,9 +35,10 @@ export function buildRackBom(lib: Library, design: RackDesign): BomLine[] {
   }
   for (const c of design.cables) {
     const media = lib.cableMedia.get(c.mediaId);
-    bom.add({ key: `cable:${c.mediaId}:${c.lengthM}`, kind: 'cable', item: `${media?.name ?? c.mediaId} ${c.lengthM} m`,
+    const len = effectiveLengthM(lib, design, c);
+    bom.add({ key: `cable:${c.mediaId}:${len}`, kind: 'cable', item: `${media?.name ?? c.mediaId} ${len} m`,
       category: 'Cable', vendorModel: media?.connector ?? '', qty: c.quantity, unitW: 0,
-      lengthM: c.lengthM * c.quantity, notes: [] });
+      lengthM: len * c.quantity, notes: [] });
   }
   return bom.build();
 }

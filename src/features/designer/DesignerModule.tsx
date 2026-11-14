@@ -13,7 +13,7 @@ import { Button } from '../../ui/Button';
 import { NewDesignForm } from './NewDesignForm';
 import { DevicePalette } from './DevicePalette';
 import { RackElevation } from './RackElevation';
-import { DesignInspector } from './DesignInspector';
+import { DesignInspector, type InspectorTab } from './DesignInspector';
 import { useDesignEditor } from './useDesignEditor';
 
 export function DesignerModule() {
@@ -26,6 +26,8 @@ export function DesignerModule() {
   const [creating, setCreating] = useState(false);
   const [face, setFace] = useState<PortFace>('front');
   const [placementId, setPlacementId] = useState<string>();
+  const [cableId, setCableId] = useState<string>();
+  const [tab, setTab] = useState<InspectorTab>('summary');
   const [message, setMessage] = useState<string>();
 
   const design = designs.find((d) => d.id === selectedId);
@@ -99,7 +101,9 @@ export function DesignerModule() {
                 design={design}
                 face={face}
                 selectedId={placementId}
-                onSelect={setPlacementId}
+                onSelect={(id) => { setPlacementId(id); if (id) setCableId(undefined); }}
+                selectedCableId={cableId}
+                onSelectCable={(id) => { setCableId(id); if (id) { setPlacementId(undefined); setTab('cables'); } }}
                 onDropDevice={(deviceId, mount) => {
                   const r = editor.addDevice(deviceId, mount);
                   report(r.error);
@@ -116,7 +120,8 @@ export function DesignerModule() {
       inspector={
         design && (
           <DesignInspector lib={lib} design={design} editor={editor} placementId={placementId}
-            onSelectPlacement={setPlacementId} />
+            onSelectPlacement={setPlacementId} tab={tab} onTabChange={setTab}
+            cableId={cableId} onSelectCable={setCableId} />
         )
       }
     />
