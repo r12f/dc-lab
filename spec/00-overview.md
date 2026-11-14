@@ -56,3 +56,8 @@ project after the unsaved-changes prompt) and binds Save to it. Browsers expose 
 the files' File System Access handles in IndexedDB (`dc-lab` / `recent-files`); the browser asks for read
 permission once per session. A file that no longer exists is dropped from the list. Chromium only (the caret is
 disabled elsewhere).
+
+**Save writes to the open file**: Save writes in place to the file the project was opened from / last saved to,
+no dialog; only Save As (or a project never saved to a file) asks for a file. The bound file survives a reload
+(its handle is kept in IndexedDB `dc-lab` / `recent-files`, key `current`), so Save after a reload still writes
+to it (the browser may ask once for write permission). New clears the binding.
