@@ -49,3 +49,10 @@ while hidden.
 drawing color — ports, roles, phases, cables, aisles, trays, facilities, infra racks — uses those hues (hot aisles
 are violet, power items slate). Enforced by `no-alert-colors.test.ts` over drawing sources and the cable catalog.
 Ports carry no color bar: index, form factor + breakout, connector / reach cells only.
+
+**Recent files**: **Import ▾** — the caret next to Import lists recently opened / saved local project files
+(newest first, up to 10, with last-used time; "Clear list"). Picking one **opens** it (replaces the current
+project after the unsaved-changes prompt) and binds Save to it. Browsers expose no file path, so the list keeps
+the files' File System Access handles in IndexedDB (`dc-lab` / `recent-files`); the browser asks for read
+permission once per session. A file that no longer exists is dropped from the list. Chromium only (the caret is
+disabled elsewhere).

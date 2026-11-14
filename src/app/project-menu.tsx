@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useAppStore } from '../state/store';
 import { Button } from '../ui/button';
 import { useProjectFile } from './use-project-file';
+import { RecentFilesMenu } from './recent-files-menu';
 
 /** Project name, bound file, and New / Open / Import / Save / Save As. */
 export function ProjectMenu() {
@@ -33,7 +34,10 @@ export function ProjectMenu() {
       </span>
       <Button onClick={pf.newProject}>New</Button>
       <Button onClick={() => void pf.open()} title="Open a project file (Ctrl+O)">Open</Button>
-      <Button onClick={() => void pf.importFile()} title="Merge a project or single device/rack file">Import</Button>
+      <span className="split-btn">
+        <Button onClick={() => void pf.importFile()} title="Merge a project or single device/rack file">Import</Button>
+        <RecentFilesMenu onOpen={(h) => void pf.openRecent(h)} />
+      </span>
       <Button variant="primary" onClick={() => void pf.save()} title="Save (Ctrl+S)">Save</Button>
       <Button onClick={() => void pf.saveAs()} title="Save As (Ctrl+Shift+S)">Save As</Button>
     </div>
