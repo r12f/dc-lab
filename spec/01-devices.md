@@ -185,3 +185,7 @@ Drawing strategy is selected by device shape:
 - Inspector: general fields, custom properties (editable on built-ins too; manage definitions inline), PSU / PDU input, port group editor (role, bank, phase), breakout profile
   editor (group default and selected-ports setting: mode, optic, cable).
 - Export SVG of the drawing; export device JSON.
+
+**Port glyph (Devices canvas)**: line 1 the port number; line 2 form factor + breakout ("OSFP 8x100G"); then one
+cell per cable connector side by side, each connector type over the leg's reach — a 2xDR4 module shows
+"MPO-12 | MPO-12" over "DR4 | DR4". Empty cages / DAC show the reach only.
