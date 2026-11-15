@@ -24,9 +24,6 @@ export interface FloorPlan {
   blocks: { y: number; depthMm: number }[];
 }
 
-/** Room left south of a cross aisle for the next block's row headers (drawn above each row, as north of the first block). */
-export const ROW_HEADER_MM = 1040;
-
 const rowWidth = (r: Row) => r.tileDepthMm;
 const rowLength = (r: Row) => r.tileCount * r.tileWidthMm;
 
@@ -34,7 +31,8 @@ const rowLength = (r: Row) => r.tileCount * r.tileWidthMm;
  * Packs the sequence into the rack area. Cross aisles split it into **row blocks** stacked north to south: inside a
  * block, rows and aisles pack edge to edge from the west edge; a block is as deep as its longest row (the last block
  * reaches down to the rack area's south edge) and its aisles span that depth. A cross aisle spans the rack area's
- * width, `widthMm` north–south, between two blocks; the next block starts `ROW_HEADER_MM` south of it (its headers).
+ * width, `widthMm` north–south, between two blocks; the next block starts right below it. Row labels take no floor
+ * space: they are drawn over whatever is north of the row (the cross aisle).
  */
 export function computeFloorPlan(l: DcLayout): FloorPlan {
   const ws = l.whitespace;
@@ -67,7 +65,7 @@ export function computeFloorPlan(l: DcLayout): FloorPlan {
     if (!last) {
       const c = aisles.get(crosses[i])!;
       bands.push({ kind: 'aisle', id: c.id, block: i, cross: true, rect: { x: ws.x, y, widthMm: ws.widthMm, depthMm: c.widthMm } });
-      y += c.widthMm + ROW_HEADER_MM;
+      y += c.widthMm;
     }
   });
   return { bands, rects: new Map(bands.map((b) => [b.id, b.rect])), usedWidthMm, usedDepthMm: y - ws.y, blocks };

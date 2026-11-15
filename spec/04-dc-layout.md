@@ -40,8 +40,8 @@ south (down), units are millimetres.
   a block, rows and aisles are packed edge to edge from the west edge in `sequence` order; a row's band is
   `tileDepthMm` wide, an aisle's `widthMm`. A row is `tileCount × tileWidthMm` long; a block is as deep as its
   longest row (the last block reaches down to the rack area's south edge, or its longest row) and its aisles span
-  that depth. A cross aisle spans the rack area's width; the next block starts below it plus room for its row
-  headers (1040 mm).
+  that depth. A cross aisle spans the rack area's width; the next block starts right below it. Row labels take no
+  floor space: a block's row headers are drawn over the cross aisle north of it.
 - A cross aisle is never a row's rear (hot) aisle for cooling loads; the hot-aisle lists leave cross aisles out.
 - New rows and aisles are appended at the east end of the sequence, so adding row, aisle, row… builds a
   hot/cold aisle sequence. A new tray goes over the selected aisle, else the first aisle.

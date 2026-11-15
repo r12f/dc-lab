@@ -5,7 +5,7 @@ import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import { newDesign } from '../design/factory';
 import { newAisle, newCrossAisle, newFloatingTray, newLayout, newRow, newTray } from '../layout/factory';
 import { addFloatingTray, insertAnchor } from '../layout/insert';
-import { computeFloorPlan, floorWarnings, nearestBand, reorderTo, ROW_HEADER_MM, trayRect } from '../layout/floor-plan';
+import { computeFloorPlan, floorWarnings, nearestBand, reorderTo, trayRect } from '../layout/floor-plan';
 import { changeDesigns, moveAssignments } from '../layout/move';
 import { rowHotAisle } from '../layout/facility-load';
 import { normalizeProject } from '../project/serializer';
@@ -39,8 +39,8 @@ describe('row blocks (rows of rows) split by cross aisles', () => {
     const l = sample();
     const p = computeFloorPlan(l);
     const ws = l.whitespace;
-    // Block 2 starts below the cross aisle plus room for its row headers; the last block fills the rack area.
-    const y2 = ws.y + 6000 + 1800 + ROW_HEADER_MM;
+    // Block 2 starts right below the cross aisle (row labels take no space); the last block fills the rack area.
+    const y2 = ws.y + 6000 + 1800;
     expect(p.blocks).toEqual([{ y: ws.y, depthMm: 6000 }, { y: y2, depthMm: Math.max(6000, ws.y + ws.depthMm - y2) }]);
     expect(p.rects.get('x1')).toEqual({ x: ws.x, y: ws.y + 6000, widthMm: ws.widthMm, depthMm: 1800 });
     expect(p.rects.get('r3')).toMatchObject({ x: ws.x, y: y2 });
@@ -59,7 +59,7 @@ describe('row blocks (rows of rows) split by cross aisles', () => {
   });
   it('blocks deeper than the rack area are a warning', () => {
     const l = { ...sample(), whitespace: { ...sample().whitespace, depthMm: 9000 } };
-    expect(floorWarnings(l)).toContain(`Row blocks and cross aisles need ${13800 + ROW_HEADER_MM} mm; rack area is 9000 mm deep`);
+    expect(floorWarnings(l)).toContain('Row blocks and cross aisles need 13800 mm; rack area is 9000 mm deep');
   });
 });
 
