@@ -27,6 +27,19 @@ export function powerInletGroup(device: DeviceDefinition): PortGroup | undefined
   return { id: PSU_GROUP_ID, label: 'PSU', role: 'inlet', formFactor: p.inlet, count: p.count, speedGbps: 0, lanes: 0, face: 'rear', rows: 1, breakoutModes: [] };
 }
 
+/** Grid cell (column, row) of the i-th port (0-based) of a group: column-major over `rows`, skipping `holes`. */
+export function portCell(g: PortGroup, i: number, rows = Math.max(1, g.rows)): { col: number; row: number } {
+  const holes = new Set(g.holes ?? []);
+  let cell = -1;
+  for (let n = 0; n <= i; n++) do cell++; while (holes.has(cell));
+  return { col: Math.floor(cell / rows), row: cell % rows };
+}
+
+/** Number of grid columns a group spans (holes included). */
+export function groupCols(g: PortGroup, rows = Math.max(1, g.rows)): number {
+  return g.count ? portCell(g, g.count - 1, rows).col + 1 : 0;
+}
+
 export function findGroup(device: DeviceDefinition, groupId: string): PortGroup | undefined {
   return device.ports.find((g) => g.id === groupId) ?? (groupId === PSU_GROUP_ID ? powerInletGroup(device) : undefined);
 }

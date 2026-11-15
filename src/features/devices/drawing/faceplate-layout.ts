@@ -1,5 +1,5 @@
 import type { DeviceDefinition, PortFace, PortGroup } from '../../../domain/device/types';
-import { formatPortRef, groupsOnFace } from '../../../domain/device/ports';
+import { formatPortRef, groupCols, groupsOnFace, portCell } from '../../../domain/device/ports';
 import { groupTitle } from './group-title';
 
 export interface Box {
@@ -50,12 +50,13 @@ function layoutPorts(device: DeviceDefinition, face: PortFace, x0: number) {
   let bottom = 0;
   for (const g of groupsOnFace(device, face)) {
     const rows = Math.max(1, g.rows);
-    const cols = Math.ceil(g.count / rows);
+    const cols = groupCols(g, rows);
     const { w, h } = portSize(g);
     const y0 = PORT.pad + PORT.label;
     labels.push({ group: g, x, y: y0 - 6 });
     for (let i = 0; i < g.count; i++) {
-      const box = { x: x + Math.floor(i / rows) * (w + PORT.gap), y: y0 + (i % rows) * (h + PORT.gap), w, h };
+      const { col, row } = portCell(g, i, rows);
+      const box = { x: x + col * (w + PORT.gap), y: y0 + row * (h + PORT.gap), w, h };
       ports.push({ ...box, ref: formatPortRef({ groupId: g.id, index: i + 1 }), group: g, index: i + 1 });
       bottom = Math.max(bottom, box.y + h);
     }

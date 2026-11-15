@@ -69,6 +69,11 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
         <NumberField label="Rows" value={group.rows} min={1} onChange={(rows) => set({ rows })} />
         <NumberField label="Lanes" value={group.lanes} min={1} onChange={(lanes) => set({ lanes })} />
       </div>
+      <TextField label="Empty cells (column-major grid indices, e.g. 2, 3, 4, 5)" value={(group.holes ?? []).join(', ')}
+        onChange={(v) => {
+          const holes = v.split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n >= 0);
+          set({ holes: holes.length ? holes : undefined });
+        }} />
       {pluggable && formFactorSpec(group.formFactor).kind === 'cage' && (
         <SelectField<HeatSink> label="Heat sink (module must match)" value={heatSinkOf(group)}
           options={HEAT_SINKS.map((h) => ({ value: h, label: h === 'IHS' ? 'IHS (integrated)' : 'RHS (riding / cold plate)' }))}

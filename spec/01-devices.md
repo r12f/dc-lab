@@ -212,3 +212,9 @@ sink) or **RHS** (riding heat sink / cold plate on the host); unset = RHS. A cag
 heat sink; IHS and RHS never mix. Set per port group in the port group editor (cages only) and shown in the
 group summary and port tooltip. Built-ins: 64x800G OSFP switch and both OSFP testers are IHS; the liquid-cooled
 64x1.6T OSFP LC switch is RHS; all QSFP / SFP cages are RHS.
+
+**Empty grid cells (`holes`)**: a port group may list grid cells (column-major indices over its `rows`) left
+empty; ports fill the remaining cells in order. Used for modules whose faceplate is not a full grid — e.g. a
+fiber-housing module with one 2x MMC slot top-left and a 3x3 block beside it (6 rows, holes 2-5: ports 1-2 the
+single slot, 3-20 the block). Edited as "Empty cells" in the port group editor; Devices canvas and Rack
+Designer cabling view both honour it.

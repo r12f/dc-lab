@@ -45,6 +45,11 @@ export interface PortGroup {
   rows: number;
   /** Allowed breakout modes, e.g. "4x200G". Native "1x<speed>G" is implicit. */
   breakoutModes: string[];
+  /**
+   * Empty grid cells: indices (column-major over `rows`) left blank, so ports skip them — e.g. a module with one
+   * slot top-left and a 3x3 block beside it. Ports fill the remaining cells in order.
+   */
+  holes?: number[];
   /** Pluggable cages: module heat sink the cage takes (IHS or RHS, not interchangeable); unset = RHS. */
   heatSink?: HeatSink;
   /** Fiber ports driven by co-packaged / near-packaged optics. */
