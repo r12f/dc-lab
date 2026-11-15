@@ -5,6 +5,16 @@ import type { RackGeometry } from '../../drawing/rack-geometry';
 import { placementRect } from './placed-device';
 import { sizedDevice } from '../../domain/design/sizing';
 
+/** Lane pitch in the cable channel: at most LANE_MAX, at least LANE_MIN (the channel widens to keep it). */
+export const LANE_MAX = 6;
+export const LANE_MIN = 2.5;
+
+/** Channel width that keeps every lane at least LANE_MIN apart: the larger side's run count decides. */
+export function cableGutter(design: RackDesign, base: number): number {
+  const n = Math.max(...(['left', 'right'] as const).map((s) => design.cables.filter((c) => c.route === s).length), 0);
+  return Math.max(base, 10 + n * LANE_MIN);
+}
+
 export interface RoutedCable {
   run: CableRun;
   /** Spine in the lane first, then one stub per endpoint (A ends, then B ends). */
@@ -50,7 +60,7 @@ export function routeCables(lib: Library, design: RackDesign, rack: RackTemplate
   for (const side of ['left', 'right'] as const) {
     const runs = ends.filter((x) => x.run.route === side).sort((a, b) => a.span - b.span); // shortest = innermost
     const room = Math.max(6, geo.gutter - 6);
-    const step = Math.min(6, room / Math.max(1, runs.length));
+    const step = Math.min(LANE_MAX, room / Math.max(1, runs.length));
     // Outer edge of the frame (outside the rails and their unit numbers).
     const frameEdge = side === 'left' ? geo.originX : geo.originX + geo.railW * 2 + geo.bodyW;
     runs.forEach(({ run, ss, es }, i) => {

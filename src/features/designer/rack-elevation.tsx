@@ -15,7 +15,7 @@ import { placementProblem } from '../../domain/design/placement';
 import { PlacedDevice, placementRect } from './placed-device';
 import { mountAt } from './mount-at';
 import { paint } from '../../theme/paint';
-import { routeCables } from './cable-routes';
+import { cableGutter, routeCables } from './cable-routes';
 import { CableRoutesDrawing } from './cable-routes-drawing';
 import { placedDevice } from '../../domain/design/sizing';
 
@@ -58,7 +58,8 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
   const rack = lib.racks.get(design.templateId);
   if (!rack) return <p className="muted">Unknown rack template {design.templateId}</p>;
   // Cable channels outside the rails on both sides, so runs never cover the unit numbers.
-  const geo = rackGeometry(rack, CABLE_GUTTER);
+  // The channels widen with the run count so every run keeps its own lane.
+  const geo = rackGeometry(rack, cableGutter(design, CABLE_GUTTER));
   const metrics = computeRackMetrics(lib, design);
   const issues = designIssues(lib, design);
   const visibleOn = (face: PortFace) => design.placements.filter((p) => {

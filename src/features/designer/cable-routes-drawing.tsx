@@ -18,7 +18,7 @@ function runPath(paths: [number, number][][]): string {
 }
 
 /** End dots of a run as one path of small circles. */
-function dotsPath(ends: [number, number][], r = 3.5): string {
+function dotsPath(ends: [number, number][], r = 2.2): string {
   return ends.map(([x, y]) => `M${x - r},${y}a${r},${r} 0 1 0 ${2 * r},0a${r},${r} 0 1 0 ${-2 * r},0`).join('');
 }
 
@@ -45,20 +45,28 @@ export const CableRoutesDrawing = memo(function CableRoutesDrawing({ lib, routes
   // The selected run is drawn last in every layer (on top).
   return (
     <g>
+      {/* Thin lines so neighbouring lanes stay apart. Only a selected or faulty run gets a casing. Dimmed runs
+          (another run selected) are drawn in a faint neutral close to the paper, not in their colour. */}
       <g pointerEvents="none">
-        {runs.map((r) => (
-          <path key={r.run.id} d={r.d} fill="none" stroke={r.sel ? paint.selection : r.bad ? paint.danger : '#0f172a'}
-            strokeWidth={r.sel ? 7 : r.bad ? 6 : 4.5} strokeLinejoin="round" strokeOpacity={r.dim ? 0.15 : 1} />
+        {runs.filter((r) => r.sel || r.bad).map((r) => (
+          <path key={r.run.id} d={r.d} fill="none" stroke={r.sel ? paint.selection : paint.danger}
+            strokeWidth={r.sel ? 5 : 3} strokeLinejoin="round" strokeOpacity={r.dim ? 0.25 : 1} />
         ))}
       </g>
       <g pointerEvents="none">
-        {runs.map((r) => <path key={r.run.id} d={r.d} fill="none" stroke={r.color} strokeWidth={r.sel ? 3.5 : 2.5} strokeLinejoin="round" strokeOpacity={r.dim ? 0.15 : 1} />)}
-        {runs.map((r) => <path key={`e${r.run.id}`} d={r.dots} fill={r.color} stroke={paint.ink} strokeWidth={0.5} opacity={r.dim ? 0.15 : 1} />)}
+        {runs.map((r) => (
+          <path key={r.run.id} d={r.d} fill="none" stroke={r.dim ? paint.inkMuted : r.color} strokeLinejoin="round"
+            strokeWidth={r.sel ? 2.5 : 1.25} strokeOpacity={r.dim ? 0.12 : 1} />
+        ))}
+        {runs.map((r) => (
+          <path key={`e${r.run.id}`} d={r.dots} fill={r.dim ? paint.inkMuted : r.color} opacity={r.dim ? 0.12 : 1}
+            stroke={r.dim ? 'none' : paint.ink} strokeWidth={0.4} />
+        ))}
       </g>
       {/* Hit targets on top: wide transparent strokes, one per run. */}
       <g style={{ cursor: 'pointer' }}>
         {runs.map((r) => (
-          <path key={r.run.id} d={r.d} fill="none" stroke="transparent" strokeWidth={8}
+          <path key={r.run.id} d={r.d} fill="none" stroke="transparent" strokeWidth={3}
             onPointerDown={(e) => { e.stopPropagation(); onSelect(r.run.id); }}>
             <title>{`${r.media?.name ?? r.run.mediaId} ×${r.run.quantity} · ${r.run.route} side · ${r.run.from.length} A / ${r.run.to.length} B`}</title>
           </path>

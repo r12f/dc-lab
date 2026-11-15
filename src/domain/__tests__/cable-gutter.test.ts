@@ -5,7 +5,7 @@ import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import { newDesign } from '../design/factory';
 import { newPlacement } from '../design/placement';
 import { rackGeometry } from '../../drawing/rack-geometry';
-import { routeCables } from '../../features/designer/cable-routes';
+import { cableGutter, LANE_MIN, routeCables } from '../../features/designer/cable-routes';
 
 const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
 
@@ -28,5 +28,19 @@ describe('elevation cable lanes', () => {
     // Side elements moved out by the gutter.
     const plain = rackGeometry(rack);
     expect(geo.width - plain.width).toBe(68);
+  });
+  it('the channel widens with the run count so lanes stay at least LANE_MIN apart', () => {
+    const rack = lib.racks.get('network-42ru-600')!;
+    const d = newDesign('d', 'D', rack.id);
+    d.placements.push(
+      newPlacement('a', 'switch-48x1g-mgmt', 'M1', { kind: 'rack', position: 1, face: 'front' }),
+      newPlacement('b', 'switch-48x1g-mgmt', 'M2', { kind: 'rack', position: 5, face: 'front' }),
+    );
+    for (let i = 1; i <= 40; i++) {
+      d.cables.push({ id: `c${i}`, from: [{ placementId: 'a', portRef: `rj45/${i}` }], to: [{ placementId: 'b', portRef: `rj45/${i}` }], route: 'left', mediaId: 'cat6a', quantity: 1 });
+    }
+    expect(cableGutter(d, 34)).toBeGreaterThan(34);
+    const lanes = routeCables(lib, d, rack, rackGeometry(rack, cableGutter(d, 34))).map((r) => r.paths[0][0][0]).sort((x, y) => x - y);
+    for (let i = 1; i < lanes.length; i++) expect(lanes[i] - lanes[i - 1]).toBeGreaterThanOrEqual(LANE_MIN - 1e-9);
   });
 });

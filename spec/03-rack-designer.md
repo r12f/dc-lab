@@ -44,9 +44,10 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   rounded up to the next 0.5 m. A manual length overrides it.
 - **Drawing**: every run is drawn on the elevation as one polyline per cable: out of the start device to
   its lane in the chosen side's rail channel, along the channel, into the end device. Each side's runs get
-  separate nested lanes (longest run outermost) so runs on one side never cross. Lines use the cable media
-  color over a dark casing; all casings are drawn below all lines, so a run's casing never cuts another run's
-  line where they cross; the selected run is highlighted (thicker, on top) and every other run is dimmed;
+  separate nested lanes (longest run outermost) so runs on one side never cross. Lines are thin (1.25 px) in the
+  cable media color, one lane per run at least 2.5 px apart: the side channels widen with the run count. Only
+  the selected run (selection-colored casing, thicker, on top) and faulty runs (red casing) get a casing; while
+  a run is selected every other run is drawn in a faint neutral close to the paper;
   clicking a run selects it, clicking empty space clears it.
 - Endpoints are drawn at the device's vertical centre; port-level position is not drawn. Multi-connector
   runs are drawn as one stub per endpoint joined by a spine in the run's lane.
