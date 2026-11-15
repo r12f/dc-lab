@@ -24,33 +24,43 @@ function dotsPath(ends: [number, number][], r = 3.5): string {
 
 /**
  * In-rack cable runs drawn over the elevation; selected run on top and highlighted. Each run is four paths (hit
- * target, casing, line, end dots), so racks with hundreds of runs stay fast to draw.
+ * target, casing, line, end dots), so racks with hundreds of runs stay fast to draw. Casings, lines and hit
+ * targets are separate layers so no run's casing hides another run's line.
  */
 export const CableRoutesDrawing = memo(function CableRoutesDrawing({ lib, routes, selectedId, errorIds, onSelect }: Props) {
   // SVG has no z-index: draw the selected run last.
   const ordered = [...routes].sort((a, b) => Number(a.run.id === selectedId) - Number(b.run.id === selectedId));
+  const runs = ordered.map(({ run, paths }) => {
+    const media = lib.cableMedia.get(run.mediaId);
+    return {
+      run, media, d: runPath(paths), dots: dotsPath(paths.slice(1).map((pts) => pts[0])),
+      sel: run.id === selectedId, bad: !!errorIds?.has(run.id), color: media?.color ?? paint.ink,
+    };
+  });
+  // Layers, not per run: every casing first, then every coloured line. Drawn per run, each run's dark casing
+  // covered the runs drawn before it wherever its stubs cross their spines, so lines looked broken.
+  // The selected run is drawn last in every layer (on top).
   return (
     <g>
-      {ordered.map(({ run, paths }) => {
-        const media = lib.cableMedia.get(run.mediaId);
-        const sel = run.id === selectedId;
-        const bad = !!errorIds?.has(run.id);
-        const color = media?.color ?? paint.ink;
-        const d = runPath(paths);
-        const ends = paths.slice(1).map((pts) => pts[0]);
-        return (
-          <g key={run.id} style={{ cursor: 'pointer' }} onPointerDown={(e) => { e.stopPropagation(); onSelect(run.id); }}>
-            <title>{`${media?.name ?? run.mediaId} ×${run.quantity} · ${run.route} side · ${run.from.length} A / ${run.to.length} B`}</title>
-            {/* Wide transparent stroke = easier hit target. */}
-            <path d={d} fill="none" stroke="transparent" strokeWidth={8} />
-            {/* Casing keeps any media color visible on the dark rail and on device fills. */}
-            <path d={d} fill="none" stroke={sel ? paint.selection : bad ? paint.danger : '#0f172a'}
-              strokeWidth={sel || bad ? 6 : 4.5} strokeLinejoin="round" pointerEvents="none" />
-            <path d={d} fill="none" stroke={color} strokeWidth={2.5} strokeLinejoin="round" pointerEvents="none" />
-            <path d={dotsPath(ends)} fill={color} stroke={paint.ink} strokeWidth={0.5} pointerEvents="none" />
-          </g>
-        );
-      })}
+      <g pointerEvents="none">
+        {runs.map((r) => (
+          <path key={r.run.id} d={r.d} fill="none" stroke={r.sel ? paint.selection : r.bad ? paint.danger : '#0f172a'}
+            strokeWidth={r.sel || r.bad ? 6 : 4.5} strokeLinejoin="round" />
+        ))}
+      </g>
+      <g pointerEvents="none">
+        {runs.map((r) => <path key={r.run.id} d={r.d} fill="none" stroke={r.color} strokeWidth={2.5} strokeLinejoin="round" />)}
+        {runs.map((r) => <path key={`e${r.run.id}`} d={r.dots} fill={r.color} stroke={paint.ink} strokeWidth={0.5} />)}
+      </g>
+      {/* Hit targets on top: wide transparent strokes, one per run. */}
+      <g style={{ cursor: 'pointer' }}>
+        {runs.map((r) => (
+          <path key={r.run.id} d={r.d} fill="none" stroke="transparent" strokeWidth={8}
+            onPointerDown={(e) => { e.stopPropagation(); onSelect(r.run.id); }}>
+            <title>{`${r.media?.name ?? r.run.mediaId} ×${r.run.quantity} · ${r.run.route} side · ${r.run.from.length} A / ${r.run.to.length} B`}</title>
+          </path>
+        ))}
+      </g>
     </g>
   );
 });
