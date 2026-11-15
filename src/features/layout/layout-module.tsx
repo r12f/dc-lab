@@ -9,7 +9,7 @@ import { Sidebar } from '../../ui/sidebar';
 import { CanvasFrame, EmptyCanvas } from '../../ui/canvas-frame';
 import { LayoutCanvas } from './layout-canvas';
 import { LayoutInspector } from './layout-inspector';
-import { LayoutToolbar } from './layout-toolbar';
+import { LayoutToolbar, LayoutViewControls } from './layout-toolbar';
 import { useLayoutShortcuts } from './use-layout-shortcuts';
 import { useLayoutEditor } from './use-layout-editor';
 import type { LayoutSelection } from './selection';
@@ -63,7 +63,8 @@ export function LayoutModule() {
         layout ? (
           <CanvasFrame title={layout.name} exportName={layout.id}
             fitKey={`${layout.id}:${layout.room.widthMm}x${layout.room.depthMm}:${layout.viewRotation ?? 0}`}
-            toolbar={<LayoutToolbar layout={layout} editor={editor} selection={sel} onSelect={setSel} />}>
+            toolbar={<LayoutToolbar layout={layout} editor={editor} selection={sel} onSelect={setSel} />}
+            viewControls={<LayoutViewControls editor={editor} />}>
             {(ref) => <LayoutCanvas ref={ref} lib={lib} designs={designs} layout={layout} editor={editor} selection={sel} onSelect={setSel} />}
           </CanvasFrame>
         ) : (

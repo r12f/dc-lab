@@ -79,8 +79,9 @@ south (down), units are millimetres.
   - room, rack area (dashed outline), facilities (PDU amber, cooling cyan, other grey), aisles (blue
     cold / red hot), vertical rows of tiles with a front-side marker, assigned racks, trays on top
     (semi-transparent, so the aisle stays visible under them).
-  - Title bar (next to Export SVG): **+ Row**, **+ Aisle**, **+ Cross aisle**, **+ Tray**, **+ PDU**, **+ Cooling**,
-    **Duplicate** (Ctrl+D) and **Delete** (Del) for the selection.
+  - Title bar: edit actions — **+ Add ▾** (one menu: Row, Aisle, Cross aisle, Tray, Floating tray, PDU, Cooling,
+    Door), **Duplicate** (Ctrl+D), **Delete** (Del), then **Export SVG** — a separator — view controls: **⟲ / ⟳ 90°**
+    rotation, zoom, maximize.
   - **Add after the selection**: + Row / + Aisle insert right after the selected row or aisle (the
     easternmost when several; a selected tile/rack counts as its row, a tray as its aisle), else at the
     east end. **+ Cross aisle** inserts there too: rows and aisles after it form the next row block. + Tray goes
@@ -105,7 +106,7 @@ south (down), units are millimetres.
     slide it north–south (snapped to 100 mm, kept in the room); the inspector sets its From / To bands, Y and width. **Drag** a
     facility to move it freely (snapped to 100 mm, kept inside the room). A click without movement
     just selects.
-  - **View rotation**: ⟲ / ⟳ 90° in the title bar turn the drawing by 90° (saved with the layout), e.g.
+  - **View rotation**: ⟲ / ⟳ 90° (view controls, before zoom) turn the drawing by 90° (saved with the layout), e.g.
     to show rows running east–west. Only the view turns — rows, aisles, sequence, doors and walls keep their
     north-up data, and dragging works in the rotated view. A north arrow shows where north is. Labels stay
     readable: row headers and rack tiles stay upright, aisle / tray / door labels keep following their
