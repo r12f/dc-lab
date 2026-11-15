@@ -36,6 +36,11 @@ export function genderedConnector(connector: string, gender?: 'male' | 'female')
 /** Transceiver receptacles for multi-fiber connectors are pinned: a module face is male. */
 export const MODULE_FACE_GENDER = 'male' as const;
 
+/** Two fiber connectors mate only when their genders differ (male pins into female); unknown gender is not judged. */
+export function gendersMate(a?: 'male' | 'female', b?: 'male' | 'female'): boolean {
+  return !a || !b || a !== b;
+}
+
 /** Fibers a connector holds when not stated: MPO-8 -> 8, MPO-12 -> 12, MMC -> 16, LC/SN/CS -> 2. */
 export function defaultFibers(connector: string): number | undefined {
   const c = connector.trim().toUpperCase();

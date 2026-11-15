@@ -1,9 +1,9 @@
 import type { Library } from '../library/library';
 import type { PortGroup } from '../device/types';
-import type { CableMedia, OpticDefinition } from '../optics/types';
+import type { CableMedia, ConnectorGender, OpticDefinition } from '../optics/types';
 import { parseMode } from '../device/breakout';
 import { formFactorSpec, heatSinkOf, moduleFits } from './form-factors';
-import { connectorsMate } from '../optics/connectors';
+import { connectorsMate, gendersMate, isMultiFiber, MODULE_FACE_GENDER } from '../optics/connectors';
 import { isDirectAttach } from '../optics/cable-types';
 
 /** Total port speed of a breakout mode ("2x400G" -> 800). */
@@ -140,6 +140,8 @@ export function cableConnector(group: PortGroup, optic?: OpticDefinition, reach?
 export interface PortConnectors {
   count: number;
   connector: string;
+  /** Gender of the port-side connector: the fiber port's own, a module face (male), a pigtail leg's. */
+  gender?: ConnectorGender;
 }
 
 /**
@@ -150,7 +152,15 @@ export interface PortConnectors {
 export function portConnectors(group: PortGroup, optic?: OpticDefinition): PortConnectors | undefined {
   const connector = isEnginePort(group) ? group.formFactor : optic?.fiberConnector.replace(/^\d+x\s*/i, '');
   if (!connector) return undefined;
-  return { count: cablesPerPort(group, optic), connector };
+  return { count: cablesPerPort(group, optic), connector, gender: portSideGender(group, optic) };
+}
+
+/** Gender a cable end meets on this port: the fiber port's own, a pigtail leg's, or a module face (pinned). */
+export function portSideGender(group: PortGroup, optic?: OpticDefinition): ConnectorGender | undefined {
+  if (isEnginePort(group)) return group.gender;
+  if (!optic) return undefined;
+  if (optic.packaging === 'pigtail') return optic.pigtail?.gender;
+  return isMultiFiber(optic.fiberConnector.replace(/^\d+x\s*/i, '')) ? MODULE_FACE_GENDER : undefined;
 }
 
 /**
@@ -176,8 +186,11 @@ export function compatibleCables(lib: Library, group: PortGroup, optic?: OpticDe
   if (!optic && !isEnginePort(group) && !connectorForReach(reach)) return directAttachCables(lib, group, mode ?? `1x${group.speedGbps}G`, reach);
   const connector = cableConnector(group, optic, reach);
   const fiber = fiberTypeFor(optic?.reach ?? reach);
+  const gender = portSideGender(group, optic);
+  // An end fits when its connector mates and its gender is the opposite of the port's (male never on male).
+  const endFits = (e: CableMedia['ends']['a']) => !connector || (connectorsMate(e.connector, connector) && gendersMate(e.gender, gender));
   return lib.cableMedia.items().filter((c) =>
     c.type !== 'power' && !isDirectAttach(c.type)
-    && (!connector || connectorsMate(c.ends.a.connector, connector) || connectorsMate(c.ends.b.connector, connector))
+    && (endFits(c.ends.a) || endFits(c.ends.b))
     && (!fiber || !c.type.startsWith('fiber') || c.type === fiber));
 }

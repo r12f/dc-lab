@@ -21,7 +21,7 @@ describe('port legs (connector view)', () => {
     expect(legReach('2xDR4', 2)).toBe('DR4');
     expect(legReach('DR8', 1)).toBe('DR8');
     const r = resolvePort(lib, sw, 'osfp/1', { id: 'p', name: 'p', groupDefaults: { osfp: { mode: '8x100G', reach: '2xDR4' } }, overrides: {} });
-    expect(portLegs(osfp, r).map((l) => l.label)).toEqual(['4x100G DR4 MPO-12', '4x100G DR4 MPO-12']);
+    expect(portLegs(osfp, r).map((l) => l.label)).toEqual(['4x100G DR4 MPO-12M', '4x100G DR4 MPO-12M']);
   });
   it('a port with no module is one leg on the port itself', () => {
     const rj = lib.devices.get('switch-48x1g-mgmt')!.ports.find((g) => g.id === 'rj45')!;
@@ -41,7 +41,7 @@ describe('applicable cables in the cabling view', () => {
   );
   const leg = (placementId: string, port: string, connector?: number): CableEndpoint => ({ placementId, portRef: port, connector });
   it('MPO-12 DR4 legs on both ends: only SMF MPO-12 cables (no MMF, no LC, no DAC)', () => {
-    expect(endpointLeg(lib, d, leg('a', 'osfp/1', 1))?.label).toBe('400G DR4 MPO-12');
+    expect(endpointLeg(lib, d, leg('a', 'osfp/1', 1))?.label).toBe('400G DR4 MPO-12M');
     const ids = applicableCables(lib, d, [leg('a', 'osfp/1', 1)], [leg('b', 'osfp/1', 1)]).map((c) => c.id);
     expect(ids).toContain('mpo12-smf');
     expect(ids).not.toContain('mpo12-mmf');

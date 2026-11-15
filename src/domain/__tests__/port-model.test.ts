@@ -97,7 +97,7 @@ describe('migration', () => {
 describe('port connectors', () => {
   it('2xDR4 = 2 x MPO-12, 2xFR4 = 2 x LC, DAC/empty = none, CPO 2xDR4 = 1 x port connector', () => {
     const osfp = dev('switch-64x800g-osfp').ports.find((g) => g.id === 'osfp')!;
-    expect(portConnectors(osfp, lib.optics.get('osfp-800g-2xdr4'))).toEqual({ count: 2, connector: 'MPO-12' });
+    expect(portConnectors(osfp, lib.optics.get('osfp-800g-2xdr4'))).toEqual({ count: 2, connector: 'MPO-12', gender: 'male' });
     expect(portConnectors(osfp, lib.optics.get('osfp-800g-2xfr4'))).toEqual({ count: 2, connector: 'LC' });
     expect(portConnectors(osfp)).toBeUndefined();
     const cpo = lib.devices.items().flatMap((d) => d.ports).find((g) => g.opticalEngine)!;

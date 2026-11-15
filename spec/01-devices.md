@@ -30,6 +30,10 @@ A port group is a run of identical ports: `label`, `role`, `formFactor`, `count`
 `lanes`, `face` (front/rear), `rows` (layout rows on the faceplate), `breakoutModes`
 (e.g. `["2x400G", "4x200G", "8x100G"]`; native `1x<speed>G` is implicit), and for fiber-connector
 ports `opticalEngine` (`cpo` | `npo`).
+Fiber connector ports (LC, CS, SN, MPO, MMC) must set `gender`: `male` (pinned) or `female` (unpinned); the
+device inspector warns until it is set. A cable end mates only with the opposite gender, so Rack Designer offers
+and accepts only those cables (and flags a same-gender end). Transceiver faces are male (cables into them are
+female); pigtail legs carry their own gender. Example: an MMC fiber housing is male on the front, female on the rear.
 
 ### Form factors
 

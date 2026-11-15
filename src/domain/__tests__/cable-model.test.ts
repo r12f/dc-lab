@@ -64,7 +64,7 @@ describe('cable model', () => {
     d.placements.push(sw);
     const run: CableRun = { id: 'r', mediaId: 'mpo8-160f-trunk-smf', route: 'left', quantity: 1,
       from: [{ placementId: 'sw', portRef: 'osfp/1', connector: 1 }], to: [{ placementId: 'sw', portRef: 'osfp/2', connector: 1 }] };
-    expect(cableIssues(lib, { ...d, cables: [run] }, run)).toContain('A SW1 osfp/1.1: male (pinned) cable end on a pinned transceiver');
+    expect(cableIssues(lib, { ...d, cables: [run] }, run)).toContain('A SW1 osfp/1.1: male cable end on a male MPO-12 (genders must differ)');
     const female = { ...run, mediaId: 'mpo8-smf' };
     expect(cableIssues(lib, { ...d, cables: [female] }, female)).toEqual([]);
   });

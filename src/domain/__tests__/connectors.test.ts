@@ -21,7 +21,7 @@ const ep = (placementId: string, portRef: string, connector?: number) => ({ plac
 
 describe('connector-to-connector cabling', () => {
   it('a 2xDR4 port has two MPO-12 legs', () => {
-    expect(endpointLegs(lib, d, 'sw', 'osfp/1')).toEqual({ count: 2, connector: 'MPO-12' });
+    expect(endpointLegs(lib, d, 'sw', 'osfp/1')).toEqual({ count: 2, connector: 'MPO-12', gender: 'male' });
   });
   it('both legs of one port can carry separate runs; reusing a leg is flagged', () => {
     const r1: CableRun = { id: 'a', from: [ep('sw', 'osfp/1', 1)], to: [ep('sw', 'osfp/2', 1)], route: 'left', mediaId: 'mpo12-smf', quantity: 1 };

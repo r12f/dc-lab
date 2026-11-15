@@ -1,3 +1,4 @@
+import type { ConnectorGender } from '../optics/types';
 import type { HeatSink } from '../ports/form-factors';
 import type { CatalogItem } from '../catalog-item';
 import type { Height } from '../units';
@@ -52,6 +53,11 @@ export interface PortGroup {
   holes?: number[];
   /** Pluggable cages: module heat sink the cage takes (IHS or RHS, not interchangeable); unset = RHS. */
   heatSink?: HeatSink;
+  /**
+   * Fiber connector ports (MPO, MMC, LC…): gender of the port's own connector — male = pinned, female = unpinned.
+   * A cable end must be the opposite gender to mate. Required for every fiber port.
+   */
+  gender?: ConnectorGender;
   /** Fiber ports driven by co-packaged / near-packaged optics. */
   opticalEngine?: OpticalEngine;
   /** Reach classes a CPO/NPO engine supports, e.g. ["DR4", "2xDR4"]. */

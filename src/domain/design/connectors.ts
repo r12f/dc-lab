@@ -1,7 +1,6 @@
 import type { Library } from '../library/library';
 import { portConnectors } from '../ports/optic-match';
-import { connectorsMate, isMultiFiber } from '../optics/connectors';
-import { formFactorSpec } from '../ports/form-factors';
+import { connectorsMate, gendersMate } from '../optics/connectors';
 import { resolvePlacedPort } from './optics';
 import type { CableEndpoint, CableRun, RackDesign } from './types';
 
@@ -14,13 +13,6 @@ export function endpointLegs(lib: Library, design: RackDesign, placementId: stri
   return r ? portConnectors(r.group, r.optic) : undefined;
 }
 
-/** True when the endpoint's port takes a transceiver (module receptacles are pinned). */
-function isModulePort(lib: Library, design: RackDesign, ep: CableEndpoint): boolean {
-  const p = design.placements.find((x) => x.id === ep.placementId);
-  const d = p && lib.devices.get(p.deviceId);
-  const r = p && d && ep.portRef ? resolvePlacedPort(lib, d, p, ep.portRef) : undefined;
-  return !!r?.optic && formFactorSpec(r.group.formFactor).kind === 'cage';
-}
 
 const endKey = (e: CableEndpoint) => `${e.placementId}|${e.portRef}|${e.connector ?? ''}`;
 /** How many cable ends sit on each connector (placement + port + leg); > 1 = used twice. Cached per design. */
@@ -54,8 +46,8 @@ export function cableIssues(lib: Library, design: RackDesign, run: CableRun): st
     const label = `${side} ${endpointLabel(design, ep)}`;
     if (!connectorsMate(legs.connector, end.connector)) issues.push(`${label} is ${legs.connector}, cable end is ${end.connector}`);
     if (ep.connector && ep.connector > legs.count) issues.push(`${label}: port has ${legs.count} connector(s)`);
-    if (end.gender === 'male' && isMultiFiber(end.connector) && isModulePort(lib, design, ep)) {
-      issues.push(`${label}: male (pinned) cable end on a pinned transceiver`);
+    if (!gendersMate(end.gender, legs.gender)) {
+      issues.push(`${label}: ${end.gender} cable end on a ${legs.gender} ${legs.connector} (genders must differ)`);
     }
   };
   run.from.forEach((ep) => check(ep, 'A'));

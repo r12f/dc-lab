@@ -4,6 +4,7 @@ import { FORM_FACTORS, formFactorSpec, HEAT_SINKS, heatSinkOf, type HeatSink } f
 import { newPortGroup } from '../../domain/device/factory';
 import { PORT_ROLES, ROLE_TRAITS } from '../../domain/device/roles';
 import { uniqueId } from '../../domain/ids';
+import type { ConnectorGender } from '../../domain/optics/types';
 import { Button } from '../../ui/button';
 import { NumberField, Section, SelectField, TextField } from '../../ui/fields';
 
@@ -12,6 +13,9 @@ interface Props {
   onChange(device: DeviceDefinition): void;
 }
 
+const genderOptions: { value: '' | ConnectorGender; label: string }[] = [
+  { value: '', label: '— not set —' }, { value: 'male', label: 'Male (pinned)' }, { value: 'female', label: 'Female (unpinned)' },
+];
 const faceOptions = [{ value: 'front' as PortFace, label: 'Front' }, { value: 'rear' as PortFace, label: 'Rear' }];
 const roleOptions = PORT_ROLES.map((r) => ({ value: r, label: ROLE_TRAITS[r].label }));
 const PHASES: Phase[] = ['L1', 'L2', 'L3', 'L1-L2', 'L2-L3', 'L3-L1'];
@@ -82,6 +86,10 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
       {pluggable && (
         <TextField label="Breakout modes (e.g. 2x400G, 4x200G)" value={group.breakoutModes.join(', ')}
           onChange={(v) => set({ breakoutModes: v.split(',').map((s) => s.trim()).filter(Boolean) })} />
+      )}
+      {formFactorSpec(group.formFactor).kind === 'fiber' && (
+        <SelectField<'' | ConnectorGender> label="Connector gender (cable end must be the opposite)" value={group.gender ?? ''}
+          options={genderOptions} onChange={(g) => set({ gender: g || undefined })} />
       )}
       {formFactorSpec(group.formFactor).kind === 'fiber' && <EngineFields group={group} set={set} />}
       {group.role === 'outlet' && <OutletFields group={group} set={set} />}
