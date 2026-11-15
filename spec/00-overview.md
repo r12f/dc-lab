@@ -20,7 +20,8 @@ built-in catalog), [06-architecture.md](06-architecture.md) (code structure) and
 - **Top tab bar** selects the module. Project actions (New / Open ▾ / Save / Save As) and the theme picker live on the right of the bar.
 - **Left sidebar** in every module lists the module's items (built-in and project), grouped, with **+ New**, then **Duplicate** (⧉) and **Delete** (✕) in its header; the icon buttons act on the selected item and are disabled when nothing is selected.
 - **Main canvas** is an SVG drawing of the selected item. Every canvas supports **Export SVG**. The exported file has the
-  drawing's size at 100 % zoom (not the canvas zoom, and not the drawing's internal units).
+  drawing's size at 100 % zoom (not the canvas zoom, and not the drawing's internal units), and carries the app's
+  font family on its root (text otherwise falls back to a serif outside the app).
 - **Right inspector** edits the selected item / sub-item.
 - Sidebar and inspector widths are resizable by dragging the pane borders (180–1600 px, double-click resets; the canvas always keeps at least 240 px, side panes shrink on narrow windows).
   Widths are shared by all modules except Rack Designer, whose inspector keeps its own width (default 640 px, so

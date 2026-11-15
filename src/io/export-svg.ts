@@ -19,6 +19,10 @@ export function exportSvg(svg: SVGSVGElement, filename: string): void {
   clone.setAttribute('height', String(Math.round(vb.width ? (w * vb.height) / vb.width : vb.height)));
   clone.removeAttribute('class');
   clone.removeAttribute('style');
+  // Text inherits the app's font from page CSS; a standalone file has none (viewers fall back to a serif), so
+  // carry the computed font over.
+  const font = getComputedStyle(svg).fontFamily;
+  if (font && !clone.hasAttribute('font-family')) clone.setAttribute('font-family', font);
   const markup = resolveCssVars(new XMLSerializer().serializeToString(clone));
   downloadText(filename.endsWith('.svg') ? filename : `${filename}.svg`, `<?xml version="1.0" encoding="UTF-8"?>\n${markup}`, 'image/svg+xml');
 }
