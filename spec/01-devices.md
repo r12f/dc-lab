@@ -80,7 +80,7 @@ source modules.
 |---|---|
 | `data` | Front-panel / NIC data ports |
 | `mgmt` | Out-of-band management Ethernet (RJ45) |
-| `console` | Serial console (RJ45) |
+| `console` | Serial console (RJ45). A console server's async ports are console ports; it has no console port of its own |
 | `service` | Service/in-band ports, e.g. 2x 10G SFP+ on high-radix switches |
 | `laser` | External laser source cages for CPO/NPO (ELSFP) |
 | `outlet` | Power outlets (PDU, power shelf) |
