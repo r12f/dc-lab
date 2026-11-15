@@ -109,6 +109,15 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
         <SelectField<'' | ConnectorGender> label="Takes cable connector" value={group.cableGender ?? ''}
           options={genderOptions} onChange={(g) => set({ cableGender: g || undefined })} />
       )}
+      {formFactorSpec(group.formFactor).kind === 'fiber' && (
+        <div className="row2">
+          <NumberField label="Connectors per port" value={group.connectorsPerPort ?? 1} min={1}
+            onChange={(n) => set({ connectorsPerPort: n > 1 ? n : undefined })} />
+          <SelectField label="Connector layout" value={group.connectorLayout ?? 'side-by-side'}
+            options={[{ value: 'side-by-side', label: 'Side by side (1 left)' }, { value: 'stacked', label: 'Stacked (1 at the bottom)' }]}
+            onChange={(v) => set({ connectorLayout: v === 'stacked' ? 'stacked' : undefined })} />
+        </div>
+      )}
       {formFactorSpec(group.formFactor).kind === 'fiber' && <EngineFields group={group} set={set} />}
       {group.role === 'outlet' && <OutletFields group={group} set={set} />}
       <Button variant="danger" onClick={onRemove}>Remove group</Button>

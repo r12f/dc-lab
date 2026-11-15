@@ -32,17 +32,21 @@ const GAP = 2;
  */
 function LegCells({ box, legs, color }: { box: PortBox; legs: PortLeg[]; color?: string }) {
   const n = legs.length;
-  const w = (box.w - INSET * 2 - GAP * (n - 1)) / n;
-  const y = box.y + CELL_TOP;
-  const h = box.h - CELL_TOP - INSET;
+  // Stacked connectors (housing slots): connector 1 at the bottom, the rest above it.
+  const stacked = box.group.connectorLayout === 'stacked' && n > 1;
+  const w = stacked ? box.w - INSET * 2 : (box.w - INSET * 2 - GAP * (n - 1)) / n;
+  const top = box.y + CELL_TOP;
+  const areaH = box.h - CELL_TOP - INSET;
+  const h = stacked ? (areaH - GAP * (n - 1)) / n : areaH;
   const fill = color ?? '#1e293b';
   const ink = color ? '#0f172a' : '#e2e8f0';
   const fit = (s: string, max: number) => Math.max(5, Math.min(max, (w - 3) / Math.max(1, s.length * 0.6)));
   return (
     <g pointerEvents="none">
       {legs.map((l, i) => {
-        const x = box.x + INSET + i * (w + GAP);
-        const reach = l.reach ?? '';
+        const x = stacked ? box.x + INSET : box.x + INSET + i * (w + GAP);
+        const y = stacked ? top + (n - 1 - i) * (h + GAP) : top;
+        const reach = stacked ? '' : l.reach ?? '';
         return (
           <g key={i}>
             <rect x={x} y={y} width={w} height={h} rx={2} fill={fill} stroke="#334155" strokeWidth={0.8} />

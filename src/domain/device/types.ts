@@ -62,6 +62,13 @@ export interface PortGroup {
   subPorts?: number;
   /** Number the group's names start at (e.g. 7 for the second column of 6 cassettes); default 1. */
   firstNumber?: number;
+  /**
+   * Fiber connector ports: cable connectors in one port (a housing slot holding 2x MMC-16); default 1. Each is a
+   * connector leg cables attach to (endpoint `connector` 1..n).
+   */
+  connectorsPerPort?: number;
+  /** How a port's connectors sit: `side-by-side` (default, 1 left) or `stacked` (1 at the bottom, upwards). */
+  connectorLayout?: 'side-by-side' | 'stacked';
   /** Pluggable cages: module heat sink the cage takes (IHS or RHS, not interchangeable); unset = RHS. */
   heatSink?: HeatSink;
   /**

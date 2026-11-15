@@ -115,9 +115,13 @@ function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: Port
     const resolved = Array.from({ length: g.count }, (_, i) => resolvePlacedPort(lib, device, p, formatPortRef({ groupId: g.id, index: i + 1 })));
     const legList = resolved.map((r) => portLegs(g, r));
     const maxLegs = Math.max(1, ...legList.map((l) => l.length));
+    // Stacked connectors (housing slots) sit one above the other, connector 1 at the bottom.
+    const stacked = g.connectorLayout === 'stacked' && maxLegs > 1;
+    const across = stacked ? 1 : maxLegs;
+    const down = stacked ? maxLegs : 1;
     // Every port of a group gets the same block size (the widest port's), so columns line up.
-    const portW = PORT_PAD * 2 + maxLegs * LEG_W + (maxLegs - 1) * LEG_GAP;
-    const h = PORT_HEAD + LEG_H + PORT_PAD;
+    const portW = PORT_PAD * 2 + across * LEG_W + (across - 1) * LEG_GAP;
+    const h = PORT_HEAD + down * LEG_H + (down - 1) * LEG_GAP + PORT_PAD;
     // Vertical: SIDE_COLS ports per line, filled row-major top to bottom.
     const rows = vertical ? Math.ceil(g.count / SIDE_COLS) : Math.max(1, g.rows);
     const cols = vertical ? Math.ceil(g.count / rows) : groupCols(g, rows);
@@ -132,7 +136,8 @@ function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: Port
       ports.push({ group: g, index: i + 1, mode: resolved[i]?.mode ?? '', x: px, y: py, w: portW, h });
       legList[i].forEach((leg, k) => {
         legs.push({ ep: { placementId: p.id, portRef, connector: leg.index }, leg,
-          x: px + PORT_PAD + k * (LEG_W + LEG_GAP), y: py + PORT_HEAD, w: LEG_W, h: LEG_H });
+          x: px + PORT_PAD + (stacked ? 0 : k * (LEG_W + LEG_GAP)),
+          y: py + PORT_HEAD + (stacked ? (down - 1 - k) * (LEG_H + LEG_GAP) : 0), w: LEG_W, h: LEG_H });
       });
       bottom = Math.max(bottom, py + h);
       right = Math.max(right, px + portW);

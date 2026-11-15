@@ -171,7 +171,7 @@ export function expectedCableGender(group: PortGroup, optic?: OpticDefinition): 
  * CPO/NPO fiber ports are a single connector: 1.
  */
 export function cablesPerPort(group: PortGroup, optic?: OpticDefinition): number {
-  if (isEnginePort(group)) return 1;
+  if (isEnginePort(group)) return Math.max(1, group.connectorsPerPort ?? 1);
   const text = optic?.fiberConnector;
   const n = Number(/^(\d+)x/i.exec(text ?? '')?.[1]);
   return n > 0 ? n : 1;

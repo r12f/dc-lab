@@ -227,6 +227,11 @@ numbering of the previous one. Names are for display (faceplate, cabling view, t
 `group/index`. Example: the built-in 2RU 96x MPO-8 housing = 4 groups (columns) of 6 cassettes x 4 connectors, row-major,
 bottom up, subPorts 4, firstNumber 1 / 7 / 13 / 19.
 
+**Connectors per port** (fiber connector ports): `connectorsPerPort` (default 1) cable connectors in one port —
+a fiber-housing slot holding 2x MMC-16 — each a connector leg cables attach to (endpoint `connector` 1..n), and
+`connectorLayout`: `side-by-side` (default, 1 on the left) or `stacked` (1 at the bottom, upwards). The
+faceplate and the cabling view draw the connectors that way.
+
 **Empty grid cells (`holes`)**: a port group may list grid cells (column-major indices over its `rows`) left
 empty; ports fill the remaining cells in order. Used for modules whose faceplate is not a full grid — e.g. a
 fiber-housing module with one 2x MMC slot top-left and a 3x3 block beside it (6 rows, holes 2-5: ports 1-2 the
