@@ -222,7 +222,7 @@ group summary and port tooltip. Built-ins: 64x800G OSFP switch and both OSFP tes
 row) set how ports fill the grid. `subPorts` gives two-level names — every `subPorts` ports share a number and take
 letters (4: 1A 1B 1C 1D 2A…) — counted from `firstNumber` (default 1), so a column of cassettes can continue the
 numbering of the previous one. Names are for display (faceplate, cabling view, tooltips); port refs stay
-`group/index`. Example: a 2U 96x MPO-8 housing = 4 groups (columns) of 6 cassettes x 4 connectors, row-major,
+`group/index`. Example: the built-in 2RU 96x MPO-8 housing = 4 groups (columns) of 6 cassettes x 4 connectors, row-major,
 bottom up, subPorts 4, firstNumber 1 / 7 / 13 / 19.
 
 **Empty grid cells (`holes`)**: a port group may list grid cells (column-major indices over its `rows`) left
