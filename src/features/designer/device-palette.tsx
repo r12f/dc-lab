@@ -8,7 +8,7 @@ import { fitsRackUnits } from '../../domain/design/placement';
 import { variantLabel } from '../../domain/items/variants';
 import { formatHeight } from '../../domain/units';
 import { buildTree, matchesFilter, type SidebarItem, type TreeNode } from '../../ui/sidebar-tree';
-import { categoryPaint } from '../../theme/paint';
+import { categoryStyle } from '../../theme/paint';
 
 /** Drag payload: "deviceId" or "deviceId|variantId". */
 export const DEVICE_DRAG_TYPE = 'application/x-dclab-device';
@@ -50,7 +50,7 @@ export function DevicePalette({ lib, rack, onAdd }: Props) {
           {variants.length > 1
             ? <span className="caret" onClick={(e) => { e.stopPropagation(); setOpen(toggle(open, d.id)); }}>{expanded ? '▾' : '▸'}</span>
             : <span className="caret" />}
-          <span className="swatch" style={{ background: categoryPaint(d.category) }} />
+          <span className="swatch" style={{ background: categoryStyle(d.category).fill, border: `1px solid ${categoryStyle(d.category).stroke}` }} />
           <span className="sidebar-item-name">{d.name}</span>
           <span className="badge">{isRepeatable(d) ? `${formatHeight(d.height)} ×n` : formatHeight(d.height)}</span>
         </div>

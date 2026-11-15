@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { RackTemplate } from '../domain/rack/types';
 import { bodyX, unitTopY, type RackGeometry } from './rack-geometry';
 import { SideElementDrawing } from './side-element-drawing';
-import { paint } from '../theme/paint';
+import { paint, RACK_FRAME } from '../theme/paint';
 
 interface Props {
   rack: RackTemplate;
@@ -23,15 +23,19 @@ export function RackFrame({ rack, geo, title, subtitle, children, selectedElemen
     <g>
       <text x={0} y={14} fontSize={14} fontWeight={700} fill={paint.ink}>{title}</text>
       {subtitle && <text x={0} y={30} fontSize={10} fill={paint.inkMuted}>{subtitle}</text>}
-      <rect x={geo.originX} y={geo.originY - 4} width={geo.railW * 2 + geo.bodyW} height={bodyH + 8} fill={paint.frame} rx={3} />
+      <rect x={geo.originX} y={geo.originY - 4} width={geo.railW * 2 + geo.bodyW} height={bodyH + 8} fill={RACK_FRAME.rail}
+        stroke={RACK_FRAME.railLine} strokeWidth={1} rx={3} />
       <rect x={bx} y={geo.originY} width={geo.bodyW} height={bodyH} fill={paint.slot} />
       {units.map((u) => {
         const y = unitTopY(geo, rack, u);
         return (
           <g key={u}>
             <line x1={bx} x2={bx + geo.bodyW} y1={y} y2={y} stroke={paint.grid} strokeWidth={0.5} />
-            <text x={geo.originX + geo.railW - 4} y={y + geo.unitPx - 5} fontSize={8} textAnchor="end" fill={paint.frameText}>{u}</text>
-            <text x={bx + geo.bodyW + 4} y={y + geo.unitPx - 5} fontSize={8} fill={paint.frameText}>{u}</text>
+            {/* Unit rows on both rails, like the unit column of the reference elevations. */}
+            <line x1={geo.originX} x2={bx} y1={y} y2={y} stroke={RACK_FRAME.railLine} strokeWidth={0.6} />
+            <line x1={bx + geo.bodyW} x2={bx + geo.bodyW + geo.railW} y1={y} y2={y} stroke={RACK_FRAME.railLine} strokeWidth={0.6} />
+            <text x={geo.originX + geo.railW - 4} y={y + geo.unitPx - 5} fontSize={8} textAnchor="end" fill={RACK_FRAME.railText}>{u}</text>
+            <text x={bx + geo.bodyW + 4} y={y + geo.unitPx - 5} fontSize={8} fill={RACK_FRAME.railText}>{u}</text>
           </g>
         );
       })}

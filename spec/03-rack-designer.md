@@ -90,6 +90,11 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 - Device palette: the Devices tree — Type → Item type → Items (vendor products); drag or double-click an
   item type (default item) or a specific item. Only devices of the rack's unit system are listed (RU racks
   take RU and 0U devices, OU racks OU and 0U); placing a device of the other system is rejected.
+- Colors (fixed, after the rack-elevation drawings): warm beige rails / unit column and side pods (`#f5efe6` /
+  `#f2ece2`, tan lines); each device category is a light pastel fill, a mid-tone outline and dark text of the same
+  hue — switches blue, console servers green, servers teal, patch panels lavender, power slate violet, fillers grey
+  (normal-weight text), reserved space grey-blue dashed. The palette swatch uses the same fill and outline.
+  Red / orange / yellow stay reserved for errors and warnings.
 - Canvas: elevation (front/rear toggle) with side pods. Drag a device from the palette onto a unit or
   side slot — the pointer marks the device's middle and a tall device dropped near the top or bottom slides
   inside the rack; drag a placed device to move it; click to select.

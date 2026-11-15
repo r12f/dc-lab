@@ -4,11 +4,8 @@ import type { Placement } from '../../domain/design/types';
 import type { RackTemplate } from '../../domain/rack/types';
 import { unitsIn } from '../../domain/units';
 import { bodyX, sideBox, sideSlotRect, unitTopY, type RackGeometry } from '../../drawing/rack-geometry';
-import { categoryPaint, paint } from '../../theme/paint';
+import { categoryStyle, paint } from '../../theme/paint';
 import { traitsOf } from '../../domain/device/categories';
-
-/** Blanking panels are dark, stiffeners steel grey; both visually recede behind active devices. */
-const FILLER_FILL = { blanking: '#1f2937', stiffener: '#64748b', reserved: 'none', brush: '#374151' } as const;
 
 interface Props {
   placement: Placement;
@@ -40,7 +37,8 @@ export function placementRect(p: Placement, device: DeviceDefinition, rack: Rack
 export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dragging, issues, onPointerDown, filteredOut }: Props) {
   const r = placementRect(placement, device, rack, geo);
   const filler = traitsOf(device.category).filler;
-  const color = filler ? FILLER_FILL[filler] : categoryPaint(device.category);
+  // Pastel fill, outline and text of the category's hue; fillers grey, reserved rose (dashed).
+  const cs = categoryStyle(device.category);
   const reserved = filler === 'reserved';
   const vertical = placement.mount.kind === 'side';
   const cx = r.x + r.w / 2;
@@ -50,11 +48,11 @@ export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dr
       <title>{[`${placement.label} — ${device.name}`, ...(issues ?? []).map((i) => `⚠ ${i}`)].join('\n')}</title>
       {/* Reserved space: dashed outline on the empty slot fill, so it reads as "kept empty", not as a device. */}
       <rect x={r.x + 1} y={r.y + 1} width={r.w - 2} height={r.h - 2} rx={2}
-        fill={reserved ? paint.slot : color} fillOpacity={ghost ? 0.25 : reserved ? 1 : 0.9}
-        stroke={selected ? paint.selection : reserved ? paint.inkMuted : paint.ink} strokeWidth={selected ? 3 : reserved ? 1.5 : 1}
+        fill={cs.fill} fillOpacity={ghost ? 0.35 : 1}
+        stroke={selected ? paint.selection : cs.stroke} strokeWidth={selected ? 3 : 1.1}
         strokeDasharray={ghost || reserved ? '4 2' : undefined} />
-      <text x={cx} y={cy + 4} fontSize={vertical ? 9 : 10} textAnchor="middle" fill={ghost || reserved ? paint.inkMuted : '#F8FAFC'}
-        fontWeight={600} transform={vertical ? `rotate(-90 ${cx} ${cy})` : undefined} pointerEvents="none">
+      <text x={cx} y={cy + 4} fontSize={vertical ? 9 : 10} textAnchor="middle" fill={cs.text} fillOpacity={ghost ? 0.7 : 1}
+        fontWeight={filler && !reserved ? 400 : 600} transform={vertical ? `rotate(-90 ${cx} ${cy})` : undefined} pointerEvents="none">
         {vertical ? placement.label : `${placement.label} · ${device.name}${placement.repeat && placement.repeat > 1 ? ` ×${placement.repeat}` : ''}`}
       </text>
       {/* Error: red outline over the device and a red badge; the selection outline stays inside it. */}
