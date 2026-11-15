@@ -133,6 +133,9 @@ the port's form factor and mode are in its tooltip.
 **Delete device**: the canvas toolbar has an icon-only ✕ button (tooltip "Delete <label> (Del)") next to Export SVG, enabled when a device is
 selected; the Delete / Backspace key does the same (ignored while typing in a field).
 
+**Devices on both faces**: a rack-mounted device is drawn on its mount face and, faded (dashed), on the other face
+when it is full depth or has ports there (PSU inlets, rear ports), so cables to those ports have an end to draw.
+
 **PDU bays on the rear**: the front panel of the elevation leaves out the PDU bays and the PDUs in them; they are
 drawn (and droppable) on the rear panel only.
 

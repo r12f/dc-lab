@@ -1,7 +1,7 @@
 import { unitsIn } from '../../domain/units';
 import { useMemo, useState, type DragEvent, type PointerEvent, type Ref } from 'react';
 import type { Library } from '../../domain/library/library';
-import type { Mount, RackDesign } from '../../domain/design/types';
+import type { Mount, Placement, RackDesign } from '../../domain/design/types';
 import type { PortFace } from '../../domain/device/types';
 import { computeRackMetrics } from '../../domain/design/metrics';
 import { isFullDepth } from '../../domain/design/placement';
@@ -20,6 +20,8 @@ import { CableRoutesDrawing } from './cable-routes-drawing';
 import { REAR_ONLY_KINDS } from '../../domain/rack/side-elements';
 import { visibleCables } from '../../domain/design/device-filter';
 import { placedDevice } from '../../domain/design/sizing';
+import { cableGroupsOnFace } from '../../domain/device/ports';
+import { deviceFaceSeenFrom } from '../../domain/design/cable-assign';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -57,6 +59,18 @@ const CABLE_GUTTER = 34;
  * placed devices are moved with pointer events (SVG has no native drag).
  */
 /** Front and rear elevations side by side in one drawing; drops and drags go to the face under the pointer. */
+/**
+ * A rack-mounted device is drawn on its mount face, and on the other face when it reaches through (full depth) or
+ * has ports on that side (PSU inlets, rear ports): cables to those ports end there.
+ */
+export function rackDeviceOnFace(lib: Library, design: RackDesign, p: Placement, face: PortFace): boolean {
+  if (p.mount.kind !== 'rack') return false;
+  if (p.mount.face === face) return true;
+  const rack = lib.racks.get(design.templateId);
+  const d = placedDevice(lib, design, p);
+  return !!d && !!rack && (isFullDepth(d, rack) || cableGroupsOnFace(d, deviceFaceSeenFrom(p, face)).length > 0);
+}
+
 export function RackElevation({ ref, lib, design, selectedId, onSelect, selectedCableId, onSelectCable, onDropDevice, onMove, showCables = true, hiddenIds }: Props) {
   const [drag, setDrag] = useState<DragState>();
   const rack = lib.racks.get(design.templateId);
@@ -77,9 +91,7 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
   const issues = designIssues(lib, design);
   const visibleOn = (face: PortFace) => design.placements.filter((p) => {
     if (p.mount.kind === 'side') return rackOf(face).sideElements.some((e) => e.id === (p.mount as { elementId: string }).elementId);
-    if (p.mount.face === face) return true;
-    const d = placedDevice(lib, design, p);
-    return !!d && isFullDepth(d, rack);
+    return rackDeviceOnFace(lib, design, p, face);
   });
   // Each face occupies one panel; the rear panel is shifted right by `panelW`.
   const panelW = geoFront.width + 20;
