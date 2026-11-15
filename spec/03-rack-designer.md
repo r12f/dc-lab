@@ -67,8 +67,9 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 
 - **Metrics**: used/total units, typical/max power (devices + optics), supply capacity (PDUs/shelves),
   total weight (rack + side elements + devices), warnings (over power, over load, supply < max draw, overlaps).
-- **BOM**: shown as a tree — **Rack** → **Rack frame** (devices in rack units) and one node per side
-  element (Sidepod L, PDU bay R… with the devices mounted in it) → each device line with its optics and
+- **BOM**: shown as a tree — the **rack as a whole** (the design, named after it; a group) → **Rack frame —
+  <template>** (the rack template as the rack item line, qty 1, with the devices in rack units below it), and
+  at the same level one node per side element (Sidepod L, PDU bay R… with the devices mounted in it) → each device line with its optics and
   port-attached cables as children; **In-rack cables** (runs by media and length) last. Same items in the
   same container merge (qty, labels in notes). Empty (Reserved) space is left out. CSV export follows the tree:
   rows in tree order with a leading **Level** column (rack = 1, rack frame / side elements / in-rack cables = 2,

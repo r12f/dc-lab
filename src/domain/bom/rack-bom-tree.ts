@@ -24,8 +24,8 @@ export interface BomNode {
 
 /**
  * Rack BOM as a tree:
- *   Rack (template)
- *   ├─ Rack frame — devices in rack units, each with its optics and port-attached cables
+ *   Rack (the designed rack as a whole: the design name)
+ *   ├─ Rack frame — <template> (the rack itself as an item, qty 1) — devices in rack units, each with its optics and port-attached cables
  *   ├─ <side element> (Sidepod L, PDU bay R…) — devices mounted in it
  *   └─ In-rack cables
  * Devices with the same item in the same container merge into one line (qty, labels in notes).
@@ -83,7 +83,12 @@ function computeBuildRackBomTree(lib: Library, design: RackDesign): BomNode | un
 
   const inRack = design.placements.filter((p) => p.mount.kind === 'rack');
   const children: BomNode[] = [
-    { key: 'frame', label: `Rack frame (${rack.units}${rack.unitSystem})`, children: devicesIn(inRack, 'frame') },
+    {
+      key: 'frame', label: `Rack frame — ${rack.name}`,
+      line: { key: `rack:${rack.id}`, kind: 'rack', item: rack.name, category: RACK_KINDS[rack.kind],
+        vendorModel: '', qty: 1, unitW: 0, notes: [], properties: rack.properties },
+      children: devicesIn(inRack, 'frame'),
+    },
     ...rack.sideElements.map((e) => ({
       key: `side:${e.id}`,
       label: `${e.name} (${SIDE_KINDS[e.kind].label})`,
@@ -105,12 +110,8 @@ function computeBuildRackBomTree(lib: Library, design: RackDesign): BomNode | un
     children.push({ key: 'cables', label: 'In-rack cables', children: cableLines.map((l) => ({ key: l.key, label: l.item, line: l, children: [] })) });
   }
 
-  return {
-    key: `rack:${rack.id}`, label: rack.name,
-    line: { key: `rack:${rack.id}`, kind: 'rack', item: rack.name, category: RACK_KINDS[rack.kind],
-      vendorModel: '', qty: 1, unitW: 0, notes: [], properties: rack.properties },
-    children,
-  };
+  // The rack as a whole: a group named after the design; the template is the rack frame line below it.
+  return { key: `design:${design.id}`, label: design.name, children };
 }
 
 /** Every line in the tree (for totals and checks). */

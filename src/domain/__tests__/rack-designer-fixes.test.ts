@@ -45,16 +45,18 @@ describe('rack BOM tree', () => {
     d.placements.push(newPlacement('r', 'reserved-2ru', 'RSV1', { kind: 'rack', position: 10, face: 'front' }));
     d.placements.push(newPlacement('p', 'pdu-vertical-3ph', 'PDU1', { kind: 'side', elementId: 'pdu-bay-l', slot: 1 }));
     const t = buildRackBomTree(lib, d)!;
-    expect(t.label).toBe('Network Rack 42RU');
+    // Root = the rack as a whole (the design); rack frame = the template, as the rack item line.
+    expect([t.label, t.line]).toEqual(['D', undefined]);
     expect(t.children.map((c) => c.label)).toEqual([
-      'Rack frame (42RU)', 'PDU bay L (PDU bay)', 'PDU bay R (PDU bay)',
+      'Rack frame — Network Rack 42RU', 'PDU bay L (PDU bay)', 'PDU bay R (PDU bay)',
     ]);
+    expect(t.children[0].line).toMatchObject({ kind: 'rack', item: 'Network Rack 42RU', qty: 1 });
     const frame = t.children[0];
     expect(frame.children.map((c) => [c.label, c.line?.qty, c.line?.notes])).toEqual([['64x800G OSFP Switch (2PSU)', 2, ['SW1', 'SW2']]]);
     expect(t.children[1].children.map((c) => c.label)).toEqual([lib.devices.get('pdu-vertical-3ph')!.name]);
     // Same totals as the flat BOM.
     const sum = (ls: { kind: string; qty: number }[], k: string) => ls.filter((l) => l.kind === k).reduce((n, l) => n + l.qty, 0);
     const flat = buildRackBom(lib, d);
-    for (const k of ['device', 'optic', 'cable']) expect(sum(treeLines(t), k), k).toBe(sum(flat, k));
+    for (const k of ['rack', 'device', 'optic', 'cable']) expect(sum(treeLines(t), k), k).toBe(sum(flat, k));
   });
 });
