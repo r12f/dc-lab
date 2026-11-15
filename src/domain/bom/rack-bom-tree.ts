@@ -9,7 +9,7 @@ import { variantLabel } from '../items/variants';
 import { BomBuilder } from './bom-builder';
 import type { BomLine } from './types';
 import { memoByDesign } from '../design/memo';
-import { placedDevice, sizeKey } from '../design/sizing';
+import { placedDevice, repeatCount } from '../design/sizing';
 
 /**
  * A node of the rack BOM tree. Group nodes (rack frame, side elements, in-rack cables) structure
@@ -45,18 +45,19 @@ function computeBuildRackBomTree(lib: Library, design: RackDesign): BomNode | un
       const d = placedDevice(lib, design, p);
       if (!d || traitsOf(d.category).filler === 'reserved') continue;
       const v = item(d.id, p.variantId);
-      const key = `${scope}:device:${v?.id ?? d.id}${sizeKey(d)}`;
+      const key = `${scope}:device:${v?.id ?? d.id}`;
+      const n = repeatCount(d, p.repeat);
       let g = groups.get(key);
       if (!g) {
         g = {
           line: { key, kind: 'device', item: d.name, category: traitsOf(d.category).label, vendorModel: variantLabel(v),
-            qty: 0, unitW: d.power.typicalW, notes: [], properties: v?.properties },
+            qty: 0, unitW: d.power.typicalW / n, notes: [], properties: v?.properties },
           parts: new BomBuilder(),
         };
         groups.set(key, g);
       }
-      g.line.qty += 1;
-      g.line.notes.push(p.label);
+      g.line.qty += n;
+      g.line.notes.push(n > 1 ? `${p.label} x${n}` : p.label);
       const counts = portItemCounts(lib, d, p);
       for (const [opticId, n] of counts.optics) {
         const o = lib.optics.get(opticId);

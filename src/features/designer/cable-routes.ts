@@ -85,7 +85,7 @@ export interface RoutedLink {
 function exitPoint(lib: Library, rack: RackTemplate, geo: RackGeometry, p: Placement, route: CableRoute): [number, number] | undefined {
   const raw = lib.devices.get(p.deviceId);
   if (!raw) return undefined;
-  const r = placementRect(p, sizedDevice(raw, rack, p.units), rack, geo);
+  const r = placementRect(p, sizedDevice(raw, rack, p.repeat), rack, geo);
   if (r.w === 0) return undefined;
   const y = r.y + Math.min(4, r.h / 2);
   if (p.mount.kind === 'side') {

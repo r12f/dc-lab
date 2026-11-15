@@ -1,5 +1,5 @@
 import type { DeviceCategory, DeviceDefinition } from '../../domain/device/types';
-import { DEVICE_CATEGORIES, isResizable, traitsOf } from '../../domain/device/categories';
+import { DEVICE_CATEGORIES, isRepeatable, traitsOf } from '../../domain/device/categories';
 import type { UnitSystem } from '../../domain/units';
 import { NumberField, Section, SelectField, TextField } from '../../ui/fields';
 
@@ -26,8 +26,8 @@ export function DeviceGeneralForm({ device: d, onChange }: Props) {
           onChange={(system) => set({ height: { ...d.height, system } })} />
       </div>
       <label className="checkbox">
-        <input type="checkbox" checked={isResizable(d)} onChange={(e) => set({ resizable: e.target.checked })} />
-        {' Variable height — set per placement in Rack Designer (height above = default size)'}
+        <input type="checkbox" checked={isRepeatable(d)} onChange={(e) => set({ repeatable: e.target.checked })} />
+        {' Repeatable — one placement can stack n copies (drawn as one block, counted n times in the BOM). Not for devices cabled individually (switches).'}
       </label>
       <div className="row2">
         <NumberField label="Depth (mm)" value={d.depthMm} min={0} onChange={(depthMm) => set({ depthMm })} />

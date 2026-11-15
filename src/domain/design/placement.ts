@@ -1,5 +1,5 @@
 import type { DeviceDefinition, PortFace } from '../device/types';
-import { isResizable, traitsOf } from '../device/categories';
+import { traitsOf } from '../device/categories';
 import { sizedDevice } from './sizing';
 import type { RackTemplate } from '../rack/types';
 import { SIDE_KINDS } from '../rack/side-elements';
@@ -30,7 +30,7 @@ export function spanOf(device: DeviceDefinition, rack: RackTemplate, mount: Moun
  * PDUs, patch panels) fit either.
  */
 export function unitSystemProblem(device: DeviceDefinition, rack: RackTemplate): string | undefined {
-  if (device.height.units === 0 || device.height.system === rack.unitSystem || isResizable(device)) return undefined;
+  if (device.height.units === 0 || device.height.system === rack.unitSystem || traitsOf(device.category).filler) return undefined;
   return `${device.height.system} device does not fit a ${rack.unitSystem} rack`;
 }
 
@@ -50,8 +50,8 @@ export function placementProblem(
   device: DeviceDefinition,
   mount: Mount,
   ignoreId?: string,
-  /** Height of a size-adjustable filler; defaults to the placement being moved, else the item's height. */
-  units = design.placements.find((p) => p.id === ignoreId)?.units,
+  /** Copies of a repeatable device; defaults to the placement being moved, else 1. */
+  repeat = design.placements.find((p) => p.id === ignoreId)?.repeat,
 ): string | undefined {
   const rack = lib.racks.get(design.templateId);
   if (!rack) return 'Unknown rack template';
@@ -65,7 +65,7 @@ export function placementProblem(
     );
     return taken ? 'Side slot occupied' : undefined;
   }
-  device = sizedDevice(lib.devices.get(device.id) ?? device, rack, units);
+  device = sizedDevice(lib.devices.get(device.id) ?? device, rack, repeat);
   if (device.height.units === 0) return '0U device mounts in a side element (PDU bay / sidepod), not in the rack body';
   const sys = unitSystemProblem(device, rack);
   if (sys) return sys;
@@ -75,7 +75,7 @@ export function placementProblem(
   for (const other of design.placements) {
     if (other.id === ignoreId) continue;
     const od = lib.devices.get(other.deviceId);
-    const os = od && spanOf(sizedDevice(od, rack, other.units), rack, other.mount);
+    const os = od && spanOf(sizedDevice(od, rack, other.repeat), rack, other.mount);
     if (os && spansOverlap(span, os)) return `Overlaps ${other.label}`;
   }
   return undefined;
@@ -120,9 +120,9 @@ export function duplicatePlacement(lib: Library, design: RackDesign, id: string,
   let mount: Mount | undefined;
   if (src.mount.kind === 'rack') {
     const face = src.mount.face;
-    const h = src.units ?? device.height.units;
+    const h = sizedDevice(device, rack, src.repeat).height.units;
     const fits = (pos: number) => pos >= 1 && pos <= rack.units
-      && !placementProblem(lib, design, device, { kind: 'rack', position: pos, face }, undefined, src.units);
+      && !placementProblem(lib, design, device, { kind: 'rack', position: pos, face }, undefined, src.repeat);
     const from = src.mount.position;
     const order = [from + h, ...Array.from({ length: rack.units }, (_, i) => i + 1)
       .sort((a, b) => Math.abs(a - from) - Math.abs(b - from) || b - a)];

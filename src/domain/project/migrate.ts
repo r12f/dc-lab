@@ -103,7 +103,10 @@ function migrateGroup(g: Json): Json {
   return { ...rest, formFactor: g.formFactor ?? connector, role: g.role ?? inferRole(g), ...(cableGender ? { cableGender } : {}) };
 }
 
-export function migrateDevice(d: Json): Json {
+export function migrateDevice(d0: Json): Json {
+  // Variable height (`resizable`) became Repeatable.
+  const { resizable, ...d } = d0;
+  if (resizable !== undefined && d.repeatable === undefined) d.repeatable = resizable;
   const ports = ((d.ports as Json[]) ?? []).map(migrateGroup);
   const breakoutProfiles = ((d.breakoutProfiles as Json[]) ?? []).map((p) => ({
     ...p,
@@ -119,7 +122,10 @@ export function migrateDevice(d: Json): Json {
   return { ...out, defaultProfileId: 'default', breakoutProfiles: ids.includes('default') ? breakoutProfiles : [...breakoutProfiles, { id: 'default', name: 'Default', groupDefaults: {}, overrides: {} }] };
 }
 
-export function migratePlacement(p: Json): Json {
+export function migratePlacement(p0: Json): Json {
+  // Filler height (`units`, of 1-unit items) became a repeat count.
+  const { units, ...p } = p0;
+  if (units !== undefined && p.repeat === undefined && Number(units) > 1) p.repeat = units;
   if (p.portSettings && p.groupSettings) {
     return { ...p, portSettings: mapValues(p.portSettings, toSetting), groupSettings: mapValues(p.groupSettings, toSetting) };
   }

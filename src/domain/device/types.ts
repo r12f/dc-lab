@@ -146,6 +146,10 @@ export interface DeviceDefinition extends CatalogItem {
   notes?: string;
   /** CDUs / chillers: cooling capacity (kW of heat removed) and pump draw (W, added to the device's power). */
   cooling?: { capacityKw: number; pumpW: number };
-  /** Height is chosen per placement (1..n units in the rack's unit system); `height` is the default size. Defaults per category (fillers). */
-  resizable?: boolean;
+  /**
+   * Repeatable: one placement can stack n copies (n x `height`), drawn as one block and counted n times in the BOM,
+   * power and weight. Off by default (a switch repeated makes no sense: every copy is cabled differently); fillers
+   * default to on. Only one copy's ports are cabled.
+   */
+  repeatable?: boolean;
 }

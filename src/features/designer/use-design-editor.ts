@@ -35,13 +35,13 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
     return problem;
   };
 
-  /** Sets the height of a size-adjustable filler; returns the problem when it does not fit. */
-  const resize = (placementId: string, units: number): string | undefined => {
+  /** Sets how many copies a repeatable placement stacks; returns the problem when they do not fit. */
+  const setRepeat = (placementId: string, repeat: number): string | undefined => {
     const p = design?.placements.find((x) => x.id === placementId);
     const device = p && lib.devices.get(p.deviceId);
     if (!design || !p || !device) return 'Unknown placement';
-    const problem = placementProblem(lib, design, device, p.mount, placementId, units);
-    if (!problem) updatePlacement(placementId, (x) => ({ ...x, units }));
+    const problem = placementProblem(lib, design, device, p.mount, placementId, repeat);
+    if (!problem) updatePlacement(placementId, (x) => ({ ...x, repeat: repeat > 1 ? repeat : undefined }));
     return problem;
   };
 
@@ -87,7 +87,7 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
   const rename = (name: string) => mutate((d) => ({ ...d, name }));
   const setAbbr = (text: string) => mutate((d) => ({ ...d, abbr: cleanAbbr(text) }));
 
-  return { addDevice, moveTo, resize, updatePlacement, duplicatePlacement: duplicatePlacementCmd, removePlacement, addCable, addCables, updateCable, removeCable, setCrossRack, rename, setAbbr };
+  return { addDevice, moveTo, setRepeat, updatePlacement, duplicatePlacement: duplicatePlacementCmd, removePlacement, addCable, addCables, updateCable, removeCable, setCrossRack, rename, setAbbr };
 }
 
 export type DesignEditor = ReturnType<typeof useDesignEditor>;

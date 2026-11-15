@@ -14,8 +14,8 @@ export interface CategoryTraits {
   filler?: 'blanking' | 'stiffener' | 'reserved' | 'brush';
   /** Sidebar / palette folder; defaults to the label. Fillers share "Misc". */
   folder?: string;
-  /** Height is chosen per placement (1..n units in the rack's unit system); one item covers every size. */
-  resizable?: boolean;
+  /** Repeatable by default (one placement stacks n copies). */
+  repeatable?: boolean;
   /** Room-level equipment (DC Layout facility), not rack-mounted: hidden from the Device Palette. */
   facility?: boolean;
 }
@@ -35,13 +35,13 @@ export const CATEGORY_TRAITS: Record<DeviceCategory, CategoryTraits> = {
   cdu: { label: 'CDU', labelPrefix: 'CDU', suppliesPower: false, allowsZeroU: false },
   other: { label: 'Other', labelPrefix: 'DEV', suppliesPower: false, allowsZeroU: true },
   // Appended after 'other' so existing categories keep their palette colors.
-  'blanking-panel': { label: 'Blanking Panel', labelPrefix: 'BP', suppliesPower: false, allowsZeroU: false, filler: 'blanking', folder: MISC, resizable: true },
-  stiffener: { label: 'Stiffener', labelPrefix: 'STF', suppliesPower: false, allowsZeroU: false, filler: 'stiffener', folder: MISC, resizable: true },
+  'blanking-panel': { label: 'Blanking Panel', labelPrefix: 'BP', suppliesPower: false, allowsZeroU: false, filler: 'blanking', folder: MISC, repeatable: true },
+  stiffener: { label: 'Stiffener', labelPrefix: 'STF', suppliesPower: false, allowsZeroU: false, filler: 'stiffener', folder: MISC, repeatable: true },
   chiller: { label: 'In-Row Chiller', labelPrefix: 'CH', suppliesPower: false, allowsZeroU: false },
   // Room-level equipment picked in DC Layout facilities, not placed in racks.
   'dc-pdu': { label: 'DC PDU', labelPrefix: 'DPDU', suppliesPower: true, allowsZeroU: false, facility: true },
-  'brush-panel': { label: 'Brush Panel', labelPrefix: 'BR', suppliesPower: false, allowsZeroU: false, filler: 'brush', folder: MISC, resizable: true },
-  reserved: { label: 'Empty (Reserved)', labelPrefix: 'RSV', suppliesPower: false, allowsZeroU: false, filler: 'reserved', folder: MISC, resizable: true },
+  'brush-panel': { label: 'Brush Panel', labelPrefix: 'BR', suppliesPower: false, allowsZeroU: false, filler: 'brush', folder: MISC, repeatable: true },
+  reserved: { label: 'Empty (Reserved)', labelPrefix: 'RSV', suppliesPower: false, allowsZeroU: false, filler: 'reserved', folder: MISC, repeatable: true },
 };
 
 export const DEVICE_CATEGORIES = Object.keys(CATEGORY_TRAITS) as DeviceCategory[];
@@ -56,6 +56,6 @@ export function categoryFolder(category: DeviceCategory): string {
   return t.folder ?? t.label;
 }
 
-/** Size-adjustable device: its own flag, else its category's default (fillers). */
-export const isResizable = (device: { category: DeviceCategory; resizable?: boolean }): boolean =>
-  device.resizable ?? !!traitsOf(device.category).resizable;
+/** Repeatable device: its own flag, else its category's default (fillers). */
+export const isRepeatable = (device: { category: DeviceCategory; repeatable?: boolean }): boolean =>
+  device.repeatable ?? !!traitsOf(device.category).repeatable;

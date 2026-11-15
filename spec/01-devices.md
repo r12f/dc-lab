@@ -152,15 +152,17 @@ Drawing strategy is selected by device shape:
   type's **typical / max power and weight** (`specs`); empty fields inherit. Rack metrics and the BOM use the
   placed item's values. Each item in the list has a ✕ delete button, and an opened item has "✕ Delete item"
   at the bottom (both ask to confirm; also in Optics & Cables).
-- **Variable height** (`resizable`): any device can be marked "Variable height" in the Devices inspector; its
-  height is then set per placement in Rack Designer and `height` is the default size. Fillers (below) default to it.
+- **Repeatable** (`repeatable`): one placement can stack **n copies** of the device (placement `repeat`). The
+  placement occupies n x the item's height and is drawn as **one block** in the elevation (label `×n`); rack
+  metrics take n x power and weight, and the BOM counts n of the item (one line, unit power per copy). Off by
+  default and enabled per device in the Devices inspector — a switch repeated makes no sense (each copy is cabled
+  differently); only one copy's ports are cabled. Fillers (below) default to on. Legacy `resizable` (Variable
+  height) and placement `units` load as `repeatable` / `repeat`.
 - **PSU arrangement** (`psus.layout`): `split` (default, half on each rear edge) or `row` (one row side by side,
   e.g. power shelves).
 - **Misc — size-adjustable fillers**: blanking panel, brush panel, stiffener and Empty (Reserved) are listed
-  together under the **Misc** folder (sidebar and palette). Each is **one item whose height is set per
-  placement** in Rack Designer (1…n units, in the rack's unit system — RU or OU), not one item per size. The
-  item's height is its default size; weight scales linearly from it. BOM lines are named and split by size
-  (`2RU Blanking Panel`). Built-ins: `blanking-panel`, `brush-panel`, `stiffener`, `reserved` (1RU default);
+  together under the **Misc** folder (sidebar and palette). Each is **one 1-unit item, repeatable**: a
+  placement stacks n of it (in the rack's unit system — RU or OU) and the BOM counts n (`Blanking Panel` x 3). Built-ins: `blanking-panel`, `brush-panel`, `stiffener`, `reserved` (1RU default);
   the former fixed-size built-ins (`blanking-panel-2ru`, `reserved-4ru`, `stiffener-1ou`…) migrate to these
   with the old height.
 - **Patch / Fiber Housing** (category `patch-panel`): fiber patch panels and housings; its own folder.

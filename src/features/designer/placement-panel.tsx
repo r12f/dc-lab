@@ -9,9 +9,9 @@ import { DeviceDrawing } from '../devices/drawing/device-drawing';
 import { resolvePlacedPort } from '../../domain/design/optics';
 import { variantLabel } from '../../domain/items/variants';
 import type { DesignEditor } from './use-design-editor';
-import { isResizable } from '../../domain/device/categories';
+import { isRepeatable } from '../../domain/device/categories';
 import { findProfile } from '../../domain/device/breakout';
-import { sizedDevice } from '../../domain/design/sizing';
+import { repeatCount, sizedDevice } from '../../domain/design/sizing';
 import { GroupOpticsEditor } from './group-optics-editor';
 import { PortConfigEditor } from './port-config-editor';
 
@@ -32,17 +32,18 @@ export function PlacementPanel({ lib, placement: p, templateId, editor, onRemove
   const device = lib.devices.get(p.deviceId);
   if (!device) return <p className="muted">Unknown device {p.deviceId}</p>;
   const update = (fn: (x: Placement) => Placement) => editor.updatePlacement(p.id, fn);
-  const placed = sizedDevice(device, lib.racks.get(templateId), p.units);
+  const placed = sizedDevice(device, lib.racks.get(templateId), p.repeat);
+  const n = repeatCount(device, p.repeat);
   const mount = p.mount;
 
   return (
     <>
       <Section title="Instance">
         <TextField label="Label" value={p.label} onChange={(label) => update((x) => ({ ...x, label }))} />
-        <p className="muted">{`${placed.name} · ${formatHeight(placed.height)} · ${formatPower(device.power.typicalW)}`}</p>
-        {isResizable(device) && mount.kind === 'rack' && (
-          <NumberField label={`Height (${placed.height.system})`} value={placed.height.units} min={1}
-            onChange={(units) => onError(editor.resize(p.id, Math.max(1, Math.round(units))))} />
+        <p className="muted">{`${placed.name}${n > 1 ? ` ×${n}` : ''} · ${formatHeight(placed.height)} · ${formatPower(placed.power.typicalW)}`}</p>
+        {isRepeatable(device) && mount.kind === 'rack' && (
+          <NumberField label={`Repeat (× ${formatHeight(sizedDevice(device, lib.racks.get(templateId)).height)} each)`} value={n} min={1}
+            onChange={(r) => onError(editor.setRepeat(p.id, Math.max(1, Math.round(r))))} />
         )}
         {mount.kind === 'rack' ? (
           <div className="row2">

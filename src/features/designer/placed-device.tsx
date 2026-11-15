@@ -55,7 +55,7 @@ export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dr
         strokeDasharray={ghost || reserved ? '4 2' : undefined} />
       <text x={cx} y={cy + 4} fontSize={vertical ? 9 : 10} textAnchor="middle" fill={ghost || reserved ? paint.inkMuted : '#F8FAFC'}
         fontWeight={600} transform={vertical ? `rotate(-90 ${cx} ${cy})` : undefined} pointerEvents="none">
-        {vertical ? placement.label : `${placement.label} · ${device.name}`}
+        {vertical ? placement.label : `${placement.label} · ${device.name}${placement.repeat && placement.repeat > 1 ? ` ×${placement.repeat}` : ''}`}
       </text>
       {/* Error: red outline over the device and a red badge; the selection outline stays inside it. */}
       {issues && issues.length > 0 && (
