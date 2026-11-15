@@ -52,7 +52,7 @@ const FACE_LABEL: Record<PortFace, string> = { front: 'Front', rear: 'Rear' };
 export function FaceMenu({ faces, onChange }: { faces: readonly PortFace[]; onChange(faces: PortFace[]): void }) {
   const all: PortFace[] = ['front', 'rear'];
   return (
-    <CheckMenu label="Views" title="Show the front view, the rear view, or both" noBulk minChecked={1}
+    <CheckMenu label="Views" title="Show the front view, the rear view, or both" noBulk compact minChecked={1}
       items={all.map((f) => ({ id: f, label: FACE_LABEL[f] }))}
       hidden={new Set(all.filter((f) => !faces.includes(f)))}
       onChange={(h) => onChange(all.filter((f) => !h.has(f)))} />

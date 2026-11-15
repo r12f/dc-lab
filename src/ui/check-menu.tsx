@@ -22,13 +22,15 @@ interface Props {
   minChecked?: number;
   /** Hide the All / None buttons (short lists). */
   noBulk?: boolean;
+  /** Narrow menu (a few short items, e.g. Front / Rear). */
+  compact?: boolean;
 }
 
 /**
  * Toolbar dropdown with a checkbox per item: the button reads "<label> n/m ▾" and is highlighted while some are
  * unchecked. All / None, outside click or Escape closes.
  */
-export function CheckMenu({ label, items, hidden, onChange, title, info, minChecked = 0, noBulk }: Props) {
+export function CheckMenu({ label, items, hidden, onChange, title, info, minChecked = 0, noBulk, compact }: Props) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -55,7 +57,7 @@ export function CheckMenu({ label, items, hidden, onChange, title, info, minChec
         {`${label} ${checked}/${items.length} ▾`}
       </Button>
       {open && (
-        <div className="dropdown-menu" role="menu">
+        <div className={compact ? 'dropdown-menu compact' : 'dropdown-menu'} role="menu">
           {(info || !noBulk) && (
             <div className="device-filter-head">
               <span className="muted">{info}</span>
