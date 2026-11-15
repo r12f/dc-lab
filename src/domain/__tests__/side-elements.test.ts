@@ -43,11 +43,11 @@ describe('default side elements', () => {
     }
   });
   const sides = (els: { side: string; kind: string }[]) => els.map((e) => `${e.side}:${e.kind}`);
-  it('MGX (PDU+SidePods) is an MGX rack with a PDU bay + sidepod on each side, 3 tiles wide', () => {
+  it('MGX (PDU+SidePods) is an MGX rack with a PDU bay + sidepod on each side, 2 tiles wide', () => {
     const r = BUILTIN_CATALOG_FOR_TESTS.racks.find((x) => x.id === 'mgx-48ru-pdu-sidepods')!;
     expect(r.kind).toBe('mgx');
     expect(sides(r.sideElements)).toEqual(['left:pdu-bay', 'left:sidepod', 'right:pdu-bay', 'right:sidepod']);
-    expect(r.footprintTiles.wide).toBe(3);
+    expect(r.footprintTiles.wide).toBe(2); // 600 + 2x300 mm sidepods = 1200 mm = 2 tiles
   });
 });
 

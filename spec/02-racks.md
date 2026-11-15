@@ -47,12 +47,12 @@ full-height CDU).
 **In-row chiller racks** (`kind: chiller`, built-in **In-Row Chiller Rack 48RU** `chiller-rack-in-row`, 1 tile,
 frame weight 0) hold one full-height In-Row Chiller. In DC Layout the chiller takes its cooling capacity out of
 the hot aisle its row exhausts into, and its power counts in the row's demand.
-| `mgx` variant **MGX Rack 48RU (PDU+SidePods)** | same side elements as `network` (PDU bay + sidepod each side, 3 tiles wide); listed under MGX |
+| `mgx` variant **MGX Rack 48RU (PDU+SidePods)** | same side elements as `network` (PDU bay + sidepod each side, 600 + 2×300 mm = 2 tiles wide); listed under MGX |
 
 Network racks are 600 mm wide. **PDU bays sit inside the rack enclosure** (between the rails and the side
 panel), so they add no width: the footprint is the body plus the side elements outside it (sidepods, cable
 managers, other). Built-in network racks: **Network Rack 42RU / 48RU** (PDU bays only, 600 mm, 1 tile) and **Network Rack 42RU /
-48RU (w/ Sidepods)** (`…-sidepods`; 600 + 2×300 mm sidepods = 1200 mm, 3 tiles). Designs on a plain network
+48RU (w/ Sidepods)** (`…-sidepods`; 600 + 2×300 mm sidepods = 1200 mm = 2 × 600 mm tiles). Designs on a plain network
 rack that mount devices in a sidepod move to the (w/ Sidepods) template on load; the
 footprint view draws PDU bays over the body edges. In-rack cable length counts no distance through a PDU bay
 for a sidepod outside it. The former built-in `network-48ru-800` is now `network-48ru-600`; projects are migrated.

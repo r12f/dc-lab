@@ -12,7 +12,7 @@ describe('network racks with and without sidepods', () => {
       expect(kinds(id), id).toEqual(['left:pdu-bay', 'right:pdu-bay']);
       expect(rack(id).footprintTiles.wide).toBe(1);
       const pods = rack(`${id}-sidepods`);
-      expect([pods.name, pods.units, pods.footprintTiles.wide]).toEqual([`Network Rack ${ru}RU (w/ Sidepods)`, Number(ru), 3]);
+      expect([pods.name, pods.units, pods.footprintTiles.wide]).toEqual([`Network Rack ${ru}RU (w/ Sidepods)`, Number(ru), 2]);
       expect(kinds(pods.id)).toEqual(['left:pdu-bay', 'left:sidepod', 'right:pdu-bay', 'right:sidepod']);
     }
   });
