@@ -50,6 +50,20 @@ function DeviceSpecs({ lib, v, set, disabled }: { lib: Library; v: ItemVariant; 
   );
 }
 
+/** Optic / cable item: its own power (module W, or W per active cable end); empty = the item type's. */
+function PowerSpec({ lib, v, set, disabled }: { lib: Library; v: ItemVariant; set(p: Partial<ItemVariant>): void; disabled: boolean }) {
+  const inherited = v.target === 'optic' ? lib.optics.get(v.itemId)?.powerW : lib.cableMedia.get(v.itemId)?.powerWPerEnd;
+  return (
+    <Section title="Power">
+      <p className="muted">Empty = item type value. Applies where this is the item type's default item.</p>
+      <fieldset disabled={disabled} className="plain">
+        <OverrideField label={v.target === 'optic' ? 'Power W' : 'Power per end W'} value={v.specs?.typicalW} inherited={inherited ?? 0}
+          onChange={(x) => set({ specs: x === undefined ? undefined : { typicalW: x } })} />
+      </fieldset>
+    </Section>
+  );
+}
+
 /** Item (vendor product) editor: vendor, model / vendor PN, default flag, custom properties. */
 export function ItemVariantEditor({ lib, variant: v, itemTypeName, readOnly, commands, onDeleted }: Props) {
   const isDefault = lib.variants.defaultOf(v.itemId)?.id === v.id;
@@ -68,6 +82,7 @@ export function ItemVariantEditor({ lib, variant: v, itemTypeName, readOnly, com
         {!isDefault && <Button onClick={() => commands.makeDefault(v)}>Make default</Button>}
       </Section>
       {v.target === 'device' && <DeviceSpecs lib={lib} v={v} set={set} disabled={readOnly} />}
+      {v.target !== 'device' && <PowerSpec lib={lib} v={v} set={set} disabled={readOnly} />}
       <CustomPropertiesSection target={v.target} item={v} builtin={readOnly} onChange={(properties) => set({ properties })} />
       {commands.canDelete(v) && <Button variant="danger" onClick={() => {
         if (!confirm(`Delete item "${variantLabel(v) || v.id}"?`)) return;

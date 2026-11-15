@@ -5,7 +5,7 @@ import { portItemCounts } from '../design/optics';
 import { RACK_KINDS } from '../rack/types';
 import { SIDE_KINDS } from '../rack/side-elements';
 import { effectiveLengthM } from '../design/cabling';
-import { variantLabel } from '../items/variants';
+import { cablePowerWPerEnd, opticPowerW, variantLabel } from '../items/variants';
 import { BomBuilder } from './bom-builder';
 import type { BomLine } from './types';
 import { memoByDesign } from '../design/memo';
@@ -64,13 +64,13 @@ function computeBuildRackBomTree(lib: Library, design: RackDesign): BomNode | un
         if (!o) continue;
         const ov = item(o.id);
         g.parts.add({ key: `${key}:optic:${o.id}`, kind: 'optic', item: o.name, category: 'Optic', vendorModel: variantLabel(ov),
-          qty: n, unitW: o.powerW, notes: [], properties: ov?.properties });
+          qty: n, unitW: opticPowerW(lib, o), notes: [], properties: ov?.properties });
       }
       for (const [cableId, n] of counts.cables) {
         const media = lib.cableMedia.get(cableId);
         const cv = item(cableId);
         g.parts.add({ key: `${key}:cable:${cableId}`, kind: 'cable', item: media?.name ?? cableId, category: 'Cable',
-          vendorModel: variantLabel(cv), qty: n, unitW: media?.powerWPerEnd ?? 0, notes: ['port-attached'], properties: cv?.properties });
+          vendorModel: variantLabel(cv), qty: n, unitW: cablePowerWPerEnd(lib, media), notes: ['port-attached'], properties: cv?.properties });
       }
     }
     return [...groups.values()]

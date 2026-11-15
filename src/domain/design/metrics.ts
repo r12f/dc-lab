@@ -1,3 +1,4 @@
+import { opticPowerW } from '../items/variants';
 import { traitsOf } from '../device/categories';
 import type { Library } from '../library/library';
 import { formatPower, unitsIn } from '../units';
@@ -60,8 +61,9 @@ function rackMetrics(lib: Library, design: RackDesign): RackMetrics {
     for (const [opticId, n] of opticCounts(lib, device, p)) {
       const optic = lib.optics.get(opticId);
       if (!optic) continue;
-      m.typicalW += optic.powerW * n;
-      m.maxW += optic.powerW * n;
+      const w = opticPowerW(lib, optic);
+      m.typicalW += w * n;
+      m.maxW += w * n;
       m.deviceWeightKg += (optic.weightKg ?? 0) * n;
     }
     const cableW = activeCableW(lib, device, p);

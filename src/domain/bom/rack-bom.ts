@@ -4,7 +4,7 @@ import type { RackDesign } from '../design/types';
 import { portItemCounts } from '../design/optics';
 import { RACK_KINDS } from '../rack/types';
 import { effectiveLengthM } from '../design/cabling';
-import { variantLabel } from '../items/variants';
+import { cablePowerWPerEnd, opticPowerW, variantLabel } from '../items/variants';
 import { BomBuilder } from './bom-builder';
 import type { BomLine } from './types';
 import { memoByDesign } from '../design/memo';
@@ -40,14 +40,14 @@ function computeBuildRackBom(lib: Library, design: RackDesign): BomLine[] {
       const media = lib.cableMedia.get(cableId);
       const cv = item(cableId);
       bom.add({ key: `portcable:${cableId}`, kind: 'cable', item: media?.name ?? cableId, category: 'Cable',
-        vendorModel: variantLabel(cv), qty: n, unitW: media?.powerWPerEnd ?? 0, notes: ['port-attached'], properties: cv?.properties });
+        vendorModel: variantLabel(cv), qty: n, unitW: cablePowerWPerEnd(lib, media), notes: ['port-attached'], properties: cv?.properties });
     }
     for (const [opticId, n] of counts.optics) {
       const o = lib.optics.get(opticId);
       if (!o) continue;
       const ov = item(o.id);
       bom.add({ key: `optic:${o.id}`, kind: 'optic', item: o.name, category: 'Optic',
-        vendorModel: variantLabel(ov), qty: n, unitW: o.powerW,
+        vendorModel: variantLabel(ov), qty: n, unitW: opticPowerW(lib, o),
         notes: o.packaging === 'pigtail' && o.pigtail ? [`pigtail ${o.pigtail.count}x ${o.pigtail.connector} ${o.pigtail.lengthM} m`] : [],
         properties: ov?.properties });
     }

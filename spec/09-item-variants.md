@@ -43,3 +43,7 @@ have any number of items; the one marked `isDefault` (else the generic item) is 
 Older projects stored `vendor`, `model` and `properties` on devices, optics and cables. On load each such
 project item type gets its generic item `<id>--generic` saved with those values. Property values that
 older projects stored under a built-in item type id are read as values of its generic item.
+
+**Optic and cable item power**: optic and cable items carry their own power too (`specs.typicalW`: module W for
+optics, W per active end for AEC / AOC cables; empty = the item type's). Ports pick no optic / cable item, so
+the item type's **default item** is the one counted: its power is used in rack metrics and BOM Unit W.

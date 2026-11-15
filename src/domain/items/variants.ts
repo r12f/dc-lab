@@ -81,6 +81,20 @@ export function withItemSpecs<T extends { power: { typicalW: number; maxW: numbe
   };
 }
 
+/**
+ * Power of one optic module: its item's override when set, else the item type's. Ports pick no optic item, so the
+ * optic type's default item is the one bought (as in the BOM).
+ */
+export function opticPowerW(lib: { variants: { defaultOf(id: string): ItemVariant | undefined } }, o: { id: string; powerW: number }): number {
+  return lib.variants.defaultOf(o.id)?.specs?.typicalW ?? o.powerW;
+}
+
+/** Power per active end of a cable (AEC / AOC): its default item's override when set, else the item type's. */
+export function cablePowerWPerEnd(lib: { variants: { defaultOf(id: string): ItemVariant | undefined } }, c: { id: string; powerWPerEnd?: number } | undefined): number {
+  if (!c) return 0;
+  return lib.variants.defaultOf(c.id)?.specs?.typicalW ?? c.powerWPerEnd ?? 0;
+}
+
 /** "Acme SW-6400", or just the model when the vendor is generic. */
 export function variantLabel(v: ItemVariant | undefined): string {
   if (!v) return '';

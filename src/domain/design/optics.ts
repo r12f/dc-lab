@@ -1,3 +1,4 @@
+import { cablePowerWPerEnd } from '../items/variants';
 import type { DeviceDefinition } from '../device/types';
 import type { Library } from '../library/library';
 import { allPortRefs, parsePortRef } from '../device/ports';
@@ -35,7 +36,7 @@ export function portItemCounts(lib: Library, device: DeviceDefinition, placement
 /** Power drawn by active direct-attach cable ends (AEC retimers, AOC optics) plugged into the placement's ports. */
 export function activeCableW(lib: Library, device: DeviceDefinition, placement: Placement): number {
   let w = 0;
-  for (const [cableId, n] of portItemCounts(lib, device, placement).cables) w += (lib.cableMedia.get(cableId)?.powerWPerEnd ?? 0) * n;
+  for (const [cableId, n] of portItemCounts(lib, device, placement).cables) w += cablePowerWPerEnd(lib, lib.cableMedia.get(cableId)) * n;
   return w;
 }
 
