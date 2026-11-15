@@ -57,13 +57,13 @@ export const CableRoutesDrawing = memo(function CableRoutesDrawing({ lib, design
       <g pointerEvents="none">
         {items.filter((i) => i.sel || i.bad).map((i) => (
           <path key={i.link.key} d={i.d} fill="none" stroke={i.sel ? paint.selection : paint.danger}
-            strokeWidth={i.sel ? 5 : 3} strokeLinejoin="round" strokeOpacity={dim(i) ? 0.25 : 1} />
+            strokeWidth={i.sel ? 3 : 2.5} strokeLinejoin="round" strokeOpacity={dim(i) ? 0.25 : 1} />
         ))}
       </g>
       <g pointerEvents="none">
         {items.map((i) => (
           <path key={i.link.key} d={i.d} fill="none" stroke={dim(i) ? paint.inkMuted : i.color} strokeLinejoin="round"
-            strokeWidth={i.sel ? 2.5 : 1.25} strokeOpacity={dim(i) ? 0.12 : 1} />
+            strokeWidth={i.sel ? 1.75 : 1.25} strokeOpacity={dim(i) ? 0.12 : 1} />
         ))}
         {items.map((i) => (
           <path key={`e${i.link.key}`} d={i.dots} fill={dim(i) ? paint.inkMuted : i.color} opacity={dim(i) ? 0.12 : 1}

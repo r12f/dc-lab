@@ -53,7 +53,7 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   the media colour when all its cables share one, else neutral. Clicking a link opens its first run; selecting
   any run highlights its link. Lines are thin (1.25 px) in the
   cable media color, one lane per run at least 2.5 px apart: the side channels widen with the run count. Only
-  the selected run (selection-colored casing, thicker, on top) and faulty runs (red casing) get a casing; while
+  the selected run (thin selection-colored casing, slightly thicker line, on top) and faulty runs (red casing) get a casing; while
   a run is selected every other run is drawn in a faint neutral close to the paper;
   clicking a run selects it, clicking empty space clears it.
 - Endpoints are drawn at the device's vertical centre; port-level position is not drawn. Multi-connector
