@@ -30,11 +30,14 @@ function dotsPath(ends: [number, number][], r = 3.5): string {
 export const CableRoutesDrawing = memo(function CableRoutesDrawing({ lib, routes, selectedId, errorIds, onSelect }: Props) {
   // SVG has no z-index: draw the selected run last.
   const ordered = [...routes].sort((a, b) => Number(a.run.id === selectedId) - Number(b.run.id === selectedId));
+  // With a run selected, every other run is dimmed so the selected one stands out.
+  const anySel = !!selectedId && routes.some((r) => r.run.id === selectedId);
   const runs = ordered.map(({ run, paths }) => {
     const media = lib.cableMedia.get(run.mediaId);
     return {
       run, media, d: runPath(paths), dots: dotsPath(paths.slice(1).map((pts) => pts[0])),
       sel: run.id === selectedId, bad: !!errorIds?.has(run.id), color: media?.color ?? paint.ink,
+      dim: anySel && run.id !== selectedId,
     };
   });
   // Layers, not per run: every casing first, then every coloured line. Drawn per run, each run's dark casing
@@ -45,12 +48,12 @@ export const CableRoutesDrawing = memo(function CableRoutesDrawing({ lib, routes
       <g pointerEvents="none">
         {runs.map((r) => (
           <path key={r.run.id} d={r.d} fill="none" stroke={r.sel ? paint.selection : r.bad ? paint.danger : '#0f172a'}
-            strokeWidth={r.sel || r.bad ? 6 : 4.5} strokeLinejoin="round" />
+            strokeWidth={r.sel ? 7 : r.bad ? 6 : 4.5} strokeLinejoin="round" strokeOpacity={r.dim ? 0.15 : 1} />
         ))}
       </g>
       <g pointerEvents="none">
-        {runs.map((r) => <path key={r.run.id} d={r.d} fill="none" stroke={r.color} strokeWidth={2.5} strokeLinejoin="round" />)}
-        {runs.map((r) => <path key={`e${r.run.id}`} d={r.dots} fill={r.color} stroke={paint.ink} strokeWidth={0.5} />)}
+        {runs.map((r) => <path key={r.run.id} d={r.d} fill="none" stroke={r.color} strokeWidth={r.sel ? 3.5 : 2.5} strokeLinejoin="round" strokeOpacity={r.dim ? 0.15 : 1} />)}
+        {runs.map((r) => <path key={`e${r.run.id}`} d={r.dots} fill={r.color} stroke={paint.ink} strokeWidth={0.5} opacity={r.dim ? 0.15 : 1} />)}
       </g>
       {/* Hit targets on top: wide transparent strokes, one per run. */}
       <g style={{ cursor: 'pointer' }}>

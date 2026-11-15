@@ -46,7 +46,8 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   its lane in the chosen side's rail channel, along the channel, into the end device. Each side's runs get
   separate nested lanes (longest run outermost) so runs on one side never cross. Lines use the cable media
   color over a dark casing; all casings are drawn below all lines, so a run's casing never cuts another run's
-  line where they cross; the selected run is highlighted; clicking a run selects it.
+  line where they cross; the selected run is highlighted (thicker, on top) and every other run is dimmed;
+  clicking a run selects it, clicking empty space clears it.
 - Endpoints are drawn at the device's vertical centre; port-level position is not drawn. Multi-connector
   runs are drawn as one stub per endpoint joined by a spine in the run's lane.
 - **Checks** (shown on the run): every A endpoint must mate with the cable's A connector and every B
