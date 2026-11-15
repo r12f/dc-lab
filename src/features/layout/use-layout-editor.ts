@@ -4,6 +4,7 @@ import { addDoor, clampDoor } from '../../domain/layout/doors';
 import { rotateBy } from '../../domain/layout/view-rotation';
 import { addAisleAfter, addFacilityNear, addRowAfter, addTrayOver, type InsertAnchor } from '../../domain/layout/insert';
 import { assignmentProblem, type DesignLookup } from '../../domain/layout/tiles';
+import { assignTiles as assignTilesTo, rackLabel, type AssignResult, type TileRef } from '../../domain/layout/assign';
 import { clampToRoom, snap } from '../../domain/layout/geometry';
 import { reorderTo } from '../../domain/layout/floor-plan';
 import { duplicateElements, type DuplicableKind } from '../../domain/layout/duplicate';
@@ -82,10 +83,17 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
     mutate((l) => {
       const id = uniqueId('r', l.assignments.map((a) => a.id));
       // Numbered by the tile the rack starts in (a 1.5-tile rack at 1.5 is "-02").
-      const label = `${row.name.replace(/\s+/g, '')}-${String(Math.floor(startTile) + 1).padStart(2, '0')}`;
+      const label = rackLabel(row.name, startTile);
       return { ...l, assignments: [...l.assignments, { id, rowId, startTile, designId, label }] };
     });
     return undefined;
+  };
+  /** Assigns one design to several tiles (tiles already taken or too short are skipped and reported). */
+  const assignTiles = (tiles: TileRef[], designId: string): AssignResult => {
+    if (!layout) return { layout: layout as never, ids: [], skipped: [] };
+    const r = assignTilesTo(lib, designs, layout, tiles, designId);
+    if (r.ids.length) mutate(() => r.layout);
+    return r;
   };
   const unassign = (id: string) => mutate((l) => ({
     ...l,
@@ -105,7 +113,7 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
 
   return {
     addRow, addAisle, addTray, addFacility, updateElement, updateElements, duplicate, removeElement, removeElements, reorder, moveTray, moveFacility,
-    assign, unassign, relabel, setServes, setRoom, setWhitespace, rename, setFacilityLinks, rotateView, addDoor: addDoorTo, moveDoor,
+    assign, assignTiles, unassign, relabel, setServes, setRoom, setWhitespace, rename, setFacilityLinks, rotateView, addDoor: addDoorTo, moveDoor,
   };
 }
 

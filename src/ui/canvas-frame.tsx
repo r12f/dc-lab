@@ -9,11 +9,22 @@ interface Props {
   toolbar?: ReactNode;
   /** View controls placed right before the zoom buttons (e.g. a filter dropdown). */
   viewControls?: ReactNode;
+  /**
+   * When this changes (and on first show), the zoom fits the drawing's width to the pane (never above 100 %), so
+   * a larger drawing shows a smaller zoom level instead of a silently smaller drawing.
+   */
+  fitKey?: string;
   children(svgRef: RefObject<SVGSVGElement | null>): ReactNode;
 }
 
 /** Zoom steps of the canvas (1 = 100 %). */
 export const ZOOM_STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4];
+
+/** Zoom that fits a drawing of `drawingW` px into `paneW` px: at most 100 %, at least the smallest step. */
+export function fitZoom(paneW: number, drawingW: number): number {
+  if (!(drawingW > 0) || !(paneW > 0)) return 1;
+  return Math.max(ZOOM_STEPS[0], Math.min(1, Math.floor((paneW / drawingW) * 100) / 100));
+}
 
 /** Next zoom step in a direction (+1 in, -1 out), clamped to the ends. */
 export function stepZoom(zoom: number, dir: 1 | -1): number {
@@ -25,7 +36,7 @@ export function stepZoom(zoom: number, dir: 1 | -1): number {
  * Canvas area with a toolbar: zoom (− / % / +, Ctrl+wheel), "Export SVG" and maximize. Zoom uses CSS `zoom` on
  * the drawing, so the scroll area grows with it and pointer mapping (getScreenCTM) stays correct.
  */
-export function CanvasFrame({ title, exportName, toolbar, viewControls, children }: Props) {
+export function CanvasFrame({ title, exportName, toolbar, viewControls, fitKey, children }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const maximized = useMaximize((s) => s.maximized);
   const setMaximized = useMaximize((s) => s.setMaximized);
@@ -44,6 +55,13 @@ export function CanvasFrame({ title, exportName, toolbar, viewControls, children
     el.addEventListener('wheel', wheel, { passive: false });
     return () => el.removeEventListener('wheel', wheel);
   }, []);
+  useEffect(() => {
+    if (fitKey === undefined) return;
+    const el = scrollRef.current;
+    const w = Number(svgRef.current?.getAttribute('width'));
+    if (!el || !w) return;
+    setZoom(fitZoom(el.clientWidth - 32, w));
+  }, [fitKey]);
   return (
     <div className="canvas-frame">
       <div className="canvas-toolbar">

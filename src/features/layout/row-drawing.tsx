@@ -5,7 +5,7 @@ import { formatTiles, tilesUsed, tileWidthOf, type DesignLookup } from '../../do
 import { tileRect } from '../../domain/layout/floor-plan';
 import { computeRackMetrics } from '../../domain/design/metrics';
 import { formatPower } from '../../domain/units';
-import { isSelected, type LayoutSelection } from './selection';
+import { clickTile, isSelected, isTileSelected, type LayoutSelection } from './selection';
 import { paint } from '../../theme/paint';
 import { useLabels } from './view-context';
 import { assignmentRole, servedRacks } from '../../domain/layout/infra';
@@ -23,7 +23,7 @@ interface Props {
   /** Live power of the row (typical W). */
   powerW: number;
   selection?: LayoutSelection;
-  onSelect(sel: LayoutSelection): void;
+  onSelect(sel: LayoutSelection | undefined): void;
   onHeaderPointerDown(e: PointerEvent<SVGElement>): void;
   onRackHover(assignmentId: string | undefined, e?: { clientX: number; clientY: number }): void;
 }
@@ -70,13 +70,13 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
       </g>
       {tiles.map((t) => {
         const r = tileRect(rect, row, t);
-        const sel = selection?.kind === 'tile' && selection.rowId === row.id && selection.tile === t;
+        const sel = isTileSelected(selection, row.id, t);
         return (
           <rect key={t} x={r.x} y={r.y} width={r.widthMm} height={r.depthMm}
             fill={sel ? paint.selection : paint.slot} fillOpacity={sel ? 0.5 : 1}
             stroke={rowSelected ? paint.selection : paint.inkMuted} strokeOpacity={rowSelected ? 1 : 0.5} strokeWidth={12}
             style={{ cursor: 'pointer' }}
-            onClick={(e) => { e.stopPropagation(); onSelect({ kind: 'tile', rowId: row.id, tile: t }); }} />
+            onClick={(e) => { e.stopPropagation(); onSelect(clickTile(selection, row.id, t, { toggle: e.ctrlKey || e.metaKey, range: e.shiftKey })); }} />
         );
       })}
       <line x1={frontX} x2={frontX} y1={rect.y} y2={rect.y + length} stroke={paint.accent} strokeWidth={50} />

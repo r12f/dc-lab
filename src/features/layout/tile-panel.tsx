@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { DcLayout } from '../../domain/layout/types';
-import { assignmentAt, assignmentProblem, formatTiles, startInTile, tileWidthOf, type DesignLookup } from '../../domain/layout/tiles';
+import { assignmentAt, formatTiles, tileWidthOf, type DesignLookup } from '../../domain/layout/tiles';
 import { computeRackMetrics } from '../../domain/design/metrics';
 import { formatPower } from '../../domain/units';
 import { useAppStore } from '../../state/store';
 import { Button } from '../../ui/button';
 import { SelectField, TextField } from '../../ui/fields';
 import type { LayoutEditor } from './use-layout-editor';
-import type { LayoutSelection } from './selection';
+import type { LayoutSelection, TileSelection } from './selection';
 import type { RackAssignment } from '../../domain/layout/types';
 import { assignmentRole, infraGroups, servedRacks } from '../../domain/layout/infra';
 
@@ -56,15 +56,17 @@ interface Props {
   onSelect(sel: LayoutSelection | undefined): void;
 }
 
-/** Assign a rack design to the selected tile, or edit the selected assignment. */
+/** Assign a rack design to the selected tile(s), or edit the selected assignment. */
 export function TilePanel({ lib, designs, layout, editor, selection, onSelect }: Props) {
   const allDesigns = useAppStore((s) => s.project.rackDesigns);
   const [designId, setDesignId] = useState(allDesigns[0]?.id ?? '');
-  const [error, setError] = useState<string>();
+  const [message, setMessage] = useState<{ error: boolean; lines: string[] }>();
 
+  // One tile covered by a rack: edit that rack.
+  const single = selection.kind === 'tile' && selection.tiles.length === 1 ? selection.tiles[0] : undefined;
   const assignment = selection.kind === 'assignment'
     ? layout.assignments.find((a) => a.id === selection.id)
-    : assignmentAt(lib, designs, layout, selection.rowId, selection.tile);
+    : single && assignmentAt(lib, designs, layout, single.rowId, single.tile);
 
   if (assignment) {
     const d = designs(assignment.designId);
@@ -81,21 +83,30 @@ export function TilePanel({ lib, designs, layout, editor, selection, onSelect }:
     );
   }
   if (selection.kind !== 'tile') return null;
-  const row = layout.rows.find((r) => r.id === selection.rowId);
-  if (!row) return null;
   if (allDesigns.length === 0) return <p className="muted">Create a rack design in Rack Designer first.</p>;
-  // A tile partly filled by a fractional-width rack (e.g. 1.5-tile ORv3) starts the next rack where that one ends.
-  const start = startInTile(lib, designs, layout, row.id, selection.tile);
-  const problem = designId ? assignmentProblem(lib, designs, layout, row, start, designId) : 'Pick a design';
+  const sel: TileSelection = selection;
+  const free = sel.tiles.filter((t) => !assignmentAt(lib, designs, layout, t.rowId, t.tile));
+  const rowName = (id: string) => layout.rows.find((r) => r.id === id)?.name ?? id;
+  const title = sel.tiles.length === 1
+    ? `${rowName(sel.tiles[0].rowId)} · tile ${sel.tiles[0].tile + 1}`
+    : `${sel.tiles.length} tiles selected · ${free.length} free`;
+  const assign = () => {
+    const r = editor.assignTiles(sel.tiles, designId);
+    if (r.ids.length) onSelect(undefined);
+    setMessage(r.skipped.length
+      ? { error: r.ids.length === 0, lines: [`${r.ids.length} rack${r.ids.length === 1 ? '' : 's'} assigned; skipped:`, ...r.skipped] }
+      : { error: false, lines: [`${r.ids.length} rack${r.ids.length === 1 ? '' : 's'} assigned`] });
+  };
   return (
     <div className="card">
-      <strong>{`${row.name} · tile ${selection.tile + 1}${start !== selection.tile ? ` (free from ${formatTiles(start + 1)})` : ''}`}</strong>
+      <strong>{title}</strong>
+      <p className="muted">Ctrl/Shift-click tiles to add or remove them; Shift-click selects a run in the row.</p>
       <SelectField label="Rack design" value={designId}
         options={allDesigns.map((d) => ({ value: d.id, label: `${d.abbr} · ${d.name} (${formatTiles(tileWidthOf(lib, d))} tiles)` }))}
         onChange={setDesignId} />
-      {(error || problem) && <p className="error">{error ?? problem}</p>}
-      <Button variant="primary" disabled={!!problem} onClick={() => setError(editor.assign(row.id, start, designId))}>
-        Assign rack
+      {message && message.lines.map((l, i) => <p key={i} className={message.error ? 'error' : 'muted'}>{l}</p>)}
+      <Button variant="primary" disabled={!designId || free.length === 0} onClick={assign}>
+        {free.length > 1 ? `Assign ${free.length} racks` : 'Assign rack'}
       </Button>
     </div>
   );

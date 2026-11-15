@@ -73,7 +73,7 @@ export function addFacilityNear(l: DcLayout, kind: FacilityKind, nextTo?: string
  */
 export function insertAnchor(
   l: DcLayout,
-  sel: { kind: 'row' | 'aisle' | 'tray' | 'facility' | 'door'; ids: string[] } | { kind: 'tile'; rowId: string } | { kind: 'assignment'; id: string } | undefined,
+  sel: { kind: 'row' | 'aisle' | 'tray' | 'facility' | 'door'; ids: string[] } | { kind: 'tile'; tiles: { rowId: string; tile: number }[] } | { kind: 'assignment'; id: string } | undefined,
 ): InsertAnchor {
   if (!sel) return {};
   const last = (ids: string[]) => [...ids].sort((a, b) => pos(l, a) - pos(l, b)).at(-1);
@@ -93,8 +93,10 @@ export function insertAnchor(
       return { facilityId: sel.ids.at(-1) };
     case 'door':
       return { doorId: sel.ids.at(-1) };
-    case 'tile':
-      return { after: sel.rowId, aisleId: aisleFrom(l, pos(l, sel.rowId) + 1) };
+    case 'tile': {
+      const rowId = sel.tiles.at(-1)?.rowId;
+      return rowId ? { after: rowId, aisleId: aisleFrom(l, pos(l, rowId) + 1) } : {};
+    }
     case 'assignment': {
       const rowId = l.assignments.find((a) => a.id === sel.id)?.rowId;
       return rowId ? { after: rowId, aisleId: aisleFrom(l, pos(l, rowId) + 1) } : {};

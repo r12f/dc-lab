@@ -35,7 +35,7 @@ describe('add after the selection', () => {
   });
   it('a tile or rack: after its row', () => {
     const l = sample();
-    expect(insertAnchor(l, { kind: 'tile', rowId: 'r1', tile: 3 } as never).after).toBe('r1');
+    expect(insertAnchor(l, { kind: 'tile', tiles: [{ rowId: 'r1', tile: 3 }] }).after).toBe('r1');
     expect(insertAnchor(l, { kind: 'assignment', id: 'x' }).after).toBe('r2');
   });
   it('trays: over the selected aisle, else the next aisle east of the selection', () => {

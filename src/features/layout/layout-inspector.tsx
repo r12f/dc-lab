@@ -20,7 +20,7 @@ interface Props {
 }
 
 function SelectionEditor({ lib, designs, layout, editor, selection, onSelect }: Props) {
-  if (!selection) return <p className="muted">Click a tile, rack, row header, aisle, tray or facility. Ctrl/Shift-click to select several of one kind.</p>;
+  if (!selection) return <p className="muted">Click a tile, rack, row header, aisle, tray or facility. Ctrl/Shift-click to select several of one kind (tiles too, to assign racks to all of them).</p>;
   if (isElementSelection(selection)) {
     return <ElementPanel lib={lib} designs={designs} layout={layout} editor={editor} selection={selection} onSelect={onSelect} />;
   }

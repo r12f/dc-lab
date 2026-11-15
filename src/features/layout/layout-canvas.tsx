@@ -30,6 +30,8 @@ interface Props {
 }
 
 const PAD = 1200;
+/** Drawing scale at 100 % zoom. */
+export const PX_PER_MM = 0.1;
 
 /**
  * Room plan in millimetres (1 SVG unit = 1 mm), north up. Draw order (SVG has no z-index):
@@ -44,8 +46,8 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
   const ws = layout.whitespace;
   const rotation = layout.viewRotation ?? 0;
   const view = viewSize(rotation, widthMm, depthMm);
-  // Fit the (rotated) room width to the pane; taller rooms scroll vertically.
-  const pxPerMm = Math.min(1100 / view.w, 0.1);
+  // Fixed drawing scale (100 % = 0.1 px/mm); the canvas zoom fits it to the pane (fitKey in the module).
+  const pxPerMm = PX_PER_MM;
   const rowPower = new Map(computeDcMetrics(lib, designs, layout).rows.map((r) => [r.rowId, r.typicalW]));
   const isSel = (kind: ElementKind, id: string) => isSelected(selection, kind, id);
   // Selection happens on pointer-down: the SVG captures the pointer for dragging, so element clicks never fire.

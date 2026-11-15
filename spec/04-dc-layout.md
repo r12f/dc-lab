@@ -116,7 +116,12 @@ south (down), units are millimetres.
   - Each row header shows `name`, `power / budget` (red when over budget) and `used/total tiles`.
   - **Hover** a rack: tooltip with label, design, rack template, tiles, units used, devices, typical and
     max power, weight, warnings.
-  - Click a tile to select it, click a rack to select the assignment.
+  - Click a tile to select it, click a rack to select the assignment. **Ctrl-click** adds / removes tiles,
+    **Shift-click** adds the run from the last selected tile in that row. With several tiles selected the
+    inspector assigns one design to all of them in row / tile order, each rack starting where its tile is free;
+    tiles already taken (including by a wide rack just placed) or too short are skipped and listed.
+  - Drawing scale is fixed (100 % = 0.1 px/mm); when the layout is opened, rotated or the room size changes,
+    the canvas zoom fits the room width to the pane (≤ 100 %), so the zoom level always matches the drawing.
 - Inspector: room and rack-area fields, layout warnings, group selections, selected element(s) editor,
   tile assignment, DC BOM.
 - Export SVG (tooltip and drag previews are not exported).
