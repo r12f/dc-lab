@@ -9,8 +9,8 @@ function cell(v: string | number): string {
 }
 
 /**
- * Tree BOM as CSV in tree order, with a leading Level column: the root (rack) is 1, its children (rack frame, side
- * elements, in-rack cables) 2, devices in them 3, and so on. Group rows carry only Level and Item.
+ * Tree BOM as CSV in tree order, with a leading Level column: the root (the rack as a whole) is 0, its children
+ * (rack frame, side elements, in-rack cables) 1, devices in them 2, and so on. Group rows carry only Level and Item.
  */
 export function bomTreeToCsv(root: BomNode, defs: readonly PropertyDef[] = []): string {
   const cols = bomColumns(defs, true);
@@ -19,7 +19,7 @@ export function bomTreeToCsv(root: BomNode, defs: readonly PropertyDef[] = []): 
     rows.push([level, ...cols.map((c, i) => (n.line ? c.cell(n.line) : i === 0 ? n.label : ''))]);
     n.children.forEach((ch) => walk(ch, level + 1));
   };
-  walk(root, 1);
+  walk(root, 0);
   return rows.map((r) => r.map(cell).join(',')).join('\n');
 }
 

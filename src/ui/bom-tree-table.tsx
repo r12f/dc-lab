@@ -59,7 +59,7 @@ export function BomTreeTable({ root, filename }: Props) {
         </tbody>
       </table>
       <Button onClick={() => downloadText(`${filename}-bom.csv`, bomTreeToCsv(root, defs), 'text/csv')}
-        title="Tree order with a Level column (rack = 1, rack frame / side elements / cables = 2, …)">Export CSV</Button>
+        title="Tree order with a Level column (rack = 0, rack frame / side elements / cables = 1, …)">Export CSV</Button>
     </div>
   );
 }
