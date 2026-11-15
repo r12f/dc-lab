@@ -130,8 +130,8 @@ line across both, so a rear port can be cabled to a front one. Power is cabled t
 busbar-fed devices have none). IEC power connectors mate only with their counterpart (C13↔C14, C19↔C20);
 built-in cords: C13-C14, C19-C20.
 
-**Cabling view layout** follows the elevation: left side PDUs | rack devices front | rack devices rear |
-right side PDUs. Side-mounted devices stack top to bottom in their side's column (element order, then slot),
+**Cabling view layout**: rack devices front | left side PDUs, rack devices rear, right side PDUs — PDU bays are
+on the rear, so the side PDUs flank the rear block. Side-mounted devices stack top to bottom in their side's column (element order, then slot),
 each drawn vertically (groups stacked, 2 ports per line, front and rear groups together). Rack devices keep
 one row per device across front and rear; each device box shrinks to its own ports (a rear face with only
 PSU inlets is a small box).
@@ -152,11 +152,10 @@ the C13-C14 cord — instead of going empty until the other end is picked.
 **Cable lines in the cabling view**: every assigned cable is drawn as lines between its connectors, in the
 cable's colour — one line per A–B connector pair (a 1:1 cable is one line, a breakout fans out to each B end).
 Lines follow the run's **route** like the elevation. **Front and rear each have their own left and right cable
-channel** (left PDUs | ch | FRONT | ch | ch | REAR | ch | right PDUs); each line leaves its connector to the gap
+channel** (ch | FRONT | ch || left PDUs | ch | REAR | ch | right PDUs); each line leaves its connector to the gap
 above or below its device row (the nearer), runs along the gap to the route's channel of its own face block,
 along its lane, and back in. A front-rear run climbs its lane to the band above the devices, crosses to the other
-face's channel on the same route side and comes down there. Left PDUs use the front block's channels, right PDUs
-the rear's. Per channel, runs get nested lanes by vertical span (shortest innermost), so runs in one channel
+face's channel on the same route side and comes down there. Side PDUs (both sides) use the rear block's channels. Per channel, runs get nested lanes by vertical span (shortest innermost), so runs in one channel
 never cross. Drawn on top of the devices; hover shows
 both ends; clicking a line opens its run.
 **Highlight**: every run on a selected connector plus the run selected in the Cables tab is highlighted

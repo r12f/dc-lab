@@ -42,6 +42,8 @@ const GROUP_GAP = 14;
 const PAD = 6;
 const LABEL_W = 120;
 const TITLE_H = 13;
+/** Space between the front block and the rear block. */
+const BLOCK_GAP = 12;
 /** Height of the FRONT / REAR headings above the devices. */
 const SECTION_H = 22;
 /** Ports per line on a side-mounted (vertical) device. */
@@ -162,7 +164,7 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
 
   const used = usedConnectors(design);
   const runColor = new Map(design.cables.map((c) => [c.id, lib.cableMedia.get(c.mediaId)?.color ?? paint.inkMuted]));
-  // As in the elevation: left side PDUs | rack devices front | rack devices rear | right side PDUs.
+  // FRONT | REAR with the PDU bays (rear side): left side PDUs | rear devices | right side PDUs.
   // Rack devices line up across front and rear (same row); each box shrinks to its own ports.
   const shift = (d: DeviceLayout, dx: number) => {
     d.x += dx;
@@ -185,8 +187,8 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
   const rightSide = stackSide('right');
   const sideW = (xs: DeviceLayout[]) => (xs.length ? Math.max(...xs.map((d) => d.w)) + 8 : 0);
   const leftW = sideW(leftSide);
-  // Columns: left PDUs | ch | FRONT | ch | ch | REAR | ch | right PDUs.
-  const frontX = leftW + CHANNEL_W;
+  // Columns: ch | FRONT | ch || left PDUs | ch | REAR | ch | right PDUs.
+  const frontX = CHANNEL_W;
   const front: DeviceLayout[] = [];
   const rear: DeviceLayout[] = [];
   let y = SECTION_H;
@@ -198,7 +200,10 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
     y += Math.max(f.h, r.h) + ROW_GAP;
   }
   const frontW = Math.max(240, ...front.map((d) => d.w)) + 8;
-  const rearX = frontX + frontW + 2 * CHANNEL_W;
+  // PDU bays are on the rear: the side PDUs flank the rear block.
+  const leftX = frontX + frontW + CHANNEL_W + BLOCK_GAP;
+  leftSide.forEach((d) => shift(d, leftX));
+  const rearX = leftX + leftW + CHANNEL_W;
   rear.forEach((d) => shift(d, rearX));
   const rearW = Math.max(240, ...rear.map((d) => d.w)) + 8;
   const rightX = rearX + rearW + CHANNEL_W;
@@ -256,7 +261,8 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
     rear: { left: rearX - CHANNEL_W, right: rearX + rearW, width: CHANNEL_W },
   };
   const anchors = new Map<string, LegAnchor>();
-  const blockOf = (d: DeviceLayout): CablingFace => (leftSide.includes(d) ? 'front' : rightSide.includes(d) ? 'rear' : d.face);
+  // Side PDUs sit in the rear block and use its channels.
+  const blockOf = (d: DeviceLayout): CablingFace => (leftSide.includes(d) || rightSide.includes(d) ? 'rear' : d.face);
   for (const d of devices) {
     for (const l of d.legs) {
       anchors.set(endpointKey(l.ep), { x: l.x + l.w / 2, y: l.y + l.h / 2, gapAbove: d.y - ROW_GAP / 2, gapBelow: d.y + d.h + ROW_GAP / 2, face: blockOf(d) });
@@ -286,7 +292,7 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
       <svg ref={ref} viewBox={`0 0 ${width} ${height}`} width={width} className="drawing" style={{ touchAction: 'none' }}>
         {/* Clicking empty space clears the highlighted run and the connector selection. */}
         <rect width={width} height={height} fill={paint.paper} onPointerDown={() => { onSelectCable(undefined); setSelection([]); }} />
-        {leftSide.length > 0 && <text x={4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>LEFT</text>}
+        {leftSide.length > 0 && <text x={leftX + 4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>LEFT</text>}
         <text x={frontX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>FRONT</text>
         <text x={rearX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>REAR</text>
         {rightSide.length > 0 && <text x={rightX + 4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>RIGHT</text>}
@@ -297,9 +303,8 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
             <text x={x + CHANNEL_W / 2} y={height - 4} fontSize={8} textAnchor="middle" fill={paint.inkMuted}>cable channel</text>
           </g>
         ))}
-        {[frontX - CHANNEL_W, rearX - CHANNEL_W, rightX].filter((x, i) => x > 0 && (i !== 2 || rightSide.length > 0)).map((x) => (
-          <line key={x} x1={x - 3} y1={0} x2={x - 3} y2={height} stroke={paint.inkMuted} strokeDasharray="4 3" />
-        ))}
+        {/* Front block | rear block (with its PDU bays). */}
+        <line x1={leftX - BLOCK_GAP / 2} y1={0} x2={leftX - BLOCK_GAP / 2} y2={height} stroke={paint.inkMuted} strokeDasharray="4 3" />
         {devices.length === 0 && <text x={10} y={SECTION_H + 16} fontSize={12} fill={paint.inkMuted}>No devices placed.</text>}
         {devices.map((d) => {
           const side = a.some((e) => e.placementId === d.p.id) ? 'A' : b.some((e) => e.placementId === d.p.id) ? 'B' : undefined;
