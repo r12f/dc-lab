@@ -134,7 +134,7 @@ export function DesignerModule() {
             }
           >
             {(ref) => view === 'cabling' ? (
-              <CablingView ref={ref} lib={lib} design={design} editor={editor}
+              <CablingView ref={ref} lib={lib} design={design} editor={editor} selectedCableId={cableId}
                 onSelectCable={(id) => { setCableId(id); if (id) { setPlacementId(undefined); setTab('cables'); } }} />
             ) : (
               <RackElevation

@@ -155,3 +155,5 @@ line leaves its connector to the gap above or below its device row (the nearer),
 route's channel, along its lane, and back in the same way. Per side, runs get nested lanes by vertical span
 (shortest innermost), so runs on one side never cross in the channel. Drawn on top of the devices; hover shows
 both ends; clicking a line opens its run.
+**Highlight**: hovering a cabled connector or a line, else the run selected in the Cables tab, highlights that
+run — its lines drawn thick on top, its connectors outlined — and dims every other run.

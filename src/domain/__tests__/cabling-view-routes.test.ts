@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { routeCablingLines, type LegAnchor } from '../../features/designer/cabling-lines';
+import { focusedRun, routeCablingLines, type LegAnchor } from '../../features/designer/cabling-lines';
 import type { CableRun } from '../design/types';
 
 const key = (e: { placementId: string; portRef: string }) => `${e.placementId}|${e.portRef}`;
@@ -38,5 +38,14 @@ describe('cabling view lines follow the run route', () => {
     const lines = routeCablingLines([r], anchors, key, channel);
     expect(lines).toHaveLength(2);
     expect(new Set(lines.map((l) => l.points[2][0])).size).toBe(1);
+  });
+});
+
+describe('cabling view highlight', () => {
+  const runs = [run('r1', 'a', 'b', 'left'), run('r2', 'a', 'c', 'right')];
+  it('hover wins over selection; a deleted selection highlights nothing', () => {
+    expect(focusedRun(runs, 'r2', 'r1')).toBe('r2');
+    expect(focusedRun(runs, undefined, 'r1')).toBe('r1');
+    expect(focusedRun(runs, undefined, 'gone')).toBeUndefined();
   });
 });

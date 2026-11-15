@@ -15,13 +15,15 @@ import { Button } from '../../ui/button';
 import { SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
 import type { SideName } from '../../domain/rack/side-elements';
-import { routeCablingLines, type LegAnchor } from './cabling-lines';
+import { focusedRun, routeCablingLines, type LegAnchor } from './cabling-lines';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
   lib: Library;
   design: RackDesign;
   editor: DesignEditor;
+  /** Run selected in the inspector / by clicking: its lines and connectors are highlighted. */
+  selectedCableId?: string;
   onSelectCable(id: string | undefined): void;
 }
 
@@ -135,7 +137,8 @@ function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: Port
  * The selection splits into A (first device) and B (other devices); only cables that fit both ends are offered,
  * and the chosen one repeats in faceplate order.
  */
-export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) {
+export function CablingView({ ref, lib, design, editor, selectedCableId, onSelectCable }: Props) {
+  const [hoverRun, setHoverRun] = useState<string>();
   const [selection, setSelection] = useState<CableEndpoint[]>([]);
   const [route, setRoute] = useState<CableRoute | 'auto'>('auto');
   const [mediaId, setMediaId] = useState('');
@@ -149,6 +152,8 @@ export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) 
   }, []);
 
   const used = usedConnectors(design);
+  // Highlighted run: the hovered one, else the selected one; other runs are dimmed.
+  const focusRun = focusedRun(design.cables, hoverRun, selectedCableId);
   const runColor = new Map(design.cables.map((c) => [c.id, lib.cableMedia.get(c.mediaId)?.color ?? paint.inkMuted]));
   // As in the elevation: left side PDUs | rack devices front | rack devices rear | right side PDUs.
   // Rack devices line up across front and rear (same row); each box shrinks to its own ports.
@@ -310,9 +315,12 @@ export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) 
                 const cx = x + w / 2;
                 const y0 = ly + h / 2 - ((lines.length - 1) * 9) / 2 + 3;
                 return (
-                  <g key={`${d.face}:${key}`} style={{ cursor: runId ? 'pointer' : 'cell' }} onPointerDown={(e) => down(ep, e)} onPointerEnter={() => enter(ep)}>
+                  <g key={`${d.face}:${key}`} style={{ cursor: runId ? 'pointer' : 'cell' }} onPointerDown={(e) => down(ep, e)}
+                    onPointerEnter={() => { enter(ep); setHoverRun(runId); }} onPointerLeave={() => setHoverRun(undefined)}>
                     <title>{`${endpointLabel(design, ep)} · ${leg.label}${runId ? ' · cabled (click to open run)' : ''}`}</title>
-                    <rect x={x} y={ly} width={w} height={h} rx={2} fill={fill} stroke={sel ? '#fff' : '#0f172a'} strokeWidth={sel ? 1.5 : 1} />
+                    <rect x={x} y={ly} width={w} height={h} rx={2} fill={fill}
+                      opacity={focusRun && runId && runId !== focusRun ? 0.45 : 1}
+                      stroke={sel || (runId && runId === focusRun) ? '#fff' : '#0f172a'} strokeWidth={sel || (runId && runId === focusRun) ? 2 : 1} />
                     {lines.map((s, k) => {
                       const size = Math.min(8, (w - 4) / Math.max(1, s.length * 0.58));
                       return (
@@ -328,9 +336,11 @@ export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) 
         })}
         {/* Assigned cables: one line per A–B connector pair, in the cable's colour; drawn last (on top). */}
         <g>
-          {lines.map((ln) => (
-            <polyline key={ln.key} points={ln.points.map((pt) => pt.join(',')).join(' ')} fill="none" stroke={runColor.get(ln.runId)} strokeOpacity={0.85}
-              strokeWidth={1.5} strokeLinejoin="round" style={{ cursor: 'pointer' }} onClick={() => onSelectCable(ln.runId)}>
+          {[...lines].sort((x, z) => Number(x.runId === focusRun) - Number(z.runId === focusRun)).map((ln) => (
+            <polyline key={ln.key} points={ln.points.map((pt) => pt.join(',')).join(' ')} fill="none" stroke={runColor.get(ln.runId)}
+              strokeOpacity={!focusRun ? 0.85 : ln.runId === focusRun ? 1 : 0.12} strokeWidth={ln.runId === focusRun ? 3.5 : 1.5}
+              onPointerEnter={() => setHoverRun(ln.runId)} onPointerLeave={() => setHoverRun(undefined)}
+              strokeLinejoin="round" style={{ cursor: 'pointer' }} onClick={() => onSelectCable(ln.runId)}>
               <title>{`${endpointLabel(design, ln.a)} ↔ ${endpointLabel(design, ln.b)}`}</title>
             </polyline>
           ))}

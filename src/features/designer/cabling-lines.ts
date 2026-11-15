@@ -60,3 +60,8 @@ export function routeCablingLines(
   }
   return out;
 }
+
+/** Run to highlight: the hovered one, else the selected one if it still exists; undefined = none. */
+export function focusedRun(runs: CableRun[], hovered?: string, selected?: string): string | undefined {
+  return hovered ?? (runs.some((r) => r.id === selected) ? selected : undefined);
+}
