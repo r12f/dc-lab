@@ -174,7 +174,7 @@ types used in the design (as defined in Optics / Cables: SMF, MMF, DAC, AEC, AOC
 counts. Runs of an unchecked type are not drawn. Modules (transceivers) are not cables and are not listed. Kept per
 design for the session (not saved).
 
-**Views (Elevation and Cabling)**: a **Views n/2 ▾** dropdown with Front and Rear (both by default; at least one
+**Views (Elevation and Cabling)**: a **Views n/2 ▾** dropdown (toolbar order: Views, Devices, Cables, then zoom) with Front and Rear (both by default; at least one
 stays checked). With one face only that panel / block is drawn, starting at the left edge; the Cabling view's
 side PDUs belong to the rear block. Session only.
 

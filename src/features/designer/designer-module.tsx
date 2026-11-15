@@ -125,9 +125,9 @@ export function DesignerModule() {
             exportName={`${design.id}-${view}`}
             viewControls={(
               <>
+                <FaceMenu faces={faces} onChange={setFaces} />
                 <DeviceFilterMenu lib={lib} design={design} filter={filter} onChange={setFilter} />
                 <CableTypeMenu lib={lib} design={design} filter={filter} onChange={setFilter} />
-                <FaceMenu faces={faces} onChange={setFaces} />
               </>
             )}
             toolbar={
