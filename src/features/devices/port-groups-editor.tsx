@@ -16,6 +16,12 @@ interface Props {
 const genderOptions: { value: '' | ConnectorGender; label: string }[] = [
   { value: '', label: '— not set —' }, { value: 'male', label: 'Male (pinned plug)' }, { value: 'female', label: 'Female (unpinned plug)' },
 ];
+const orderOptions = [
+  { value: 'column-major', label: 'Columns, top down' },
+  { value: 'column-major:up', label: 'Columns, bottom up' },
+  { value: 'row-major', label: 'Rows, top down' },
+  { value: 'row-major:up', label: 'Rows, bottom up' },
+];
 const faceOptions = [{ value: 'front' as PortFace, label: 'Front' }, { value: 'rear' as PortFace, label: 'Rear' }];
 const roleOptions = PORT_ROLES.map((r) => ({ value: r, label: ROLE_TRAITS[r].label }));
 const PHASES: Phase[] = ['L1', 'L2', 'L3', 'L1-L2', 'L2-L3', 'L3-L1'];
@@ -78,6 +84,17 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
           const holes = v.split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n >= 0);
           set({ holes: holes.length ? holes : undefined });
         }} />
+      <div className="row3">
+        <SelectField<string> label="Port order" value={`${group.fill ?? 'column-major'}${group.bottomUp ? ':up' : ''}`}
+          options={orderOptions} onChange={(v) => {
+            const [fill, up] = v.split(':');
+            set({ fill: fill === 'row-major' ? 'row-major' : undefined, bottomUp: up ? true : undefined });
+          }} />
+        <NumberField label="Ports per number (1A, 1B…)" value={group.subPorts ?? 1} min={1}
+          onChange={(n) => set({ subPorts: n > 1 ? n : undefined })} />
+        <NumberField label="First number" value={group.firstNumber ?? 1} min={0}
+          onChange={(n) => set({ firstNumber: n !== 1 ? n : undefined })} />
+      </div>
       {pluggable && formFactorSpec(group.formFactor).kind === 'cage' && (
         <SelectField<HeatSink> label="Heat sink (module must match)" value={heatSinkOf(group)}
           options={HEAT_SINKS.map((h) => ({ value: h, label: h === 'IHS' ? 'IHS (integrated)' : 'RHS (riding / cold plate)' }))}

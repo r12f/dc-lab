@@ -218,6 +218,13 @@ heat sink; IHS and RHS never mix. Set per port group in the port group editor (c
 group summary and port tooltip. Built-ins: 64x800G OSFP switch and both OSFP testers are IHS; the liquid-cooled
 64x1.6T OSFP LC switch is RHS; all QSFP / SFP cages are RHS.
 
+**Port order and names**: `fill` (`column-major` default, or `row-major`) and `bottomUp` (port 1 in the bottom
+row) set how ports fill the grid. `subPorts` gives two-level names — every `subPorts` ports share a number and take
+letters (4: 1A 1B 1C 1D 2A…) — counted from `firstNumber` (default 1), so a column of cassettes can continue the
+numbering of the previous one. Names are for display (faceplate, cabling view, tooltips); port refs stay
+`group/index`. Example: a 2U 96x MPO-8 housing = 4 groups (columns) of 6 cassettes x 4 connectors, row-major,
+bottom up, subPorts 4, firstNumber 1 / 7 / 13 / 19.
+
 **Empty grid cells (`holes`)**: a port group may list grid cells (column-major indices over its `rows`) left
 empty; ports fill the remaining cells in order. Used for modules whose faceplate is not a full grid — e.g. a
 fiber-housing module with one 2x MMC slot top-left and a 3x3 block beside it (6 rows, holes 2-5: ports 1-2 the

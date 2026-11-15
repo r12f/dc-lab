@@ -5,7 +5,7 @@ import type { DeviceDefinition, PortFace, PortGroup } from '../../domain/device/
 import { applicableCables, deviceFaceSeenFrom, endpointKey, planCable, splitSelection, usedConnectors } from '../../domain/design/cable-assign';
 import { endpointLabel } from '../../domain/design/connectors';
 import { resolvePlacedPort } from '../../domain/design/optics';
-import { cableGroupsOnFace, formatPortRef, groupCols, portCell } from '../../domain/device/ports';
+import { cableGroupsOnFace, formatPortRef, groupCols, portCell, portName } from '../../domain/device/ports';
 import { portLegs, type PortLeg } from '../../domain/ports/legs';
 import { groupTitle } from '../devices/drawing/group-title';
 import { unitsIn } from '../../domain/units';
@@ -285,7 +285,7 @@ const CablingBase = memo(function CablingBase({ L }: { L: CablingLayout }) {
           {d.ports.map((pt) => (
             <g key={`${pt.group.id}/${pt.index}`}>
               <rect x={pt.x} y={pt.y} width={pt.w} height={pt.h} rx={2} fill="#0f172a" stroke="#475569" />
-              <text x={pt.x + pt.w / 2} y={pt.y + 9} fontSize={9} fontWeight={700} textAnchor="middle" fill="#e2e8f0">{pt.index}</text>
+              <text x={pt.x + pt.w / 2} y={pt.y + 9} fontSize={9} fontWeight={700} textAnchor="middle" fill="#e2e8f0">{portName(pt.group, pt.index)}</text>
             </g>
           ))}
           {d.legs.map((l) => {

@@ -1,3 +1,4 @@
+import { portName } from '../../../domain/device/ports';
 import type { PortBox } from './faceplate-layout';
 import type { DrawingContext } from './types';
 import { modeColor, ROLE_COLORS, speedLabel } from './port-style';
@@ -69,7 +70,7 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
   const multi = legs.length > 1;
   const engine = box.group.opticalEngine ? ` · ${box.group.opticalEngine.toUpperCase()}` : '';
   const tip = [
-    `${box.ref} · ${box.group.formFactor}${box.group.heatSink ? ` ${box.group.heatSink}` : ''}${engine} · ${ROLE_TRAITS[box.group.role].label}`,
+    `${box.group.label} ${portName(box.group, box.index)} (${box.ref}) · ${box.group.formFactor}${box.group.heatSink ? ` ${box.group.heatSink}` : ''}${engine} · ${ROLE_TRAITS[box.group.role].label}`,
     speed ? `Speed ${speed}` : '',
     r?.reach ? `Reach ${r.reach}` : '',
     optic ? `Module ${optic.name}${r?.autoOptic ? ' (auto)' : ''}` : '',
@@ -92,13 +93,13 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
         stroke={sel ? paint.selection : '#0f172a'} strokeWidth={sel ? 3 : 1} />
       {pluggable ? (
         <>
-          {t(15, 12, '#0f172a', String(box.index), true)}
+          {t(15, 12, '#0f172a', portName(box.group, box.index), true)}
           {t(27, fitFont(iface, box.w, 10), '#1e293b', iface, true)}
           {legs.length > 0 && <LegCells box={box} legs={legs} color={cable?.color} />}
         </>
       ) : (
         <>
-          {t(box.h / 2 - 2, 10, '#0f172a', box.group.count > 1 ? String(box.index) : box.group.label, true)}
+          {t(box.h / 2 - 2, 10, '#0f172a', box.group.count > 1 ? portName(box.group, box.index) : box.group.label, true)}
           {t(box.h / 2 + 10, fitFont(iface, box.w, 9), '#334155', iface)}
         </>
       )}

@@ -51,6 +51,17 @@ export interface PortGroup {
    * slot top-left and a 3x3 block beside it. Ports fill the remaining cells in order.
    */
   holes?: number[];
+  /** Port fill order over the grid: `column-major` (default: down each column) or `row-major` (along each row). */
+  fill?: 'column-major' | 'row-major';
+  /** Rows count from the bottom: port 1 sits in the bottom row. */
+  bottomUp?: boolean;
+  /**
+   * Two-level port names: every `subPorts` ports share a number and take letters — 4 gives 1A 1B 1C 1D 2A… (a
+   * cassette of 4 connectors). Unset / 1 = plain numbers.
+   */
+  subPorts?: number;
+  /** Number the group's names start at (e.g. 7 for the second column of 6 cassettes); default 1. */
+  firstNumber?: number;
   /** Pluggable cages: module heat sink the cage takes (IHS or RHS, not interchangeable); unset = RHS. */
   heatSink?: HeatSink;
   /**

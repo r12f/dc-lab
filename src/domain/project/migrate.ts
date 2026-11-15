@@ -97,8 +97,10 @@ function mapValues(obj: unknown, fn: (v: unknown) => unknown): Json {
 }
 
 function migrateGroup(g: Json): Json {
-  const { connector, ...rest } = g;
-  return { ...rest, formFactor: g.formFactor ?? connector, role: g.role ?? inferRole(g) };
+  const { connector, gender, ...rest } = g;
+  // `gender` (briefly the port's own gender) became `cableGender` (the cable end it takes).
+  const cableGender = g.cableGender ?? gender;
+  return { ...rest, formFactor: g.formFactor ?? connector, role: g.role ?? inferRole(g), ...(cableGender ? { cableGender } : {}) };
 }
 
 export function migrateDevice(d: Json): Json {

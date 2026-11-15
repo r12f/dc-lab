@@ -27,17 +27,44 @@ export function powerInletGroup(device: DeviceDefinition): PortGroup | undefined
   return { id: PSU_GROUP_ID, label: 'PSU', role: 'inlet', formFactor: p.inlet, count: p.count, speedGbps: 0, lanes: 0, face: 'rear', rows: 1, breakoutModes: [] };
 }
 
-/** Grid cell (column, row) of the i-th port (0-based) of a group: column-major over `rows`, skipping `holes`. */
+/**
+ * Grid cell (column, row; row 0 = top) of the i-th port (0-based) of a group: column-major over `rows` (or
+ * row-major with `fill`), skipping `holes`; `bottomUp` puts the first row at the bottom.
+ */
 export function portCell(g: PortGroup, i: number, rows = Math.max(1, g.rows)): { col: number; row: number } {
   const holes = new Set(g.holes ?? []);
   let cell = -1;
   for (let n = 0; n <= i; n++) do cell++; while (holes.has(cell));
-  return { col: Math.floor(cell / rows), row: cell % rows };
+  let col: number;
+  let row: number;
+  if (g.fill === 'row-major') {
+    const cols = Math.max(1, Math.ceil((g.count + holes.size) / rows));
+    row = Math.floor(cell / cols);
+    col = cell % cols;
+  } else {
+    col = Math.floor(cell / rows);
+    row = cell % rows;
+  }
+  return { col, row: g.bottomUp ? rows - 1 - row : row };
+}
+
+/**
+ * Display name of port `index` (1-based) of a group: a plain number, or with `subPorts` a number + letter
+ * (subPorts 4: 1A 1B 1C 1D 2A…), counting from `firstNumber`. Port refs stay `group/index`.
+ */
+export function portName(g: PortGroup, index: number): string {
+  const first = g.firstNumber ?? 1;
+  const sub = g.subPorts ?? 1;
+  if (sub <= 1) return String(first - 1 + index);
+  const i = index - 1;
+  return `${first + Math.floor(i / sub)}${String.fromCharCode(65 + (i % sub))}`;
 }
 
 /** Number of grid columns a group spans (holes included). */
 export function groupCols(g: PortGroup, rows = Math.max(1, g.rows)): number {
-  return g.count ? portCell(g, g.count - 1, rows).col + 1 : 0;
+  if (!g.count) return 0;
+  if (g.fill === 'row-major') return Math.max(1, Math.ceil((g.count + (g.holes?.length ?? 0)) / rows));
+  return portCell(g, g.count - 1, rows).col + 1;
 }
 
 export function findGroup(device: DeviceDefinition, groupId: string): PortGroup | undefined {
