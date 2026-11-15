@@ -17,7 +17,7 @@ export function FacilityLinksForm({ lib, designs, layout, facility: f, editor }:
   const isPdu = f.kind === 'pdu';
   const targets = isPdu
     ? layout.sequence.map((id) => layout.rows.find((r) => r.id === id)).filter((r): r is Row => !!r).map((r) => ({ id: r.id, name: r.name }))
-    : layout.sequence.map((id) => layout.aisles.find((a) => a.id === id && a.kind === 'hot')).filter((a) => !!a).map((a, i) => ({ id: a!.id, name: `Hot aisle ${i + 1}` }));
+    : layout.sequence.map((id) => layout.aisles.find((a) => a.id === id && a.kind === 'hot' && !a.cross)).filter((a) => !!a).map((a, i) => ({ id: a!.id, name: `Hot aisle ${i + 1}` }));
   const links = isPdu ? f.rowIds : f.aisleIds;
   return (
     <div className="subcard">

@@ -31,6 +31,6 @@ describe('duplicate layout elements', () => {
   });
   it('tray copy moves to the next aisle without a tray of its kind', () => {
     const { layout, ids } = duplicateElements(sample(), 'tray', ['t1']);
-    expect(layout.trays.find((t) => t.id === ids[0])!.aisleId).toBe('a2');
+    expect(layout.trays.find((t) => t.id === ids[0])!.overId).toBe('a2');
   });
 });

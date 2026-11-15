@@ -18,8 +18,9 @@ function groupsOf(layout: DcLayout): { label: string; sel: ElementSelection }[] 
   const g = (label: string, kind: ElementKind, ids: string[]) => ({ label: `${label} (${ids.length})`, sel: { kind, ids } });
   return [
     g('All rows', 'row', layout.rows.map((r) => r.id)),
-    g('Cold aisles', 'aisle', layout.aisles.filter((a) => a.kind === 'cold').map((a) => a.id)),
-    g('Hot aisles', 'aisle', layout.aisles.filter((a) => a.kind === 'hot').map((a) => a.id)),
+    g('Cold aisles', 'aisle', layout.aisles.filter((a) => a.kind === 'cold' && !a.cross).map((a) => a.id)),
+    g('Hot aisles', 'aisle', layout.aisles.filter((a) => a.kind === 'hot' && !a.cross).map((a) => a.id)),
+    g('Cross aisles', 'aisle', layout.aisles.filter((a) => a.cross).map((a) => a.id)),
     g('All trays', 'tray', layout.trays.map((t) => t.id)),
     g('Facilities', 'facility', layout.facilities.map((f) => f.id)),
     g('Doors', 'door', layout.doors.map((d) => d.id)),

@@ -20,8 +20,13 @@ export function newAisle(id: string): Aisle {
   return { id, kind: 'cold', widthMm: 1200 };
 }
 
-export function newTray(id: string, aisleId: string): CableTray {
-  return { id, kind: 'data', aisleId, widthMm: 600 };
+/** Aisle between row blocks: east–west across the rack area, cold, 1800 mm. */
+export function newCrossAisle(id: string): Aisle {
+  return { id, kind: 'cold', widthMm: 1800, cross: true };
+}
+
+export function newTray(id: string, overId: string): CableTray {
+  return { id, kind: 'data', overId, widthMm: 600 };
 }
 
 const FACILITY_DEFAULTS: Record<FacilityKind, { name: string; widthMm: number; depthMm: number }> = {

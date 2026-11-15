@@ -1,24 +1,24 @@
 import { uniqueId } from '../ids';
 import { clampToRoom } from './geometry';
-import { newAisle, newFacility, newRow, newTray } from './factory';
+import { newAisle, newCrossAisle, newFacility, newRow, newTray } from './factory';
 import type { DcLayout, FacilityKind } from './types';
 
 /**
  * Where new elements go, derived from the current selection: the element it follows.
  * - `after`: row/aisle id in the sequence after which new rows/aisles are inserted (undefined = east end);
- * - `aisleId`: aisle a new tray goes over;
+ * - `overId`: row or aisle a new tray goes over;
  * - `facilityId`: facility a new facility is placed next to.
  */
 export interface InsertAnchor {
   after?: string;
-  aisleId?: string;
+  overId?: string;
   facilityId?: string;
   /** Door a new door is placed next to. */
   doorId?: string;
 }
 
 const pos = (l: DcLayout, id: string) => l.sequence.indexOf(id);
-const isAisle = (l: DcLayout, id: string) => l.aisles.some((a) => a.id === id);
+const isAisle = (l: DcLayout, id: string) => l.aisles.some((a) => a.id === id && !a.cross);
 
 /** First aisle at or east of sequence index `from`, else the last aisle west of it. */
 function aisleFrom(l: DcLayout, from: number): string | undefined {
@@ -40,15 +40,15 @@ export function addRowAfter(l: DcLayout, after?: string): { layout: DcLayout; id
   return { id, layout: { ...l, rows: [...l.rows, newRow(id, `Row ${n}`)], sequence: insertAfter(l.sequence, after, id) } };
 }
 
-export function addAisleAfter(l: DcLayout, after?: string): { layout: DcLayout; id: string } {
+export function addAisleAfter(l: DcLayout, after?: string, cross = false): { layout: DcLayout; id: string } {
   const id = uniqueId('aisle', [...l.rows, ...l.aisles].map((x) => x.id));
-  return { id, layout: { ...l, aisles: [...l.aisles, newAisle(id)], sequence: insertAfter(l.sequence, after, id) } };
+  return { id, layout: { ...l, aisles: [...l.aisles, cross ? newCrossAisle(id) : newAisle(id)], sequence: insertAfter(l.sequence, after, id) } };
 }
 
-/** Adds a tray over `aisleId`; without one, over the first aisle that has no tray yet (else the first aisle). */
-export function addTrayOver(l: DcLayout, aisleId?: string): { layout: DcLayout; id?: string } {
+/** Adds a tray over `overId` (row or aisle); without one, over the first aisle that has no tray yet (else the first aisle). */
+export function addTrayOver(l: DcLayout, overId?: string): { layout: DcLayout; id?: string } {
   const aisles = l.sequence.filter((id) => isAisle(l, id));
-  const target = aisleId ?? aisles.find((a) => !l.trays.some((t) => t.aisleId === a)) ?? aisles[0];
+  const target = overId ?? aisles.find((a) => !l.trays.some((t) => t.overId === a)) ?? aisles[0];
   if (!target) return { layout: l };
   const id = uniqueId('tray', l.trays.map((t) => t.id));
   return { id, layout: { ...l, trays: [...l.trays, newTray(id, target)] } };
@@ -66,14 +66,14 @@ export function addFacilityNear(l: DcLayout, kind: FacilityKind, nextTo?: string
 
 /**
  * Anchor for "add after the selection":
- * - rows/aisles: after the easternmost selected one; a tray: after its aisle; a tile or rack: after its row;
- * - trays go over the selected aisle, the selected tray's aisle (next aisle east), or the first aisle east
- *   of a selected row;
+ * - rows/aisles: after the last selected one in the sequence; a tray: after its band; a tile or rack: after its row;
+ * - trays go over the selected row / aisle / cross aisle, the next aisle east of a selected tray's band, or the
+ *   row of a selected tile / rack;
  * - facilities go next to the last selected facility.
  */
 export function insertAnchor(
   l: DcLayout,
-  sel: { kind: 'row' | 'aisle' | 'tray' | 'facility' | 'door'; ids: string[] } | { kind: 'tile'; tiles: { rowId: string; tile: number }[] } | { kind: 'assignment'; id: string } | undefined,
+  sel: { kind: 'row' | 'aisle' | 'tray' | 'facility' | 'door' | 'assignment'; ids: string[] } | { kind: 'tile'; tiles: { rowId: string; tile: number }[] } | undefined,
 ): InsertAnchor {
   if (!sel) return {};
   const last = (ids: string[]) => [...ids].sort((a, b) => pos(l, a) - pos(l, b)).at(-1);
@@ -82,12 +82,12 @@ export function insertAnchor(
     case 'aisle': {
       const after = last(sel.ids);
       if (!after) return {};
-      return { after, aisleId: sel.kind === 'aisle' ? after : aisleFrom(l, pos(l, after) + 1) };
+      return { after, overId: after };
     }
     case 'tray': {
       const trays = l.trays.filter((t) => sel.ids.includes(t.id));
-      const after = last(trays.map((t) => t.aisleId));
-      return after ? { after, aisleId: aisleFrom(l, pos(l, after) + 1) ?? after } : {};
+      const after = last(trays.map((t) => t.overId));
+      return after ? { after, overId: aisleFrom(l, pos(l, after) + 1) ?? after } : {};
     }
     case 'facility':
       return { facilityId: sel.ids.at(-1) };
@@ -95,11 +95,11 @@ export function insertAnchor(
       return { doorId: sel.ids.at(-1) };
     case 'tile': {
       const rowId = sel.tiles.at(-1)?.rowId;
-      return rowId ? { after: rowId, aisleId: aisleFrom(l, pos(l, rowId) + 1) } : {};
+      return rowId ? { after: rowId, overId: rowId } : {};
     }
     case 'assignment': {
-      const rowId = l.assignments.find((a) => a.id === sel.id)?.rowId;
-      return rowId ? { after: rowId, aisleId: aisleFrom(l, pos(l, rowId) + 1) } : {};
+      const rowId = l.assignments.find((a) => a.id === sel.ids.at(-1))?.rowId;
+      return rowId ? { after: rowId, overId: rowId } : {};
     }
   }
 }

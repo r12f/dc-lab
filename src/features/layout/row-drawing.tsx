@@ -25,6 +25,8 @@ interface Props {
   selection?: LayoutSelection;
   onSelect(sel: LayoutSelection | undefined): void;
   onHeaderPointerDown(e: PointerEvent<SVGElement>): void;
+  /** Press on a rack: select it (Ctrl/Shift adds) and start dragging the selected racks. */
+  onRackPointerDown(assignmentId: string, e: PointerEvent<SVGElement>): void;
   onRackHover(assignmentId: string | undefined, e?: { clientX: number; clientY: number }): void;
 }
 
@@ -34,7 +36,7 @@ const HEADER_H = 1040;
  * One vertical row: header (name + power / budget, drag handle), tiles from north to south,
  * a front-side marker and assigned racks.
  */
-export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection, onSelect, onHeaderPointerDown, onRackHover }: Props) {
+export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection, onSelect, onHeaderPointerDown, onRackPointerDown, onRackHover }: Props) {
   const tiles = Array.from({ length: row.tileCount }, (_, i) => i);
   const assignments = layout.assignments.filter((a) => a.rowId === row.id);
   const length = row.tileCount * row.tileWidthMm;
@@ -84,11 +86,11 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
         const design = designs(a.designId);
         const r = tileRect(rect, row, a.startTile, tileWidthOf(lib, design));
         const power = design ? computeRackMetrics(lib, design).typicalW : 0;
-        const sel = selection?.kind === 'assignment' && selection.id === a.id;
+        const sel = isSelected(selection, 'assignment', a.id);
         const role = assignmentRole(lib, designs, a);
         const fill = role === 'it' ? paint.accent : INFRA_FILL[role];
         // Racks served by the selected power / CDU rack get a dashed ring in that rack's color.
-        const selInfra = selection?.kind === 'assignment' ? layout.assignments.find((x) => x.id === selection.id) : undefined;
+        const selInfra = selection?.kind === 'assignment' && selection.ids.length === 1 ? layout.assignments.find((x) => x.id === selection.ids[0]) : undefined;
         const servedBySel = !!selInfra && selInfra.id !== a.id && assignmentRole(lib, designs, selInfra) !== 'it'
           && servedRacks(lib, designs, layout, selInfra).some((x) => x.id === a.id);
         const selRole = selInfra ? assignmentRole(lib, designs, selInfra) : 'it';
@@ -99,8 +101,9 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
         const mx = r.x + r.widthMm / 2;
         const my = r.y + r.depthMm / 2;
         return (
-          <g key={a.id} style={{ cursor: 'pointer' }}
-            onClick={(e) => { e.stopPropagation(); onSelect({ kind: 'assignment', id: a.id }); }}
+          <g key={a.id} style={{ cursor: 'move' }}
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => onRackPointerDown(a.id, e)}
             onPointerEnter={(e) => onRackHover(a.id, e)} onPointerMove={(e) => onRackHover(a.id, e)}
             onPointerLeave={() => onRackHover(undefined)}>
             <rect x={r.x + 30} y={r.y + 30} width={r.widthMm - 60} height={r.depthMm - 60} rx={40}

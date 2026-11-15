@@ -8,6 +8,7 @@ import { assignTiles as assignTilesTo, rackLabel, type AssignResult, type TileRe
 import { clampToRoom, snap } from '../../domain/layout/geometry';
 import { reorderTo } from '../../domain/layout/floor-plan';
 import { duplicateElements, type DuplicableKind } from '../../domain/layout/duplicate';
+import { changeDesigns, moveAssignments } from '../../domain/layout/move';
 import { uniqueId } from '../../domain/ids';
 import { pruneFacilityLinks } from '../../domain/layout/facility-load';
 import { useAppStore } from '../../state/store';
@@ -30,7 +31,9 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
   // New rows/aisles go right after the anchor (the selection) in the sequence, else at the east end.
   const addRow = (anchor: InsertAnchor = {}) => add((l) => addRowAfter(l, anchor.after));
   const addAisle = (anchor: InsertAnchor = {}) => add((l) => addAisleAfter(l, anchor.after));
-  const addTray = (anchor: InsertAnchor = {}) => add((l) => addTrayOver(l, anchor.aisleId));
+  /** Cross aisle after the selection: everything after it forms the next row block (south). */
+  const addCrossAisle = (anchor: InsertAnchor = {}) => add((l) => addAisleAfter(l, anchor.after, true));
+  const addTray = (anchor: InsertAnchor = {}) => add((l) => addTrayOver(l, anchor.overId));
   const addFacility = (kind: FacilityKind, anchor: InsertAnchor = {}) => add((l) => addFacilityNear(l, kind, anchor.facilityId));
   const addDoorTo = (anchor: InsertAnchor = {}) => add((l) => addDoor(l, anchor.doorId));
   /** Moves a door to a wall position (kept on the wall). */
@@ -58,16 +61,20 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
       ...l,
       [list]: (l[list] as Element[]).filter((e) => !ids.includes(e.id)),
       sequence: l.sequence.filter((x) => !ids.includes(x)),
-      trays: l.trays.filter((t) => !ids.includes(t.id) && !(list === 'aisles' && ids.includes(t.aisleId))),
+      trays: l.trays.filter((t) => !ids.includes(t.id) && !((list === 'aisles' || list === 'rows') && ids.includes(t.overId))),
       assignments: list === 'rows' ? l.assignments.filter((a) => !ids.includes(a.rowId)) : l.assignments,
     }));
   /** Rows a PDU feeds / hot aisles a cooling unit serves. */
   const setFacilityLinks = (id: string, patch: Pick<Facility, 'rowIds'> | Pick<Facility, 'aisleIds'>) =>
     mutate((l) => ({ ...l, facilities: l.facilities.map((f) => (f.id === id ? { ...f, ...patch } : f)) }));
 
-  /** Re-orders a row/aisle so its band centre lands nearest `centerX`. */
-  const reorder = (id: string, centerX: number) => mutate((l) => ({ ...l, sequence: reorderTo(l, id, centerX) }));
-  const moveTray = (id: string, aisleId: string) => updateElement<CableTray>('trays', id, { aisleId });
+  /** Re-orders a row/aisle so its band centre lands nearest `centerX` (in the row block under `centerY`). */
+  const reorder = (id: string, centerX: number, centerY?: number) => mutate((l) => ({ ...l, sequence: reorderTo(l, id, centerX, centerY) }));
+  const setSequence = (sequence: string[]) => mutate((l) => ({ ...l, sequence }));
+  /** Moves a tray over another row / aisle (centred there). */
+  const moveTray = (id: string, overId: string) => mutate((l) => ({
+    ...l, trays: l.trays.map((t) => (t.id === id ? { ...t, overId, offsetMm: t.overId === overId ? t.offsetMm : undefined } : t)),
+  }));
   /** Moves a facility so its top-left is at (x, y), snapped and kept inside the room. */
   const moveFacility = (id: string, x: number, y: number) => mutate((l) => ({
     ...l,
@@ -95,10 +102,27 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
     if (r.ids.length) mutate(() => r.layout);
     return r;
   };
-  const unassign = (id: string) => mutate((l) => ({
+  const unassign = (id: string) => unassignAll([id]);
+  /** Removes racks (and drops them from power / CDU racks' serve lists). */
+  const unassignAll = (ids: string[]) => mutate((l) => ({
     ...l,
-    assignments: l.assignments.filter((a) => a.id !== id).map((a) => (a.serves?.includes(id) ? { ...a, serves: a.serves.filter((x) => x !== id) } : a)),
+    assignments: l.assignments.filter((a) => !ids.includes(a.id))
+      .map((a) => (a.serves?.some((x) => ids.includes(x)) ? { ...a, serves: a.serves.filter((x) => !ids.includes(x)) } : a)),
   }));
+  /** Moves racks together by rows (in row order) and tiles; all or none. Returns the problem when they do not fit. */
+  const moveRacks = (ids: string[], dRow: number, dTile: number): string | undefined => {
+    if (!layout) return 'No layout';
+    const r = moveAssignments(lib, designs, layout, ids, dRow, dTile);
+    if (!r.error) mutate(() => r.layout);
+    return r.error;
+  };
+  /** Puts another design on the racks in place (racks it does not fit are skipped). */
+  const changeDesign = (ids: string[], designId: string) => {
+    if (!layout) return { changed: 0, skipped: [] as string[] };
+    const r = changeDesigns(lib, designs, layout, ids, designId);
+    if (r.changed) mutate(() => r.layout);
+    return r;
+  };
   /** Sets which IT racks a power / CDU rack serves; undefined = the adjacent IT racks (default). */
   const setServes = (id: string, serves: string[] | undefined) =>
     mutate((l) => ({ ...l, assignments: l.assignments.map((a) => (a.id === id ? { ...a, serves } : a)) }));
@@ -112,8 +136,8 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
   const rotateView = (step: 90 | -90) => mutate((l) => ({ ...l, viewRotation: rotateBy(l.viewRotation, step) }));
 
   return {
-    addRow, addAisle, addTray, addFacility, updateElement, updateElements, duplicate, removeElement, removeElements, reorder, moveTray, moveFacility,
-    assign, assignTiles, unassign, relabel, setServes, setRoom, setWhitespace, rename, setFacilityLinks, rotateView, addDoor: addDoorTo, moveDoor,
+    addRow, addAisle, addCrossAisle, addTray, addFacility, updateElement, updateElements, duplicate, removeElement, removeElements, reorder, setSequence, moveTray, moveFacility,
+    assign, assignTiles, unassign, unassignAll, moveRacks, changeDesign, relabel, setServes, setRoom, setWhitespace, rename, setFacilityLinks, rotateView, addDoor: addDoorTo, moveDoor,
   };
 }
 

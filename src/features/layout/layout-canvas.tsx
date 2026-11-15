@@ -38,7 +38,7 @@ export const PX_PER_MM = 0.1;
  * room, rack area, facilities, aisles, rows, then overhead trays on top.
  */
 export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, selection, onSelect }: Props) {
-  const drag = useDragMove(stored, editor);
+  const drag = useDragMove(lib, designs, stored, editor);
   const layout = drag.preview();
   const plan = computeFloorPlan(layout);
   const [hover, setHover] = useState<{ id: string; x: number; y: number }>();
@@ -59,7 +59,18 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
     setHover(undefined);
     drag.start(kind, id)(e);
   };
+  /** Press on a rack: select it (Ctrl/Shift adds or removes; pressing a selected one keeps the selection) and drag. */
+  const rackDown = (id: string, e: Parameters<ReturnType<typeof drag.start>>[0]) => {
+    e.stopPropagation();
+    const additive = e.ctrlKey || e.metaKey || e.shiftKey;
+    let next = selection;
+    if (additive || !isSelected(selection, 'assignment', id)) next = clickSelect(selection, 'assignment', id, additive);
+    onSelect(next);
+    setHover(undefined);
+    if (next?.kind === 'assignment' && next.ids.includes(id)) drag.start('assignment', id, next.ids)(e);
+  };
   const ghost = (id: string) => (drag.dragging?.id === id ? 0.6 : 1);
+  const rackProblem = drag.rackProblem();
   const hovered = hover && !drag.dragging && layout.assignments.find((a) => a.id === hover.id);
 
   return (
@@ -102,7 +113,7 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
           const a = layout.aisles.find((x) => x.id === b.id)!;
           return (
             <g key={a.id} opacity={ghost(a.id)}>
-              <AreaDrawing rect={b.rect} fill={AISLE_COLORS[a.kind]} label={`${a.kind} aisle`} cursor="ew-resize"
+              <AreaDrawing rect={b.rect} fill={AISLE_COLORS[a.kind]} label={`${a.kind}${b.cross ? ' cross' : ''} aisle`} cursor={b.cross ? 'pointer' : 'move'}
                 selected={isSel('aisle', a.id)}
                 onPointerDown={startDrag('aisle', a.id)} />
             </g>
@@ -113,7 +124,7 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
           return (
             <g key={r.id} opacity={ghost(r.id)}>
               <RowDrawing lib={lib} designs={designs} layout={layout} row={r} rect={b.rect} powerW={rowPower.get(r.id) ?? 0}
-                selection={selection} onSelect={onSelect} onHeaderPointerDown={startDrag('row', r.id)}
+                selection={selection} onSelect={onSelect} onHeaderPointerDown={startDrag('row', r.id)} onRackPointerDown={rackDown}
                 onRackHover={(id, e) => setHover(id && e ? { id, x: e.clientX, y: e.clientY } : undefined)} />
             </g>
           );
@@ -125,13 +136,16 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
           return rect && (
             <g key={t.id} opacity={ghost(t.id)}>
               <AreaDrawing rect={rect} fill={TRAY_COLORS[t.kind]} opacity={0.35} label={`${t.kind} tray (overhead)`} dashed labelAt={0.8} overhead
-                cursor="ew-resize" selected={isSel('tray', t.id)}
+                cursor="move" selected={isSel('tray', t.id)}
                 onPointerDown={startDrag('tray', t.id)} />
             </g>
           );
         })}
         </g>
         </ViewRotationContext.Provider>
+        {rackProblem && (
+          <text x={0} y={-PAD / 2 + 300} fontSize={220} fontWeight={700} fill={paint.danger} pointerEvents="none">{`Cannot move here — ${rackProblem}`}</text>
+        )}
       </svg>
       {hovered && <RackTooltip lines={rackSummary(lib, designs, hovered)} x={hover.x} y={hover.y} />}
     </>

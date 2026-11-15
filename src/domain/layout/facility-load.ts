@@ -39,7 +39,7 @@ export function rowHotAisle(l: DcLayout, rowId: string): string | undefined {
   if (!row || i < 0) return undefined;
   // Front faces east -> rear (exhaust) is west = previous band in the west-to-east sequence.
   const id = l.sequence[row.frontFacing === 'east' ? i - 1 : i + 1];
-  return l.aisles.find((a) => a.id === id && a.kind === 'hot')?.id;
+  return l.aisles.find((a) => a.id === id && a.kind === 'hot' && !a.cross)?.id;
 }
 
 export function computeFacilityLoads(lib: Library, designs: DesignLookup, l: DcLayout): FacilityLoads {

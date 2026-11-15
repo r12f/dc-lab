@@ -12,6 +12,10 @@ export function useLayoutShortcuts(editor: LayoutEditor, sel: LayoutSelection | 
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+      if (sel?.kind === 'assignment') {
+        if (e.key === 'Delete') { editor.unassignAll(sel.ids); setSel(undefined); }
+        return;
+      }
       if (!isElementSelection(sel)) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
         e.preventDefault();

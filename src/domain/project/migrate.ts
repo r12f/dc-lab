@@ -228,8 +228,8 @@ function sequenceLayout(l: Json): Json {
     trays: ((l.trays as Json[]) ?? []).map((t) => {
       const c = num(t.x) + num(t.widthMm) / 2;
       const near = [...aisles].sort((a, b) => Math.abs(aisleCenter(a) - c) - Math.abs(aisleCenter(b) - c))[0];
-      return { id: t.id, kind: t.kind, aisleId: near?.id ?? '', widthMm: Math.min(num(t.widthMm ?? 600), num(near?.widthMm ?? 600)) };
-    }).filter((t) => t.aisleId),
+      return { id: t.id, kind: t.kind, overId: near?.id ?? '', widthMm: Math.min(num(t.widthMm ?? 600), num(near?.widthMm ?? 600)) };
+    }).filter((t) => t.overId),
   };
 }
 
@@ -243,7 +243,9 @@ export function migrateLayout(l: Json): Json {
     return rowIds.length ? { ...f, rowIds } : f;
   });
   const { feeds: _feeds, ...rest } = out;
-  return { ...rest, facilities, doors: (out.doors as Json[] | undefined) ?? [] };
+  // Trays over an aisle (`aisleId`) became trays over any band (`overId`).
+  const trays = ((out.trays as Json[] | undefined) ?? []).map(({ aisleId, ...t }) => ({ ...t, overId: t.overId ?? aisleId }));
+  return { ...rest, facilities, trays, doors: (out.doors as Json[] | undefined) ?? [] };
 }
 
 /** Removed form factor "QSFP-DD800" -> "QSFP-DD" (an 800G QSFP-DD cage); old built-in device id renamed. */

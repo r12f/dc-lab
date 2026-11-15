@@ -24,30 +24,46 @@ const ids = (xs: { id: string }[]) => xs.map((x) => x.id);
 
 export function AisleForm({ aisles, editor }: { aisles: Aisle[]; editor: LayoutEditor }) {
   const set = (patch: Partial<Aisle>) => editor.updateElements<Aisle>('aisles', ids(aisles), patch);
+  const cross = aisles.every((a) => a.cross);
   return (
-    <div className="row2">
-      <BatchSelect<Aisle['kind']> label="Aisle" value={common(aisles, 'kind')}
-        options={[{ value: 'cold', label: 'Cold' }, { value: 'hot', label: 'Hot' }]} onChange={(kind) => set({ kind })} />
-      <BatchNumber label="Width mm" value={common(aisles, 'widthMm')} min={100} onChange={(widthMm) => set({ widthMm })} />
-    </div>
+    <>
+      <div className="row2">
+        <BatchSelect<Aisle['kind']> label={cross ? 'Cross aisle' : 'Aisle'} value={common(aisles, 'kind')}
+          options={[{ value: 'cold', label: 'Cold' }, { value: 'hot', label: 'Hot' }]} onChange={(kind) => set({ kind })} />
+        <BatchNumber label={cross ? 'Width (north–south) mm' : 'Width mm'} value={common(aisles, 'widthMm')} min={100} onChange={(widthMm) => set({ widthMm })} />
+      </div>
+      {cross && <p className="muted">Runs east–west across the rack area between two row blocks.</p>}
+    </>
   );
+}
+
+/** Name of a band a tray can run over: "Row 3", "cold aisle 2", "cross aisle 1". */
+export function bandName(layout: DcLayout, id: string): string {
+  const row = layout.rows.find((r) => r.id === id);
+  if (row) return `${row.name} (over racks)`;
+  const a = layout.aisles.find((x) => x.id === id);
+  if (!a) return id;
+  const same = layout.sequence.filter((x) => layout.aisles.some((y) => y.id === x && !!y.cross === !!a.cross));
+  return `${a.cross ? 'cross' : a.kind} aisle ${same.indexOf(id) + 1}`;
 }
 
 export function TrayForm({ trays, layout, editor }: { trays: CableTray[]; layout: DcLayout; editor: LayoutEditor }) {
   const set = (patch: Partial<CableTray>) => editor.updateElements<CableTray>('trays', ids(trays), patch);
-  const aisleOrder = layout.sequence.filter((id) => layout.aisles.some((a) => a.id === id));
   return (
     <>
-      <div className="row2">
+      <div className="row3">
         <BatchSelect<CableTray['kind']> label="Tray" value={common(trays, 'kind')}
           options={[{ value: 'data', label: 'Data' }, { value: 'power', label: 'Power' }]} onChange={(kind) => set({ kind })} />
         <BatchNumber label="Width mm" value={common(trays, 'widthMm')} min={50} onChange={(widthMm) => set({ widthMm })} />
+        <BatchNumber label="Offset mm (+ east/south)" value={common(trays, 'offsetMm') ?? (trays.every((t) => !t.offsetMm) ? 0 : undefined)}
+          onChange={(offsetMm) => set({ offsetMm: offsetMm || undefined })} />
       </div>
       {trays.length === 1 && (
-        <BatchSelect label="Above aisle" value={trays[0].aisleId}
-          options={aisleOrder.map((id, i) => ({ value: id, label: `${layout.aisles.find((a) => a.id === id)?.kind} aisle ${i + 1}` }))}
-          onChange={(aisleId) => set({ aisleId })} />
+        <BatchSelect label="Runs over" value={trays[0].overId}
+          options={layout.sequence.map((id) => ({ value: id, label: bandName(layout, id) }))}
+          onChange={(overId) => editor.moveTray(trays[0].id, overId)} />
       )}
+      <p className="muted">A tray floats over an aisle, a cross aisle or a row (over the rack tops). Drag it onto another one.</p>
     </>
   );
 }

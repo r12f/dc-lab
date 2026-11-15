@@ -36,15 +36,16 @@ describe('add after the selection', () => {
   it('a tile or rack: after its row', () => {
     const l = sample();
     expect(insertAnchor(l, { kind: 'tile', tiles: [{ rowId: 'r1', tile: 3 }] }).after).toBe('r1');
-    expect(insertAnchor(l, { kind: 'assignment', id: 'x' }).after).toBe('r2');
+    expect(insertAnchor(l, { kind: 'assignment', ids: ['x'] }).after).toBe('r2');
   });
-  it('trays: over the selected aisle, else the next aisle east of the selection', () => {
+  it('trays: over the selected row / aisle, else the next aisle east of a selected tray', () => {
     const l = sample();
-    expect(addTrayOver(l, insertAnchor(l, { kind: 'aisle', ids: ['a2'] }).aisleId).layout.trays.at(-1)?.aisleId).toBe('a2');
-    expect(insertAnchor(l, { kind: 'row', ids: ['r2'] }).aisleId).toBe('a2');
-    expect(insertAnchor(l, { kind: 'tray', ids: ['t1'] }).aisleId).toBe('a2');
+    expect(addTrayOver(l, insertAnchor(l, { kind: 'aisle', ids: ['a2'] }).overId).layout.trays.at(-1)?.overId).toBe('a2');
+    // A row: over its racks.
+    expect(insertAnchor(l, { kind: 'row', ids: ['r2'] }).overId).toBe('r2');
+    expect(insertAnchor(l, { kind: 'tray', ids: ['t1'] }).overId).toBe('a2');
     // No selection: the first aisle without a tray.
-    expect(addTrayOver(l).layout.trays.at(-1)?.aisleId).toBe('a2');
+    expect(addTrayOver(l).layout.trays.at(-1)?.overId).toBe('a2');
   });
   it('facilities: next to the selected one', () => {
     const l = sample();

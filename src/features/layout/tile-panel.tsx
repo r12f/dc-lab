@@ -6,7 +6,7 @@ import { computeRackMetrics } from '../../domain/design/metrics';
 import { formatPower } from '../../domain/units';
 import { useAppStore } from '../../state/store';
 import { Button } from '../../ui/button';
-import { SelectField, TextField } from '../../ui/fields';
+import { NumberField, SelectField, TextField } from '../../ui/fields';
 import type { LayoutEditor } from './use-layout-editor';
 import type { LayoutSelection, TileSelection } from './selection';
 import type { RackAssignment } from '../../domain/layout/types';
@@ -65,8 +65,12 @@ export function TilePanel({ lib, designs, layout, editor, selection, onSelect }:
   // One tile covered by a rack: edit that rack.
   const single = selection.kind === 'tile' && selection.tiles.length === 1 ? selection.tiles[0] : undefined;
   const assignment = selection.kind === 'assignment'
-    ? layout.assignments.find((a) => a.id === selection.id)
+    ? selection.ids.length === 1 ? layout.assignments.find((a) => a.id === selection.ids[0]) : undefined
     : single && assignmentAt(lib, designs, layout, single.rowId, single.tile);
+
+  if (selection.kind === 'assignment' && selection.ids.length > 1) {
+    return <RacksPanel lib={lib} designs={designs} layout={layout} editor={editor} ids={selection.ids} onSelect={onSelect} />;
+  }
 
   if (assignment) {
     const d = designs(assignment.designId);
@@ -78,6 +82,7 @@ export function TilePanel({ lib, designs, layout, editor, selection, onSelect }:
         {assignmentRole(lib, designs, assignment) !== 'it' && (
           <ServesEditor lib={lib} designs={designs} layout={layout} editor={editor} infra={assignment} />
         )}
+        <RackMoveFields editor={editor} ids={[assignment.id]} designId={assignment.designId} />
         <Button variant="danger" onClick={() => { editor.unassign(assignment.id); onSelect(undefined); }}>Remove rack</Button>
       </div>
     );
@@ -100,7 +105,7 @@ export function TilePanel({ lib, designs, layout, editor, selection, onSelect }:
   return (
     <div className="card">
       <strong>{title}</strong>
-      <p className="muted">Ctrl/Shift-click tiles to add or remove them; Shift-click selects a run in the row.</p>
+      <p className="muted">Ctrl-click tiles to add or remove them; Shift-click selects the run from the last tile in that row.</p>
       <SelectField label="Rack design" value={designId}
         options={allDesigns.map((d) => ({ value: d.id, label: `${d.abbr} · ${d.name} (${formatTiles(tileWidthOf(lib, d))} tiles)` }))}
         onChange={setDesignId} />
@@ -108,6 +113,65 @@ export function TilePanel({ lib, designs, layout, editor, selection, onSelect }:
       <Button variant="primary" disabled={!designId || free.length === 0} onClick={assign}>
         {free.length > 1 ? `Assign ${free.length} racks` : 'Assign rack'}
       </Button>
+    </div>
+  );
+}
+
+/**
+ * Move the selected racks by rows (row order, across row blocks) and tiles, or swap their design in place. Moves are
+ * all-or-none; dragging a selected rack on the canvas does the same.
+ */
+function RackMoveFields({ editor, ids, designId }: { editor: LayoutEditor; ids: string[]; designId?: string }) {
+  const allDesigns = useAppStore((s) => s.project.rackDesigns);
+  const [rows, setRows] = useState(0);
+  const [tiles, setTiles] = useState(0);
+  const [to, setTo] = useState(designId ?? allDesigns[0]?.id ?? '');
+  const [msg, setMsg] = useState<{ error: boolean; lines: string[] }>();
+  const move = (dRow: number, dTile: number) => {
+    const e = editor.moveRacks(ids, dRow, dTile);
+    setMsg(e ? { error: true, lines: [e] } : undefined);
+  };
+  const change = () => {
+    const r = editor.changeDesign(ids, to);
+    setMsg({ error: r.changed === 0 && r.skipped.length > 0, lines: [`${r.changed} rack${r.changed === 1 ? '' : 's'} changed`, ...r.skipped] });
+  };
+  return (
+    <div className="subcard">
+      <strong>Move</strong>
+      <div className="row-actions">
+        <Button title="One tile north" onClick={() => move(0, -1)}>↑ tile</Button>
+        <Button title="One tile south" onClick={() => move(0, 1)}>↓ tile</Button>
+        <Button title="Previous row (west / block above)" onClick={() => move(-1, 0)}>← row</Button>
+        <Button title="Next row (east / block below)" onClick={() => move(1, 0)}>→ row</Button>
+      </div>
+      <div className="row3">
+        <NumberField label="Rows (+ next)" value={rows} onChange={setRows} />
+        <NumberField label="Tiles (+ south)" value={tiles} onChange={setTiles} />
+        <Button onClick={() => move(rows, tiles)}>Move</Button>
+      </div>
+      <p className="muted">Or drag a selected rack on the canvas: the selection moves with it, all or none.</p>
+      <div className="row2">
+        <SelectField label="Design" value={to} options={allDesigns.map((d) => ({ value: d.id, label: `${d.abbr} · ${d.name}` }))} onChange={setTo} />
+        <Button onClick={change}>Change design</Button>
+      </div>
+      {msg && msg.lines.map((l, i) => <p key={i} className={msg.error ? 'error' : 'muted'}>{l}</p>)}
+    </div>
+  );
+}
+
+/** Several racks selected: list them, move them together, swap their design, or remove them. */
+function RacksPanel({ lib, designs, layout, editor, ids, onSelect }: {
+  lib: Library; designs: DesignLookup; layout: DcLayout; editor: LayoutEditor; ids: string[]; onSelect(sel: LayoutSelection | undefined): void;
+}) {
+  const racks = layout.assignments.filter((a) => ids.includes(a.id));
+  const kw = racks.reduce((n, a) => { const d = designs(a.designId); return n + (d ? computeRackMetrics(lib, d).typicalW : 0); }, 0);
+  return (
+    <div className="card">
+      <strong>{`${racks.length} racks selected · ${formatPower(kw)}`}</strong>
+      <p className="muted">{racks.map((a) => a.label).join(', ')}</p>
+      <p className="muted">Ctrl/Shift-click racks to add or remove them.</p>
+      <RackMoveFields editor={editor} ids={ids} designId={racks.every((a) => a.designId === racks[0]?.designId) ? racks[0]?.designId : undefined} />
+      <Button variant="danger" onClick={() => { editor.unassignAll(ids); onSelect(undefined); }}>{`Remove ${racks.length} racks`}</Button>
     </div>
   );
 }

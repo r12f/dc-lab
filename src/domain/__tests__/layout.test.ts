@@ -62,7 +62,7 @@ describe('layout migration', () => {
     const l = p.layouts[0];
     expect(l.sequence).toEqual(['r1', 'a', 'r2']);
     expect(l.whitespace).toEqual({ x: 1200, y: 1200, widthMm: 4800, depthMm: 12000 });
-    expect(l.trays[0]).toEqual({ id: 't', kind: 'data', aisleId: 'a', widthMm: 300 });
+    expect(l.trays[0]).toEqual({ id: 't', kind: 'data', overId: 'a', widthMm: 300 });
     expect(l.rows[0]).not.toHaveProperty('x');
     expect(l.facilities).toEqual([]);
   });

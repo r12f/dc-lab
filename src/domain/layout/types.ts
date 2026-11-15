@@ -23,19 +23,29 @@ export interface Row {
   frontFacing: RowFront;
 }
 
-/** A hot or cold aisle between rows; positioned by the layout sequence, spans the rack area depth. */
+/**
+ * A hot or cold aisle; positioned by the layout sequence. A lengthwise aisle runs between rows of a row block and
+ * spans its depth. A **cross aisle** (`cross`) runs east–west across the whole rack area and splits the sequence
+ * into row blocks (rows of rows) stacked north to south; `widthMm` is then its north–south width.
+ */
 export interface Aisle {
   id: string;
   kind: 'hot' | 'cold';
   widthMm: number;
+  cross?: boolean;
 }
 
-/** Overhead cable tray floating above an aisle, centred on it, full aisle length. */
+/**
+ * Overhead cable tray floating over a band — an aisle, a cross aisle, or a row (over the tops of its racks) —
+ * running its full length, centred on it and shifted `offsetMm` across it (+ = east / south).
+ */
 export interface CableTray {
   id: string;
   kind: 'data' | 'power';
-  aisleId: string;
+  /** Row or aisle id the tray runs over. */
+  overId: string;
   widthMm: number;
+  offsetMm?: number;
 }
 
 export type FacilityKind = 'pdu' | 'cooling' | 'other';
@@ -94,7 +104,7 @@ export interface DcLayout {
   facilities: Facility[];
   rows: Row[];
   aisles: Aisle[];
-  /** Row and aisle ids from west to east. */
+  /** Row and aisle ids from west to east; a cross aisle starts the next row block (south). */
   sequence: string[];
   trays: CableTray[];
   assignments: RackAssignment[];

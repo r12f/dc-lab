@@ -48,10 +48,12 @@ export function duplicateElements(l: DcLayout, kind: DuplicableKind, ids: string
     } else if (kind === 'tray') {
       const src = next.trays.find((t) => t.id === id);
       if (!src) continue;
-      const aisleOrder = next.sequence.filter((x) => next.aisles.some((a) => a.id === x));
-      const after = aisleOrder.slice(aisleOrder.indexOf(src.aisleId) + 1);
-      const free = after.find((a) => !next.trays.some((t) => t.aisleId === a && t.kind === src.kind));
-      const copy: CableTray = { ...src, id: uniqueId('tray', next.trays.map((t) => t.id)), aisleId: free ?? src.aisleId };
+      // Next band of the same sort (row / aisle / cross aisle) east that has no tray of this kind.
+      const sortOf = (id: string) => (next.rows.some((r) => r.id === id) ? 'row' : next.aisles.find((a) => a.id === id)?.cross ? 'cross' : 'aisle');
+      const same = next.sequence.filter((x) => sortOf(x) === sortOf(src.overId));
+      const after = same.slice(same.indexOf(src.overId) + 1);
+      const free = after.find((a) => !next.trays.some((t) => t.overId === a && t.kind === src.kind));
+      const copy: CableTray = { ...src, id: uniqueId('tray', next.trays.map((t) => t.id)), overId: free ?? src.overId };
       next = { ...next, trays: [...next.trays, copy] };
       created.push(copy.id);
     } else if (kind === 'door') {

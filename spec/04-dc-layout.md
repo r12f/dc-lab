@@ -20,22 +20,30 @@ south (down), units are millimetres.
 - `rows[]`: `name`, `tileCount`, `tileWidthMm` (pitch along the row), `tileDepthMm` (across the row),
   `powerBudgetKw`, `frontFacing` (`east`/`west` — the side facing the cold aisle). Rows run
   **vertically** (north–south). They have no stored position.
-- `aisles[]`: `kind` (hot/cold), `widthMm`. No stored position; an aisle spans the rack area's depth.
-- `sequence`: ids of rows and aisles from west to east.
-- `trays[]`: overhead cable trays — `kind` (data/power), `aisleId`, `widthMm`. A tray **floats above an
-  aisle**: centred on it, running its full length, drawn on top of everything.
+- `aisles[]`: `kind` (hot/cold), `widthMm`, `cross?`. No stored position. A lengthwise aisle spans its row
+  block's depth. A **cross aisle** (`cross: true`) runs east–west across the whole rack area between two **row
+  blocks** (rows of rows); its `widthMm` is north–south.
+- `sequence`: ids of rows and aisles from west to east; a cross aisle in it ends one row block and starts the next
+  (south of it).
+- `trays[]`: overhead cable trays — `kind` (data/power), `overId`, `widthMm`, `offsetMm?`. A tray **floats over a
+  band** — an aisle, a cross aisle, or a **row (over the rack tops)** — running its full length, centred on it and
+  shifted `offsetMm` across it (+ = east / south); drawn on top of everything. Old `aisleId` loads as `overId`.
 - `assignments[]`: `rowId`, `startTile` (0-based, from the north end), `designId`, `label`; power / CDU racks
   optionally `serves[]` — ids of the IT racks they serve.
 
 ## Arrangement (derived, never stored)
 
-- Rows and aisles are packed edge to edge from the west edge of the rack area in `sequence` order; a
-  row's band is `tileDepthMm` wide, an aisle's `widthMm`. All start at the rack area's north edge.
-  A row is `tileCount × tileWidthMm` long; an aisle is as long as the rack area is deep.
+- Cross aisles split the sequence into **row blocks**, stacked from the rack area's north edge southwards. Inside
+  a block, rows and aisles are packed edge to edge from the west edge in `sequence` order; a row's band is
+  `tileDepthMm` wide, an aisle's `widthMm`. A row is `tileCount × tileWidthMm` long; a block is as deep as its
+  longest row (the last block reaches down to the rack area's south edge, or its longest row) and its aisles span
+  that depth. A cross aisle spans the rack area's width; the next block starts below it plus room for its row
+  headers (1040 mm).
+- A cross aisle is never a row's rear (hot) aisle for cooling loads; the hot-aisle lists leave cross aisles out.
 - New rows and aisles are appended at the east end of the sequence, so adding row, aisle, row… builds a
   hot/cold aisle sequence. A new tray goes over the selected aisle, else the first aisle.
-- Warnings: sequence wider than the rack area; a row longer than the rack area; a facility overlapping
-  the rack area.
+- Warnings: a row block wider than the rack area; a row longer than the rack area (one block) or blocks and cross
+  aisles deeper than it; a facility overlapping the rack area; a tray over nothing.
 
 ## Rules
 
@@ -68,12 +76,13 @@ south (down), units are millimetres.
   - room, rack area (dashed outline), facilities (PDU amber, cooling cyan, other grey), aisles (blue
     cold / red hot), vertical rows of tiles with a front-side marker, assigned racks, trays on top
     (semi-transparent, so the aisle stays visible under them).
-  - Title bar (next to Export SVG): **+ Row**, **+ Aisle**, **+ Tray**, **+ PDU**, **+ Cooling**,
+  - Title bar (next to Export SVG): **+ Row**, **+ Aisle**, **+ Cross aisle**, **+ Tray**, **+ PDU**, **+ Cooling**,
     **Duplicate** (Ctrl+D) and **Delete** (Del) for the selection.
   - **Add after the selection**: + Row / + Aisle insert right after the selected row or aisle (the
     easternmost when several; a selected tile/rack counts as its row, a tray as its aisle), else at the
-    east end. + Tray goes over the selected aisle, else the next aisle east of the selection, else the first
-    aisle without a tray. + PDU / + Cooling go right of the selected facility. The new element becomes
+    east end. **+ Cross aisle** inserts there too: rows and aisles after it form the next row block. + Tray goes
+    over the selected row (rack tops) / aisle / cross aisle (a selected tile or rack counts as its row), the next
+    aisle east of a selected tray, else the first aisle without a tray. + PDU / + Cooling go right of the selected facility. The new element becomes
     the selection, so repeated clicks build row / aisle / row… in place.
   - **Selection**: click a row header, aisle, tray or facility; Ctrl/Shift-click adds or removes elements
     of the same kind. The inspector also offers group selections (all rows, cold aisles, hot aisles, all
@@ -85,8 +94,9 @@ south (down), units are millimetres.
     of the sequence, in the originals' west-to-east order, so duplicating a row + aisle pattern repeats it;
     a tray copy goes over the next aisle east that has no tray of that kind; a facility copy is
     offset 200 mm.
-  - **Drag** a row (by its header) or an aisle sideways to **reorder** it in the sequence; the plan
-    re-packs live while dragging. **Drag** a tray onto another aisle to move it there. **Drag** a
+  - **Drag** a row (by its header) or an aisle sideways to **reorder** it in the sequence, or down / up into
+    another row block; the plan re-packs live while dragging (cross aisles are not dragged). **Drag** a tray onto
+    another row, aisle or cross aisle to move it there (the inspector also sets its offset). **Drag** a
     facility to move it freely (snapped to 100 mm, kept inside the room). A click without movement
     just selects.
   - **View rotation**: ⟲ / ⟳ 90° in the title bar turn the drawing by 90° (saved with the layout), e.g.
@@ -116,10 +126,17 @@ south (down), units are millimetres.
   - Each row header shows `name`, `power / budget` (red when over budget) and `used/total tiles`.
   - **Hover** a rack: tooltip with label, design, rack template, tiles, units used, devices, typical and
     max power, weight, warnings.
-  - Click a tile to select it, click a rack to select the assignment. **Ctrl-click** adds / removes tiles,
+  - Click a tile to select it, click a rack to select it. **Ctrl-click** adds / removes tiles,
     **Shift-click** adds the run from the last selected tile in that row. With several tiles selected the
     inspector assigns one design to all of them in row / tile order, each rack starting where its tile is free;
     tiles already taken (including by a wide rack just placed) or too short are skipped and listed.
+  - **Several racks**: Ctrl- or Shift-click racks to add / remove them (any rows). **Drag** a selected rack and
+    the whole selection moves with it by whole rows (in row order, across row blocks) and tiles; the inspector
+    also has ↑ / ↓ tile, ← / → row and a rows / tiles move. A move is **all or none**: when any rack would leave its
+    row or overlap a rack that stays, nothing moves and the reason is shown (red on the canvas while dragging).
+    Labels still in the automatic form (`Row1-03`) follow the new row / tile; hand-set labels stay. The inspector
+    can also **change the design** of the selected racks in place (racks it does not fit are skipped and listed)
+    and **remove** them (also Delete).
   - Drawing scale is fixed (100 % = 0.1 px/mm); when the layout is opened, rotated or the room size changes,
     the canvas zoom fits the room width to the pane (≤ 100 %), so the zoom level always matches the drawing.
 - Inspector: room and rack-area fields, layout warnings, group selections, selected element(s) editor,
