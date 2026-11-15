@@ -12,7 +12,7 @@ export function validateDevice(device: DeviceDefinition): string[] {
   for (const g of device.ports) {
     if (groupIds.has(g.id)) errors.push(`Duplicate port group id "${g.id}"`);
     groupIds.add(g.id);
-    if (isFiberConnector(g.formFactor) && !g.gender) errors.push(`${g.label}: set the ${g.formFactor} connector gender (male / female)`);
+    if (isFiberConnector(g.formFactor) && !g.cableGender) errors.push(`${g.label}: set which ${g.formFactor} cable gender it takes (male / female)`);
     for (const m of g.breakoutModes) {
       if (!isModeFeasible(g, m)) errors.push(`${g.label}: ${m} exceeds ${g.speedGbps}G`);
     }

@@ -24,7 +24,7 @@
       "label": "LC duplex",
       "role": "data",
       "formFactor": "LC",
-      "gender": "female",
+      "cableGender": "male",
       "count": 64,
       "speedGbps": 0,
       "lanes": 2,

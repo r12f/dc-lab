@@ -23,8 +23,8 @@ export interface PortLeg {
   label: string;
   /** Total speed of the port's mode (Gbps), for direct-attach cable speed checks. */
   portGbps: number;
-  /** Gender of the port-side connector (fiber ports, module faces, pigtail legs); a cable end must be the opposite. */
-  gender?: ConnectorGender;
+  /** Gender of the cable end this leg takes (shown in the label: "MPO-12F" = plug a female end in). */
+  cableGender?: ConnectorGender;
 }
 
 /** The share of a port mode on one of `legs` legs: 8x100G over 2 legs -> "4x100G"; 800G over 2 -> "400G". */
@@ -50,13 +50,13 @@ export function portLegs(group: PortGroup, r: ResolvedPort | undefined): PortLeg
   if (!conns) {
     const lm = legMode(mode, 1);
     const reach = r?.reach;
-    return [{ connector: group.formFactor, mode: lm, reach, portGbps, gender: group.gender,
-      label: [lm, reach, genderedConnector(group.formFactor, group.gender)].filter(Boolean).join(' ') }];
+    return [{ connector: group.formFactor, mode: lm, reach, portGbps, cableGender: group.cableGender,
+      label: [lm, reach, genderedConnector(group.formFactor, group.cableGender)].filter(Boolean).join(' ') }];
   }
   const lm = legMode(mode, conns.count);
   const reach = legReach(r?.reach, conns.count);
   return Array.from({ length: conns.count }, (_, i) => ({
-    index: i + 1, connector: conns.connector, mode: lm, reach, portGbps, gender: conns.gender,
-    label: [lm, reach, genderedConnector(conns.connector, conns.gender)].filter(Boolean).join(' '),
+    index: i + 1, connector: conns.connector, mode: lm, reach, portGbps, cableGender: conns.cableGender,
+    label: [lm, reach, genderedConnector(conns.connector, conns.cableGender)].filter(Boolean).join(' '),
   }));
 }

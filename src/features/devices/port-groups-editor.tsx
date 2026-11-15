@@ -14,7 +14,7 @@ interface Props {
 }
 
 const genderOptions: { value: '' | ConnectorGender; label: string }[] = [
-  { value: '', label: '— not set —' }, { value: 'male', label: 'Male (pinned)' }, { value: 'female', label: 'Female (unpinned)' },
+  { value: '', label: '— not set —' }, { value: 'male', label: 'Male (pinned plug)' }, { value: 'female', label: 'Female (unpinned plug)' },
 ];
 const faceOptions = [{ value: 'front' as PortFace, label: 'Front' }, { value: 'rear' as PortFace, label: 'Rear' }];
 const roleOptions = PORT_ROLES.map((r) => ({ value: r, label: ROLE_TRAITS[r].label }));
@@ -88,8 +88,8 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
           onChange={(v) => set({ breakoutModes: v.split(',').map((s) => s.trim()).filter(Boolean) })} />
       )}
       {formFactorSpec(group.formFactor).kind === 'fiber' && (
-        <SelectField<'' | ConnectorGender> label="Connector gender (cable end must be the opposite)" value={group.gender ?? ''}
-          options={genderOptions} onChange={(g) => set({ gender: g || undefined })} />
+        <SelectField<'' | ConnectorGender> label="Takes cable connector" value={group.cableGender ?? ''}
+          options={genderOptions} onChange={(g) => set({ cableGender: g || undefined })} />
       )}
       {formFactorSpec(group.formFactor).kind === 'fiber' && <EngineFields group={group} set={set} />}
       {group.role === 'outlet' && <OutletFields group={group} set={set} />}

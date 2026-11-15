@@ -1,6 +1,6 @@
 import type { Library } from '../library/library';
 import { portConnectors } from '../ports/optic-match';
-import { connectorsMate, gendersMate } from '../optics/connectors';
+import { connectorsMate, genderFits } from '../optics/connectors';
 import { resolvePlacedPort } from './optics';
 import type { CableEndpoint, CableRun, RackDesign } from './types';
 
@@ -46,8 +46,8 @@ export function cableIssues(lib: Library, design: RackDesign, run: CableRun): st
     const label = `${side} ${endpointLabel(design, ep)}`;
     if (!connectorsMate(legs.connector, end.connector)) issues.push(`${label} is ${legs.connector}, cable end is ${end.connector}`);
     if (ep.connector && ep.connector > legs.count) issues.push(`${label}: port has ${legs.count} connector(s)`);
-    if (!gendersMate(end.gender, legs.gender)) {
-      issues.push(`${label}: ${end.gender} cable end on a ${legs.gender} ${legs.connector} (genders must differ)`);
+    if (!genderFits(end.gender, legs.cableGender)) {
+      issues.push(`${label}: ${end.gender} cable end, port takes ${legs.cableGender} ${legs.connector}`);
     }
   };
   run.from.forEach((ep) => check(ep, 'A'));

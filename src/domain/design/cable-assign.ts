@@ -5,7 +5,7 @@ import { endpointLegs } from './connectors';
 import { estimateLengthM } from './cabling';
 import type { CableEndpoint, CableRoute, CableRun, Placement, RackDesign } from './types';
 import type { CableMedia } from '../optics/types';
-import { connectorsMate, gendersMate } from '../optics/connectors';
+import { connectorsMate, genderFits } from '../optics/connectors';
 import { isDirectAttach } from '../optics/cable-types';
 import { fiberTypeFor } from '../ports/optic-match';
 import { portLegs, type PortLeg } from '../ports/legs';
@@ -114,7 +114,7 @@ function endFits(media: CableMedia, side: 'a' | 'b', leg: PortLeg | undefined): 
   if (!leg) return false;
   const end = media.ends[side];
   if (!connectorsMate(end.connector, leg.connector)) return false;
-  if (!gendersMate(end.gender, leg.gender)) return false;
+  if (!genderFits(end.gender, leg.cableGender)) return false;
   if (isDirectAttach(media.type)) return !media.speedGbps || !leg.portGbps || media.speedGbps === leg.portGbps;
   const fiber = fiberTypeFor(leg.reach);
   return !fiber || !media.type.startsWith('fiber') || media.type === fiber;
