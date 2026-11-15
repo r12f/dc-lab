@@ -149,6 +149,9 @@ shows every cable with an end that fits those connectors — a C20 PSU inlet lis
 the C13-C14 cord — instead of going empty until the other end is picked.
 
 **Cable lines in the cabling view**: every assigned cable is drawn as lines between its connectors, in the
-cable's colour — one line per A–B connector pair (a 1:1 cable is one line, a breakout fans out to each B end),
-curved so links between ports of one row stay visible, drawn on top of the devices. Hover shows both ends;
-clicking a line opens its run.
+cable's colour — one line per A–B connector pair (a 1:1 cable is one line, a breakout fans out to each B end).
+Lines follow the run's **route** like the elevation: a left and a right cable channel frame the drawing; each
+line leaves its connector to the gap above or below its device row (the nearer), runs along the gap to the
+route's channel, along its lane, and back in the same way. Per side, runs get nested lanes by vertical span
+(shortest innermost), so runs on one side never cross in the channel. Drawn on top of the devices; hover shows
+both ends; clicking a line opens its run.

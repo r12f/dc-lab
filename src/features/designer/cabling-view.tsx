@@ -15,6 +15,7 @@ import { Button } from '../../ui/button';
 import { SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
 import type { SideName } from '../../domain/rack/side-elements';
+import { routeCablingLines, type LegAnchor } from './cabling-lines';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -43,6 +44,10 @@ const TITLE_H = 13;
 const SECTION_H = 22;
 /** Ports per line on a side-mounted (vertical) device. */
 const SIDE_COLS = 2;
+/** Width of the left / right cable channels the lines run in (as the elevation's side channels). */
+const CHANNEL_W = 90;
+/** Gap between device rows: cables run along it to their channel. */
+const ROW_GAP = 10;
 
 interface LegBox { ep: CableEndpoint; leg: PortLeg; x: number; y: number; w: number; h: number }
 interface PortBox { group: PortGroup; index: number; mode: string; x: number; y: number; w: number; h: number }
@@ -125,27 +130,6 @@ function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: Port
 }
 
 /**
- * Lines of the assigned cables: each run joins every A connector to every B connector (a 1:1 cable is one line,
- * a breakout fans out). Curves bow sideways so lines between ports of one row stay visible.
- */
-function cableLines(design: RackDesign, devices: DeviceLayout[]) {
-  const at = new Map<string, { x: number; y: number }>();
-  for (const d of devices) for (const l of d.legs) at.set(endpointKey(l.ep), { x: l.x + l.w / 2, y: l.y + l.h / 2 });
-  return design.cables.flatMap((c) => c.from.flatMap((f, i) => c.to.map((t, j) => {
-    const a = at.get(endpointKey(f));
-    const b = at.get(endpointKey(t));
-    if (!a || !b) return undefined;
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const bow = Math.max(24, Math.hypot(dx, dy) * 0.25);
-    // Control points pushed perpendicular-ish: down for same-row links, sideways otherwise.
-    const [ox, oy] = Math.abs(dy) < 8 ? [0, bow] : [bow * Math.sign(dx || 1), 0];
-    const d = `M${a.x},${a.y} C${a.x + ox},${a.y + oy} ${b.x + ox},${b.y + oy} ${b.x},${b.y}`;
-    return { key: `${c.id}:${i}:${j}`, runId: c.id, d, title: `${endpointLabel(design, f)} ↔ ${endpointLabel(design, t)}` };
-  }))).filter((x): x is NonNullable<typeof x> => !!x);
-}
-
-/**
  * Cabling view: every device's face drawn like its faceplate, each port split into its connector legs with
  * what runs on them. Press on a connector and drag to select several (dragging from a selected one deselects).
  * The selection splits into A (first device) and B (other devices); only cables that fit both ends are offered,
@@ -181,7 +165,7 @@ export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) 
       const l = layoutDevice(lib, design, p, 'all', 0, sy, true);
       if (!l) continue;
       out.push(l);
-      sy += l.h + 4;
+      sy += l.h + ROW_GAP;
     }
     return out;
   };
@@ -197,7 +181,7 @@ export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) 
     const r = layoutDevice(lib, design, p, 'rear', 0, y);
     if (!f || !r) continue;
     front.push(f); rear.push(r);
-    y += Math.max(f.h, r.h) + 4;
+    y += Math.max(f.h, r.h) + ROW_GAP;
   }
   const frontW = Math.max(240, ...front.map((d) => d.w)) + 8;
   const rearX = leftW + frontW;
@@ -206,6 +190,8 @@ export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) 
   const rightX = rearX + rearW;
   rightSide.forEach((d) => shift(d, rightX));
   const devices = [...leftSide, ...front, ...rear, ...rightSide];
+  // Left channel before everything, right channel after: shift the whole drawing right by one channel.
+  devices.forEach((d) => shift(d, CHANNEL_W));
   const legOrder = new Map(devices.flatMap((d) => d.legs.map((l, i) => [endpointKey(l.ep), i + (d.face === 'rear' ? 100000 : 0)] as const)));
   const selected = new Set(selection.map(endpointKey));
 
@@ -249,7 +235,15 @@ export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) 
     onSelectCable(last);
   };
 
-  const width = rightX + sideW(rightSide);
+  const contentW = rightX + sideW(rightSide);
+  const width = contentW + 2 * CHANNEL_W;
+  const anchors = new Map<string, LegAnchor>();
+  for (const d of devices) {
+    for (const l of d.legs) {
+      anchors.set(endpointKey(l.ep), { x: l.x + l.w / 2, y: l.y + l.h / 2, gapAbove: d.y - ROW_GAP / 2, gapBelow: d.y + d.h + ROW_GAP / 2 });
+    }
+  }
+  const lines = routeCablingLines(design.cables, anchors, endpointKey, { left: 0, right: CHANNEL_W + contentW, width: CHANNEL_W });
   const height = Math.max(y, SECTION_H + 30, ...[...leftSide, ...rightSide].map((d) => d.y + d.h + 4));
 
   return (
@@ -272,11 +266,16 @@ export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) 
       <p className="muted">Front and rear side by side (power inlets and PDU outlets included). Press on a connector and drag to select several; drag from a selected one to deselect. A = first device selected, B = the others; the cable repeats in port order. Click a cabled connector to open its run.</p>
       <svg ref={ref} viewBox={`0 0 ${width} ${height}`} width={width} className="drawing" style={{ touchAction: 'none' }}>
         <rect width={width} height={height} fill={paint.paper} />
-        {leftSide.length > 0 && <text x={4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>LEFT</text>}
-        <text x={leftW + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>FRONT</text>
-        <text x={rearX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>REAR</text>
-        {rightSide.length > 0 && <text x={rightX + 4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>RIGHT</text>}
-        {[leftW, rearX, rightX].filter((x, i) => x > 0 && (i !== 2 || rightSide.length > 0)).map((x) => (
+        {leftSide.length > 0 && <text x={CHANNEL_W + 4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>LEFT</text>}
+        <text x={CHANNEL_W + leftW + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>FRONT</text>
+        <text x={CHANNEL_W + rearX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>REAR</text>
+        {rightSide.length > 0 && <text x={CHANNEL_W + rightX + 4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>RIGHT</text>}
+        <text x={4} y={14} fontSize={10} fill={paint.inkMuted}>◀ left route</text>
+        <text x={width - 4} y={14} fontSize={10} textAnchor="end" fill={paint.inkMuted}>right route ▶</text>
+        {[CHANNEL_W, CHANNEL_W + contentW].map((x) => (
+          <line key={`ch${x}`} x1={x} y1={SECTION_H} x2={x} y2={height} stroke={paint.inkMuted} strokeOpacity={0.4} />
+        ))}
+        {[leftW, rearX, rightX].filter((x, i) => x > 0 && (i !== 2 || rightSide.length > 0)).map((x) => x + CHANNEL_W).map((x) => (
           <line key={x} x1={x - 3} y1={0} x2={x - 3} y2={height} stroke={paint.inkMuted} strokeDasharray="4 3" />
         ))}
         {devices.length === 0 && <text x={10} y={SECTION_H + 16} fontSize={12} fill={paint.inkMuted}>No devices placed.</text>}
@@ -329,11 +328,11 @@ export function CablingView({ ref, lib, design, editor, onSelectCable }: Props) 
         })}
         {/* Assigned cables: one line per A–B connector pair, in the cable's colour; drawn last (on top). */}
         <g>
-          {cableLines(design, devices).map((ln) => (
-            <path key={ln.key} d={ln.d} fill="none" stroke={runColor.get(ln.runId)} strokeWidth={2} strokeOpacity={0.85}
-              strokeLinecap="round" style={{ cursor: 'pointer' }} onClick={() => onSelectCable(ln.runId)}>
-              <title>{ln.title}</title>
-            </path>
+          {lines.map((ln) => (
+            <polyline key={ln.key} points={ln.points.map((pt) => pt.join(',')).join(' ')} fill="none" stroke={runColor.get(ln.runId)} strokeOpacity={0.85}
+              strokeWidth={1.5} strokeLinejoin="round" style={{ cursor: 'pointer' }} onClick={() => onSelectCable(ln.runId)}>
+              <title>{`${endpointLabel(design, ln.a)} ↔ ${endpointLabel(design, ln.b)}`}</title>
+            </polyline>
           ))}
         </g>
       </svg>
