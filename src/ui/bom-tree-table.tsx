@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import type { BomNode } from '../domain/bom/rack-bom-tree';
-import type { BomLine } from '../domain/bom/types';
 import { bomColumns } from '../domain/bom/columns';
-import { bomToCsv } from '../domain/bom/csv';
+import { bomTreeToCsv } from '../domain/bom/csv';
 import { formatPower } from '../domain/units';
 import { downloadText } from '../io/download';
 import { useAppStore } from '../state/store';
@@ -10,13 +9,11 @@ import { Button } from './button';
 
 interface Props {
   root: BomNode;
-  /** Flat BOM for the CSV export (merged by item, for ordering). */
-  csvLines: BomLine[];
   filename: string;
 }
 
 /** BOM as an expandable tree table: the first column is indented by depth, groups collapse. */
-export function BomTreeTable({ root, csvLines, filename }: Props) {
+export function BomTreeTable({ root, filename }: Props) {
   const defs = useAppStore((s) => s.project.propertyDefs);
   const cols = bomColumns(defs);
   const [closed, setClosed] = useState<Set<string>>(new Set());
@@ -61,7 +58,8 @@ export function BomTreeTable({ root, csvLines, filename }: Props) {
           })}
         </tbody>
       </table>
-      <Button onClick={() => downloadText(`${filename}-bom.csv`, bomToCsv(csvLines, defs), 'text/csv')}>Export CSV</Button>
+      <Button onClick={() => downloadText(`${filename}-bom.csv`, bomTreeToCsv(root, defs), 'text/csv')}
+        title="Tree order with a Level column (rack = 1, rack frame / side elements / cables = 2, …)">Export CSV</Button>
     </div>
   );
 }

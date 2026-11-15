@@ -28,7 +28,7 @@ export function RackSummaryPanel({ lib, design }: { lib: Library; design: RackDe
       ]} />
       <WarningList warnings={m.warnings} />
       <Section title="BOM">
-        {tree ? <BomTreeTable root={tree} csvLines={bom} filename={design.id} /> : <BomTable lines={bom} filename={design.id} />}
+        {tree ? <BomTreeTable root={tree} filename={design.id} /> : <BomTable lines={bom} filename={design.id} />}
       </Section>
     </>
   );

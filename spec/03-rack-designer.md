@@ -70,8 +70,9 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 - **BOM**: shown as a tree — **Rack** → **Rack frame** (devices in rack units) and one node per side
   element (Sidepod L, PDU bay R… with the devices mounted in it) → each device line with its optics and
   port-attached cables as children; **In-rack cables** (runs by media and length) last. Same items in the
-  same container merge (qty, labels in notes). Empty (Reserved) space is left out. CSV export stays flat
-  (merged by item).
+  same container merge (qty, labels in notes). Empty (Reserved) space is left out. CSV export follows the tree:
+  rows in tree order with a leading **Level** column (rack = 1, rack frame / side elements / in-rack cables = 2,
+  devices = 3, their optics and cables = 4); group rows carry only Level and Item.
   Columns: Item, Category, Vendor / Model (PN), every custom property with `showInBom`, Qty, Unit W,
   Total W, Notes.
 
