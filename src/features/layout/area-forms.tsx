@@ -37,10 +37,10 @@ export function AisleForm({ aisles, editor }: { aisles: Aisle[]; editor: LayoutE
   );
 }
 
-/** Name of a band a tray can run over: "Row 3", "cold aisle 2", "cross aisle 1". */
+/** Name of a band: "Row 3", "cold aisle 2", "cross aisle 1". */
 export function bandName(layout: DcLayout, id: string): string {
   const row = layout.rows.find((r) => r.id === id);
-  if (row) return `${row.name} (over racks)`;
+  if (row) return row.name;
   const a = layout.aisles.find((x) => x.id === id);
   if (!a) return id;
   const same = layout.sequence.filter((x) => layout.aisles.some((y) => y.id === x && !!y.cross === !!a.cross));
@@ -49,6 +49,30 @@ export function bandName(layout: DcLayout, id: string): string {
 
 export function TrayForm({ trays, layout, editor }: { trays: CableTray[]; layout: DcLayout; editor: LayoutEditor }) {
   const set = (patch: Partial<CableTray>) => editor.updateElements<CableTray>('trays', ids(trays), patch);
+  const floating = trays.every((t) => t.floating);
+  if (floating) {
+    const one = trays.length === 1 ? trays[0] : undefined;
+    // Bands of the sequence, cross aisles left out (a floating tray spans rows / aisles of row blocks).
+    const bands = layout.sequence.filter((id) => !layout.aisles.find((a) => a.id === id)?.cross)
+      .map((id) => ({ value: id, label: bandName(layout, id) }));
+    return (
+      <>
+        <div className="row3">
+          <BatchSelect<CableTray['kind']> label="Floating tray" value={common(trays, 'kind')}
+            options={[{ value: 'data', label: 'Data' }, { value: 'power', label: 'Power' }]} onChange={(kind) => set({ kind })} />
+          <BatchNumber label="Width mm" value={common(trays, 'widthMm')} min={50} onChange={(widthMm) => set({ widthMm })} />
+          {one && <BatchNumber label="Y mm (north edge)" value={one.y} onChange={(y) => editor.moveFloatingTray(one.id, y)} />}
+        </div>
+        {one && (
+          <div className="row2">
+            <BatchSelect label="From (west)" value={one.fromId} options={bands} onChange={(fromId) => set({ fromId })} />
+            <BatchSelect label="To (east)" value={one.toId} options={bands} onChange={(toId) => set({ toId })} />
+          </div>
+        )}
+        <p className="muted">Runs across the rows over the rack tops, from one row / aisle to another. Drag it north–south.</p>
+      </>
+    );
+  }
   return (
     <>
       <div className="row3">
@@ -59,11 +83,11 @@ export function TrayForm({ trays, layout, editor }: { trays: CableTray[]; layout
           onChange={(offsetMm) => set({ offsetMm: offsetMm || undefined })} />
       </div>
       {trays.length === 1 && (
-        <BatchSelect label="Runs over" value={trays[0].overId}
-          options={layout.sequence.map((id) => ({ value: id, label: bandName(layout, id) }))}
+        <BatchSelect label="Runs along" value={trays[0].overId}
+          options={layout.sequence.filter((id) => layout.aisles.some((a) => a.id === id)).map((id) => ({ value: id, label: bandName(layout, id) }))}
           onChange={(overId) => editor.moveTray(trays[0].id, overId)} />
       )}
-      <p className="muted">A tray floats over an aisle, a cross aisle or a row (over the rack tops). Drag it onto another one.</p>
+      <p className="muted">Runs along an aisle or cross aisle. Drag it onto another one.</p>
     </>
   );
 }

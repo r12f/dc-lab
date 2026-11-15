@@ -35,7 +35,7 @@ const DRAG_START_MM = 150;
 /**
  * Pointer-driven arrangement on the layout SVG:
  * - row / aisle: dragged to a new slot in the sequence — sideways, or into another row block (the plan re-packs live);
- * - tray: dragged onto another row / aisle / cross aisle;
+ * - aisle tray: dragged onto another aisle / cross aisle; floating tray: slid north–south;
  * - rack(s): the selected racks move together by whole rows and tiles (all or none);
  * - facility: moved freely (snapped, kept in the room); door: along the walls.
  * `preview` is the layout as it would be after release; render it while dragging.
@@ -96,6 +96,12 @@ export function useDragMove(lib: Library, designs: DesignLookup, layout: DcLayou
         return r ? { ...layout, sequence: reorderTo(layout, drag.id, r.x + r.widthMm / 2 + dx, r.y + Math.min(r.depthMm, 2000) / 2 + dy) } : layout;
       }
       case 'tray': {
+        const t = layout.trays.find((x) => x.id === drag.id);
+        // Floating trays slide north–south only (they always run across the rows).
+        if (t?.floating) {
+          const y = Math.max(0, Math.min(layout.room.depthMm - t.widthMm, snap((t.y ?? 0) + dy)));
+          return { ...layout, trays: layout.trays.map((x) => (x.id === drag.id ? { ...x, y } : x)) };
+        }
         const overId = nearestBand(plan, drag.x, drag.y);
         return overId ? { ...layout, trays: layout.trays.map((x) => (x.id === drag.id ? { ...x, overId, offsetMm: x.overId === overId ? x.offsetMm : undefined } : x)) } : layout;
       }
@@ -128,7 +134,8 @@ export function useDragMove(lib: Library, designs: DesignLookup, layout: DcLayou
     if (d.kind === 'row' || d.kind === 'aisle') editor.setSequence(p.sequence);
     else if (d.kind === 'tray') {
       const t = p.trays.find((x) => x.id === d.id);
-      if (t) editor.moveTray(d.id, t.overId);
+      if (t?.floating) editor.moveFloatingTray(d.id, t.y ?? 0);
+      else if (t?.overId) editor.moveTray(d.id, t.overId);
     } else if (d.kind === 'assignment') {
       const s = rackStep(d);
       editor.moveRacks(d.ids, s.dRow, s.dTile);

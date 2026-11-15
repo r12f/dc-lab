@@ -24,7 +24,9 @@ export function LayoutToolbar({ layout, editor, selection, onSelect }: Props) {
       <Button title="After the selected row/aisle, else at the east end" onClick={() => added('aisle', editor.addAisle(anchor))}>+ Aisle</Button>
       <Button title="Aisle across the rack area after the selection: rows and aisles after it form the next row block (south)"
         onClick={() => added('aisle', editor.addCrossAisle(anchor))}>+ Cross aisle</Button>
-      <Button title="Over the selected row (rack tops), aisle or cross aisle, else the next aisle" onClick={() => added('tray', editor.addTray(anchor))}>+ Tray</Button>
+      <Button title="Along the selected aisle / cross aisle, else the next aisle" onClick={() => added('tray', editor.addTray(anchor))}>+ Tray</Button>
+      <Button title="Across the rows over the rack tops: spans the selected rows (or the rows of the selected tiles / racks), else the first row block; drag it north–south"
+        onClick={() => added('tray', editor.addFloating(anchor))}>+ Floating tray</Button>
       <Button title="Next to the selected facility" onClick={() => added('facility', editor.addFacility('pdu', anchor))}>+ PDU</Button>
       <Button title="Next to the selected facility" onClick={() => added('facility', editor.addFacility('cooling', anchor))}>+ Cooling</Button>
       <Button title="Entry on the south wall, or next to the selected door; drag along the walls" onClick={() => added('door', editor.addDoor(anchor))}>+ Door</Button>

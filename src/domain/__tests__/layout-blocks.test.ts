@@ -3,7 +3,8 @@ import { Library } from '../library/library';
 import { emptyProject } from '../project/types';
 import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import { newDesign } from '../design/factory';
-import { newAisle, newCrossAisle, newLayout, newRow, newTray } from '../layout/factory';
+import { newAisle, newCrossAisle, newFloatingTray, newLayout, newRow, newTray } from '../layout/factory';
+import { addFloatingTray, insertAnchor } from '../layout/insert';
 import { computeFloorPlan, floorWarnings, nearestBand, reorderTo, ROW_HEADER_MM, trayRect } from '../layout/floor-plan';
 import { changeDesigns, moveAssignments } from '../layout/move';
 import { rowHotAisle } from '../layout/facility-load';
@@ -24,7 +25,7 @@ function sample(): DcLayout {
     rows: [row('r1', 'Row 1'), row('r2', 'Row 2'), row('r3', 'Row 3'), row('r4', 'Row 4')],
     aisles: [newAisle('a1'), { ...newAisle('a2'), kind: 'hot' }, newCrossAisle('x1')],
     sequence: ['r1', 'a1', 'r2', 'x1', 'r3', 'a2', 'r4'],
-    trays: [newTray('t1', 'x1'), { ...newTray('t2', 'r3'), offsetMm: 200 }],
+    trays: [newTray('t1', 'x1'), { ...newTray('t2', 'a2'), offsetMm: 200 }, newFloatingTray('f1', 'r1', 'r2', 4000)],
     assignments: [
       { id: 'k1', rowId: 'r1', startTile: 0, designId: 'n', label: 'Row1-01' },
       { id: 'k2', rowId: 'r1', startTile: 1, designId: 'n', label: 'Spare' },
@@ -63,14 +64,27 @@ describe('row blocks (rows of rows) split by cross aisles', () => {
 });
 
 describe('floating trays', () => {
-  it('run over a cross aisle (east–west) or a row (over the racks), centred, with an offset', () => {
+  it('aisle trays run along an aisle / cross aisle, centred, with an offset; drops land on aisles only', () => {
     const l = sample();
     const p = computeFloorPlan(l);
     const x = p.rects.get('x1')!;
     expect(trayRect(p, l.trays[0])).toEqual({ x: x.x, y: x.y + 600, widthMm: x.widthMm, depthMm: 600 });
+    const a2 = p.rects.get('a2')!;
+    expect(trayRect(p, l.trays[1])).toEqual({ x: a2.x + 300 + 200, y: a2.y, widthMm: 600, depthMm: a2.depthMm });
     const r3 = p.rects.get('r3')!;
-    expect(trayRect(p, l.trays[1])).toEqual({ x: r3.x + 300 + 200, y: r3.y, widthMm: 600, depthMm: 6000 });
-    expect(nearestBand(p, r3.x + 10, r3.y + 10)).toBe('r3');
+    expect(nearestBand(p, r3.x + 10, r3.y + 10)).not.toBe('r3');
+  });
+  it('a floating tray runs across the rows (east–west) from one band to another, at its own y', () => {
+    const l = sample();
+    const p = computeFloorPlan(l);
+    const r1 = p.rects.get('r1')!;
+    const r2 = p.rects.get('r2')!;
+    expect(trayRect(p, l.trays[2])).toEqual({ x: r1.x, y: 4000, widthMm: r2.x + r2.widthMm - r1.x, depthMm: 300 });
+    // Added across the selected rows (westmost..eastmost), at the selected tile.
+    const r = addFloatingTray(l, insertAnchor(l, { kind: 'tile', tiles: [{ rowId: 'r4', tile: 2 }, { rowId: 'r3', tile: 2 }] }).rows, 9000);
+    expect(r.layout.trays.at(-1)).toMatchObject({ floating: true, fromId: 'r3', toId: 'r4', y: 9000 });
+    // Default: every band of the first row block.
+    expect(addFloatingTray(l).layout.trays.at(-1)).toMatchObject({ fromId: 'r1', toId: 'r2' });
   });
   it('legacy trays over an aisle (`aisleId`) load as `overId`', () => {
     const p = normalizeProject({ layouts: [{ ...newLayout('l', 'L'), aisles: [newAisle('a')], sequence: ['a'], trays: [{ id: 't', kind: 'data', aisleId: 'a', widthMm: 600 }] }] });

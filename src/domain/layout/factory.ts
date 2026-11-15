@@ -29,6 +29,11 @@ export function newTray(id: string, overId: string): CableTray {
   return { id, kind: 'data', overId, widthMm: 600 };
 }
 
+/** Floating tray across the rows from `fromId` to `toId`, north edge at `y`. */
+export function newFloatingTray(id: string, fromId: string, toId: string, y: number): CableTray {
+  return { id, kind: 'data', widthMm: 300, floating: true, fromId, toId, y };
+}
+
 const FACILITY_DEFAULTS: Record<FacilityKind, { name: string; widthMm: number; depthMm: number }> = {
   pdu: { name: 'PDU', widthMm: 1200, depthMm: 800 },
   cooling: { name: 'CRAH', widthMm: 2400, depthMm: 900 },

@@ -2,7 +2,7 @@ import type { Library } from '../../domain/library/library';
 import type { Aisle, CableTray, DcLayout, Door, Facility, FacilityKind, Rect, Row, Wall } from '../../domain/layout/types';
 import { addDoor, clampDoor } from '../../domain/layout/doors';
 import { rotateBy } from '../../domain/layout/view-rotation';
-import { addAisleAfter, addFacilityNear, addRowAfter, addTrayOver, type InsertAnchor } from '../../domain/layout/insert';
+import { addAisleAfter, addFacilityNear, addFloatingTray, addRowAfter, addTrayOver, type InsertAnchor } from '../../domain/layout/insert';
 import { assignmentProblem, type DesignLookup } from '../../domain/layout/tiles';
 import { assignTiles as assignTilesTo, rackLabel, type AssignResult, type TileRef } from '../../domain/layout/assign';
 import { clampToRoom, snap } from '../../domain/layout/geometry';
@@ -34,6 +34,8 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
   /** Cross aisle after the selection: everything after it forms the next row block (south). */
   const addCrossAisle = (anchor: InsertAnchor = {}) => add((l) => addAisleAfter(l, anchor.after, true));
   const addTray = (anchor: InsertAnchor = {}) => add((l) => addTrayOver(l, anchor.overId));
+  /** Floating tray across the selected rows (default: the first row block), at the selection's position. */
+  const addFloating = (anchor: InsertAnchor = {}) => add((l) => addFloatingTray(l, anchor.rows, anchor.y));
   const addFacility = (kind: FacilityKind, anchor: InsertAnchor = {}) => add((l) => addFacilityNear(l, kind, anchor.facilityId));
   const addDoorTo = (anchor: InsertAnchor = {}) => add((l) => addDoor(l, anchor.doorId));
   /** Moves a door to a wall position (kept on the wall). */
@@ -61,7 +63,8 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
       ...l,
       [list]: (l[list] as Element[]).filter((e) => !ids.includes(e.id)),
       sequence: l.sequence.filter((x) => !ids.includes(x)),
-      trays: l.trays.filter((t) => !ids.includes(t.id) && !((list === 'aisles' || list === 'rows') && ids.includes(t.overId))),
+      // Trays over / spanning a deleted band go with it.
+      trays: l.trays.filter((t) => !ids.includes(t.id) && ![t.overId, t.fromId, t.toId].some((x) => x && ids.includes(x))),
       assignments: list === 'rows' ? l.assignments.filter((a) => !ids.includes(a.rowId)) : l.assignments,
     }));
   /** Rows a PDU feeds / hot aisles a cooling unit serves. */
@@ -71,7 +74,11 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
   /** Re-orders a row/aisle so its band centre lands nearest `centerX` (in the row block under `centerY`). */
   const reorder = (id: string, centerX: number, centerY?: number) => mutate((l) => ({ ...l, sequence: reorderTo(l, id, centerX, centerY) }));
   const setSequence = (sequence: string[]) => mutate((l) => ({ ...l, sequence }));
-  /** Moves a tray over another row / aisle (centred there). */
+  /** Moves a floating tray north–south: north edge at `y`, snapped to 100 mm and kept in the room. */
+  const moveFloatingTray = (id: string, y: number) => mutate((l) => ({
+    ...l, trays: l.trays.map((t) => (t.id === id ? { ...t, y: Math.max(0, Math.min(l.room.depthMm - t.widthMm, snap(y))) } : t)),
+  }));
+  /** Moves an aisle tray over another aisle (centred there). */
   const moveTray = (id: string, overId: string) => mutate((l) => ({
     ...l, trays: l.trays.map((t) => (t.id === id ? { ...t, overId, offsetMm: t.overId === overId ? t.offsetMm : undefined } : t)),
   }));
@@ -136,7 +143,7 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
   const rotateView = (step: 90 | -90) => mutate((l) => ({ ...l, viewRotation: rotateBy(l.viewRotation, step) }));
 
   return {
-    addRow, addAisle, addCrossAisle, addTray, addFacility, updateElement, updateElements, duplicate, removeElement, removeElements, reorder, setSequence, moveTray, moveFacility,
+    addRow, addAisle, addCrossAisle, addTray, addFloating, moveFloatingTray, addFacility, updateElement, updateElements, duplicate, removeElement, removeElements, reorder, setSequence, moveTray, moveFacility,
     assign, assignTiles, unassign, unassignAll, moveRacks, changeDesign, relabel, setServes, setRoom, setWhitespace, rename, setFacilityLinks, rotateView, addDoor: addDoorTo, moveDoor,
   };
 }

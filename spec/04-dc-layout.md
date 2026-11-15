@@ -25,9 +25,12 @@ south (down), units are millimetres.
   blocks** (rows of rows); its `widthMm` is north–south.
 - `sequence`: ids of rows and aisles from west to east; a cross aisle in it ends one row block and starts the next
   (south of it).
-- `trays[]`: overhead cable trays — `kind` (data/power), `overId`, `widthMm`, `offsetMm?`. A tray **floats over a
-  band** — an aisle, a cross aisle, or a **row (over the rack tops)** — running its full length, centred on it and
-  shifted `offsetMm` across it (+ = east / south); drawn on top of everything. Old `aisleId` loads as `overId`.
+- `trays[]`: overhead cable trays, `kind` (data/power), `widthMm`, drawn on top of everything; two sorts:
+  - **aisle tray** — `overId`, `offsetMm?`: runs along an aisle or cross aisle, its full length, centred on it and
+    shifted `offsetMm` across it (+ = east / south). Old `aisleId` loads as `overId`.
+  - **floating tray** — `floating: true`, `fromId`, `toId`, `y`: runs **across the rows** (east–west, perpendicular
+    to them, over the rack tops) from band `fromId` to band `toId` (rows / aisles, both included; may span row blocks)
+    with its north edge at `y` mm; `widthMm` is its north–south width.
 - `assignments[]`: `rowId`, `startTile` (0-based, from the north end), `designId`, `label`; power / CDU racks
   optionally `serves[]` — ids of the IT racks they serve.
 
@@ -82,7 +85,9 @@ south (down), units are millimetres.
     easternmost when several; a selected tile/rack counts as its row, a tray as its aisle), else at the
     east end. **+ Cross aisle** inserts there too: rows and aisles after it form the next row block. + Tray goes
     over the selected row (rack tops) / aisle / cross aisle (a selected tile or rack counts as its row), the next
-    aisle east of a selected tray, else the first aisle without a tray. + PDU / + Cooling go right of the selected facility. The new element becomes
+    aisle east of a selected tray, else the first aisle without a tray. **+ Floating tray** spans the selected rows
+    (or the rows of the selected tiles / racks; at the selected tile), else every band of the first row block at its
+    middle; with a floating tray selected the next one goes 1.2 m south with the same span. + PDU / + Cooling go right of the selected facility. The new element becomes
     the selection, so repeated clicks build row / aisle / row… in place.
   - **Selection**: click a row header, aisle, tray or facility; Ctrl/Shift-click adds or removes elements
     of the same kind. The inspector also offers group selections (all rows, cold aisles, hot aisles, all
@@ -96,7 +101,8 @@ south (down), units are millimetres.
     offset 200 mm.
   - **Drag** a row (by its header) or an aisle sideways to **reorder** it in the sequence, or down / up into
     another row block; the plan re-packs live while dragging (cross aisles are not dragged). **Drag** a tray onto
-    another row, aisle or cross aisle to move it there (the inspector also sets its offset). **Drag** a
+    another aisle or cross aisle to move it there (the inspector also sets its offset). **Drag** a floating tray to
+    slide it north–south (snapped to 100 mm, kept in the room); the inspector sets its From / To bands, Y and width. **Drag** a
     facility to move it freely (snapped to 100 mm, kept inside the room). A click without movement
     just selects.
   - **View rotation**: ⟲ / ⟳ 90° in the title bar turn the drawing by 90° (saved with the layout), e.g.

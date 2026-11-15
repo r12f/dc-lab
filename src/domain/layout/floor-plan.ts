@@ -74,11 +74,20 @@ export function computeFloorPlan(l: DcLayout): FloorPlan {
 }
 
 /**
- * A tray's rect: along the band it runs over (aisle, cross aisle, or a row — over the racks), centred on it and
- * shifted `offsetMm` across it; full band length. Undefined if the band is gone.
+ * A tray's rect. Aisle tray: along its aisle / cross aisle, full length, centred and shifted `offsetMm` across.
+ * Floating tray: east–west across the rows from `fromId` to `toId` (both bands included), `widthMm` deep at `y`.
+ * Undefined if a band it needs is gone.
  */
 export function trayRect(plan: FloorPlan, tray: CableTray): Rect | undefined {
-  const b = plan.rects.get(tray.overId);
+  if (tray.floating) {
+    const a = tray.fromId ? plan.rects.get(tray.fromId) : undefined;
+    const b = tray.toId ? plan.rects.get(tray.toId) : undefined;
+    if (!a || !b || tray.y === undefined) return undefined;
+    const x0 = Math.min(a.x, b.x);
+    const x1 = Math.max(a.x + a.widthMm, b.x + b.widthMm);
+    return { x: x0, y: tray.y, widthMm: x1 - x0, depthMm: tray.widthMm };
+  }
+  const b = tray.overId ? plan.rects.get(tray.overId) : undefined;
   if (!b) return undefined;
   const off = tray.offsetMm ?? 0;
   if (b.widthMm > b.depthMm) {
@@ -119,10 +128,11 @@ export function reorderTo(l: DcLayout, id: string, centerX: number, centerY?: nu
 const distance = (r: Rect, x: number, y: number) =>
   Math.hypot(Math.max(r.x - x, 0, x - r.x - r.widthMm), Math.max(r.y - y, 0, y - r.y - r.depthMm));
 
-/** The band (row, aisle or cross aisle) nearest the point, for dropping a tray; inside one = that one. */
+/** The aisle or cross aisle nearest the point, for dropping an aisle tray; inside one = that one. */
 export function nearestBand(plan: FloorPlan, x: number, y: number): string | undefined {
   let best: { id: string; d: number } | undefined;
   for (const b of plan.bands) {
+    if (b.kind !== 'aisle') continue;
     const d = distance(b.rect, x, y);
     if (!best || d < best.d) best = { id: b.id, d };
   }
@@ -160,6 +170,6 @@ export function floorWarnings(l: DcLayout): string[] {
     for (const r of l.rows) if (rowLength(r) > ws.depthMm) out.push(`${r.name} is ${rowLength(r)} mm long; rack area is ${ws.depthMm} mm deep`);
   }
   for (const f of l.facilities) if (overlaps(f, ws)) out.push(`${f.name} overlaps the rack area`);
-  for (const t of l.trays) if (!plan.rects.has(t.overId)) out.push(`Tray ${t.id} runs over nothing`);
+  for (const t of l.trays) if (!trayRect(plan, t)) out.push(`Tray ${t.id} runs over nothing`);
   return out;
 }

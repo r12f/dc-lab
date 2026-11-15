@@ -36,16 +36,24 @@ export interface Aisle {
 }
 
 /**
- * Overhead cable tray floating over a band — an aisle, a cross aisle, or a row (over the tops of its racks) —
- * running its full length, centred on it and shifted `offsetMm` across it (+ = east / south).
+ * Overhead cable tray, two sorts:
+ * - **aisle tray** (`overId`): runs along an aisle or cross aisle, its full length, centred on it and shifted
+ *   `offsetMm` across it (+ = east / south);
+ * - **floating tray** (`floating`): runs **across the rows** (east–west, over the rack tops), from band `fromId` to
+ *   band `toId` (rows / aisles, edges included), at `y` (north edge, mm) — placed freely north–south.
  */
 export interface CableTray {
   id: string;
   kind: 'data' | 'power';
-  /** Row or aisle id the tray runs over. */
-  overId: string;
   widthMm: number;
+  /** Aisle tray: aisle / cross aisle it runs along. */
+  overId?: string;
   offsetMm?: number;
+  /** Floating tray across the rows. */
+  floating?: boolean;
+  fromId?: string;
+  toId?: string;
+  y?: number;
 }
 
 export type FacilityKind = 'pdu' | 'cooling' | 'other';
