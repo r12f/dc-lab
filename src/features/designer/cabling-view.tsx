@@ -158,7 +158,6 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
   }, [onSelectCable]);
 
   const used = usedConnectors(design);
-  // Highlighted run: the hovered one, else the selected one; other runs are dimmed.
   const runColor = new Map(design.cables.map((c) => [c.id, lib.cableMedia.get(c.mediaId)?.color ?? paint.inkMuted]));
   // As in the elevation: left side PDUs | rack devices front | rack devices rear | right side PDUs.
   // Rack devices line up across front and rear (same row); each box shrinks to its own ports.
