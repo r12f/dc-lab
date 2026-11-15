@@ -17,7 +17,7 @@ import { mountAt } from './mount-at';
 import { paint } from '../../theme/paint';
 import { cableGutter, routeCables } from './cable-routes';
 import { CableRoutesDrawing } from './cable-routes-drawing';
-import type { SideElementKind } from '../../domain/rack/side-elements';
+import { REAR_ONLY_KINDS } from '../../domain/rack/side-elements';
 import { placedDevice } from '../../domain/design/sizing';
 
 interface Props {
@@ -47,8 +47,6 @@ interface DragState {
 }
 
 const FACES: PortFace[] = ['front', 'rear'];
-/** Side elements reached from the rear only: not drawn on the front panel. */
-const REAR_ONLY: ReadonlySet<SideElementKind> = new Set(['pdu-bay']);
 const CABLE_GUTTER = 34;
 
 /**
@@ -65,7 +63,7 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
   // PDU bays are on the rear: the front panel leaves them out (and the PDUs in them).
   const gutter = cableGutter(lib, design, CABLE_GUTTER);
   const geoRear = rackGeometry(rack, gutter);
-  const rackFront = { ...rack, sideElements: rack.sideElements.filter((e) => !REAR_ONLY.has(e.kind)) };
+  const rackFront = { ...rack, sideElements: rack.sideElements.filter((e) => !REAR_ONLY_KINDS.has(e.kind)) };
   const geoFront = rackGeometry(rackFront, gutter);
   const geoOf = (face: PortFace) => (face === 'rear' ? geoRear : geoFront);
   const rackOf = (face: PortFace) => (face === 'rear' ? rack : rackFront);

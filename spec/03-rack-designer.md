@@ -45,8 +45,9 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 - **Drawing**: the elevation draws **links**, not single cables: all runs joining the same set of devices on
   the same side channel are one link (one device pair = at most one line per side, however many cables; a
   breakout joining 3+ devices is its own link). Left and right runs are never merged: each stays on its own
-  side. A link is drawn on the rack faces its ends are on (port group face, flipped for a rear-mounted device):
-  front-to-front cables only on the front panel, front-to-rear on both. A link runs out of each device to its
+  side. A link is drawn on every rack face one of its ends is on (port group face, flipped for a rear-mounted device;
+  PSU inlets are rear; a device in a PDU bay is on the rear): front-to-front cables only on the front panel,
+  any cable with a rear end on the rear panel (front-to-rear on both). A link runs out of each device to its
   lane in its side channel, along the channel and into the other devices. Each side's links get separate nested lanes (longest outermost) so
   links on one side never cross. The tooltip names the devices, the cable count and the media; the colour is
   the media colour when all its cables share one, else neutral. Clicking a link opens its first run; selecting

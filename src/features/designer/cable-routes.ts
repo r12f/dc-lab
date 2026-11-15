@@ -2,6 +2,7 @@ import type { Library } from '../../domain/library/library';
 import type { CableEndpoint, CableRoute, CableRun, Placement, RackDesign } from '../../domain/design/types';
 import type { PortFace } from '../../domain/device/types';
 import { findGroup, parsePortRef } from '../../domain/device/ports';
+import { REAR_ONLY_KINDS } from '../../domain/rack/side-elements';
 import type { RackTemplate } from '../../domain/rack/types';
 import type { RackGeometry } from '../../drawing/rack-geometry';
 import { placementRect } from './placed-device';
@@ -27,15 +28,22 @@ export interface CableLink {
 }
 
 /**
- * Rack face a cable end is on: its port group's face, flipped for a rear-mounted device. Undefined when unknown
- * (no port picked) or for side-mounted devices (they sit in a side element, not on a rack face).
+ * Rack face a cable end is on: its port group's face, flipped for a rear-mounted device; a device in a rear-only
+ * side element (PDU bay) is on the rear. Undefined when unknown (no port picked) or for other side elements
+ * (reachable from both faces).
  */
 export function endpointFace(lib: Library, design: RackDesign, ep: CableEndpoint): PortFace | undefined {
   const p = design.placements.find((x) => x.id === ep.placementId);
-  const d = p && lib.devices.get(p.deviceId);
+  if (!p) return undefined;
+  if (p.mount.kind === 'side') {
+    const id = p.mount.elementId;
+    const el = lib.racks.get(design.templateId)?.sideElements.find((e) => e.id === id);
+    return el && REAR_ONLY_KINDS.has(el.kind) ? 'rear' : undefined;
+  }
+  const d = lib.devices.get(p.deviceId);
   const ref = parsePortRef(ep.portRef);
   const g = d && ref && findGroup(d, ref.groupId);
-  if (!p || !g || p.mount.kind !== 'rack') return undefined;
+  if (!g) return undefined;
   return p.mount.face === 'rear' ? (g.face === 'front' ? 'rear' : 'front') : g.face;
 }
 
@@ -89,7 +97,8 @@ function exitPoint(lib: Library, rack: RackTemplate, geo: RackGeometry, p: Place
 }
 
 /**
- * Polylines for every link drawn on `face` (all when omitted): one stub per device into the link's lane in the cable channel outside the rails
+ * Polylines for every link drawn on `face` (all when omitted): any end on that face puts the link there. A device
+ * not drawn on the face (e.g. a PDU in a rear-only bay seen from the front) gets no stub. One stub per device into the link's lane in the cable channel outside the rails
  * (unit numbers stay visible), and a spine joining them. Per side, lanes are assigned by vertical span (longest
  * link outermost) so nested links never cross.
  */

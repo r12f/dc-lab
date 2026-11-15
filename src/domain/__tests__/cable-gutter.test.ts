@@ -91,4 +91,19 @@ describe('elevation cable lanes', () => {
     expect(routeCables(lib, d, rack, geo, 'rear')).toHaveLength(1);
     expect(routeCables(lib, d, rack, geo, 'front')).toHaveLength(1);
   });
+  it('a cable with an end on the rear (PSU inlet, PDU in a rear bay) is drawn on the rear', () => {
+    const rack = lib.racks.get('network-42ru-600')!;
+    const geo = rackGeometry(rack, 34);
+    const d = newDesign('d', 'D', rack.id);
+    d.placements.push(
+      newPlacement('a', 'switch-48x1g-mgmt', 'M1', { kind: 'rack', position: 1, face: 'front' }),
+      newPlacement('pdu', 'pdu-vertical-3ph', 'PDU1', { kind: 'side', elementId: 'pdu-bay-l', slot: 1 }),
+    );
+    // PDU MGMT (rear bay) to a front RJ45: one end on each face.
+    d.cables.push({ id: 'm', from: [{ placementId: 'pdu', portRef: 'mgmt/1' }], to: [{ placementId: 'a', portRef: 'rj45/1' }], route: 'left', mediaId: 'cat6a', quantity: 1 });
+    // Power cord: PDU outlet to the PSU inlet (rear).
+    d.cables.push({ id: 'p', from: [{ placementId: 'pdu', portRef: 'bank-a-c13/1' }], to: [{ placementId: 'a', portRef: 'psu/1' }], route: 'left', mediaId: 'power-c13-c14', quantity: 1 });
+    expect(cableLinks(lib, d).map((l) => [l.runs[0].id, l.faces.join('+')]).sort()).toEqual([['m', 'front+rear'], ['p', 'rear']]);
+    expect(routeCables(lib, d, rack, geo, 'rear').map((r) => r.link.runs[0].id).sort()).toEqual(['m', 'p']);
+  });
 });

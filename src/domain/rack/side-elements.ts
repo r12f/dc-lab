@@ -77,6 +77,9 @@ export function elementsOn(elements: readonly SideElement[], side: SideName): Si
 }
 
 /** True when the element sits inside the rack enclosure (PDU bay) and takes no floor space. */
+/** Side element kinds reached from the rack rear only (PDU bays): drawn on the rear panel, their devices on the rear. */
+export const REAR_ONLY_KINDS: ReadonlySet<SideElementKind> = new Set(['pdu-bay']);
+
 export const isInternal = (e: Pick<SideElement, 'kind'>): boolean => !!SIDE_KINDS[e.kind]?.internal;
 
 /** Footprint width: rack body plus the side elements outside it (internal ones such as PDU bays excluded). */
