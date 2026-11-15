@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { newDesign } from '../design/factory';
 import { newPlacement } from '../design/placement';
-import { visibleDesign } from '../design/device-filter';
+import { visibleCables, visibleDesign } from '../design/device-filter';
 
 describe('cabling view device filter', () => {
   const d = newDesign('d', 'D', 'network-42ru-600');
@@ -25,5 +25,11 @@ describe('cabling view device filter', () => {
   });
   it('nothing hidden -> the same design object (layout cache stays valid)', () => {
     expect(visibleDesign(d, new Set())).toBe(d);
+  });
+  it('elevation filter keeps every device and drops links touching hidden ones', () => {
+    const v = visibleCables(d, new Set(['c']));
+    expect(v.placements).toHaveLength(3);
+    expect(v.cables.map((c) => c.id)).toEqual(['ab']);
+    expect(visibleCables(d, new Set())).toBe(d);
   });
 });

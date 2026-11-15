@@ -119,7 +119,7 @@ export function DesignerModule() {
           <CanvasFrame
             title={design.name}
             exportName={`${design.id}-${view}`}
-            viewControls={view === 'cabling' && (
+            viewControls={(
               <DeviceFilterMenu lib={lib} design={design} hidden={hidden}
                 onChange={(h) => setHiddenBy((m) => ({ ...m, [design.id]: h }))} />
             )}
@@ -162,6 +162,7 @@ export function DesignerModule() {
                 }}
                 onMove={(id, mount) => report(editor.moveTo(id, mount))}
                 showCables={showCables}
+                hiddenIds={hidden}
               />
             )}
           </CanvasFrame>

@@ -22,6 +22,8 @@ interface Props {
   /** Problems with this placement; marked in red. */
   issues?: string[];
   onPointerDown(e: PointerEvent<SVGGElement>): void;
+  /** Hidden by the device filter: drawn faded. */
+  filteredOut?: boolean;
 }
 
 export function placementRect(p: Placement, device: DeviceDefinition, rack: RackTemplate, geo: RackGeometry) {
@@ -35,7 +37,7 @@ export function placementRect(p: Placement, device: DeviceDefinition, rack: Rack
 }
 
 /** A device instance drawn in the elevation. */
-export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dragging, issues, onPointerDown }: Props) {
+export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dragging, issues, onPointerDown, filteredOut }: Props) {
   const r = placementRect(placement, device, rack, geo);
   const filler = traitsOf(device.category).filler;
   const color = filler ? FILLER_FILL[filler] : categoryPaint(device.category);
@@ -44,7 +46,7 @@ export function PlacedDevice({ placement, device, rack, geo, selected, ghost, dr
   const cx = r.x + r.w / 2;
   const cy = r.y + r.h / 2;
   return (
-    <g onPointerDown={onPointerDown} style={{ cursor: 'grab' }} opacity={dragging ? 0.4 : 1}>
+    <g onPointerDown={onPointerDown} style={{ cursor: 'grab' }} opacity={dragging ? 0.4 : filteredOut ? 0.3 : 1}>
       <title>{[`${placement.label} — ${device.name}`, ...(issues ?? []).map((i) => `⚠ ${i}`)].join('\n')}</title>
       {/* Reserved space: dashed outline on the empty slot fill, so it reads as "kept empty", not as a device. */}
       <rect x={r.x + 1} y={r.y + 1} width={r.w - 2} height={r.h - 2} rx={2}

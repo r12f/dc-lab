@@ -13,7 +13,7 @@ interface Props {
 }
 
 /**
- * Cabling view device filter: a toolbar button ("Devices n/m") that drops down a checkbox list. Unchecked devices
+ * Device filter (Elevation and Cabling views): a toolbar button ("Devices n/m") that drops down a checkbox list. Unchecked devices
  * and every link touching them are not drawn. Closes on outside click or Escape.
  */
 export function DeviceFilterMenu({ lib, design, hidden, onChange }: Props) {

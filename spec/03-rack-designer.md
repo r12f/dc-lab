@@ -158,7 +158,8 @@ device — same item, height, breakout profile and port settings — with the ne
 right above the source, else at the closest free unit (0U devices: first free side slot). Cables are not copied.
 The copy becomes the selection; with no room the toolbar reports it.
 
-**Device filter (cabling view)**: in the cabling view the canvas toolbar has a **Devices n/m ▾** button right
+**Device filter (Elevation and Cabling)**: both views share one filter (per design). In the elevation, hidden
+devices stay in place but are drawn faded and links touching them are not drawn. The canvas toolbar has a **Devices n/m ▾** button right
 before the zoom buttons (highlighted while some are hidden). It drops down a checkbox per placed device (fillers
 left out), the count of links drawn, and **All** / **None**; outside click or Escape closes it. Unchecked devices
 are not drawn, and neither is any link with an end on one of them (a link is drawn only when both its devices

@@ -1,5 +1,5 @@
 import { unitsIn } from '../../domain/units';
-import { useState, type DragEvent, type PointerEvent, type Ref } from 'react';
+import { useMemo, useState, type DragEvent, type PointerEvent, type Ref } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { Mount, RackDesign } from '../../domain/design/types';
 import type { PortFace } from '../../domain/device/types';
@@ -18,6 +18,7 @@ import { paint } from '../../theme/paint';
 import { cableGutter, routeCables } from './cable-routes';
 import { CableRoutesDrawing } from './cable-routes-drawing';
 import { REAR_ONLY_KINDS } from '../../domain/rack/side-elements';
+import { visibleCables } from '../../domain/design/device-filter';
 import { placedDevice } from '../../domain/design/sizing';
 
 interface Props {
@@ -32,6 +33,8 @@ interface Props {
   onMove(placementId: string, mount: Mount): void;
   /** Draw cable runs (default true). */
   showCables?: boolean;
+  /** Device filter: links touching these placements are not drawn, the devices are dimmed. */
+  hiddenIds?: ReadonlySet<string>;
 }
 
 interface DragState {
@@ -54,7 +57,7 @@ const CABLE_GUTTER = 34;
  * placed devices are moved with pointer events (SVG has no native drag).
  */
 /** Front and rear elevations side by side in one drawing; drops and drags go to the face under the pointer. */
-export function RackElevation({ ref, lib, design, selectedId, onSelect, selectedCableId, onSelectCable, onDropDevice, onMove, showCables = true }: Props) {
+export function RackElevation({ ref, lib, design, selectedId, onSelect, selectedCableId, onSelectCable, onDropDevice, onMove, showCables = true, hiddenIds }: Props) {
   const [drag, setDrag] = useState<DragState>();
   const rack = lib.racks.get(design.templateId);
   if (!rack) return <p className="muted">Unknown rack template {design.templateId}</p>;
@@ -69,6 +72,8 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
   const rackOf = (face: PortFace) => (face === 'rear' ? rack : rackFront);
   const geo = geoRear;
   const metrics = computeRackMetrics(lib, design);
+  // Links follow the device filter (same object when nothing is hidden, so the drawing stays memoized).
+  const cableDesign = useMemo(() => visibleCables(design, hiddenIds), [design, hiddenIds]);
   const issues = designIssues(lib, design);
   const visibleOn = (face: PortFace) => design.placements.filter((p) => {
     if (p.mount.kind === 'side') return rackOf(face).sideElements.some((e) => e.id === (p.mount as { elementId: string }).elementId);
@@ -173,11 +178,12 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
                 <PlacedDevice key={p.id} placement={p} device={device} rack={rack} geo={geoOf(face)}
                   ghost={p.mount.kind === 'rack' && p.mount.face !== face}
                   dragging={drag?.id === p.id && drag.moved}
-                  selected={p.id === selectedId} issues={issues.placements.get(p.id)} onPointerDown={startDrag(p.id, face)} />
+                  selected={p.id === selectedId} issues={issues.placements.get(p.id)} onPointerDown={startDrag(p.id, face)}
+                  filteredOut={!!hiddenIds?.has(p.id)} />
               ) : null;
             })}
             {showCables && (
-              <CableRoutesDrawing lib={lib} design={design} routes={routeCables(lib, design, rack, geoOf(face), face)} selectedId={selectedCableId}
+              <CableRoutesDrawing lib={lib} design={design} routes={routeCables(lib, cableDesign, rack, geoOf(face), face)} selectedId={selectedCableId}
                 errorIds={new Set(issues.cables.keys())} onSelect={onSelectCable} />
             )}
             {/* Rack-wide problems: red frame around the rack body and the messages under the title. */}
