@@ -150,6 +150,7 @@ body.resizing-rows .splitter-h { background: color-mix(in srgb, var(--accent) 50
 .checks { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0 8px; }
 .checks label { display: flex; align-items: center; gap: 4px; }
 .checks input { width: auto; }
+input[type="checkbox"], input[type="radio"] { width: auto; }
 .table-scroll { overflow-x: auto; }
 p.warn { color: var(--danger); margin: 4px 0; font-size: 12px; }
 .toolbar-group { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
@@ -166,5 +167,7 @@ p.warn { color: var(--danger); margin: 4px 0; font-size: 12px; }
 .device-filter-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .device-filter-list { display: flex; flex-direction: column; gap: 2px; max-height: 60vh; overflow: auto; }
 .device-filter-list .check { display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
+.device-filter-list .check input { width: auto; flex: none; margin: 0; padding: 0; }
+.device-filter-list .check > span:first-of-type { flex: none; font-weight: 600; }
 .device-filter-list .check .muted { overflow: hidden; text-overflow: ellipsis; }
 .row-actions { display: flex; gap: 4px; }
