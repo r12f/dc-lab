@@ -22,8 +22,10 @@ function computeBuildRackBom(lib: Library, design: RackDesign): BomLine[] {
   const item = (itemId: string, variantId?: string) => lib.variants.resolve(itemId, variantId);
   const rack = lib.racks.get(design.templateId);
   if (rack) {
+    // The rack frame as bought: the template's default item (vendor / PN, its own property values).
+    const rv = lib.variants.defaultOf(rack.id);
     bom.add({ key: `rack:${rack.id}`, kind: 'rack', item: rack.name, category: RACK_KINDS[rack.kind],
-      vendorModel: '', qty: 1, unitW: 0, notes: [], properties: rack.properties });
+      vendorModel: variantLabel(rv), qty: 1, unitW: 0, notes: [], properties: { ...rack.properties, ...rv?.properties } });
   }
   for (const p of design.placements) {
     const d = placedDevice(lib, design, p);

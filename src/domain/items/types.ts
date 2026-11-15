@@ -4,7 +4,7 @@ import type { HasProperties } from '../properties/types';
 export const ITEM_SCHEMA = 'dc-lab/item@1';
 
 /** Catalog kinds that have purchasable items (vendor products) under an item type. */
-export type ItemTarget = 'device' | 'optic' | 'cable';
+export type ItemTarget = 'device' | 'rack' | 'optic' | 'cable';
 
 /** A concrete product of an item type: vendor, model / vendor PN and custom property values. */
 export interface ItemVariant extends CatalogItem, HasProperties {

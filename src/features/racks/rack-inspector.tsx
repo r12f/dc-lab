@@ -33,7 +33,7 @@ function withKind(r: RackTemplate, kind: RackKind): Partial<RackTemplate> {
 export function RackInspector({ rack: r, readOnly, onChange, onDuplicate, selectedElementId, onSelectElement }: Props) {
   const set = (patch: Partial<RackTemplate>) => onChange({ ...r, ...patch });
   return (
-    <div className="inspector-inner">
+    <>
       {readOnly && <ReadOnlyNotice onDuplicate={onDuplicate} />}
       <fieldset disabled={readOnly} className="plain">
         <Section title="General">
@@ -67,6 +67,6 @@ export function RackInspector({ rack: r, readOnly, onChange, onDuplicate, select
       <Button onClick={() => downloadText(`${r.id}.json`, JSON.stringify({ schema: 'dc-lab/rack@1', ...r }, null, 2))}>
         Export rack JSON
       </Button>
-    </div>
+    </>
   );
 }

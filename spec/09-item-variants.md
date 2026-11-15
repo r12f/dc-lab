@@ -47,3 +47,7 @@ older projects stored under a built-in item type id are read as values of its ge
 **Optic and cable item power**: optic and cable items carry their own power too (`specs.typicalW`: module W for
 optics, W per active end for AEC / AOC cables; empty = the item type's). Ports pick no optic / cable item, so
 the item type's **default item** is the one counted: its power is used in rack metrics and BOM Unit W.
+
+**Rack template items**: rack templates have items too (Racks module: Item type | Items tabs, items under each
+template in the sidebar). The template's **default item** is the rack frame line in the Rack Designer BOM: its
+vendor / PN and its own property values (MSPN, MSF…).

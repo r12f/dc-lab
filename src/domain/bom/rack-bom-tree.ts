@@ -82,11 +82,13 @@ function computeBuildRackBomTree(lib: Library, design: RackDesign): BomNode | un
   };
 
   const inRack = design.placements.filter((p) => p.mount.kind === 'rack');
+  // The rack frame as bought: the template's default item (vendor / PN, its own property values).
+  const rackItem = lib.variants.defaultOf(rack.id);
   const children: BomNode[] = [
     {
       key: 'frame', label: `Rack frame — ${rack.name}`,
       line: { key: `rack:${rack.id}`, kind: 'rack', item: rack.name, category: RACK_KINDS[rack.kind],
-        vendorModel: '', qty: 1, unitW: 0, notes: [], properties: rack.properties },
+        vendorModel: variantLabel(rackItem), qty: 1, unitW: 0, notes: [], properties: { ...rack.properties, ...rackItem?.properties } },
       children: devicesIn(inRack, 'frame'),
     },
     ...rack.sideElements.map((e) => ({

@@ -73,6 +73,7 @@ export class Library {
     this.cableMedia = new ItemCollection(builtin.cableMedia, project.cableMedia, hidden);
     const types = [
       ...this.devices.items().map((i) => ({ target: 'device' as const, id: i.id, name: i.name })),
+      ...this.racks.items().map((i) => ({ target: 'rack' as const, id: i.id, name: i.name })),
       ...this.optics.items().map((i) => ({ target: 'optic' as const, id: i.id, name: i.name })),
       ...this.cableMedia.items().map((i) => ({ target: 'cable' as const, id: i.id, name: i.name })),
     ];

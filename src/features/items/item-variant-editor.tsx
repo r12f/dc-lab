@@ -82,7 +82,7 @@ export function ItemVariantEditor({ lib, variant: v, itemTypeName, readOnly, com
         {!isDefault && <Button onClick={() => commands.makeDefault(v)}>Make default</Button>}
       </Section>
       {v.target === 'device' && <DeviceSpecs lib={lib} v={v} set={set} disabled={readOnly} />}
-      {v.target !== 'device' && <PowerSpec lib={lib} v={v} set={set} disabled={readOnly} />}
+      {(v.target === 'optic' || v.target === 'cable') && <PowerSpec lib={lib} v={v} set={set} disabled={readOnly} />}
       <CustomPropertiesSection target={v.target} item={v} builtin={readOnly} onChange={(properties) => set({ properties })} />
       {commands.canDelete(v) && <Button variant="danger" onClick={() => {
         if (!confirm(`Delete item "${variantLabel(v) || v.id}"?`)) return;
