@@ -1,72 +1,60 @@
-import { useEffect, useRef, useState } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { RackDesign } from '../../domain/design/types';
+import type { PortFace } from '../../domain/device/types';
 import { traitsOf } from '../../domain/device/categories';
-import { Button } from '../../ui/button';
+import { CABLE_TYPES } from '../../domain/optics/cable-types';
+import { runCableType, runShown, type ViewFilter } from '../../domain/design/device-filter';
+import { CheckMenu } from '../../ui/check-menu';
 
-interface Props {
+interface FilterProps {
   lib: Library;
   design: RackDesign;
-  /** Placement ids hidden from the cabling view. */
-  hidden: ReadonlySet<string>;
-  onChange(hidden: Set<string>): void;
+  filter: ViewFilter;
+  onChange(f: ViewFilter): void;
 }
 
-/**
- * Device filter (Elevation and Cabling views): a toolbar button ("Devices n/m") that drops down a checkbox list. Unchecked devices
- * and every link touching them are not drawn. Closes on outside click or Escape.
- */
-export function DeviceFilterMenu({ lib, design, hidden, onChange }: Props) {
-  const [open, setOpen] = useState(false);
-  const root = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (!open) return;
-    const down = (e: PointerEvent) => { if (!root.current?.contains(e.target as Node)) setOpen(false); };
-    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    window.addEventListener('pointerdown', down);
-    window.addEventListener('keydown', key);
-    return () => { window.removeEventListener('pointerdown', down); window.removeEventListener('keydown', key); };
-  }, [open]);
-
-  // Fillers (blanking, stiffener, reserved, brush) have no ports: nothing to filter.
+/** "Devices n/m": which placed devices are shown (fillers left out); links of hidden devices are not drawn. */
+export function DeviceFilterMenu({ lib, design, filter, onChange }: FilterProps) {
   const devices = design.placements.filter((p) => {
     const d = lib.devices.get(p.deviceId);
     return d && !traitsOf(d.category).filler;
   });
-  const shown = devices.filter((p) => !hidden.has(p.id)).length;
-  const toggle = (id: string) => {
-    const next = new Set(hidden);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    onChange(next);
-  };
-  const shownLinks = design.cables.filter((c) => [...c.from, ...c.to].every((e) => !hidden.has(e.placementId))).length;
-
+  const shownLinks = design.cables.filter((c) => runShown(lib, c, filter)).length;
   return (
-    <div className="dropdown" ref={root}>
-      <Button variant={hidden.size ? 'primary' : 'default'} aria-haspopup="true" aria-expanded={open}
-        title="Choose the devices drawn; links are drawn when both their devices are shown" onClick={() => setOpen(!open)}>
-        {`Devices ${shown}/${devices.length} ▾`}
-      </Button>
-      {open && (
-        <div className="dropdown-menu" role="menu">
-          <div className="device-filter-head">
-            <span className="muted">{`${shownLinks}/${design.cables.length} links`}</span>
-            <span className="row-actions">
-              <Button onClick={() => onChange(new Set())} title="Show every device">All</Button>
-              <Button onClick={() => onChange(new Set(devices.map((p) => p.id)))} title="Hide every device">None</Button>
-            </span>
-          </div>
-          <div className="device-filter-list">
-            {devices.map((p) => (
-              <label key={p.id} className="check" title={lib.devices.get(p.deviceId)?.name}>
-                <input type="checkbox" checked={!hidden.has(p.id)} onChange={() => toggle(p.id)} />
-                <span>{p.label}</span>
-                <span className="muted">{lib.devices.get(p.deviceId)?.name}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    <CheckMenu label="Devices" title="Choose the devices drawn; links are drawn when both their devices are shown"
+      items={devices.map((p) => ({ id: p.id, label: p.label, sub: lib.devices.get(p.deviceId)?.name }))}
+      hidden={filter.hiddenDevices} onChange={(h) => onChange({ ...filter, hiddenDevices: h })}
+      info={`${shownLinks}/${design.cables.length} links`} />
+  );
+}
+
+/**
+ * "Cables n/m": which top-level cable types (SMF, MMF, DAC, AEC, AOC, power…, as defined in Optics / Cables) are
+ * drawn. Only types used in the design are listed; modules (transceivers) are not cables.
+ */
+export function CableTypeMenu({ lib, design, filter, onChange }: FilterProps) {
+  const count = new Map<string, number>();
+  for (const c of design.cables) {
+    const t = runCableType(lib, c);
+    if (t) count.set(t, (count.get(t) ?? 0) + c.quantity);
+  }
+  const types = (Object.keys(CABLE_TYPES) as (keyof typeof CABLE_TYPES)[]).filter((t) => count.has(t));
+  return (
+    <CheckMenu label="Cables" title="Choose the cable types drawn"
+      items={types.map((t) => ({ id: t, label: CABLE_TYPES[t], sub: `${count.get(t)} cable${count.get(t) === 1 ? '' : 's'}` }))}
+      hidden={filter.hiddenCableTypes} onChange={(h) => onChange({ ...filter, hiddenCableTypes: h })} />
+  );
+}
+
+const FACE_LABEL: Record<PortFace, string> = { front: 'Front', rear: 'Rear' };
+
+/** "Views n/2": front and / or rear shown (at least one). */
+export function FaceMenu({ faces, onChange }: { faces: readonly PortFace[]; onChange(faces: PortFace[]): void }) {
+  const all: PortFace[] = ['front', 'rear'];
+  return (
+    <CheckMenu label="Views" title="Show the front view, the rear view, or both" noBulk minChecked={1}
+      items={all.map((f) => ({ id: f, label: FACE_LABEL[f] }))}
+      hidden={new Set(all.filter((f) => !faces.includes(f)))}
+      onChange={(h) => onChange(all.filter((f) => !h.has(f)))} />
   );
 }

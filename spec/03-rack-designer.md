@@ -152,8 +152,7 @@ each drawn vertically (groups stacked, 2 ports per line, front and rear groups t
 one row per device across front and rear; each device box shrinks to its own ports (a rear face with only
 PSU inlets is a small box).
 
-**Elevation cables**: a **Cables** latch button in the toolbar (highlighted = on) (elevation only) shows / hides the cable runs.
-Runs use a cable channel (gutter) outside the rails on each side, between the frame and the side elements,
+**Elevation cables**: runs use a cable channel (gutter) outside the rails on each side, between the frame and the side elements,
 so the unit numbers on the rails stay visible; stubs leave each device near its top edge.
 
 **Duplicate device**: next to the toolbar's ✕ Delete button, an icon-only ⧉ button (Ctrl+D; tooltip names the device) copies the selected
@@ -168,6 +167,15 @@ left out), the count of links drawn, and **All** / **None**; outside click or Es
 are not drawn, and neither is any link with an end on one of them (a link is drawn only when both its devices
 are checked). Drawing only: selection, Assign and cross-rack marks work on the full design. Kept per design for
 the session (not saved).
+
+**Cable type filter (Elevation and Cabling)**: a **Cables n/m ▾** dropdown after Devices lists the top-level cable
+types used in the design (as defined in Optics / Cables: SMF, MMF, DAC, AEC, AOC, Power, Other) with their cable
+counts. Runs of an unchecked type are not drawn. Modules (transceivers) are not cables and are not listed. Kept per
+design for the session (not saved).
+
+**Views (Elevation and Cabling)**: a **Views n/2 ▾** dropdown with Front and Rear (both by default; at least one
+stays checked). With one face only that panel / block is drawn, starting at the left edge; the Cabling view's
+side PDUs belong to the rear block. Session only.
 
 **Cross-rack ports**: in the cabling view, **Mark cross-rack** marks the selected connectors as leaving the rack
 (`design.crossRack[]`, same endpoint shape as cable ends: placement + port + connector leg). The button reads

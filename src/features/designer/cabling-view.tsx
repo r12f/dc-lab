@@ -16,7 +16,7 @@ import { SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
 import type { SideName } from '../../domain/rack/side-elements';
 import { memoByDesign } from '../../domain/design/memo';
-import { visibleDesign } from '../../domain/design/device-filter';
+import { visibleDesign, type ViewFilter } from '../../domain/design/device-filter';
 import { crossRackKeys, toggleCrossRack } from '../../domain/design/cross-rack';
 import { focusedRuns, routeCablingLines, type CablingFace, type CablingLine, type LegAnchor } from './cabling-lines';
 
@@ -29,7 +29,10 @@ interface Props {
   selectedCableId?: string;
   onSelectCable(id: string | undefined): void;
   /** Placement ids not drawn (device filter); links touching them are not drawn either. */
-  hiddenIds?: ReadonlySet<string>;
+  /** Device / cable-type filter (drawing only). */
+  filter?: ViewFilter;
+  /** Faces shown (default both). */
+  faces?: readonly PortFace[];
 }
 
 /**
@@ -152,15 +155,21 @@ interface CablingLayout {
   /** endpointKey -> connector, for event delegation and tooltips. */
   epByKey: Map<string, LegBox>;
   lines: CablingLine[];
+  faces: readonly PortFace[];
   leftX: number; frontX: number; rearX: number; rightX: number;
   width: number; height: number;
   channels: Record<CablingFace, { left: number; right: number; width: number }>;
 }
 
 /** Everything the drawing needs that depends only on the design (not on the selection); cached per design snapshot. */
-const cablingLayout = memoByDesign(computeCablingLayout);
+const FACE_SETS: Record<string, readonly PortFace[]> = { both: ['front', 'rear'], front: ['front'], rear: ['rear'] };
+const cablingLayouts = Object.fromEntries(Object.entries(FACE_SETS).map(([k, f]) => [k, memoByDesign((lib, d) => computeCablingLayout(lib, d, f))]));
+const cablingLayout = (lib: Library, design: RackDesign, faces: readonly PortFace[]) =>
+  cablingLayouts[faces.length === 1 ? faces[0] : 'both'](lib, design);
 
-function computeCablingLayout(lib: Library, design: RackDesign): CablingLayout {
+function computeCablingLayout(lib: Library, design: RackDesign, faces: readonly PortFace[]): CablingLayout {
+  const showFront = faces.includes('front');
+  const showRear = faces.includes('rear');
   const used = usedConnectors(design);
   const cross = crossRackKeys(design);
   const runColor = new Map(design.cables.map((c) => [c.id, lib.cableMedia.get(c.mediaId)?.color ?? paint.inkMuted]));
@@ -183,8 +192,9 @@ function computeCablingLayout(lib: Library, design: RackDesign): CablingLayout {
     }
     return out;
   };
-  const leftSide = stackSide('left');
-  const rightSide = stackSide('right');
+  // Side PDUs are on the rear: drawn only with the rear block.
+  const leftSide = showRear ? stackSide('left') : [];
+  const rightSide = showRear ? stackSide('right') : [];
   const sideW = (xs: DeviceLayout[]) => (xs.length ? Math.max(...xs.map((d) => d.w)) + 8 : 0);
   const leftW = sideW(leftSide);
   // Columns: ch | FRONT | ch || left PDUs | ch | REAR | ch | right PDUs.
@@ -193,24 +203,25 @@ function computeCablingLayout(lib: Library, design: RackDesign): CablingLayout {
   const rear: DeviceLayout[] = [];
   let y = SECTION_H;
   for (const p of rackOrder(lib, design)) {
-    const f = layoutDevice(lib, design, p, 'front', frontX, y);
-    const r = layoutDevice(lib, design, p, 'rear', 0, y);
-    if (!f || !r) continue;
-    front.push(f); rear.push(r);
-    y += Math.max(f.h, r.h) + ROW_GAP;
+    const f = showFront ? layoutDevice(lib, design, p, 'front', frontX, y) : undefined;
+    const r = showRear ? layoutDevice(lib, design, p, 'rear', 0, y) : undefined;
+    if ((showFront && !f) || (showRear && !r)) continue;
+    if (f) front.push(f);
+    if (r) rear.push(r);
+    y += Math.max(f?.h ?? 0, r?.h ?? 0) + ROW_GAP;
   }
-  const frontW = Math.max(240, ...front.map((d) => d.w)) + 8;
-  // PDU bays are on the rear: the side PDUs flank the rear block.
-  const leftX = frontX + frontW + CHANNEL_W + BLOCK_GAP;
+  const frontW = showFront ? Math.max(240, ...front.map((d) => d.w)) + 8 : 0;
+  // PDU bays are on the rear: the side PDUs flank the rear block (which starts at the left edge when alone).
+  const leftX = showFront ? frontX + frontW + CHANNEL_W + BLOCK_GAP : 0;
   leftSide.forEach((d) => shift(d, leftX));
   const rearX = leftX + leftW + CHANNEL_W;
   rear.forEach((d) => shift(d, rearX));
-  const rearW = Math.max(240, ...rear.map((d) => d.w)) + 8;
+  const rearW = showRear ? Math.max(240, ...rear.map((d) => d.w)) + 8 : 0;
   const rightX = rearX + rearW + CHANNEL_W;
   rightSide.forEach((d) => shift(d, rightX));
   const devices = [...leftSide, ...front, ...rear, ...rightSide];
   const legOrder = new Map(devices.flatMap((d) => d.legs.map((l, i) => [endpointKey(l.ep), i + (d.face === 'rear' ? 100000 : 0)] as const)));
-  const width = rightX + sideW(rightSide);
+  const width = showRear ? rightX + sideW(rightSide) : frontX + frontW + CHANNEL_W;
   const channels = {
     front: { left: frontX - CHANNEL_W, right: frontX + frontW, width: CHANNEL_W },
     rear: { left: rearX - CHANNEL_W, right: rearX + rearW, width: CHANNEL_W },
@@ -228,7 +239,7 @@ function computeCablingLayout(lib: Library, design: RackDesign): CablingLayout {
   }
   const lines = routeCablingLines(design.cables, anchors, endpointKey, channels, BAND_Y);
   const height = Math.max(y, SECTION_H + 30, ...[...leftSide, ...rightSide].map((d) => d.y + d.h + 4));
-  return { used, cross, runColor, devices, leftSide, rightSide, legOrder, epByKey, lines, leftX, frontX, rearX, rightX, width, height, channels };
+  return { faces, used, cross, runColor, devices, leftSide, rightSide, legOrder, epByKey, lines, leftX, frontX, rearX, rightX, width, height, channels };
 }
 
 /** One connector block: fill, outline and its three text lines (lanes / reach / connector). */
@@ -298,9 +309,10 @@ const CablingBase = memo(function CablingBase({ L }: { L: CablingLayout }) {
  * The selection splits into A (first device) and B (other devices); only cables that fit both ends are offered,
  * and the chosen one repeats in faceplate order.
  */
-const NO_HIDDEN: ReadonlySet<string> = new Set();
+const NO_FILTER: ViewFilter = { hiddenDevices: new Set(), hiddenCableTypes: new Set() };
+const BOTH: readonly PortFace[] = ['front', 'rear'];
 
-export function CablingView({ ref, lib, design, editor, selectedCableId, onSelectCable, hiddenIds = NO_HIDDEN }: Props) {
+export function CablingView({ ref, lib, design, editor, selectedCableId, onSelectCable, filter = NO_FILTER, faces = BOTH }: Props) {
   const [selection, setSelection] = useState<CableEndpoint[]>([]);
   const [route, setRoute] = useState<CableRoute | 'auto'>('auto');
   const [mediaId, setMediaId] = useState('');
@@ -322,8 +334,8 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
   }, [onSelectCable]);
 
   // Drawing uses the filtered design (stable object per filter, so the layout cache holds); edits use the full one.
-  const shown = useMemo(() => visibleDesign(design, hiddenIds), [design, hiddenIds]);
-  const L = cablingLayout(lib, shown);
+  const shown = useMemo(() => visibleDesign(lib, design, filter), [lib, design, filter]);
+  const L = cablingLayout(lib, shown, faces);
   const { used, cross, devices, legOrder, epByKey, leftSide, rightSide, leftX, frontX, rearX, rightX, width, height, channels } = L;
   const selected = new Set(selection.map(endpointKey));
   const focus = focusedRuns(design.cables, used, selected, selectedCableId);
@@ -432,18 +444,18 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
         {/* Clicking empty space clears the highlighted run and the connector selection. */}
         <rect width={width} height={height} fill={paint.paper} onPointerDown={() => { onSelectCable(undefined); setSelection([]); }} />
         {leftSide.length > 0 && <text x={leftX + 4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>LEFT</text>}
-        <text x={frontX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>FRONT</text>
-        <text x={rearX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>REAR</text>
+        {L.faces.includes('front') && <text x={frontX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>FRONT</text>}
+        {L.faces.includes('rear') && <text x={rearX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>REAR</text>}
         {rightSide.length > 0 && <text x={rightX + 4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>RIGHT</text>}
         {/* Each face block's own left / right cable channels. */}
-        {(['front', 'rear'] as const).flatMap((f) => [channels[f].left, channels[f].right]).map((x) => (
+        {L.faces.flatMap((f) => [channels[f].left, channels[f].right]).map((x) => (
           <g key={`ch${x}`}>
             <rect x={x} y={SECTION_H} width={CHANNEL_W} height={height - SECTION_H} fill={paint.inkMuted} fillOpacity={0.06} />
             <text x={x + CHANNEL_W / 2} y={height - 4} fontSize={8} textAnchor="middle" fill={paint.inkMuted}>cable channel</text>
           </g>
         ))}
         {/* Front block | rear block (with its PDU bays). */}
-        <line x1={leftX - BLOCK_GAP / 2} y1={0} x2={leftX - BLOCK_GAP / 2} y2={height} stroke={paint.inkMuted} strokeDasharray="4 3" />
+        {L.faces.length === 2 && <line x1={leftX - BLOCK_GAP / 2} y1={0} x2={leftX - BLOCK_GAP / 2} y2={height} stroke={paint.inkMuted} strokeDasharray="4 3" />}
         {devices.length === 0 && <text x={10} y={SECTION_H + 16} fontSize={12} fill={paint.inkMuted}>No devices placed.</text>}
         <g onPointerDown={basePointerDown} onPointerOver={basePointerOver} onPointerLeave={() => setHover(undefined)}>
           <CablingBase L={L} />

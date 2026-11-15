@@ -13,9 +13,12 @@ import { NewDesignForm } from './new-design-form';
 import { DevicePalette } from './device-palette';
 import { RackElevation } from './rack-elevation';
 import { CablingView } from './cabling-view';
-import { DeviceFilterMenu } from './device-filter-menu';
+import { CableTypeMenu, DeviceFilterMenu, FaceMenu } from './device-filter-menu';
+import type { ViewFilter } from '../../domain/design/device-filter';
+import type { PortFace } from '../../domain/device/types';
 
-const NO_HIDDEN: Set<string> = new Set();
+const NO_FILTER: ViewFilter = { hiddenDevices: new Set(), hiddenCableTypes: new Set() };
+const BOTH_FACES: PortFace[] = ['front', 'rear'];
 import { DesignInspector, type InspectorTab } from './design-inspector';
 import { useDesignEditor } from './use-design-editor';
 import { designIssues } from '../../domain/design/issues';
@@ -29,16 +32,16 @@ export function DesignerModule() {
   const remove = useAppStore((s) => s.remove);
   const [creating, setCreating] = useState(false);
   const [view, setView] = useState<'elevation' | 'cabling'>('elevation');
-  const [showCables, setShowCables] = useState(true);
   const [placementId, setPlacementId] = useState<string>();
   const [cableId, setCableId] = useState<string>();
   const [tab, setTab] = useState<InspectorTab>('summary');
-  // Cabling view device filter: hidden placement ids per design (session only).
-  const [hiddenBy, setHiddenBy] = useState<Record<string, Set<string>>>({});
+  // Device / cable-type filter per design, faces shown (session only).
+  const [filterBy, setFilterBy] = useState<Record<string, ViewFilter>>({});
+  const [faces, setFaces] = useState<PortFace[]>(BOTH_FACES);
   const [message, setMessage] = useState<string>();
 
   const design = designs.find((d) => d.id === selectedId);
-  const hidden = (design && hiddenBy[design.id]) || NO_HIDDEN;
+  const filter = (design && filterBy[design.id]) || NO_FILTER;
   const editor = useDesignEditor(lib, design);
   const issueCount = design ? designIssues(lib, design).count : 0;
 
@@ -56,6 +59,7 @@ export function DesignerModule() {
     select('designer', copy.id);
   };
   const report = (error?: string) => setMessage(error);
+  const setFilter = (f: ViewFilter) => { if (design) setFilterBy((m) => ({ ...m, [design.id]: f })); };
   const selectedPlacement = design?.placements.find((p) => p.id === placementId);
   const duplicateSelected = () => {
     if (!selectedPlacement) return;
@@ -120,8 +124,11 @@ export function DesignerModule() {
             title={design.name}
             exportName={`${design.id}-${view}`}
             viewControls={(
-              <DeviceFilterMenu lib={lib} design={design} hidden={hidden}
-                onChange={(h) => setHiddenBy((m) => ({ ...m, [design.id]: h }))} />
+              <>
+                <DeviceFilterMenu lib={lib} design={design} filter={filter} onChange={setFilter} />
+                <CableTypeMenu lib={lib} design={design} filter={filter} onChange={setFilter} />
+                <FaceMenu faces={faces} onChange={setFaces} />
+              </>
             )}
             toolbar={
               <>
@@ -129,10 +136,6 @@ export function DesignerModule() {
                 {issueCount > 0 && <span className="toolbar-msg error" title="Marked in red on the rack">{`⚠ ${issueCount} problem${issueCount > 1 ? 's' : ''}`}</span>}
                 <Button variant={view === 'elevation' ? 'primary' : 'default'} onClick={() => setView('elevation')}>Elevation</Button>
                 <Button variant={view === 'cabling' ? 'primary' : 'default'} onClick={() => setView('cabling')}>Cabling</Button>
-                {view === 'elevation' && (
-                  <Button variant={showCables ? 'primary' : 'default'} aria-pressed={showCables}
-                    title={showCables ? 'Hide cable runs' : 'Show cable runs'} onClick={() => setShowCables(!showCables)}>Cables</Button>
-                )}
                 <span className="toolbar-sep" />
                 <Button disabled={!selectedPlacement} onClick={duplicateSelected}
                   aria-label="Duplicate device"
@@ -144,7 +147,7 @@ export function DesignerModule() {
             }
           >
             {(ref) => view === 'cabling' ? (
-              <CablingView ref={ref} lib={lib} design={design} editor={editor} selectedCableId={cableId} hiddenIds={hidden}
+              <CablingView ref={ref} lib={lib} design={design} editor={editor} selectedCableId={cableId} filter={filter} faces={faces}
                 onSelectCable={(id) => { setCableId(id); if (id) { setPlacementId(undefined); setTab('cables'); } }} />
             ) : (
               <RackElevation
@@ -161,8 +164,8 @@ export function DesignerModule() {
                   if (r.id) setPlacementId(r.id);
                 }}
                 onMove={(id, mount) => report(editor.moveTo(id, mount))}
-                showCables={showCables}
-                hiddenIds={hidden}
+                filter={filter}
+                faces={faces}
               />
             )}
           </CanvasFrame>
