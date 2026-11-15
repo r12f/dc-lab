@@ -160,3 +160,8 @@ p.warn { color: var(--danger); margin: 4px 0; font-size: 12px; }
 .sidebar-subitem { font-size: 12px; color: var(--muted); }
 .sidebar-subitem.active { color: var(--dialog-selected-fg); }
 .inspector-subtitle { margin: 12px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+
+.device-filter { display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow: auto; }
+.device-filter .check { display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
+.device-filter .check .muted { overflow: hidden; text-overflow: ellipsis; }
+.row-actions { display: flex; gap: 4px; }

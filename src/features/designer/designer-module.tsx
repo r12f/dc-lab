@@ -13,6 +13,9 @@ import { NewDesignForm } from './new-design-form';
 import { DevicePalette } from './device-palette';
 import { RackElevation } from './rack-elevation';
 import { CablingView } from './cabling-view';
+import { DeviceFilterPanel } from './device-filter-panel';
+
+const NO_HIDDEN: Set<string> = new Set();
 import { DesignInspector, type InspectorTab } from './design-inspector';
 import { useDesignEditor } from './use-design-editor';
 import { designIssues } from '../../domain/design/issues';
@@ -30,9 +33,12 @@ export function DesignerModule() {
   const [placementId, setPlacementId] = useState<string>();
   const [cableId, setCableId] = useState<string>();
   const [tab, setTab] = useState<InspectorTab>('summary');
+  // Cabling view device filter: hidden placement ids per design (session only).
+  const [hiddenBy, setHiddenBy] = useState<Record<string, Set<string>>>({});
   const [message, setMessage] = useState<string>();
 
   const design = designs.find((d) => d.id === selectedId);
+  const hidden = (design && hiddenBy[design.id]) || NO_HIDDEN;
   const editor = useDesignEditor(lib, design);
   const issueCount = design ? designIssues(lib, design).count : 0;
 
@@ -134,7 +140,7 @@ export function DesignerModule() {
             }
           >
             {(ref) => view === 'cabling' ? (
-              <CablingView ref={ref} lib={lib} design={design} editor={editor} selectedCableId={cableId}
+              <CablingView ref={ref} lib={lib} design={design} editor={editor} selectedCableId={cableId} hiddenIds={hidden}
                 onSelectCable={(id) => { setCableId(id); if (id) { setPlacementId(undefined); setTab('cables'); } }} />
             ) : (
               <RackElevation
@@ -163,7 +169,11 @@ export function DesignerModule() {
         design && (
           <DesignInspector lib={lib} design={design} editor={editor} placementId={placementId}
             onSelectPlacement={setPlacementId} tab={tab} onTabChange={setTab}
-            cableId={cableId} onSelectCable={setCableId} onError={report} />
+            cableId={cableId} onSelectCable={setCableId} onError={report}
+            top={view === 'cabling' && (
+              <DeviceFilterPanel lib={lib} design={design} hidden={hidden}
+                onChange={(h) => setHiddenBy((m) => ({ ...m, [design.id]: h }))} />
+            )} />
         )
       }
     />

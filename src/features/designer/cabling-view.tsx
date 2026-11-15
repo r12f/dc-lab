@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState, type PointerEvent, type Ref } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type PointerEvent, type Ref } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { CableEndpoint, CableRoute, Placement, RackDesign } from '../../domain/design/types';
 import type { DeviceDefinition, PortFace, PortGroup } from '../../domain/device/types';
@@ -16,6 +16,7 @@ import { SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
 import type { SideName } from '../../domain/rack/side-elements';
 import { memoByDesign } from '../../domain/design/memo';
+import { visibleDesign } from '../../domain/design/device-filter';
 import { crossRackKeys, toggleCrossRack } from '../../domain/design/cross-rack';
 import { focusedRuns, routeCablingLines, type CablingFace, type CablingLine, type LegAnchor } from './cabling-lines';
 
@@ -27,6 +28,8 @@ interface Props {
   /** Run selected in the inspector / by clicking: its lines and connectors are highlighted. */
   selectedCableId?: string;
   onSelectCable(id: string | undefined): void;
+  /** Placement ids not drawn (device filter); links touching them are not drawn either. */
+  hiddenIds?: ReadonlySet<string>;
 }
 
 /**
@@ -295,7 +298,9 @@ const CablingBase = memo(function CablingBase({ L }: { L: CablingLayout }) {
  * The selection splits into A (first device) and B (other devices); only cables that fit both ends are offered,
  * and the chosen one repeats in faceplate order.
  */
-export function CablingView({ ref, lib, design, editor, selectedCableId, onSelectCable }: Props) {
+const NO_HIDDEN: ReadonlySet<string> = new Set();
+
+export function CablingView({ ref, lib, design, editor, selectedCableId, onSelectCable, hiddenIds = NO_HIDDEN }: Props) {
   const [selection, setSelection] = useState<CableEndpoint[]>([]);
   const [route, setRoute] = useState<CableRoute | 'auto'>('auto');
   const [mediaId, setMediaId] = useState('');
@@ -316,7 +321,9 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
     return () => { window.removeEventListener('pointerup', up); window.removeEventListener('keydown', key); };
   }, [onSelectCable]);
 
-  const L = cablingLayout(lib, design);
+  // Drawing uses the filtered design (stable object per filter, so the layout cache holds); edits use the full one.
+  const shown = useMemo(() => visibleDesign(design, hiddenIds), [design, hiddenIds]);
+  const L = cablingLayout(lib, shown);
   const { used, cross, devices, legOrder, epByKey, leftSide, rightSide, leftX, frontX, rearX, rightX, width, height, channels } = L;
   const selected = new Set(selection.map(endpointKey));
   const focus = focusedRuns(design.cables, used, selected, selectedCableId);

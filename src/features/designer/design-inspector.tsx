@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { RackDesign } from '../../domain/design/types';
 import { Tabs } from '../../ui/tabs';
@@ -21,9 +22,11 @@ interface Props {
   cableId?: string;
   onSelectCable(id: string | undefined): void;
   onError(message: string | undefined): void;
+  /** Shown above the tabs (e.g. the cabling view's device filter). */
+  top?: ReactNode;
 }
 
-export function DesignInspector({ lib, design, editor, placementId, onSelectPlacement, tab, onTabChange, cableId, onSelectCable, onError }: Props) {
+export function DesignInspector({ lib, design, editor, placementId, onSelectPlacement, tab, onTabChange, cableId, onSelectCable, onError, top }: Props) {
   const placement = design.placements.find((p) => p.id === placementId);
   return (
     <div className="inspector-inner">
@@ -32,6 +35,7 @@ export function DesignInspector({ lib, design, editor, placementId, onSelectPlac
         <TextField label={`Abbreviation (≤ ${ABBR_MAX})`} value={design.abbr} onChange={editor.setAbbr} />
       </div>
       {abbrProblem(design.abbr) && <p className="error">{abbrProblem(design.abbr)}</p>}
+      {top}
       <Tabs<InspectorTab>
         tabs={[{ id: 'summary', label: 'BOM & metrics' }, { id: 'placement', label: 'Device' }, { id: 'cables', label: `Cables (${design.cables.length})` }]}
         value={tab}
