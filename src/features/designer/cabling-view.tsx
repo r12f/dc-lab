@@ -138,7 +138,6 @@ function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: Port
  * and the chosen one repeats in faceplate order.
  */
 export function CablingView({ ref, lib, design, editor, selectedCableId, onSelectCable }: Props) {
-  const [hoverRun, setHoverRun] = useState<string>();
   const [selection, setSelection] = useState<CableEndpoint[]>([]);
   const [route, setRoute] = useState<CableRoute | 'auto'>('auto');
   const [mediaId, setMediaId] = useState('');
@@ -205,7 +204,7 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
   devices.forEach((d) => shift(d, CHANNEL_W));
   const legOrder = new Map(devices.flatMap((d) => d.legs.map((l, i) => [endpointKey(l.ep), i + (d.face === 'rear' ? 100000 : 0)] as const)));
   const selected = new Set(selection.map(endpointKey));
-  const focus = focusedRuns(design.cables, used, selected, hoverRun, selectedCableId);
+  const focus = focusedRuns(design.cables, used, selected, selectedCableId);
   const dim = (runId?: string) => focus.size > 0 && !!runId && !focus.has(runId);
   const lit = (runId?: string) => !!runId && focus.has(runId);
 
@@ -326,7 +325,7 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
                 const y0 = ly + h / 2 - ((lines.length - 1) * 9) / 2 + 3;
                 return (
                   <g key={`${d.face}:${key}`} style={{ cursor: runId ? 'pointer' : 'cell' }} onPointerDown={(e) => down(ep, e)}
-                    onPointerEnter={() => { enter(ep); setHoverRun(runId); }} onPointerLeave={() => setHoverRun(undefined)}>
+                    onPointerEnter={() => enter(ep)}>
                     <title>{`${endpointLabel(design, ep)} · ${leg.label}${runId ? ' · cabled (click to open run)' : ''}`}</title>
                     <rect x={x} y={ly} width={w} height={h} rx={2} fill={fill}
                       opacity={dim(runId) ? 0.45 : 1}
@@ -349,7 +348,6 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
           {[...lines].sort((x, z) => Number(lit(x.runId)) - Number(lit(z.runId))).map((ln) => (
             <polyline key={ln.key} points={ln.points.map((pt) => pt.join(',')).join(' ')} fill="none" stroke={runColor.get(ln.runId)}
               strokeOpacity={dim(ln.runId) ? 0.12 : lit(ln.runId) ? 1 : 0.85} strokeWidth={lit(ln.runId) ? 3.5 : 1.5}
-              onPointerEnter={() => setHoverRun(ln.runId)} onPointerLeave={() => setHoverRun(undefined)}
               strokeLinejoin="round" style={{ cursor: 'pointer' }} onClick={() => onSelectCable(ln.runId === selectedCableId ? undefined : ln.runId)}>
               <title>{`${endpointLabel(design, ln.a)} ↔ ${endpointLabel(design, ln.b)}`}</title>
             </polyline>

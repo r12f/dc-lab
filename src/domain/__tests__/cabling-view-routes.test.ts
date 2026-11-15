@@ -46,10 +46,10 @@ describe('cabling view highlight', () => {
   const used = new Map([['a|p/1', 'r1'], ['b|p/2', 'r2'], ['c|p/3', 'r3']]);
   it('every run on a selected connector is highlighted, plus the inspector run', () => {
     expect([...focusedRuns(runs, used, ['a|p/1', 'b|p/2', 'x|free'])].sort()).toEqual(['r1', 'r2']);
-    expect([...focusedRuns(runs, used, ['a|p/1'], undefined, 'r3')].sort()).toEqual(['r1', 'r3']);
+    expect([...focusedRuns(runs, used, ['a|p/1'], 'r3')].sort()).toEqual(['r1', 'r3']);
   });
-  it('hover wins; nothing selected or a deleted run highlights nothing', () => {
-    expect([...focusedRuns(runs, used, ['a|p/1'], 'r2')]).toEqual(['r2']);
-    expect(focusedRuns(runs, used, [], undefined, 'gone').size).toBe(0);
+  it('nothing selected or a deleted run highlights nothing', () => {
+    expect(focusedRuns(runs, used, []).size).toBe(0);
+    expect(focusedRuns(runs, used, [], 'gone').size).toBe(0);
   });
 });
