@@ -169,10 +169,11 @@ are not drawn, and neither is any link with an end on one of them (a link is dra
 are checked). Drawing only: selection, Assign and cross-rack marks work on the full design. Kept per design for
 the session (not saved).
 
-**Cable type filter (Elevation and Cabling)**: a **Cables n/m ▾** dropdown after Devices lists the top-level cable
-types used in the design (as defined in Optics / Cables: SMF, MMF, DAC, AEC, AOC, Power, Other) with their cable
-counts. Runs of an unchecked type are not drawn. Modules (transceivers) are not cables and are not listed. Kept per
-design for the session (not saved).
+**Cable filter (Elevation and Cabling)**: a **Cables n/m ▾** dropdown after Devices lists every cable item used in
+the design (the leaf items of Optics / Cables, so a Y-cable or a shuffle can be picked on its own), grouped under
+its type heading (DAC, AEC, AOC, Power, SMF, MMF, Other) in the Optics / Cables order, each with its cable count.
+Runs of an unchecked item are not drawn. Modules (transceivers) are not cables and are not listed. Kept per design
+for the session (not saved).
 
 **Views (Elevation and Cabling)**: a **Views n/2 ▾** dropdown (toolbar order: Views, Devices, Cables, then zoom) with Front and Rear (both by default; at least one
 stays checked). With one face only that panel / block is drawn, starting at the left edge; the Cabling view's

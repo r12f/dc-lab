@@ -7,7 +7,7 @@ import { newPlacement } from '../design/placement';
 import { visibleCables, visibleDesign, type ViewFilter } from '../design/device-filter';
 
 const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
-const f = (devices: string[] = [], types: string[] = []): ViewFilter => ({ hiddenDevices: new Set(devices), hiddenCableTypes: new Set(types) });
+const f = (devices: string[] = [], cables: string[] = []): ViewFilter => ({ hiddenDevices: new Set(devices), hiddenCables: new Set(cables) });
 
 describe('Rack Designer view filters', () => {
   const d = newDesign('d', 'D', 'network-42ru-600');
@@ -39,8 +39,8 @@ describe('Rack Designer view filters', () => {
     expect(v.placements).toHaveLength(3);
     expect(v.cables.map((c) => c.id)).toEqual(['ab', 'pw']);
   });
-  it('a hidden cable type drops its runs in both views', () => {
-    expect(visibleCables(lib, d, f([], ['power'])).cables.map((c) => c.id)).toEqual(['ab', 'bc']);
-    expect(visibleDesign(lib, d, f([], ['other'])).cables.map((c) => c.id)).toEqual(['pw']);
+  it('a hidden cable item drops its runs in both views', () => {
+    expect(visibleCables(lib, d, f([], ['power-c13-c14'])).cables.map((c) => c.id)).toEqual(['ab', 'bc']);
+    expect(visibleDesign(lib, d, f([], ['cat6a'])).cables.map((c) => c.id)).toEqual(['pw']);
   });
 });

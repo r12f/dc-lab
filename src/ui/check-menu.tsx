@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from './button';
 
 export interface CheckMenuItem {
@@ -6,6 +6,8 @@ export interface CheckMenuItem {
   label: string;
   /** Secondary text after the label (muted). */
   sub?: string;
+  /** Heading the item is listed under (consecutive items with the same group share one heading). */
+  group?: string;
 }
 
 interface Props {
@@ -71,13 +73,16 @@ export function CheckMenu({ label, items, hidden, onChange, title, info, minChec
           )}
           <div className="device-filter-list">
             {items.length === 0 && <span className="muted">Nothing to show.</span>}
-            {items.map((i) => (
-              <label key={i.id} className="check" title={i.sub}>
+            {items.map((i, n) => (
+              <Fragment key={i.id}>
+              {i.group && i.group !== items[n - 1]?.group && <div className="check-group">{i.group}</div>}
+              <label className="check" title={i.sub}>
                 <input type="checkbox" checked={!hidden.has(i.id)} onChange={() => toggle(i.id)}
                   disabled={!hidden.has(i.id) && checked <= minChecked} />
                 <span>{i.label}</span>
                 {i.sub && <span className="muted">{i.sub}</span>}
               </label>
+              </Fragment>
             ))}
           </div>
         </div>

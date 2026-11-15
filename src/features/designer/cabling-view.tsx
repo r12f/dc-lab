@@ -309,7 +309,7 @@ const CablingBase = memo(function CablingBase({ L }: { L: CablingLayout }) {
  * The selection splits into A (first device) and B (other devices); only cables that fit both ends are offered,
  * and the chosen one repeats in faceplate order.
  */
-const NO_FILTER: ViewFilter = { hiddenDevices: new Set(), hiddenCableTypes: new Set() };
+const NO_FILTER: ViewFilter = { hiddenDevices: new Set(), hiddenCables: new Set() };
 const BOTH: readonly PortFace[] = ['front', 'rear'];
 
 export function CablingView({ ref, lib, design, editor, selectedCableId, onSelectCable, filter = NO_FILTER, faces = BOTH }: Props) {

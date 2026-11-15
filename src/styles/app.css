@@ -165,6 +165,7 @@ p.warn { color: var(--danger); margin: 4px 0; font-size: 12px; }
 .dropdown { position: relative; }
 .dropdown-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 280px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.3); padding: 8px; }
 .dropdown-menu.compact { min-width: 0; width: max-content; }
+.device-filter-list .check-group { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-top: 6px; }
 .device-filter-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .device-filter-list { display: flex; flex-direction: column; gap: 2px; max-height: 60vh; overflow: auto; }
 .device-filter-list .check { display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }

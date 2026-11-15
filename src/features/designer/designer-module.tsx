@@ -17,7 +17,7 @@ import { CableTypeMenu, DeviceFilterMenu, FaceMenu } from './device-filter-menu'
 import type { ViewFilter } from '../../domain/design/device-filter';
 import type { PortFace } from '../../domain/device/types';
 
-const NO_FILTER: ViewFilter = { hiddenDevices: new Set(), hiddenCableTypes: new Set() };
+const NO_FILTER: ViewFilter = { hiddenDevices: new Set(), hiddenCables: new Set() };
 const BOTH_FACES: PortFace[] = ['front', 'rear'];
 import { DesignInspector, type InspectorTab } from './design-inspector';
 import { useDesignEditor } from './use-design-editor';

@@ -3,7 +3,8 @@ import type { RackDesign } from '../../domain/design/types';
 import type { PortFace } from '../../domain/device/types';
 import { traitsOf } from '../../domain/device/categories';
 import { CABLE_TYPES } from '../../domain/optics/cable-types';
-import { runCableType, runShown, type ViewFilter } from '../../domain/design/device-filter';
+import { cableTreePlacement } from '../../domain/optics/grouping';
+import { runShown, type ViewFilter } from '../../domain/design/device-filter';
 import { CheckMenu } from '../../ui/check-menu';
 
 interface FilterProps {
@@ -29,20 +30,25 @@ export function DeviceFilterMenu({ lib, design, filter, onChange }: FilterProps)
 }
 
 /**
- * "Cables n/m": which top-level cable types (SMF, MMF, DAC, AEC, AOC, power…, as defined in Optics / Cables) are
- * drawn. Only types used in the design are listed; modules (transceivers) are not cables.
+ * "Cables n/m": which cable items are drawn — each item in Optics / Cables (a Y-cable, a shuffle, a DAC…) is its own
+ * entry, grouped under its type. Only items used in the design are listed; modules (transceivers) are not cables.
  */
 export function CableTypeMenu({ lib, design, filter, onChange }: FilterProps) {
   const count = new Map<string, number>();
-  for (const c of design.cables) {
-    const t = runCableType(lib, c);
-    if (t) count.set(t, (count.get(t) ?? 0) + c.quantity);
-  }
-  const types = (Object.keys(CABLE_TYPES) as (keyof typeof CABLE_TYPES)[]).filter((t) => count.has(t));
+  for (const c of design.cables) count.set(c.mediaId, (count.get(c.mediaId) ?? 0) + c.quantity);
+  const items = [...count.keys()].map((id) => {
+    const m = lib.cableMedia.get(id);
+    return { id, m, place: m ? cableTreePlacement(m) : undefined };
+  }).sort((a, b) => (a.place?.pathOrder[0] ?? 99) - (b.place?.pathOrder[0] ?? 99)
+    || String(a.place?.order ?? a.id).localeCompare(String(b.place?.order ?? b.id)));
   return (
-    <CheckMenu label="Cables" title="Choose the cable types drawn"
-      items={types.map((t) => ({ id: t, label: CABLE_TYPES[t], sub: `${count.get(t)} cable${count.get(t) === 1 ? '' : 's'}` }))}
-      hidden={filter.hiddenCableTypes} onChange={(h) => onChange({ ...filter, hiddenCableTypes: h })} />
+    <CheckMenu label="Cables" title="Choose the cables drawn"
+      items={items.map(({ id, m }) => ({
+        id, label: m?.name ?? id,
+        group: m ? CABLE_TYPES[m.type] : 'Unknown',
+        sub: `${count.get(id)}`,
+      }))}
+      hidden={filter.hiddenCables} onChange={(h) => onChange({ ...filter, hiddenCables: h })} />
   );
 }
 
