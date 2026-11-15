@@ -1,3 +1,4 @@
+import { groupConnector } from '../../domain/device/port-label';
 import type { Library } from '../../domain/library/library';
 import type { DeviceDefinition } from '../../domain/device/types';
 import type { Placement } from '../../domain/design/types';
@@ -23,7 +24,7 @@ export function GroupOpticsEditor({ lib, device, placement, onChange }: Props) {
     <Section title="Port groups (this instance)">
       {groups.map((g) => (
         <details key={g.id} className="card">
-          <summary>{`${g.label} (${g.count}x ${g.formFactor}${g.opticalEngine ? ` ${g.opticalEngine.toUpperCase()}` : ''})`}</summary>
+          <summary>{`${g.label} (${g.count}x ${groupConnector(g)}${g.opticalEngine ? ` ${g.opticalEngine.toUpperCase()}` : ''})`}</summary>
           <PortSettingFields lib={lib} group={g} value={placement.groupSettings[g.id] ?? {}}
             inherited={resolvePlacedPort(lib, device, { ...noPorts, groupSettings: {} }, `${g.id}/1`)}
             effective={resolvePlacedPort(lib, device, noPorts, `${g.id}/1`)}

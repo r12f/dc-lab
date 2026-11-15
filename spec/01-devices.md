@@ -34,7 +34,9 @@ Fiber connector ports (LC, CS, SN, MPO, MMC) must set `cableGender`: the gender 
 takes** (`male` = plug a male / pinned end in), not the port's own connector — the UI shows what you connect. The
 device inspector warns until it is set. Only cable ends of that gender fit: Rack Designer offers and accepts only
 those cables and flags others. Transceiver faces take female ends; a pigtail leg takes the opposite of its own
-gender. Port labels show the taken gender ("MPO-12F"). Example: an MMC fiber housing takes male on the front, female on the rear.
+gender. Everywhere a fiber port group's connector is shown in the Devices module (faceplate group titles, port
+labels and tooltips, the port group editor) and in Rack Designer port settings, it carries that gender suffix:
+"MPO-8F" (takes female), "MMC-16M" (takes male). Duplex connectors (LC, CS, SN) keep the plain name. Example: an MMC fiber housing takes male on the front, female on the rear.
 
 ### Form factors
 

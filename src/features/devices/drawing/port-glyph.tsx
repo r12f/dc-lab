@@ -1,3 +1,4 @@
+import { groupConnector } from '../../../domain/device/port-label';
 import { portName } from '../../../domain/device/ports';
 import type { PortBox } from './faceplate-layout';
 import type { DrawingContext } from './types';
@@ -70,7 +71,7 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
   const multi = legs.length > 1;
   const engine = box.group.opticalEngine ? ` · ${box.group.opticalEngine.toUpperCase()}` : '';
   const tip = [
-    `${box.group.label} ${portName(box.group, box.index)} (${box.ref}) · ${box.group.formFactor}${box.group.heatSink ? ` ${box.group.heatSink}` : ''}${engine} · ${ROLE_TRAITS[box.group.role].label}`,
+    `${box.group.label} ${portName(box.group, box.index)} (${box.ref}) · ${groupConnector(box.group)}${box.group.heatSink ? ` ${box.group.heatSink}` : ''}${engine} · ${ROLE_TRAITS[box.group.role].label}`,
     speed ? `Speed ${speed}` : '',
     r?.reach ? `Reach ${r.reach}` : '',
     optic ? `Module ${optic.name}${r?.autoOptic ? ' (auto)' : ''}` : '',

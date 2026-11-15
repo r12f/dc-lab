@@ -1,3 +1,4 @@
+import { groupConnector } from '../../domain/device/port-label';
 import type { Library } from '../../domain/library/library';
 import type { DeviceDefinition } from '../../domain/device/types';
 import type { Placement } from '../../domain/design/types';
@@ -23,7 +24,7 @@ export function PortConfigEditor({ lib, device, placement, portRef, onChange }: 
   const eff = resolvePlacedPort(lib, device, placement, portRef);
   return (
     <div className="card">
-      <strong>{`Port ${portRef} (${group.formFactor})`}</strong>
+      <strong>{`Port ${portRef} (${groupConnector(group)})`}</strong>
       <PortSettingFields lib={lib} group={group} value={placement.portSettings[portRef] ?? {}} inherited={inh} effective={eff}
         onChange={(s) => onChange((p) => ({ ...p, portSettings: withSetting(p.portSettings, portRef, s) }))} />
       <p className="muted">{`Effective: ${eff?.mode ?? ''} · ${eff?.reach ?? 'no reach'} · ${eff?.optic?.name ?? 'no module'} · ${lib.cableMedia.get(eff?.cableId)?.name ?? 'no cable'}`}</p>

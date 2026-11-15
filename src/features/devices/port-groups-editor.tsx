@@ -4,6 +4,7 @@ import { FORM_FACTORS, formFactorSpec, HEAT_SINKS, heatSinkOf, type HeatSink } f
 import { newPortGroup } from '../../domain/device/factory';
 import { PORT_ROLES, ROLE_TRAITS } from '../../domain/device/roles';
 import { uniqueId } from '../../domain/ids';
+import { groupConnector } from '../../domain/device/port-label';
 import type { ConnectorGender } from '../../domain/optics/types';
 import { Button } from '../../ui/button';
 import { NumberField, Section, SelectField, TextField } from '../../ui/fields';
@@ -63,7 +64,7 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
   const pluggable = ROLE_TRAITS[group.role].pluggable;
   return (
     <details className="card" open={false}>
-      <summary>{`${group.label} · ${group.count}x ${group.formFactor}${group.heatSink ? ` ${group.heatSink}` : ''}${group.opticalEngine ? ` ${group.opticalEngine.toUpperCase()}` : ''}${group.speedGbps ? ` ${formatGbps(group.speedGbps)}` : ''} · ${group.face}`}</summary>
+      <summary>{`${group.label} · ${group.count}x ${groupConnector(group)}${group.heatSink ? ` ${group.heatSink}` : ''}${group.opticalEngine ? ` ${group.opticalEngine.toUpperCase()}` : ''}${group.speedGbps ? ` ${formatGbps(group.speedGbps)}` : ''} · ${group.face}`}</summary>
       <div className="row2">
         <TextField label="Label" value={group.label} onChange={(label) => set({ label })} />
         <SelectField<PortRole> label="Role" value={group.role} options={roleOptions} onChange={(role) => set({ role })} />
