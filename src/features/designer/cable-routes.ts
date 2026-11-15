@@ -81,7 +81,8 @@ export function routeCables(lib: Library, design: RackDesign, rack: RackTemplate
     const ends = link.placementIds
       .map((id) => { const p = find(id); return p && exitPoint(lib, rack, geo, p, link.route); })
       .filter((e): e is [number, number] => !!e);
-    if (ends.length < 1) return undefined;
+    // A device not drawn on this face (e.g. a PDU in a rear-only bay) leaves no end; a link needs two.
+    if (ends.length < 2) return undefined;
     const ys = ends.map((p) => p[1]);
     return { link, ends, span: Math.max(...ys) - Math.min(...ys) };
   }).filter((x): x is NonNullable<typeof x> => !!x);

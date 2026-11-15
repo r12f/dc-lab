@@ -17,6 +17,7 @@ import { mountAt } from './mount-at';
 import { paint } from '../../theme/paint';
 import { cableGutter, routeCables } from './cable-routes';
 import { CableRoutesDrawing } from './cable-routes-drawing';
+import type { SideElementKind } from '../../domain/rack/side-elements';
 import { placedDevice } from '../../domain/design/sizing';
 
 interface Props {
@@ -46,6 +47,8 @@ interface DragState {
 }
 
 const FACES: PortFace[] = ['front', 'rear'];
+/** Side elements reached from the rear only: not drawn on the front panel. */
+const REAR_ONLY: ReadonlySet<SideElementKind> = new Set(['pdu-bay']);
 const CABLE_GUTTER = 34;
 
 /**
@@ -59,16 +62,24 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
   if (!rack) return <p className="muted">Unknown rack template {design.templateId}</p>;
   // Cable channels outside the rails on both sides, so runs never cover the unit numbers.
   // The channels widen with the run count so every run keeps its own lane.
-  const geo = rackGeometry(rack, cableGutter(design, CABLE_GUTTER));
+  // PDU bays are on the rear: the front panel leaves them out (and the PDUs in them).
+  const gutter = cableGutter(design, CABLE_GUTTER);
+  const geoRear = rackGeometry(rack, gutter);
+  const rackFront = { ...rack, sideElements: rack.sideElements.filter((e) => !REAR_ONLY.has(e.kind)) };
+  const geoFront = rackGeometry(rackFront, gutter);
+  const geoOf = (face: PortFace) => (face === 'rear' ? geoRear : geoFront);
+  const rackOf = (face: PortFace) => (face === 'rear' ? rack : rackFront);
+  const geo = geoRear;
   const metrics = computeRackMetrics(lib, design);
   const issues = designIssues(lib, design);
   const visibleOn = (face: PortFace) => design.placements.filter((p) => {
-    if (p.mount.kind === 'side' || p.mount.face === face) return true;
+    if (p.mount.kind === 'side') return rackOf(face).sideElements.some((e) => e.id === (p.mount as { elementId: string }).elementId);
+    if (p.mount.face === face) return true;
     const d = placedDevice(lib, design, p);
     return !!d && isFullDepth(d, rack);
   });
   // Each face occupies one panel; the rear panel is shifted right by `panelW`.
-  const panelW = geo.width + 20;
+  const panelW = geoFront.width + 20;
   const offsetOf = (face: PortFace) => (face === 'rear' ? panelW : 0);
   const faceAt = (x: number): PortFace => (x >= panelW - 10 ? 'rear' : 'front');
 
@@ -84,7 +95,7 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
     const [deviceId, variantId] = e.dataTransfer.getData(DEVICE_DRAG_TYPE).split('|');
     if (!deviceId) return;
     const pt = svgPoint(e);
-    const mount = mountAt(geo, rack, pt.face, pt.x, pt.y);
+    const mount = mountAt(geoOf(pt.face), rack, pt.face, pt.x, pt.y);
     const device = lib.devices.get(deviceId);
     // The pointer marks the device's middle; a tall device dropped near the top/bottom slides inside the rack.
     if (mount.kind === 'rack' && device) {
@@ -102,7 +113,7 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
     const d = p && placedDevice(lib, design, p);
     if (!p || !d) return;
     const pt = svgPoint(e);
-    const r = placementRect(p, d, rack, geo);
+    const r = placementRect(p, d, rack, geoOf(face));
     (e.currentTarget.closest('svg') as SVGSVGElement).setPointerCapture(e.pointerId);
     setDrag({ id, dy: pt.y - r.y, y: r.y, x: pt.x, moved: false, face });
   };
@@ -119,8 +130,8 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
     const p = design.placements.find((x) => x.id === drag.id);
     const d = p && placedDevice(lib, design, p);
     if (!p || !d) return undefined;
-    const r = placementRect(p, d, rack, geo);
-    const mount = mountAt(geo, rack, drag.face, drag.x, drag.y + r.h - geo.unitPx / 2);
+    const r = placementRect(p, d, rack, geoOf(drag.face));
+    const mount = mountAt(geoOf(drag.face), rack, drag.face, drag.x, drag.y + r.h - geo.unitPx / 2);
     return mount;
   };
 
@@ -137,7 +148,7 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
   const previewBad = !!(preview && draggedDevice && placementProblem(lib, design, draggedDevice, preview, drag?.id));
 
   const h = geo.height + 14 + issues.rack.length * 12;
-  const totalW = panelW * 2;
+  const totalW = panelW + geoRear.width + 20;
   return (
     <svg
       ref={ref}
@@ -153,36 +164,36 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
       {FACES.map((face) => (
         <g key={face} transform={face === 'rear' ? `translate(${panelW} 0)` : undefined}>
           <RackFrame
-            rack={rack}
-            geo={geo}
+            rack={rackOf(face)}
+            geo={geoOf(face)}
             title={`${design.name} — ${face}`}
             subtitle={`${rack.name} · ${metrics.usedUnits}/${metrics.totalUnits} ${rack.unitSystem} · ${formatPower(metrics.typicalW)} typ · ${formatWeight(metrics.totalWeightKg)}`}
           >
             {visibleOn(face).map((p) => {
               const device = placedDevice(lib, design, p);
               return device ? (
-                <PlacedDevice key={p.id} placement={p} device={device} rack={rack} geo={geo}
+                <PlacedDevice key={p.id} placement={p} device={device} rack={rack} geo={geoOf(face)}
                   ghost={p.mount.kind === 'rack' && p.mount.face !== face}
                   dragging={drag?.id === p.id && drag.moved}
                   selected={p.id === selectedId} issues={issues.placements.get(p.id)} onPointerDown={startDrag(p.id, face)} />
               ) : null;
             })}
             {showCables && (
-              <CableRoutesDrawing lib={lib} design={design} routes={routeCables(lib, design, rack, geo)} selectedId={selectedCableId}
+              <CableRoutesDrawing lib={lib} design={design} routes={routeCables(lib, design, rack, geoOf(face))} selectedId={selectedCableId}
                 errorIds={new Set(issues.cables.keys())} onSelect={onSelectCable} />
             )}
             {/* Rack-wide problems: red frame around the rack body and the messages under the title. */}
             {issues.rack.length > 0 && (
               <g pointerEvents="none">
-                <rect x={geo.originX - 3} y={geo.originY - 7} width={geo.railW * 2 + geo.bodyW + 6} height={geo.bodyH + 14} rx={4}
+                <rect x={geoOf(face).originX - 3} y={geo.originY - 7} width={geo.railW * 2 + geo.bodyW + 6} height={geo.bodyH + 14} rx={4}
                   fill="none" stroke={paint.danger} strokeWidth={3} />
                 {face === 'front' && issues.rack.map((w, i) => (
-                  <text key={w} x={geo.originX} y={geo.height + 4 + i * 12} fontSize={10} fontWeight={700} fill={paint.danger}>{`⚠ ${w}`}</text>
+                  <text key={w} x={geoOf(face).originX} y={geo.height + 4 + i * 12} fontSize={10} fontWeight={700} fill={paint.danger}>{`⚠ ${w}`}</text>
                 ))}
               </g>
             )}
             {preview?.kind === 'rack' && preview.face === face && (
-              <rect data-export="skip" x={geo.originX + geo.railW} y={unitTopY(geo, rack, preview.position)}
+              <rect data-export="skip" x={geoOf(face).originX + geo.railW} y={unitTopY(geo, rack, preview.position)}
                 width={geo.bodyW} height={geo.unitPx} fill="none" stroke={previewBad ? paint.danger : paint.selection} strokeWidth={2} pointerEvents="none" />
             )}
           </RackFrame>

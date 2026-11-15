@@ -130,6 +130,9 @@ the port's form factor and mode are in its tooltip.
 **Delete device**: the canvas toolbar has an icon-only ✕ button (tooltip "Delete <label> (Del)") next to Export SVG, enabled when a device is
 selected; the Delete / Backspace key does the same (ignored while typing in a field).
 
+**PDU bays on the rear**: the front panel of the elevation leaves out the PDU bays and the PDUs in them; they are
+drawn (and droppable) on the rear panel only.
+
 **No face toggle**: the elevation draws front and rear side by side (drop / drag on either; the mount face is
 the panel under the pointer). The cabling view also shows **front and rear side by side**, each device on one
 line across both, so a rear port can be cabled to a front one. Power is cabled there too: PDU **outlets**
