@@ -8,6 +8,7 @@ import { effectiveLengthM } from '../design/cabling';
 import { variantLabel } from '../items/variants';
 import { BomBuilder } from './bom-builder';
 import type { BomLine } from './types';
+import { memoByDesign } from '../design/memo';
 import { placedDevice, sizeKey } from '../design/sizing';
 
 /**
@@ -30,7 +31,10 @@ export interface BomNode {
  * Devices with the same item in the same container merge into one line (qty, labels in notes).
  * Empty (Reserved) space is not hardware and is left out.
  */
-export function buildRackBomTree(lib: Library, design: RackDesign): BomNode | undefined {
+/** Cached per (library, design) snapshot. */
+export const buildRackBomTree = memoByDesign(computeBuildRackBomTree);
+
+function computeBuildRackBomTree(lib: Library, design: RackDesign): BomNode | undefined {
   const rack = lib.racks.get(design.templateId);
   if (!rack) return undefined;
   const item = (itemId: string, variantId?: string) => lib.variants.resolve(itemId, variantId);

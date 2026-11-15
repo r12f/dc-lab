@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent, type Ref } from 'react';
+import { memo, useEffect, useRef, useState, type PointerEvent, type Ref } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { CableEndpoint, CableRoute, Placement, RackDesign } from '../../domain/design/types';
 import type { DeviceDefinition, PortFace, PortGroup } from '../../domain/device/types';
@@ -15,8 +15,9 @@ import { Button } from '../../ui/button';
 import { SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
 import type { SideName } from '../../domain/rack/side-elements';
+import { memoByDesign } from '../../domain/design/memo';
 import { crossRackKeys, toggleCrossRack } from '../../domain/design/cross-rack';
-import { focusedRuns, routeCablingLines, type CablingFace, type LegAnchor } from './cabling-lines';
+import { focusedRuns, routeCablingLines, type CablingFace, type CablingLine, type LegAnchor } from './cabling-lines';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -137,32 +138,26 @@ function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: Port
   return { p, device, face: face === 'all' ? 'front' : face, x: x0, y: y0, h: Math.max(bottom - y0 + PAD, 40), w: right - x0 + PAD, ports, legs, titles };
 }
 
-/**
- * Cabling view: every device's face drawn like its faceplate, each port split into its connector legs with
- * what runs on them. Press on a connector and drag to select several (dragging from a selected one deselects).
- * The selection splits into A (first device) and B (other devices); only cables that fit both ends are offered,
- * and the chosen one repeats in faceplate order.
- */
-export function CablingView({ ref, lib, design, editor, selectedCableId, onSelectCable }: Props) {
-  const [selection, setSelection] = useState<CableEndpoint[]>([]);
-  const [route, setRoute] = useState<CableRoute | 'auto'>('auto');
-  const [mediaId, setMediaId] = useState('');
-  const [message, setMessage] = useState<string>();
-  const drag = useRef<{ adding: boolean } | undefined>(undefined);
+interface CablingLayout {
+  used: Map<string, string>;
+  cross: Set<string>;
+  runColor: Map<string, string>;
+  devices: DeviceLayout[];
+  leftSide: DeviceLayout[];
+  rightSide: DeviceLayout[];
+  legOrder: Map<string, number>;
+  /** endpointKey -> connector, for event delegation and tooltips. */
+  epByKey: Map<string, LegBox>;
+  lines: CablingLine[];
+  leftX: number; frontX: number; rearX: number; rightX: number;
+  width: number; height: number;
+  channels: Record<CablingFace, { left: number; right: number; width: number }>;
+}
 
-  useEffect(() => {
-    const up = () => { drag.current = undefined; };
-    // Escape clears the highlighted run and the selection (ignored while typing in a field).
-    const key = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || (e.target as HTMLElement | null)?.closest('input, select, textarea')) return;
-      onSelectCable(undefined);
-      setSelection([]);
-    };
-    window.addEventListener('pointerup', up);
-    window.addEventListener('keydown', key);
-    return () => { window.removeEventListener('pointerup', up); window.removeEventListener('keydown', key); };
-  }, [onSelectCable]);
+/** Everything the drawing needs that depends only on the design (not on the selection); cached per design snapshot. */
+const cablingLayout = memoByDesign(computeCablingLayout);
 
+function computeCablingLayout(lib: Library, design: RackDesign): CablingLayout {
   const used = usedConnectors(design);
   const cross = crossRackKeys(design);
   const runColor = new Map(design.cables.map((c) => [c.id, lib.cableMedia.get(c.mediaId)?.color ?? paint.inkMuted]));
@@ -212,10 +207,119 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
   rightSide.forEach((d) => shift(d, rightX));
   const devices = [...leftSide, ...front, ...rear, ...rightSide];
   const legOrder = new Map(devices.flatMap((d) => d.legs.map((l, i) => [endpointKey(l.ep), i + (d.face === 'rear' ? 100000 : 0)] as const)));
+  const width = rightX + sideW(rightSide);
+  const channels = {
+    front: { left: frontX - CHANNEL_W, right: frontX + frontW, width: CHANNEL_W },
+    rear: { left: rearX - CHANNEL_W, right: rearX + rearW, width: CHANNEL_W },
+  };
+  const anchors = new Map<string, LegAnchor>();
+  const epByKey = new Map<string, LegBox>();
+  // Side PDUs sit in the rear block and use its channels.
+  const blockOf = (d: DeviceLayout): CablingFace => (leftSide.includes(d) || rightSide.includes(d) ? 'rear' : d.face);
+  for (const d of devices) {
+    for (const l of d.legs) {
+      const k = endpointKey(l.ep);
+      epByKey.set(k, l);
+      anchors.set(k, { x: l.x + l.w / 2, y: l.y + l.h / 2, gapAbove: d.y - ROW_GAP / 2, gapBelow: d.y + d.h + ROW_GAP / 2, face: blockOf(d) });
+    }
+  }
+  const lines = routeCablingLines(design.cables, anchors, endpointKey, channels, BAND_Y);
+  const height = Math.max(y, SECTION_H + 30, ...[...leftSide, ...rightSide].map((d) => d.y + d.h + 4));
+  return { used, cross, runColor, devices, leftSide, rightSide, legOrder, epByKey, lines, leftX, frontX, rearX, rightX, width, height, channels };
+}
+
+/** One connector block: fill, outline and its three text lines (lanes / reach / connector). */
+function LegBlock({ l, fill, ink, stroke, strokeWidth, cross }: { l: LegBox; fill: string; ink: string; stroke: string; strokeWidth: number; cross: boolean }) {
+  const { leg, x, y, w, h } = l;
+  const lines = [leg.mode, leg.reach, leg.connector].filter((s): s is string => !!s);
+  const cx = x + w / 2;
+  const y0 = y + h / 2 - ((lines.length - 1) * 9) / 2 + 3;
+  return (
+    <>
+      <rect data-k={endpointKey(l.ep)} x={x} y={y} width={w} height={h} rx={2} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
+      {cross && <text x={x + w - 2} y={y + 8} fontSize={8} fontWeight={700} textAnchor="end" fill={ink} pointerEvents="none">⇄</text>}
+      {lines.map((s, k) => (
+        <text key={k} x={cx} y={y0 + k * 9} fontSize={Math.min(8, (w - 4) / Math.max(1, s.length * 0.58))} fontWeight={k === 0 ? 700 : 500}
+          textAnchor="middle" fill={ink} opacity={k === 0 ? 1 : 0.85} pointerEvents="none">{s}</text>
+      ))}
+    </>
+  );
+}
+
+const legFill = (L: CablingLayout, k: string) => {
+  const runId = L.used.get(k);
+  return runId ? L.runColor.get(runId)! : L.cross.has(k) ? '#0e7490' : '#334155';
+};
+
+/**
+ * The selection-independent drawing: device boxes, ports, connectors and cable lines. Memoized on the layout, so
+ * selecting, dragging or highlighting never re-renders these thousands of elements; events are delegated
+ * (`data-k` = connector key, `data-run` = run id).
+ */
+const CablingBase = memo(function CablingBase({ L }: { L: CablingLayout }) {
+  return (
+    <>
+      {L.devices.map((d) => (
+        <g key={`${d.face}:${d.p.id}`}>
+          <rect x={d.x + 2} y={d.y} width={d.w - 2} height={d.h} rx={4} fill="#1e293b" stroke="#475569" />
+          <text x={d.x + 8} y={d.y + 17} fontSize={12} fontWeight={700} fill="#f8fafc">{d.p.label}</text>
+          <text x={d.x + 8} y={d.y + 30} fontSize={9} fill="#cbd5e1">
+            {d.device.name.length > 24 ? `${d.device.name.slice(0, 23)}…` : d.device.name}
+          </text>
+          {d.legs.length === 0 && <text x={d.x + 8} y={d.y + d.h - 4} fontSize={8} fill="#94a3b8">{`no ${d.face} ports`}</text>}
+          {d.titles.map((t) => <text key={`${t.x}`} x={t.x} y={t.y} fontSize={9} fontWeight={600} fill="#e2e8f0">{t.text}</text>)}
+          {d.ports.map((pt) => (
+            <g key={`${pt.group.id}/${pt.index}`}>
+              <rect x={pt.x} y={pt.y} width={pt.w} height={pt.h} rx={2} fill="#0f172a" stroke="#475569" />
+              <text x={pt.x + pt.w / 2} y={pt.y + 9} fontSize={9} fontWeight={700} textAnchor="middle" fill="#e2e8f0">{pt.index}</text>
+            </g>
+          ))}
+          {d.legs.map((l) => {
+            const k = endpointKey(l.ep);
+            return <LegBlock key={k} l={l} fill={legFill(L, k)} ink={L.used.has(k) ? '#0f172a' : '#e2e8f0'} stroke="#0f172a" strokeWidth={1} cross={L.cross.has(k)} />;
+          })}
+        </g>
+      ))}
+      {/* Assigned cables: one line per A-B connector pair, in the cable's colour. */}
+      {L.lines.map((ln) => (
+        <polyline key={ln.key} data-run={ln.runId} points={ln.points.map((pt) => pt.join(',')).join(' ')} fill="none"
+          stroke={L.runColor.get(ln.runId)} strokeOpacity={0.85} strokeWidth={1.5} strokeLinejoin="round" style={{ cursor: 'pointer' }} />
+      ))}
+    </>
+  );
+});
+
+/**
+ * Cabling view: every device's face drawn like its faceplate, each port split into its connector legs with
+ * what runs on them. Press on a connector and drag to select several (dragging from a selected one deselects).
+ * The selection splits into A (first device) and B (other devices); only cables that fit both ends are offered,
+ * and the chosen one repeats in faceplate order.
+ */
+export function CablingView({ ref, lib, design, editor, selectedCableId, onSelectCable }: Props) {
+  const [selection, setSelection] = useState<CableEndpoint[]>([]);
+  const [route, setRoute] = useState<CableRoute | 'auto'>('auto');
+  const [mediaId, setMediaId] = useState('');
+  const [message, setMessage] = useState<string>();
+  const drag = useRef<{ adding: boolean } | undefined>(undefined);
+  const [hover, setHover] = useState<string>();
+
+  useEffect(() => {
+    const up = () => { drag.current = undefined; };
+    // Escape clears the highlighted run and the selection (ignored while typing in a field).
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || (e.target as HTMLElement | null)?.closest('input, select, textarea')) return;
+      onSelectCable(undefined);
+      setSelection([]);
+    };
+    window.addEventListener('pointerup', up);
+    window.addEventListener('keydown', key);
+    return () => { window.removeEventListener('pointerup', up); window.removeEventListener('keydown', key); };
+  }, [onSelectCable]);
+
+  const L = cablingLayout(lib, design);
+  const { used, cross, devices, legOrder, epByKey, leftSide, rightSide, leftX, frontX, rearX, rightX, width, height, channels } = L;
   const selected = new Set(selection.map(endpointKey));
   const focus = focusedRuns(design.cables, used, selected, selectedCableId);
-  const dim = (runId?: string) => focus.size > 0 && !!runId && !focus.has(runId);
-  const lit = (runId?: string) => !!runId && focus.has(runId);
 
   // A/B split by device, each side in faceplate order so repeats pair 1↔1, 2↔2…
   const byFaceplate = (eps: CableEndpoint[]) => [...eps].sort((x, z) =>
@@ -226,6 +330,9 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
   const cables = applicableCables(lib, design, a, b);
   const media = cables.find((c) => c.id === mediaId) ?? cables[0];
   const plan = selection.length && media ? planCable(lib, design, a, b, media.id, route) : undefined;
+  const aIds = new Set(a.map((e) => e.placementId));
+  const bIds = new Set(b.map((e) => e.placementId));
+  const sideOf = (id: string) => (aIds.has(id) ? 'A' : bIds.has(id) ? 'B' : undefined);
 
   const setSel = (ep: CableEndpoint, on: boolean) => {
     const key = endpointKey(ep);
@@ -248,6 +355,29 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
     if (runId) onSelectCable(adding ? runId : undefined);
   };
   const enter = (ep: CableEndpoint) => { if (drag.current) setSel(ep, drag.current.adding); };
+  const target = (e: { target: EventTarget }) => (e.target as Element).closest('[data-k],[data-run]');
+  const basePointerDown = (e: PointerEvent) => {
+    const t = target(e);
+    const k = t?.getAttribute('data-k');
+    const run = t?.getAttribute('data-run');
+    if (k) { const l = epByKey.get(k); if (l) down(l.ep, e); }
+    else if (run) onSelectCable(run === selectedCableId ? undefined : run);
+    else { onSelectCable(undefined); setSelection([]); }
+  };
+  const basePointerOver = (e: PointerEvent) => {
+    const t = target(e);
+    const k = t?.getAttribute('data-k');
+    const run = t?.getAttribute('data-run');
+    if (k) {
+      const l = epByKey.get(k);
+      if (l) enter(l.ep);
+      const runId = used.get(k);
+      setHover(l && `${endpointLabel(design, l.ep)} · ${l.leg.label}${runId ? ' · cabled' : ''}${cross.has(k) ? ' · cross-rack' : ''}`);
+    } else if (run) {
+      const c = design.cables.find((x) => x.id === run);
+      setHover(c && `${c.from.map((x) => endpointLabel(design, x)).join(', ')} ↔ ${c.to.map((x) => endpointLabel(design, x)).join(', ')}`);
+    } else setHover(undefined);
+  };
 
   // Cross-rack: toggles the mark on the selection (all marked -> unmark, else mark all).
   const allCross = selection.length > 0 && selection.every((e) => cross.has(endpointKey(e)));
@@ -266,22 +396,6 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
     setSelection([]);
     onSelectCable(last);
   };
-
-  const width = rightX + sideW(rightSide);
-  const channels = {
-    front: { left: frontX - CHANNEL_W, right: frontX + frontW, width: CHANNEL_W },
-    rear: { left: rearX - CHANNEL_W, right: rearX + rearW, width: CHANNEL_W },
-  };
-  const anchors = new Map<string, LegAnchor>();
-  // Side PDUs sit in the rear block and use its channels.
-  const blockOf = (d: DeviceLayout): CablingFace => (leftSide.includes(d) || rightSide.includes(d) ? 'rear' : d.face);
-  for (const d of devices) {
-    for (const l of d.legs) {
-      anchors.set(endpointKey(l.ep), { x: l.x + l.w / 2, y: l.y + l.h / 2, gapAbove: d.y - ROW_GAP / 2, gapBelow: d.y + d.h + ROW_GAP / 2, face: blockOf(d) });
-    }
-  }
-  const lines = routeCablingLines(design.cables, anchors, endpointKey, channels, BAND_Y);
-  const height = Math.max(y, SECTION_H + 30, ...[...leftSide, ...rightSide].map((d) => d.y + d.h + 4));
 
   return (
     <div className="cabling-view">
@@ -304,6 +418,7 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
         {plan?.error && <span className="warn">{plan.error}</span>}
         {message && <span className="muted">{message}</span>}
         <span className="muted">{`${cross.size} cross-rack`}</span>
+        {hover && <span className="muted">{hover}</span>}
       </div>
       <p className="muted">Front and rear side by side (power inlets and PDU outlets included). Press on a connector and drag to select several; drag from a selected one to deselect. A = first device selected, B = the others; the cable repeats in port order. Click a cabled connector to open its run.</p>
       <svg ref={ref} viewBox={`0 0 ${width} ${height}`} width={width} className="drawing" style={{ touchAction: 'none' }}>
@@ -323,66 +438,29 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
         {/* Front block | rear block (with its PDU bays). */}
         <line x1={leftX - BLOCK_GAP / 2} y1={0} x2={leftX - BLOCK_GAP / 2} y2={height} stroke={paint.inkMuted} strokeDasharray="4 3" />
         {devices.length === 0 && <text x={10} y={SECTION_H + 16} fontSize={12} fill={paint.inkMuted}>No devices placed.</text>}
-        {devices.map((d) => {
-          const side = a.some((e) => e.placementId === d.p.id) ? 'A' : b.some((e) => e.placementId === d.p.id) ? 'B' : undefined;
-          const x0 = d.x;
-          return (
-            <g key={`${d.face}:${d.p.id}`}>
-              <rect x={x0 + 2} y={d.y} width={d.w - 2} height={d.h} rx={4} fill="#1e293b" stroke={side ? paint.selection : '#475569'} strokeWidth={side ? 2 : 1} />
-              <text x={x0 + 8} y={d.y + 17} fontSize={12} fontWeight={700} fill="#f8fafc">{`${side ? `[${side}] ` : ''}${d.p.label}`}</text>
-              <text x={x0 + 8} y={d.y + 30} fontSize={9} fill="#cbd5e1">
-                <title>{d.device.name}</title>
-                {d.device.name.length > 24 ? `${d.device.name.slice(0, 23)}…` : d.device.name}
-              </text>
-              {d.legs.length === 0 && <text x={x0 + 8} y={d.y + d.h - 4} fontSize={8} fill="#94a3b8">{`no ${d.face} ports`}</text>}
-              {d.titles.map((t) => <text key={`${t.x}`} x={t.x} y={t.y} fontSize={9} fontWeight={600} fill="#e2e8f0">{t.text}</text>)}
-              {d.ports.map((pt) => (
-                <g key={`${d.face}:${pt.group.id}/${pt.index}`}>
-                  <title>{`${pt.group.formFactor} ${pt.index} · ${pt.mode}`}</title>
-                  <rect x={pt.x} y={pt.y} width={pt.w} height={pt.h} rx={2} fill="#0f172a" stroke="#475569" />
-                  <text x={pt.x + pt.w / 2} y={pt.y + 9} fontSize={9} fontWeight={700} textAnchor="middle" fill="#e2e8f0">{pt.index}</text>
-                </g>
-              ))}
-              {d.legs.map(({ ep, leg, x, y: ly, w, h }) => {
-                const key = endpointKey(ep);
-                const runId = used.get(key);
-                const sel = selected.has(key);
-                const isCross = cross.has(key);
-                const fill = sel ? paint.selection : runId ? runColor.get(runId) : isCross ? '#0e7490' : '#334155';
-                const ink = runId || sel ? '#0f172a' : '#e2e8f0';
-                // Three lines: lanes, reach, connector; missing lines are skipped, the rest stay centred.
-                const lines = [leg.mode, leg.reach, leg.connector].filter((s): s is string => !!s);
-                const cx = x + w / 2;
-                const y0 = ly + h / 2 - ((lines.length - 1) * 9) / 2 + 3;
-                return (
-                  <g key={`${d.face}:${key}`} style={{ cursor: runId ? 'pointer' : 'cell' }} onPointerDown={(e) => down(ep, e)}
-                    onPointerEnter={() => enter(ep)}>
-                    <title>{`${endpointLabel(design, ep)} · ${leg.label}${runId ? ' · cabled (click to open run)' : ''}${isCross ? ' · cross-rack' : ''}`}</title>
-                    <rect x={x} y={ly} width={w} height={h} rx={2} fill={fill}
-                      opacity={dim(runId) ? 0.45 : 1}
-                      stroke={sel || lit(runId) ? '#fff' : '#0f172a'} strokeWidth={sel ? 2.5 : lit(runId) ? 2 : 1} />
-                    {isCross && <text x={x + w - 2} y={ly + 8} fontSize={8} fontWeight={700} textAnchor="end" fill={ink} pointerEvents="none">⇄</text>}
-                    {lines.map((s, k) => {
-                      const size = Math.min(8, (w - 4) / Math.max(1, s.length * 0.58));
-                      return (
-                        <text key={k} x={cx} y={y0 + k * 9} fontSize={size} fontWeight={k === 0 ? 700 : 500} textAnchor="middle"
-                          fill={ink} opacity={k === 0 ? 1 : 0.85} pointerEvents="none">{s}</text>
-                      );
-                    })}
-                  </g>
-                );
-              })}
+        <g onPointerDown={basePointerDown} onPointerOver={basePointerOver} onPointerLeave={() => setHover(undefined)}>
+          <CablingBase L={L} />
+        </g>
+        {/* Overlay (cheap, re-rendered on selection): veil over everything when runs are highlighted, then the
+            highlighted runs, A/B device outlines and the selected connectors on top. */}
+        <g pointerEvents="none">
+          {focus.size > 0 && <rect width={width} height={height} fill={paint.paper} fillOpacity={0.6} />}
+          {L.lines.filter((ln) => focus.has(ln.runId)).map((ln) => (
+            <polyline key={ln.key} points={ln.points.map((pt) => pt.join(',')).join(' ')} fill="none"
+              stroke={L.runColor.get(ln.runId)} strokeWidth={3.5} strokeLinejoin="round" />
+          ))}
+          {[...L.used].filter(([, r]) => focus.has(r)).map(([k]) => epByKey.get(k)).filter((l): l is LegBox => !!l).map((l) => {
+            const k = endpointKey(l.ep);
+            return <LegBlock key={`f${k}`} l={l} fill={legFill(L, k)} ink="#0f172a" stroke="#fff" strokeWidth={2} cross={cross.has(k)} />;
+          })}
+          {devices.filter((d) => sideOf(d.p.id)).map((d) => (
+            <g key={`ab${d.face}:${d.p.id}`}>
+              <rect x={d.x + 2} y={d.y} width={d.w - 2} height={d.h} rx={4} fill="none" stroke={paint.selection} strokeWidth={2} />
+              <text x={d.x + 8} y={d.y + 17} fontSize={12} fontWeight={700} fill={paint.selection} dx={-2} dy={-20 + 9}>{`[${sideOf(d.p.id)}]`}</text>
             </g>
-          );
-        })}
-        {/* Assigned cables: one line per A–B connector pair, in the cable's colour; drawn last (on top). */}
-        <g>
-          {[...lines].sort((x, z) => Number(lit(x.runId)) - Number(lit(z.runId))).map((ln) => (
-            <polyline key={ln.key} points={ln.points.map((pt) => pt.join(',')).join(' ')} fill="none" stroke={runColor.get(ln.runId)}
-              strokeOpacity={dim(ln.runId) ? 0.12 : lit(ln.runId) ? 1 : 0.85} strokeWidth={lit(ln.runId) ? 3.5 : 1.5}
-              strokeLinejoin="round" style={{ cursor: 'pointer' }} onClick={() => onSelectCable(ln.runId === selectedCableId ? undefined : ln.runId)}>
-              <title>{`${endpointLabel(design, ln.a)} ↔ ${endpointLabel(design, ln.b)}`}</title>
-            </polyline>
+          ))}
+          {selection.map((ep) => epByKey.get(endpointKey(ep))).filter((l): l is LegBox => !!l).map((l) => (
+            <LegBlock key={`s${endpointKey(l.ep)}`} l={l} fill={paint.selection} ink="#0f172a" stroke="#fff" strokeWidth={2.5} cross={cross.has(endpointKey(l.ep))} />
           ))}
         </g>
       </svg>

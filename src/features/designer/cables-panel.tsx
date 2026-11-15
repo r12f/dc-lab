@@ -1,6 +1,7 @@
 import type { Library } from '../../domain/library/library';
 import type { CableRun, RackDesign } from '../../domain/design/types';
-import { cableIssues, endpointLabel } from '../../domain/design/connectors';
+import { endpointLabel } from '../../domain/design/connectors';
+import { designIssues } from '../../domain/design/issues';
 import { Button } from '../../ui/button';
 import { Section } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
@@ -24,6 +25,7 @@ function runTitle(design: RackDesign, c: CableRun): string {
 /** In-rack cable runs, connector to connector; breakout cables have several B ends. */
 export function CablesPanel({ lib, design, editor, selectedId, onSelect, startPlacementId }: Props) {
   const placements = design.placements;
+  const issues = designIssues(lib, design).cables;
   const media = lib.cableMedia.items().filter((m) => m.type !== 'power');
   const add = () => {
     const from = placements.find((p) => p.id === startPlacementId) ?? placements[0];
@@ -43,10 +45,15 @@ export function CablesPanel({ lib, design, editor, selectedId, onSelect, startPl
           onToggle={(e) => (e.currentTarget as HTMLDetailsElement).open && c.id !== selectedId && onSelect(c.id)}>
           <summary>
             <span className="swatch" style={{ background: lib.cableMedia.get(c.mediaId)?.color, display: 'inline-block', marginRight: 6 }} />
-            {`${runTitle(design, c)} · ×${c.quantity}${cableIssues(lib, design, c).length ? ' ⚠' : ''}`}
+            {`${runTitle(design, c)} · ×${c.quantity}${issues.has(c.id) ? ' ⚠' : ''}`}
           </summary>
-          <CableEditor lib={lib} design={design} editor={editor} c={c} />
-          <Button variant="danger" onClick={() => { editor.removeCable(c.id); onSelect(undefined); }}>Remove</Button>
+          {/* Only the open run builds its editor: hundreds of closed runs stay cheap. */}
+          {c.id === selectedId && (
+            <>
+              <CableEditor lib={lib} design={design} editor={editor} c={c} />
+              <Button variant="danger" onClick={() => { editor.removeCable(c.id); onSelect(undefined); }}>Remove</Button>
+            </>
+          )}
         </details>
       ))}
     </Section>

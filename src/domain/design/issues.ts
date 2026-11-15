@@ -3,6 +3,7 @@ import type { RackDesign } from './types';
 import { placementProblem } from './placement';
 import { cableIssues } from './connectors';
 import { computeRackMetrics } from './metrics';
+import { memoByDesign } from './memo';
 
 /** Every problem of a design, attached to what it is about so the elevation can mark it. */
 export interface DesignIssues {
@@ -15,7 +16,10 @@ export interface DesignIssues {
   count: number;
 }
 
-export function designIssues(lib: Library, design: RackDesign): DesignIssues {
+/** Every problem of the design; cached per (library, design) snapshot. */
+export const designIssues = memoByDesign(computeDesignIssues);
+
+function computeDesignIssues(lib: Library, design: RackDesign): DesignIssues {
   const placements = new Map<string, string[]>();
   for (const p of design.placements) {
     const d = lib.devices.get(p.deviceId);

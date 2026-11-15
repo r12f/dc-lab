@@ -22,8 +22,18 @@ function isModulePort(lib: Library, design: RackDesign, ep: CableEndpoint): bool
   return !!r?.optic && formFactorSpec(r.group.formFactor).kind === 'cage';
 }
 
-const sameEnd = (x: CableEndpoint, y: CableEndpoint) =>
-  x.placementId === y.placementId && x.portRef === y.portRef && !!x.portRef && (x.connector ?? 0) === (y.connector ?? 0) && !!x.connector;
+const endKey = (e: CableEndpoint) => `${e.placementId}|${e.portRef}|${e.connector ?? ''}`;
+/** How many cable ends sit on each connector (placement + port + leg); > 1 = used twice. Cached per design. */
+const usesCache = new WeakMap<RackDesign, Map<string, number>>();
+function connectorUses(design: RackDesign): Map<string, number> {
+  let m = usesCache.get(design);
+  if (!m) {
+    m = new Map();
+    for (const c of design.cables) for (const e of [...c.from, ...c.to]) if (e.portRef && e.connector) m.set(endKey(e), (m.get(endKey(e)) ?? 0) + 1);
+    usesCache.set(design, m);
+  }
+  return m;
+}
 
 /** Human-readable endpoint, e.g. "SW1 osfp/3.2" (leg 2 of port osfp/3). */
 export function endpointLabel(design: RackDesign, ep: CableEndpoint): string {
@@ -52,12 +62,9 @@ export function cableIssues(lib: Library, design: RackDesign, run: CableRun): st
   run.to.forEach((ep) => check(ep, 'B'));
   if (run.from.length > media.ends.a.count) issues.push(`${run.from.length} A ends but cable has ${media.ends.a.count} A connector(s)`);
   if (run.to.length > media.ends.b.count) issues.push(`${run.to.length} B ends but cable has ${media.ends.b.count} B connector(s)`);
-  const mine = [...run.from, ...run.to];
-  const others = design.cables.filter((c) => c.id !== run.id).flatMap((c) => [...c.from, ...c.to]);
-  for (const ep of mine) {
-    if (others.some((o) => sameEnd(o, ep)) || mine.filter((m) => sameEnd(m, ep)).length > 1) {
-      issues.push(`${endpointLabel(design, ep)} is already connected`);
-    }
+  const uses = connectorUses(design);
+  for (const ep of [...run.from, ...run.to]) {
+    if (ep.portRef && ep.connector && (uses.get(endKey(ep)) ?? 0) > 1) issues.push(`${endpointLabel(design, ep)} is already connected`);
   }
   return [...new Set(issues)];
 }

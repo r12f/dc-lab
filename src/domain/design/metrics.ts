@@ -5,6 +5,7 @@ import type { RackDesign } from './types';
 import { activeCableW, opticCounts } from './optics';
 import { placementProblem } from './placement';
 import { placedDevice } from './sizing';
+import { memoByDesign } from './memo';
 
 export interface RackMetrics {
   totalUnits: number;
@@ -22,7 +23,10 @@ export interface RackMetrics {
   warnings: string[];
 }
 
-export function computeRackMetrics(lib: Library, design: RackDesign): RackMetrics {
+/** Rack metrics; cached per (library, design) snapshot. */
+export const computeRackMetrics = memoByDesign(rackMetrics);
+
+function rackMetrics(lib: Library, design: RackDesign): RackMetrics {
   const rack = lib.racks.get(design.templateId);
   const m: RackMetrics = {
     totalUnits: rack?.units ?? 0,

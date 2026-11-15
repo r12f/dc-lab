@@ -7,13 +7,17 @@ import { effectiveLengthM } from '../design/cabling';
 import { variantLabel } from '../items/variants';
 import { BomBuilder } from './bom-builder';
 import type { BomLine } from './types';
+import { memoByDesign } from '../design/memo';
 import { placedDevice, sizeKey } from '../design/sizing';
 
 /**
  * Rack BOM. Device lines are keyed by item (vendor product); optic and cable lines use their item
  * type's default item. Vendor / model and custom property values come from the item.
  */
-export function buildRackBom(lib: Library, design: RackDesign): BomLine[] {
+/** Cached per (library, design) snapshot. */
+export const buildRackBom = memoByDesign(computeBuildRackBom);
+
+function computeBuildRackBom(lib: Library, design: RackDesign): BomLine[] {
   const bom = new BomBuilder();
   const item = (itemId: string, variantId?: string) => lib.variants.resolve(itemId, variantId);
   const rack = lib.racks.get(design.templateId);

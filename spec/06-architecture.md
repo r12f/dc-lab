@@ -29,3 +29,15 @@ SVG drawings use presentation attributes (not CSS classes) so exported SVG rende
 
 Build: `npm run build` emits `dist/` (relative base) deployed to GitHub Pages by
 `.github/workflows/pages.yml`.
+
+## Performance
+
+- Designs and the library are immutable snapshots, so derived data (rack metrics, design issues, BOM lines and
+  tree, cabling-view layout) is cached per `(library, design)` object pair (`memoByDesign`, WeakMap); switching
+  racks or re-rendering with an unchanged design reuses it. Duplicate-connector checks use one per-design count
+  map instead of comparing every run with every other.
+- Large drawings keep element counts low: an elevation cable run is a few `<path>`s however many ends it has;
+  the cabling view draws its devices, connectors and lines once per design (memoized), with delegated events and
+  one hover read-out instead of per-element tooltips; the selection / highlight is a light overlay on top.
+- The Cables tab builds the editor only for the open run.
+- The project autosave to `localStorage` is debounced (400 ms, flushed before unload).
