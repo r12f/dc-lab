@@ -77,11 +77,14 @@ export function rackDeviceOnFace(lib: Library, design: RackDesign, p: Placement,
 export function RackElevation({ ref, lib, design, selectedId, onSelect, selectedCableId, onSelectCable, onDropDevice, onMove, showCables = true, filter, faces = FACES }: Props) {
   const [drag, setDrag] = useState<DragState>();
   const rack = lib.racks.get(design.templateId);
+  // Links follow the device / cable filters (same object when nothing is hidden, so the drawing stays memoized).
+  const cableDesign = useMemo(() => (filter ? visibleCables(lib, design, filter) : design), [lib, design, filter]);
   if (!rack) return <p className="muted">Unknown rack template {design.templateId}</p>;
   // Cable channels outside the rails on both sides, so runs never cover the unit numbers.
   // The channels widen with the run count so every run keeps its own lane.
   // PDU bays are on the rear: the front panel leaves them out (and the PDUs in them).
-  const gutter = cableGutter(lib, design, CABLE_GUTTER);
+  // No cable drawn (all filtered out / hidden): no channels either.
+  const gutter = showCables && cableDesign.cables.length > 0 ? cableGutter(lib, cableDesign, CABLE_GUTTER) : 0;
   const geoRear = rackGeometry(rack, gutter);
   const rackFront = { ...rack, sideElements: rack.sideElements.filter((e) => !REAR_ONLY_KINDS.has(e.kind)) };
   const geoFront = rackGeometry(rackFront, gutter);
@@ -89,8 +92,6 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
   const rackOf = (face: PortFace) => (face === 'rear' ? rack : rackFront);
   const geo = geoRear;
   const metrics = computeRackMetrics(lib, design);
-  // Links follow the device filter (same object when nothing is hidden, so the drawing stays memoized).
-  const cableDesign = useMemo(() => (filter ? visibleCables(lib, design, filter) : design), [lib, design, filter]);
   const issues = designIssues(lib, design);
   const visibleOn = (face: PortFace) => design.placements.filter((p) => {
     if (p.mount.kind === 'side') return rackOf(face).sideElements.some((e) => e.id === (p.mount as { elementId: string }).elementId);

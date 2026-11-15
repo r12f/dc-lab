@@ -154,7 +154,7 @@ each drawn vertically (groups stacked, 2 ports per line, front and rear groups t
 one row per device across front and rear; each device box shrinks to its own ports (a rear face with only
 PSU inlets is a small box).
 
-**Elevation cables**: runs use a cable channel (gutter) outside the rails on each side, between the frame and the side elements,
+**Elevation cables**: when no cable is drawn (none, or all hidden by the Devices / Cables filters) the channels are dropped too; runs use a cable channel (gutter) outside the rails on each side, between the frame and the side elements,
 so the unit numbers on the rails stay visible; stubs leave each device near its top edge.
 
 **Duplicate device**: next to the toolbar's ✕ Delete button, an icon-only ⧉ button (Ctrl+D; tooltip names the device) copies the selected

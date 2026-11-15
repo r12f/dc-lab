@@ -69,6 +69,8 @@ export function CanvasFrame({ title, exportName, toolbar, viewControls, fitKey, 
         <div className="spacer" />
         {toolbar}
         <Button onClick={() => svgRef.current && exportSvg(svgRef.current, exportName)}>Export SVG</Button>
+        {/* View controls (filters, zoom, maximize) follow. */}
+        <span className="toolbar-sep" />
         {viewControls}
         <Button aria-label="Zoom out" title="Zoom out (Ctrl+wheel)" disabled={zoom <= ZOOM_STEPS[0]} onClick={() => setZoom((z) => stepZoom(z, -1))}>−</Button>
         <Button aria-label="Reset zoom" title="Reset zoom to 100 %" className="zoom-level" onClick={() => setZoom(1)}>{`${Math.round(zoom * 100)}%`}</Button>
