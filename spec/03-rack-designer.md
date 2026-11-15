@@ -151,10 +151,13 @@ the C13-C14 cord — instead of going empty until the other end is picked.
 
 **Cable lines in the cabling view**: every assigned cable is drawn as lines between its connectors, in the
 cable's colour — one line per A–B connector pair (a 1:1 cable is one line, a breakout fans out to each B end).
-Lines follow the run's **route** like the elevation: a left and a right cable channel frame the drawing; each
-line leaves its connector to the gap above or below its device row (the nearer), runs along the gap to the
-route's channel, along its lane, and back in the same way. Per side, runs get nested lanes by vertical span
-(shortest innermost), so runs on one side never cross in the channel. Drawn on top of the devices; hover shows
+Lines follow the run's **route** like the elevation. **Front and rear each have their own left and right cable
+channel** (left PDUs | ch | FRONT | ch | ch | REAR | ch | right PDUs); each line leaves its connector to the gap
+above or below its device row (the nearer), runs along the gap to the route's channel of its own face block,
+along its lane, and back in. A front-rear run climbs its lane to the band above the devices, crosses to the other
+face's channel on the same route side and comes down there. Left PDUs use the front block's channels, right PDUs
+the rear's. Per channel, runs get nested lanes by vertical span (shortest innermost), so runs in one channel
+never cross. Drawn on top of the devices; hover shows
 both ends; clicking a line opens its run.
 **Highlight**: every run on a selected connector plus the run selected in the Cables tab is highlighted
 (hover changes nothing) — its lines drawn thick on top, its connectors outlined — and dims every other run. Clicking the selected run again, clicking empty space

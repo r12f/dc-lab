@@ -5,7 +5,7 @@ import type { DeviceDefinition, PortFace, PortGroup } from '../../domain/device/
 import { applicableCables, deviceFaceSeenFrom, endpointKey, planCable, splitSelection, usedConnectors } from '../../domain/design/cable-assign';
 import { endpointLabel } from '../../domain/design/connectors';
 import { resolvePlacedPort } from '../../domain/design/optics';
-import { cableGroupsOnFace, formatPortRef } from '../../domain/device/ports';
+import { cableGroupsOnFace, formatPortRef, groupCols, portCell } from '../../domain/device/ports';
 import { portLegs, type PortLeg } from '../../domain/ports/legs';
 import { groupTitle } from '../devices/drawing/group-title';
 import { unitsIn } from '../../domain/units';
@@ -15,7 +15,7 @@ import { Button } from '../../ui/button';
 import { SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
 import type { SideName } from '../../domain/rack/side-elements';
-import { focusedRuns, routeCablingLines, type LegAnchor } from './cabling-lines';
+import { focusedRuns, routeCablingLines, type CablingFace, type LegAnchor } from './cabling-lines';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -46,8 +46,10 @@ const TITLE_H = 13;
 const SECTION_H = 22;
 /** Ports per line on a side-mounted (vertical) device. */
 const SIDE_COLS = 2;
-/** Width of the left / right cable channels the lines run in (as the elevation's side channels). */
-const CHANNEL_W = 90;
+/** Width of each cable channel: front and rear each have their own left and right channel. */
+const CHANNEL_W = 70;
+/** y of the band above the devices where front-rear runs cross between the two face blocks. */
+const BAND_Y = SECTION_H - 3;
 /** Gap between device rows: cables run along it to their channel. */
 const ROW_GAP = 10;
 
@@ -107,11 +109,12 @@ function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: Port
     const h = PORT_HEAD + LEG_H + PORT_PAD;
     // Vertical: SIDE_COLS ports per line, filled row-major top to bottom.
     const rows = vertical ? Math.ceil(g.count / SIDE_COLS) : Math.max(1, g.rows);
-    const cols = Math.ceil(g.count / rows);
+    const cols = vertical ? Math.ceil(g.count / rows) : groupCols(g, rows);
     const top = gy + PAD + TITLE_H;
     titles.push({ text: groupTitle(g), x, y: gy + PAD + 9 });
     for (let i = 0; i < g.count; i++) {
-      const [col, row] = vertical ? [i % SIDE_COLS, Math.floor(i / SIDE_COLS)] : [Math.floor(i / rows), i % rows];
+      const cell = portCell(g, i, rows);
+      const [col, row] = vertical ? [i % SIDE_COLS, Math.floor(i / SIDE_COLS)] : [cell.col, cell.row];
       const px = x + col * (portW + GAP);
       const py = top + row * (h + GAP);
       const portRef = formatPortRef({ groupId: g.id, index: i + 1 });
@@ -182,25 +185,25 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
   const rightSide = stackSide('right');
   const sideW = (xs: DeviceLayout[]) => (xs.length ? Math.max(...xs.map((d) => d.w)) + 8 : 0);
   const leftW = sideW(leftSide);
+  // Columns: left PDUs | ch | FRONT | ch | ch | REAR | ch | right PDUs.
+  const frontX = leftW + CHANNEL_W;
   const front: DeviceLayout[] = [];
   const rear: DeviceLayout[] = [];
   let y = SECTION_H;
   for (const p of rackOrder(lib, design)) {
-    const f = layoutDevice(lib, design, p, 'front', leftW, y);
+    const f = layoutDevice(lib, design, p, 'front', frontX, y);
     const r = layoutDevice(lib, design, p, 'rear', 0, y);
     if (!f || !r) continue;
     front.push(f); rear.push(r);
     y += Math.max(f.h, r.h) + ROW_GAP;
   }
   const frontW = Math.max(240, ...front.map((d) => d.w)) + 8;
-  const rearX = leftW + frontW;
+  const rearX = frontX + frontW + 2 * CHANNEL_W;
   rear.forEach((d) => shift(d, rearX));
   const rearW = Math.max(240, ...rear.map((d) => d.w)) + 8;
-  const rightX = rearX + rearW;
+  const rightX = rearX + rearW + CHANNEL_W;
   rightSide.forEach((d) => shift(d, rightX));
   const devices = [...leftSide, ...front, ...rear, ...rightSide];
-  // Left channel before everything, right channel after: shift the whole drawing right by one channel.
-  devices.forEach((d) => shift(d, CHANNEL_W));
   const legOrder = new Map(devices.flatMap((d) => d.legs.map((l, i) => [endpointKey(l.ep), i + (d.face === 'rear' ? 100000 : 0)] as const)));
   const selected = new Set(selection.map(endpointKey));
   const focus = focusedRuns(design.cables, used, selected, selectedCableId);
@@ -247,15 +250,19 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
     onSelectCable(last);
   };
 
-  const contentW = rightX + sideW(rightSide);
-  const width = contentW + 2 * CHANNEL_W;
+  const width = rightX + sideW(rightSide);
+  const channels = {
+    front: { left: frontX - CHANNEL_W, right: frontX + frontW, width: CHANNEL_W },
+    rear: { left: rearX - CHANNEL_W, right: rearX + rearW, width: CHANNEL_W },
+  };
   const anchors = new Map<string, LegAnchor>();
+  const blockOf = (d: DeviceLayout): CablingFace => (leftSide.includes(d) ? 'front' : rightSide.includes(d) ? 'rear' : d.face);
   for (const d of devices) {
     for (const l of d.legs) {
-      anchors.set(endpointKey(l.ep), { x: l.x + l.w / 2, y: l.y + l.h / 2, gapAbove: d.y - ROW_GAP / 2, gapBelow: d.y + d.h + ROW_GAP / 2 });
+      anchors.set(endpointKey(l.ep), { x: l.x + l.w / 2, y: l.y + l.h / 2, gapAbove: d.y - ROW_GAP / 2, gapBelow: d.y + d.h + ROW_GAP / 2, face: blockOf(d) });
     }
   }
-  const lines = routeCablingLines(design.cables, anchors, endpointKey, { left: 0, right: CHANNEL_W + contentW, width: CHANNEL_W });
+  const lines = routeCablingLines(design.cables, anchors, endpointKey, channels, BAND_Y);
   const height = Math.max(y, SECTION_H + 30, ...[...leftSide, ...rightSide].map((d) => d.y + d.h + 4));
 
   return (
@@ -279,16 +286,18 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
       <svg ref={ref} viewBox={`0 0 ${width} ${height}`} width={width} className="drawing" style={{ touchAction: 'none' }}>
         {/* Clicking empty space clears the highlighted run and the connector selection. */}
         <rect width={width} height={height} fill={paint.paper} onPointerDown={() => { onSelectCable(undefined); setSelection([]); }} />
-        {leftSide.length > 0 && <text x={CHANNEL_W + 4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>LEFT</text>}
-        <text x={CHANNEL_W + leftW + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>FRONT</text>
-        <text x={CHANNEL_W + rearX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>REAR</text>
-        {rightSide.length > 0 && <text x={CHANNEL_W + rightX + 4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>RIGHT</text>}
-        <text x={4} y={14} fontSize={10} fill={paint.inkMuted}>◀ left route</text>
-        <text x={width - 4} y={14} fontSize={10} textAnchor="end" fill={paint.inkMuted}>right route ▶</text>
-        {[CHANNEL_W, CHANNEL_W + contentW].map((x) => (
-          <line key={`ch${x}`} x1={x} y1={SECTION_H} x2={x} y2={height} stroke={paint.inkMuted} strokeOpacity={0.4} />
+        {leftSide.length > 0 && <text x={4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>LEFT</text>}
+        <text x={frontX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>FRONT</text>
+        <text x={rearX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>REAR</text>
+        {rightSide.length > 0 && <text x={rightX + 4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>RIGHT</text>}
+        {/* Each face block's own left / right cable channels. */}
+        {(['front', 'rear'] as const).flatMap((f) => [channels[f].left, channels[f].right]).map((x) => (
+          <g key={`ch${x}`}>
+            <rect x={x} y={SECTION_H} width={CHANNEL_W} height={height - SECTION_H} fill={paint.inkMuted} fillOpacity={0.06} />
+            <text x={x + CHANNEL_W / 2} y={height - 4} fontSize={8} textAnchor="middle" fill={paint.inkMuted}>cable channel</text>
+          </g>
         ))}
-        {[leftW, rearX, rightX].filter((x, i) => x > 0 && (i !== 2 || rightSide.length > 0)).map((x) => x + CHANNEL_W).map((x) => (
+        {[frontX - CHANNEL_W, rearX - CHANNEL_W, rightX].filter((x, i) => x > 0 && (i !== 2 || rightSide.length > 0)).map((x) => (
           <line key={x} x1={x - 3} y1={0} x2={x - 3} y2={height} stroke={paint.inkMuted} strokeDasharray="4 3" />
         ))}
         {devices.length === 0 && <text x={10} y={SECTION_H + 16} fontSize={12} fill={paint.inkMuted}>No devices placed.</text>}

@@ -1,34 +1,47 @@
 import type { CableEndpoint, CableRun } from '../../domain/design/types';
 
-/** A connector on the cabling view: its centre and the gaps above / below its device box. */
+export type CablingFace = 'front' | 'rear';
+
+/** A connector on the cabling view: its centre, the gaps above / below its device box, and its face block. */
 export interface LegAnchor {
   x: number;
   y: number;
   /** y of the free gap just above / below the device box (where stubs turn toward the channel). */
   gapAbove: number;
   gapBelow: number;
+  /** Face block the connector is drawn in; its cables use that block's own left / right channels. */
+  face: CablingFace;
+}
+
+/** Cable channels of one face block: x where its left / right channel starts, and their width. */
+export interface FaceChannels {
+  left: number;
+  right: number;
+  width: number;
 }
 
 export interface CablingLine {
   key: string;
   runId: string;
-  /** Orthogonal polyline: connector -> device gap -> channel lane -> device gap -> connector. */
+  /** Orthogonal polyline: connector -> device gap -> channel lane (-> top band -> other face's lane) -> connector. */
   points: [number, number][];
   a: CableEndpoint;
   b: CableEndpoint;
 }
 
 /**
- * Routes every assigned cable as in the elevation: out of each connector to the gap above or below its device
- * (whichever is nearer), along the gap to the run's side channel (`left` / `right`), along its lane, and back in.
- * Per side, runs get nested lanes by vertical span (shortest innermost), so runs on one side never cross in the
- * channel. One line per A-B connector pair; all pairs of a run share its lane.
+ * Routes every assigned cable as in the elevation, front and rear each with their own left and right channels:
+ * out of each connector to the gap above or below its device (the nearer), along the gap to the route's channel
+ * of its own face block, along its lane, and back in. A front-rear run goes up its lane to the band above the
+ * devices, across to the other face's channel on the same route side, and down its lane there.
+ * Per channel, runs get nested lanes by vertical span (shortest innermost), so runs in one channel never cross.
  */
 export function routeCablingLines(
   runs: CableRun[],
   anchors: Map<string, LegAnchor>,
   keyOf: (ep: CableEndpoint) => string,
-  channel: { left: number; right: number; width: number },
+  channels: Record<CablingFace, FaceChannels>,
+  bandY: number,
 ): CablingLine[] {
   const turn = (a: LegAnchor) => (a.y - a.gapAbove <= a.gapBelow - a.y ? a.gapAbove : a.gapBelow);
   const placed = runs.map((run) => {
@@ -37,26 +50,42 @@ export function routeCablingLines(
       const b = anchors.get(keyOf(t));
       return a && b ? { i, j, a, b, fa: f, tb: t } : undefined;
     })).filter((x): x is NonNullable<typeof x> => !!x);
+    const cross = pairs.some((p) => p.a.face !== p.b.face);
     const ys = pairs.flatMap((p) => [turn(p.a), turn(p.b)]);
-    return { run, pairs, span: ys.length ? Math.max(...ys) - Math.min(...ys) : 0 };
+    // A front-rear run climbs to the band: its span reaches from its lowest end to the band.
+    const span = ys.length ? Math.max(...ys) - (cross ? bandY : Math.min(...ys)) : 0;
+    return { run, pairs, span, faces: new Set(pairs.flatMap((p) => [p.a.face, p.b.face])) };
   }).filter((r) => r.pairs.length);
 
+  // Lane x per (face, run): nested per face block and route side.
+  const laneOf = new Map<string, number>();
+  for (const face of ['front', 'rear'] as const) {
+    const ch = channels[face];
+    for (const side of ['left', 'right'] as const) {
+      const list = placed.filter((r) => r.run.route === side && r.faces.has(face)).sort((a, b) => a.span - b.span);
+      const step = Math.min(4, (ch.width - 8) / Math.max(1, list.length));
+      list.forEach(({ run }, n) => {
+        // Innermost lane sits next to the block's devices; outer lanes move away from them.
+        laneOf.set(`${face}|${run.id}`, side === 'left' ? ch.left + ch.width - 4 - n * step : ch.right + 4 + n * step);
+      });
+    }
+  }
+
   const out: CablingLine[] = [];
-  for (const side of ['left', 'right'] as const) {
-    const list = placed.filter((r) => r.run.route === side).sort((a, b) => a.span - b.span);
-    const step = Math.min(4, (channel.width - 8) / Math.max(1, list.length));
-    list.forEach(({ run, pairs }, n) => {
-      // Innermost lane sits next to the devices; outer lanes move away from them.
-      const lane = side === 'left' ? channel.left + channel.width - 4 - n * step : channel.right + 4 + n * step;
-      for (const p of pairs) {
-        const ya = turn(p.a);
-        const yb = turn(p.b);
-        out.push({
-          key: `${run.id}:${p.i}:${p.j}`, runId: run.id, a: p.fa, b: p.tb,
-          points: [[p.a.x, p.a.y], [p.a.x, ya], [lane, ya], [lane, yb], [p.b.x, yb], [p.b.x, p.b.y]],
-        });
-      }
-    });
+  for (const { run, pairs } of placed) {
+    for (const p of pairs) {
+      const ya = turn(p.a);
+      const yb = turn(p.b);
+      const la = laneOf.get(`${p.a.face}|${run.id}`)!;
+      const lb = laneOf.get(`${p.b.face}|${run.id}`)!;
+      const mid: [number, number][] = p.a.face === p.b.face
+        ? [[la, ya], [la, yb]]
+        : [[la, ya], [la, bandY], [lb, bandY], [lb, yb]];
+      out.push({
+        key: `${run.id}:${p.i}:${p.j}`, runId: run.id, a: p.fa, b: p.tb,
+        points: [[p.a.x, p.a.y], [p.a.x, ya], ...mid, [p.b.x, yb], [p.b.x, p.b.y]],
+      });
+    }
   }
   return out;
 }
