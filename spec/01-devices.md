@@ -135,9 +135,9 @@ Drawing strategy is selected by device shape:
   widest face (ports + PSUs) sets the box width, so small devices draw narrow.
 - **CDU** (category `cdu`): `cooling: { capacityKw, pumpW }` — heat it removes and pump draw (added to its
   power). Built-ins: In-Rack 7 kW (4U), In-Row Sidecar 110 kW (48RU, fills a CDU rack).
-- **DC PDU** (`dc-pdu`): room-level PDU item, picked by PDU facilities in DC Layout (supply capacity = their
+- **PDU** (`dc-pdu`, category label; shares the PDU folder): room-level PDU item, picked by PDU facilities in DC Layout (supply capacity = their
   default max power); hidden from the Rack Designer palette.
-- **In-Row Chiller** (`chiller`): full-height device with cooling capacity / pump power; fills a chiller rack.
+- **Chiller** (`chiller`): full-height device with cooling capacity / pump power; fills a chiller rack.
 - **Default breakout profile** (`defaultProfileId`): every device has one. Built-in switches ship "Default (max
   speed, no module)": every cage at its native (maximum) speed with no module (empty cage; the connector is the
   cage form factor, so DAC / AEC / AOC fit in Rack Designer). Other built-ins (servers, testers) keep their DR

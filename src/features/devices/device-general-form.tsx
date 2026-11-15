@@ -8,7 +8,12 @@ interface Props {
   onChange(device: DeviceDefinition): void;
 }
 
-const categoryOptions = DEVICE_CATEGORIES.map((c) => ({ value: c, label: traitsOf(c).label }));
+// Categories sharing a label (rack PDU / room-level PDU) are told apart by their room-level flag.
+const categoryOptions = DEVICE_CATEGORIES.map((c) => ({
+  value: c,
+  label: DEVICE_CATEGORIES.some((o) => o !== c && traitsOf(o).label === traitsOf(c).label) && traitsOf(c).facility
+    ? `${traitsOf(c).label} (room-level)` : traitsOf(c).label,
+}));
 const systemOptions = [{ value: 'RU' as UnitSystem, label: 'RU' }, { value: 'OU' as UnitSystem, label: 'OU' }];
 
 export function DeviceGeneralForm({ device: d, onChange }: Props) {

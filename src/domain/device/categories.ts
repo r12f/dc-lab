@@ -37,9 +37,9 @@ export const CATEGORY_TRAITS: Record<DeviceCategory, CategoryTraits> = {
   // Appended after 'other' so existing categories keep their palette colors.
   'blanking-panel': { label: 'Blanking Panel', labelPrefix: 'BP', suppliesPower: false, allowsZeroU: false, filler: 'blanking', folder: MISC, repeatable: true },
   stiffener: { label: 'Stiffener', labelPrefix: 'STF', suppliesPower: false, allowsZeroU: false, filler: 'stiffener', folder: MISC, repeatable: true },
-  chiller: { label: 'In-Row Chiller', labelPrefix: 'CH', suppliesPower: false, allowsZeroU: false },
+  chiller: { label: 'Chiller', labelPrefix: 'CH', suppliesPower: false, allowsZeroU: false },
   // Room-level equipment picked in DC Layout facilities, not placed in racks.
-  'dc-pdu': { label: 'DC PDU', labelPrefix: 'DPDU', suppliesPower: true, allowsZeroU: false, facility: true },
+  'dc-pdu': { label: 'PDU', labelPrefix: 'DPDU', suppliesPower: true, allowsZeroU: false, facility: true },
   'brush-panel': { label: 'Brush Panel', labelPrefix: 'BR', suppliesPower: false, allowsZeroU: false, filler: 'brush', folder: MISC, repeatable: true },
   reserved: { label: 'Empty (Reserved)', labelPrefix: 'RSV', suppliesPower: false, allowsZeroU: false, filler: 'reserved', folder: MISC, repeatable: true },
 };
