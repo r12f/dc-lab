@@ -91,7 +91,8 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   the run's media color; clicking one opens that run in the Cables tab. Device faceplates (Devices, Placement
   preview) show the same per-connector text (`2× 4x100G DR4`, details in the tooltip).
   - **Selecting**: press on a connector and drag across others to select them; starting on a selected one
-    drags to deselect. Cabled connectors are skipped.
+    drags to deselect. Cabled connectors select the same way (selecting one also opens its run); Assign
+    is rejected while the selection holds a cabled connector.
   - **Cable list** shows only cables that fit the selection: each end's connector mates, the fiber type
     matches the leg's reach (SMF/MMF), direct-attach speed matches the port; a cable that fits only the other
     way round (e.g. an MPO→4xLC breakout selected LC side first) is offered and laid reversed.
@@ -155,6 +156,6 @@ line leaves its connector to the gap above or below its device row (the nearer),
 route's channel, along its lane, and back in the same way. Per side, runs get nested lanes by vertical span
 (shortest innermost), so runs on one side never cross in the channel. Drawn on top of the devices; hover shows
 both ends; clicking a line opens its run.
-**Highlight**: hovering a cabled connector or a line, else the run selected in the Cables tab, highlights that
-run — its lines drawn thick on top, its connectors outlined — and dims every other run. Clicking the selected run again, clicking empty space
+**Highlight**: hovering a cabled connector or a line, else every run on a selected connector plus the run
+selected in the Cables tab, highlights those runs — its lines drawn thick on top, its connectors outlined — and dims every other run. Clicking the selected run again, clicking empty space
 or pressing Escape clears the selected run (and the connector selection), so nothing stays highlighted.

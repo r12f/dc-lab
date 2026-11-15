@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { focusedRun, routeCablingLines, type LegAnchor } from '../../features/designer/cabling-lines';
+import { focusedRuns, routeCablingLines, type LegAnchor } from '../../features/designer/cabling-lines';
 import type { CableRun } from '../design/types';
 
 const key = (e: { placementId: string; portRef: string }) => `${e.placementId}|${e.portRef}`;
@@ -42,10 +42,14 @@ describe('cabling view lines follow the run route', () => {
 });
 
 describe('cabling view highlight', () => {
-  const runs = [run('r1', 'a', 'b', 'left'), run('r2', 'a', 'c', 'right')];
-  it('hover wins over selection; a deleted selection highlights nothing', () => {
-    expect(focusedRun(runs, 'r2', 'r1')).toBe('r2');
-    expect(focusedRun(runs, undefined, 'r1')).toBe('r1');
-    expect(focusedRun(runs, undefined, 'gone')).toBeUndefined();
+  const runs = [run('r1', 'a', 'b', 'left'), run('r2', 'a', 'c', 'right'), run('r3', 'b', 'c', 'left')];
+  const used = new Map([['a|p/1', 'r1'], ['b|p/2', 'r2'], ['c|p/3', 'r3']]);
+  it('every run on a selected connector is highlighted, plus the inspector run', () => {
+    expect([...focusedRuns(runs, used, ['a|p/1', 'b|p/2', 'x|free'])].sort()).toEqual(['r1', 'r2']);
+    expect([...focusedRuns(runs, used, ['a|p/1'], undefined, 'r3')].sort()).toEqual(['r1', 'r3']);
+  });
+  it('hover wins; nothing selected or a deleted run highlights nothing', () => {
+    expect([...focusedRuns(runs, used, ['a|p/1'], 'r2')]).toEqual(['r2']);
+    expect(focusedRuns(runs, used, [], undefined, 'gone').size).toBe(0);
   });
 });

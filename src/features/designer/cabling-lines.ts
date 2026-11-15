@@ -61,7 +61,14 @@ export function routeCablingLines(
   return out;
 }
 
-/** Run to highlight: the hovered one, else the selected one if it still exists; undefined = none. */
-export function focusedRun(runs: CableRun[], hovered?: string, selected?: string): string | undefined {
-  return hovered ?? (runs.some((r) => r.id === selected) ? selected : undefined);
+/**
+ * Runs to highlight: the hovered one; else every run on a selected connector plus the run selected in the
+ * inspector (if it still exists). Empty = nothing highlighted.
+ */
+export function focusedRuns(runs: CableRun[], usedBy: Map<string, string>, selectedKeys: Iterable<string>, hovered?: string, selected?: string): Set<string> {
+  if (hovered) return new Set([hovered]);
+  const out = new Set<string>();
+  for (const k of selectedKeys) { const r = usedBy.get(k); if (r) out.add(r); }
+  if (selected && runs.some((r) => r.id === selected)) out.add(selected);
+  return out;
 }

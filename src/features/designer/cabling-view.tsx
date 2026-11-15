@@ -15,7 +15,7 @@ import { Button } from '../../ui/button';
 import { SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
 import type { SideName } from '../../domain/rack/side-elements';
-import { focusedRun, routeCablingLines, type LegAnchor } from './cabling-lines';
+import { focusedRuns, routeCablingLines, type LegAnchor } from './cabling-lines';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -160,7 +160,6 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
 
   const used = usedConnectors(design);
   // Highlighted run: the hovered one, else the selected one; other runs are dimmed.
-  const focusRun = focusedRun(design.cables, hoverRun, selectedCableId);
   const runColor = new Map(design.cables.map((c) => [c.id, lib.cableMedia.get(c.mediaId)?.color ?? paint.inkMuted]));
   // As in the elevation: left side PDUs | rack devices front | rack devices rear | right side PDUs.
   // Rack devices line up across front and rear (same row); each box shrinks to its own ports.
@@ -206,6 +205,9 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
   devices.forEach((d) => shift(d, CHANNEL_W));
   const legOrder = new Map(devices.flatMap((d) => d.legs.map((l, i) => [endpointKey(l.ep), i + (d.face === 'rear' ? 100000 : 0)] as const)));
   const selected = new Set(selection.map(endpointKey));
+  const focus = focusedRuns(design.cables, used, selected, hoverRun, selectedCableId);
+  const dim = (runId?: string) => focus.size > 0 && !!runId && !focus.has(runId);
+  const lit = (runId?: string) => !!runId && focus.has(runId);
 
   // A/B split by device, each side in faceplate order so repeats pair 1↔1, 2↔2…
   const byFaceplate = (eps: CableEndpoint[]) => [...eps].sort((x, z) =>
@@ -219,7 +221,6 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
 
   const setSel = (ep: CableEndpoint, on: boolean) => {
     const key = endpointKey(ep);
-    if (used.has(key)) return;
     setSelection((cur) => {
       const has = cur.some((e) => endpointKey(e) === key);
       if (on && !has) return [...cur, ep];
@@ -231,11 +232,12 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
     if (e.button !== 0) return;
     e.preventDefault();
     setMessage(undefined);
+    // Cabled connectors select like free ones (click toggles, drag extends); selecting one also opens its run.
     const runId = used.get(endpointKey(ep));
-    if (runId) { onSelectCable(runId === selectedCableId ? undefined : runId); return; }
     const adding = !selected.has(endpointKey(ep));
     drag.current = { adding };
     setSel(ep, adding);
+    if (runId) onSelectCable(adding ? runId : undefined);
   };
   const enter = (ep: CableEndpoint) => { if (drag.current) setSel(ep, drag.current.adding); };
 
@@ -316,7 +318,7 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
                 const key = endpointKey(ep);
                 const runId = used.get(key);
                 const sel = selected.has(key);
-                const fill = runId ? runColor.get(runId) : sel ? paint.selection : '#334155';
+                const fill = sel ? paint.selection : runId ? runColor.get(runId) : '#334155';
                 const ink = runId || sel ? '#0f172a' : '#e2e8f0';
                 // Three lines: lanes, reach, connector; missing lines are skipped, the rest stay centred.
                 const lines = [leg.mode, leg.reach, leg.connector].filter((s): s is string => !!s);
@@ -327,8 +329,8 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
                     onPointerEnter={() => { enter(ep); setHoverRun(runId); }} onPointerLeave={() => setHoverRun(undefined)}>
                     <title>{`${endpointLabel(design, ep)} · ${leg.label}${runId ? ' · cabled (click to open run)' : ''}`}</title>
                     <rect x={x} y={ly} width={w} height={h} rx={2} fill={fill}
-                      opacity={focusRun && runId && runId !== focusRun ? 0.45 : 1}
-                      stroke={sel || (runId && runId === focusRun) ? '#fff' : '#0f172a'} strokeWidth={sel || (runId && runId === focusRun) ? 2 : 1} />
+                      opacity={dim(runId) ? 0.45 : 1}
+                      stroke={sel || lit(runId) ? '#fff' : '#0f172a'} strokeWidth={sel ? 2.5 : lit(runId) ? 2 : 1} />
                     {lines.map((s, k) => {
                       const size = Math.min(8, (w - 4) / Math.max(1, s.length * 0.58));
                       return (
@@ -344,9 +346,9 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
         })}
         {/* Assigned cables: one line per A–B connector pair, in the cable's colour; drawn last (on top). */}
         <g>
-          {[...lines].sort((x, z) => Number(x.runId === focusRun) - Number(z.runId === focusRun)).map((ln) => (
+          {[...lines].sort((x, z) => Number(lit(x.runId)) - Number(lit(z.runId))).map((ln) => (
             <polyline key={ln.key} points={ln.points.map((pt) => pt.join(',')).join(' ')} fill="none" stroke={runColor.get(ln.runId)}
-              strokeOpacity={!focusRun ? 0.85 : ln.runId === focusRun ? 1 : 0.12} strokeWidth={ln.runId === focusRun ? 3.5 : 1.5}
+              strokeOpacity={dim(ln.runId) ? 0.12 : lit(ln.runId) ? 1 : 0.85} strokeWidth={lit(ln.runId) ? 3.5 : 1.5}
               onPointerEnter={() => setHoverRun(ln.runId)} onPointerLeave={() => setHoverRun(undefined)}
               strokeLinejoin="round" style={{ cursor: 'pointer' }} onClick={() => onSelectCable(ln.runId === selectedCableId ? undefined : ln.runId)}>
               <title>{`${endpointLabel(design, ln.a)} ↔ ${endpointLabel(design, ln.b)}`}</title>
