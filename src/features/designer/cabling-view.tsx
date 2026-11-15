@@ -1,3 +1,4 @@
+import { genderedConnector } from '../../domain/optics/connectors';
 import { memo, useEffect, useMemo, useRef, useState, type PointerEvent, type Ref } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { CableEndpoint, CableRoute, Placement, RackDesign } from '../../domain/design/types';
@@ -245,7 +246,7 @@ function computeCablingLayout(lib: Library, design: RackDesign, faces: readonly 
 /** One connector block: fill, outline and its three text lines (lanes / reach / connector). */
 function LegBlock({ l, fill, ink, stroke, strokeWidth, cross }: { l: LegBox; fill: string; ink: string; stroke: string; strokeWidth: number; cross: boolean }) {
   const { leg, x, y, w, h } = l;
-  const lines = [leg.mode, leg.reach, leg.connector].filter((s): s is string => !!s);
+  const lines = [leg.mode, leg.reach, genderedConnector(leg.connector, leg.cableGender)].filter((s): s is string => !!s);
   const cx = x + w / 2;
   const y0 = y + h / 2 - ((lines.length - 1) * 9) / 2 + 3;
   return (

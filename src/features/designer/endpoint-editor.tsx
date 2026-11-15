@@ -1,3 +1,4 @@
+import { genderedConnector } from '../../domain/optics/connectors';
 import type { Library } from '../../domain/library/library';
 import type { CableEndpoint, RackDesign } from '../../domain/design/types';
 import { allPortRefs } from '../../domain/device/ports';
@@ -19,7 +20,7 @@ export function EndpointEditor({ lib, design, label, value, onChange }: Props) {
   const ports = device ? allPortRefs(device) : [];
   const legs = endpointLegs(lib, design, value.placementId, value.portRef);
   const legOptions = legs
-    ? Array.from({ length: legs.count }, (_, i) => ({ value: String(i + 1), label: `${i + 1} · ${legs.connector}` }))
+    ? Array.from({ length: legs.count }, (_, i) => ({ value: String(i + 1), label: `${i + 1} · ${genderedConnector(legs.connector, legs.cableGender)}` }))
     : [];
   return (
     <div className="row3">

@@ -1,3 +1,4 @@
+import { genderedConnector } from '../../../domain/optics/connectors';
 import { groupConnector } from '../../../domain/device/port-label';
 import { portName } from '../../../domain/device/ports';
 import type { PortBox } from './faceplate-layout';
@@ -45,7 +46,7 @@ function LegCells({ box, legs, color }: { box: PortBox; legs: PortLeg[]; color?:
         return (
           <g key={i}>
             <rect x={x} y={y} width={w} height={h} rx={2} fill={fill} stroke="#334155" strokeWidth={0.8} />
-            <text x={x + w / 2} y={y + h * (reach ? 0.42 : 0.62)} fontSize={fit(l.connector, 8)} textAnchor="middle" fill={ink} fontWeight={700}>{l.connector}</text>
+            <text x={x + w / 2} y={y + h * (reach ? 0.42 : 0.62)} fontSize={fit(genderedConnector(l.connector, l.cableGender), 8)} textAnchor="middle" fill={ink} fontWeight={700}>{genderedConnector(l.connector, l.cableGender)}</text>
             {reach && <text x={x + w / 2} y={y + h * 0.85} fontSize={fit(reach, 8)} textAnchor="middle" fill={ink} fontWeight={500}>{reach}</text>}
           </g>
         );
@@ -75,7 +76,7 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
     speed ? `Speed ${speed}` : '',
     r?.reach ? `Reach ${r.reach}` : '',
     optic ? `Module ${optic.name}${r?.autoOptic ? ' (auto)' : ''}` : '',
-    ...(multi ? legs.map((l) => `Connector ${l.index}: ${l.label}`) : [conns ? `Connectors ${conns.count}x ${conns.connector}` : '']),
+    ...(multi ? legs.map((l) => `Connector ${l.index}: ${l.label}`) : [conns ? `Connectors ${conns.count}x ${genderedConnector(conns.connector, conns.cableGender)}` : '']),
     cable ? `Cable ${cable.name}` : '',
   ].filter(Boolean).join('\n');
   // Text never spills into the next port: the font shrinks to fit (never stretched or squeezed).
