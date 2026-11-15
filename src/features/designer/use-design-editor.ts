@@ -1,6 +1,6 @@
 import { traitsOf } from '../../domain/device/categories';
 import type { Library } from '../../domain/library/library';
-import type { CableRun, Mount, Placement, RackDesign } from '../../domain/design/types';
+import type { CableRun, Mount, Placement, RackDesign, CableEndpoint } from '../../domain/design/types';
 import { defaultMount, duplicatePlacement, nextLabel, newPlacement, placementProblem } from '../../domain/design/placement';
 import { uniqueId } from '../../domain/ids';
 import { cleanAbbr } from '../../domain/design/abbr';
@@ -61,6 +61,7 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
     mutate((d) => ({
       ...d,
       placements: d.placements.filter((p) => p.id !== id),
+      crossRack: d.crossRack?.filter((e) => e.placementId !== id),
       cables: d.cables.filter((c) => [...c.from, ...c.to].every((t) => t.placementId !== id)),
     }));
 
@@ -82,10 +83,11 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
     mutate((d) => ({ ...d, cables: d.cables.map((c) => (c.id === id ? fn(c) : c)) }));
   const removeCable = (id: string) => mutate((d) => ({ ...d, cables: d.cables.filter((c) => c.id !== id) }));
 
+  const setCrossRack = (crossRack: CableEndpoint[]) => mutate((d) => ({ ...d, crossRack }));
   const rename = (name: string) => mutate((d) => ({ ...d, name }));
   const setAbbr = (text: string) => mutate((d) => ({ ...d, abbr: cleanAbbr(text) }));
 
-  return { addDevice, moveTo, resize, updatePlacement, duplicatePlacement: duplicatePlacementCmd, removePlacement, addCable, addCables, updateCable, removeCable, rename, setAbbr };
+  return { addDevice, moveTo, resize, updatePlacement, duplicatePlacement: duplicatePlacementCmd, removePlacement, addCable, addCables, updateCable, removeCable, setCrossRack, rename, setAbbr };
 }
 
 export type DesignEditor = ReturnType<typeof useDesignEditor>;

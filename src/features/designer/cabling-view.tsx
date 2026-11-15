@@ -15,6 +15,7 @@ import { Button } from '../../ui/button';
 import { SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
 import type { SideName } from '../../domain/rack/side-elements';
+import { crossRackKeys, toggleCrossRack } from '../../domain/design/cross-rack';
 import { focusedRuns, routeCablingLines, type CablingFace, type LegAnchor } from './cabling-lines';
 
 interface Props {
@@ -163,6 +164,7 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
   }, [onSelectCable]);
 
   const used = usedConnectors(design);
+  const cross = crossRackKeys(design);
   const runColor = new Map(design.cables.map((c) => [c.id, lib.cableMedia.get(c.mediaId)?.color ?? paint.inkMuted]));
   // FRONT | REAR with the PDU bays (rear side): left side PDUs | rear devices | right side PDUs.
   // Rack devices line up across front and rear (same row); each box shrinks to its own ports.
@@ -247,6 +249,16 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
   };
   const enter = (ep: CableEndpoint) => { if (drag.current) setSel(ep, drag.current.adding); };
 
+  // Cross-rack: toggles the mark on the selection (all marked -> unmark, else mark all).
+  const allCross = selection.length > 0 && selection.every((e) => cross.has(endpointKey(e)));
+  const markCrossRack = () => {
+    const r = toggleCrossRack(design, selection);
+    if (r.error) { setMessage(r.error); return; }
+    editor.setCrossRack(r.crossRack);
+    setMessage(`${selection.length} connector${selection.length > 1 ? 's' : ''} ${allCross ? 'unmarked' : 'marked cross-rack'}`);
+    setSelection([]);
+  };
+
   const assign = () => {
     if (!plan || plan.error) return;
     const last = editor.addCables(plan.runs).at(-1);
@@ -284,9 +296,14 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
         <Button variant="primary" disabled={!plan || !!plan.error} onClick={assign}>
           {plan && !plan.error ? `Assign ${plan.runs.length} cable${plan.runs.length > 1 ? 's' : ''}` : 'Assign'}
         </Button>
+        <Button disabled={!selection.length} onClick={markCrossRack}
+          title="Cross-rack ports leave the rack: no in-rack cable; DC Layout assigns trunk cables to them">
+          {allCross ? 'Unmark cross-rack' : 'Mark cross-rack'}
+        </Button>
         <Button disabled={!selection.length} onClick={() => setSelection([])}>Clear</Button>
         {plan?.error && <span className="warn">{plan.error}</span>}
-        {message && !selection.length && <span className="muted">{message}</span>}
+        {message && <span className="muted">{message}</span>}
+        <span className="muted">{`${cross.size} cross-rack`}</span>
       </div>
       <p className="muted">Front and rear side by side (power inlets and PDU outlets included). Press on a connector and drag to select several; drag from a selected one to deselect. A = first device selected, B = the others; the cable repeats in port order. Click a cabled connector to open its run.</p>
       <svg ref={ref} viewBox={`0 0 ${width} ${height}`} width={width} className="drawing" style={{ touchAction: 'none' }}>
@@ -330,7 +347,8 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
                 const key = endpointKey(ep);
                 const runId = used.get(key);
                 const sel = selected.has(key);
-                const fill = sel ? paint.selection : runId ? runColor.get(runId) : '#334155';
+                const isCross = cross.has(key);
+                const fill = sel ? paint.selection : runId ? runColor.get(runId) : isCross ? '#0e7490' : '#334155';
                 const ink = runId || sel ? '#0f172a' : '#e2e8f0';
                 // Three lines: lanes, reach, connector; missing lines are skipped, the rest stay centred.
                 const lines = [leg.mode, leg.reach, leg.connector].filter((s): s is string => !!s);
@@ -339,10 +357,11 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
                 return (
                   <g key={`${d.face}:${key}`} style={{ cursor: runId ? 'pointer' : 'cell' }} onPointerDown={(e) => down(ep, e)}
                     onPointerEnter={() => enter(ep)}>
-                    <title>{`${endpointLabel(design, ep)} · ${leg.label}${runId ? ' · cabled (click to open run)' : ''}`}</title>
+                    <title>{`${endpointLabel(design, ep)} · ${leg.label}${runId ? ' · cabled (click to open run)' : ''}${isCross ? ' · cross-rack' : ''}`}</title>
                     <rect x={x} y={ly} width={w} height={h} rx={2} fill={fill}
                       opacity={dim(runId) ? 0.45 : 1}
                       stroke={sel || lit(runId) ? '#fff' : '#0f172a'} strokeWidth={sel ? 2.5 : lit(runId) ? 2 : 1} />
+                    {isCross && <text x={x + w - 2} y={ly + 8} fontSize={8} fontWeight={700} textAnchor="end" fill={ink} pointerEvents="none">⇄</text>}
                     {lines.map((s, k) => {
                       const size = Math.min(8, (w - 4) / Math.max(1, s.length * 0.58));
                       return (

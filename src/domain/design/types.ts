@@ -59,4 +59,9 @@ export interface RackDesign {
   placements: Placement[];
   cables: CableRun[];
   notes?: string;
+  /**
+   * Connectors that leave the rack (cross-rack ports): no in-rack cable; DC Layout assigns trunk cables to them.
+   * Same endpoint shape as cable ends.
+   */
+  crossRack?: CableEndpoint[];
 }

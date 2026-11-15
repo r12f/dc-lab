@@ -85,6 +85,9 @@ export function planAssignments(
   const used = usedConnectors(design);
   const taken = [...a, ...b].find((e) => used.has(endpointKey(e)));
   if (taken) return { runs: [], error: `${taken.portRef}${taken.connector ? `.${taken.connector}` : ''} is already connected` };
+  const cross = new Set((design.crossRack ?? []).map(endpointKey));
+  const out = [...a, ...b].find((e) => cross.has(endpointKey(e)));
+  if (out) return { runs: [], error: `${out.portRef}${out.connector ? `.${out.connector}` : ''} is a cross-rack port` };
   const runs: Omit<CableRun, 'id'>[] = [];
   for (let i = 0; i < a.length / na; i++) {
     const from = a.slice(i * na, i * na + na);

@@ -145,6 +145,13 @@ device — same item, height, breakout profile and port settings — with the ne
 right above the source, else at the closest free unit (0U devices: first free side slot). Cables are not copied.
 The copy becomes the selection; with no room the toolbar reports it.
 
+**Cross-rack ports**: in the cabling view, **Mark cross-rack** marks the selected connectors as leaving the rack
+(`design.crossRack[]`, same endpoint shape as cable ends: placement + port + connector leg). The button reads
+**Unmark cross-rack** when every selected connector is already marked and removes the marks. A connector with an
+in-rack cable cannot be marked, and Assign rejects a cross-rack connector. Marked connectors are drawn teal with a
+⇄ badge (tooltip "cross-rack"); the bar shows the count. Deleting a device drops its marks. DC Layout assigns
+trunk cables to these ports.
+
 **Cable list with one end selected**: while only one end is selected (one device's connectors), the Cable list
 shows every cable with an end that fits those connectors — a C20 PSU inlet lists the C19-C20 cord, a C14 inlet
 the C13-C14 cord — instead of going empty until the other end is picked.
