@@ -63,7 +63,7 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
   // Cable channels outside the rails on both sides, so runs never cover the unit numbers.
   // The channels widen with the run count so every run keeps its own lane.
   // PDU bays are on the rear: the front panel leaves them out (and the PDUs in them).
-  const gutter = cableGutter(design, CABLE_GUTTER);
+  const gutter = cableGutter(lib, design, CABLE_GUTTER);
   const geoRear = rackGeometry(rack, gutter);
   const rackFront = { ...rack, sideElements: rack.sideElements.filter((e) => !REAR_ONLY.has(e.kind)) };
   const geoFront = rackGeometry(rackFront, gutter);
@@ -179,7 +179,7 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
               ) : null;
             })}
             {showCables && (
-              <CableRoutesDrawing lib={lib} design={design} routes={routeCables(lib, design, rack, geoOf(face))} selectedId={selectedCableId}
+              <CableRoutesDrawing lib={lib} design={design} routes={routeCables(lib, design, rack, geoOf(face), face)} selectedId={selectedCableId}
                 errorIds={new Set(issues.cables.keys())} onSelect={onSelectCable} />
             )}
             {/* Rack-wide problems: red frame around the rack body and the messages under the title. */}

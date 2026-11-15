@@ -1,5 +1,7 @@
 import type { Library } from '../../domain/library/library';
-import type { CableRoute, CableRun, Placement, RackDesign } from '../../domain/design/types';
+import type { CableEndpoint, CableRoute, CableRun, Placement, RackDesign } from '../../domain/design/types';
+import type { PortFace } from '../../domain/device/types';
+import { findGroup, parsePortRef } from '../../domain/device/ports';
 import type { RackTemplate } from '../../domain/rack/types';
 import type { RackGeometry } from '../../drawing/rack-geometry';
 import { placementRect } from './placed-device';
@@ -10,39 +12,55 @@ export const LANE_MAX = 6;
 export const LANE_MIN = 2.5;
 
 /**
- * A link on the elevation: every cable run between the same devices, drawn as one line. A plain cable joins one
- * device pair; a breakout (e.g. a shuffle to 4 switches) joins all the devices it touches.
+ * A link on the elevation: every cable run joining the same devices on the same side channel, drawn as one line.
+ * A plain cable joins one device pair; a breakout (e.g. a shuffle to 4 switches) joins all the devices it touches.
+ * Runs on the left and on the right channel are separate links (they are separate bundles).
  */
 export interface CableLink {
-  /** Sorted placement ids joined, `|`-separated. */
+  /** Sorted placement ids joined, `|`-separated, then the route and the faces. */
   key: string;
   placementIds: string[];
-  /** Side channel: the one most of its runs use. */
   route: CableRoute;
+  /** Rack faces its ends are on; drawn on those faces only (empty = unknown, drawn on both). */
+  faces: PortFace[];
   runs: CableRun[];
 }
 
-/** Groups the design's cable runs into links, one per set of devices joined. */
-export function cableLinks(design: RackDesign): CableLink[] {
+/**
+ * Rack face a cable end is on: its port group's face, flipped for a rear-mounted device. Undefined when unknown
+ * (no port picked) or for side-mounted devices (they sit in a side element, not on a rack face).
+ */
+export function endpointFace(lib: Library, design: RackDesign, ep: CableEndpoint): PortFace | undefined {
+  const p = design.placements.find((x) => x.id === ep.placementId);
+  const d = p && lib.devices.get(p.deviceId);
+  const ref = parsePortRef(ep.portRef);
+  const g = d && ref && findGroup(d, ref.groupId);
+  if (!p || !g || p.mount.kind !== 'rack') return undefined;
+  return p.mount.face === 'rear' ? (g.face === 'front' ? 'rear' : 'front') : g.face;
+}
+
+/** Groups the design's cable runs into links: one per set of devices joined, side channel and faces. */
+export function cableLinks(lib: Library, design: RackDesign): CableLink[] {
   const byKey = new Map<string, CableLink>();
   for (const run of design.cables) {
     const ids = [...new Set([...run.from, ...run.to].map((e) => e.placementId))].sort();
-    const key = ids.join('|');
+    const faces = [...new Set([...run.from, ...run.to].map((e) => endpointFace(lib, design, e)).filter((f): f is PortFace => !!f))].sort();
+    const key = `${ids.join('|')}#${run.route}#${faces.join('+')}`;
     let link = byKey.get(key);
-    if (!link) { link = { key, placementIds: ids, route: run.route, runs: [] }; byKey.set(key, link); }
+    if (!link) { link = { key, placementIds: ids, route: run.route, faces, runs: [] }; byKey.set(key, link); }
     link.runs.push(run);
-  }
-  for (const link of byKey.values()) {
-    const left = link.runs.filter((r) => r.route === 'left').length;
-    link.route = left * 2 >= link.runs.length ? 'left' : 'right';
   }
   return [...byKey.values()];
 }
 
-/** Channel width that keeps every lane at least LANE_MIN apart: the larger side's link count decides. */
-export function cableGutter(design: RackDesign, base: number): number {
-  const links = cableLinks(design);
-  const n = Math.max(...(['left', 'right'] as const).map((s) => links.filter((l) => l.route === s).length), 0);
+/** True when the link is drawn on rack face `face`: one of its ends is on it (or its faces are unknown). */
+export const linkOnFace = (link: CableLink, face: PortFace) => link.faces.length === 0 || link.faces.includes(face);
+
+/** Channel width that keeps every lane at least LANE_MIN apart: the busiest side channel of either face decides. */
+export function cableGutter(lib: Library, design: RackDesign, base: number): number {
+  const links = cableLinks(lib, design);
+  const n = Math.max(0, ...(['front', 'rear'] as const).flatMap((f) =>
+    (['left', 'right'] as const).map((s) => links.filter((l) => l.route === s && linkOnFace(l, f)).length)));
   return Math.max(base, 10 + n * LANE_MIN);
 }
 
@@ -71,13 +89,13 @@ function exitPoint(lib: Library, rack: RackTemplate, geo: RackGeometry, p: Place
 }
 
 /**
- * Polylines for every link: one stub per device into the link's lane in the cable channel outside the rails
+ * Polylines for every link drawn on `face` (all when omitted): one stub per device into the link's lane in the cable channel outside the rails
  * (unit numbers stay visible), and a spine joining them. Per side, lanes are assigned by vertical span (longest
  * link outermost) so nested links never cross.
  */
-export function routeCables(lib: Library, design: RackDesign, rack: RackTemplate, geo: RackGeometry): RoutedLink[] {
+export function routeCables(lib: Library, design: RackDesign, rack: RackTemplate, geo: RackGeometry, face?: PortFace): RoutedLink[] {
   const find = (id: string) => design.placements.find((p) => p.id === id);
-  const placed = cableLinks(design).map((link) => {
+  const placed = cableLinks(lib, design).filter((l) => !face || linkOnFace(l, face)).map((link) => {
     const ends = link.placementIds
       .map((id) => { const p = find(id); return p && exitPoint(lib, rack, geo, p, link.route); })
       .filter((e): e is [number, number] => !!e);

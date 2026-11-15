@@ -40,8 +40,8 @@ describe('elevation cable lanes', () => {
       d.placements.push(newPlacement(`x${i}`, 'switch-48x1g-mgmt', `X${i}`, { kind: 'rack', position: i + 1, face: 'front' }));
       d.cables.push({ id: `c${i}`, from: [{ placementId: 'a', portRef: `rj45/${i}` }], to: [{ placementId: `x${i}`, portRef: 'rj45/1' }], route: 'left', mediaId: 'cat6a', quantity: 1 });
     }
-    expect(cableGutter(d, 34)).toBeGreaterThan(34);
-    const lanes = routeCables(lib, d, rack, rackGeometry(rack, cableGutter(d, 34))).map((r) => r.paths[0][0][0]).sort((x, y) => x - y);
+    expect(cableGutter(lib, d, 34)).toBeGreaterThan(34);
+    const lanes = routeCables(lib, d, rack, rackGeometry(rack, cableGutter(lib, d, 34))).map((r) => r.paths[0][0][0]).sort((x, y) => x - y);
     for (let i = 1; i < lanes.length; i++) expect(lanes[i] - lanes[i - 1]).toBeGreaterThanOrEqual(LANE_MIN - 1e-9);
   });
   it('cables between the same devices are one link (one lane); a breakout joins all its devices', () => {
@@ -56,10 +56,39 @@ describe('elevation cable lanes', () => {
     for (let i = 1; i <= 10; i++) d.cables.push({ id: `ab${i}`, from: [ep('a', i)], to: [ep('b', i)], route: 'left', mediaId: 'cat6a', quantity: 1 });
     d.cables.push({ id: 'ba', from: [ep('b', 20)], to: [ep('a', 20)], route: 'left', mediaId: 'cat6a', quantity: 1 });
     d.cables.push({ id: 'y', from: [ep('a', 30)], to: [ep('b', 30), ep('c', 30)], route: 'right', mediaId: 'cat6a', quantity: 1 });
-    const links = cableLinks(d);
-    expect(links.map((l) => [l.key, l.runs.length])).toEqual([['a|b', 11], ['a|b|c', 1]]);
+    const links = cableLinks(lib, d);
+    expect(links.map((l) => [l.placementIds.join('|'), l.route, l.runs.length])).toEqual([['a|b', 'left', 11], ['a|b|c', 'right', 1]]);
     const routed = routeCables(lib, d, rack, rackGeometry(rack, 34));
     expect(routed).toHaveLength(2);
-    expect(routed.find((r) => r.link.key === 'a|b|c')!.paths).toHaveLength(4);
+    expect(routed.find((r) => r.link.placementIds.length === 3)!.paths).toHaveLength(4);
+  });
+  it('left and right runs between the same devices stay separate links on their own sides', () => {
+    const rack = lib.racks.get('network-42ru-600')!;
+    const d = newDesign('d', 'D', rack.id);
+    d.placements.push(
+      newPlacement('a', 'switch-48x1g-mgmt', 'M1', { kind: 'rack', position: 1, face: 'front' }),
+      newPlacement('b', 'switch-48x1g-mgmt', 'M2', { kind: 'rack', position: 5, face: 'front' }),
+    );
+    const ep = (p: string, i: number) => ({ placementId: p, portRef: `rj45/${i}` });
+    d.cables.push({ id: 'l1', from: [ep('a', 1)], to: [ep('b', 1)], route: 'left', mediaId: 'cat6a', quantity: 1 });
+    d.cables.push({ id: 'r1', from: [ep('a', 2)], to: [ep('b', 2)], route: 'right', mediaId: 'cat6a', quantity: 1 });
+    d.cables.push({ id: 'r2', from: [ep('a', 3)], to: [ep('b', 3)], route: 'right', mediaId: 'cat6a', quantity: 1 });
+    expect(cableLinks(lib, d).map((l) => [l.route, l.runs.length]).sort()).toEqual([['left', 1], ['right', 2]]);
+  });
+  it('a link with every end on the front is not drawn on the rear', () => {
+    const rack = lib.racks.get('network-42ru-600')!;
+    const geo = rackGeometry(rack, 34);
+    const d = newDesign('d', 'D', rack.id);
+    d.placements.push(
+      newPlacement('a', 'switch-48x1g-mgmt', 'M1', { kind: 'rack', position: 1, face: 'front' }),
+      newPlacement('b', 'switch-48x1g-mgmt', 'M2', { kind: 'rack', position: 5, face: 'front' }),
+    );
+    d.cables.push({ id: 'f', from: [{ placementId: 'a', portRef: 'rj45/1' }], to: [{ placementId: 'b', portRef: 'rj45/1' }], route: 'left', mediaId: 'cat6a', quantity: 1 });
+    expect(routeCables(lib, d, rack, geo, 'front')).toHaveLength(1);
+    expect(routeCables(lib, d, rack, geo, 'rear')).toHaveLength(0);
+    // A rear-mounted device's front ports face the rack rear.
+    d.placements[1] = { ...d.placements[1], mount: { kind: 'rack', position: 5, face: 'rear' } };
+    expect(routeCables(lib, d, rack, geo, 'rear')).toHaveLength(1);
+    expect(routeCables(lib, d, rack, geo, 'front')).toHaveLength(1);
   });
 });

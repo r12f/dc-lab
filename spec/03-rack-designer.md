@@ -42,10 +42,12 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   side elements to the body edge, plus the full body width when they sit on the opposite side), plus the
   vertical distance between the endpoints' heights (RU/OU centre or side-slot centre), plus 0.5 m slack;
   rounded up to the next 0.5 m. A manual length overrides it.
-- **Drawing**: the elevation draws **links**, not single cables: all runs joining the same set of devices are
-  one link (one device pair = at most one line, however many cables; a breakout joining 3+ devices is its own
-  link). A link runs out of each device to its lane in its side channel (the side most of its runs use), along
-  the channel and into the other devices. Each side's links get separate nested lanes (longest outermost) so
+- **Drawing**: the elevation draws **links**, not single cables: all runs joining the same set of devices on
+  the same side channel are one link (one device pair = at most one line per side, however many cables; a
+  breakout joining 3+ devices is its own link). Left and right runs are never merged: each stays on its own
+  side. A link is drawn on the rack faces its ends are on (port group face, flipped for a rear-mounted device):
+  front-to-front cables only on the front panel, front-to-rear on both. A link runs out of each device to its
+  lane in its side channel, along the channel and into the other devices. Each side's links get separate nested lanes (longest outermost) so
   links on one side never cross. The tooltip names the devices, the cable count and the media; the colour is
   the media colour when all its cables share one, else neutral. Clicking a link opens its first run; selecting
   any run highlights its link. Lines are thin (1.25 px) in the
