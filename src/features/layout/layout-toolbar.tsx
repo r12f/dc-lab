@@ -68,7 +68,7 @@ function AddMenu({ items }: { items: { label: string; hint: string; run(): void 
     <span ref={root} className="dropdown">
       <Button variant="primary" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen(!open)}>+ Add ▾</Button>
       {open && (
-        <div className="dropdown-menu" role="menu">
+        <div className="dropdown-menu compact" role="menu">
           {items.map((i) => (
             <button key={i.label} type="button" role="menuitem" className="dropdown-item" title={i.hint}
               onClick={() => { setOpen(false); i.run(); }}>
