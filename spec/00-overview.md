@@ -41,8 +41,12 @@ Built-in items ship with the app as one JSON file per item under `src/catalog/`.
 Built-in catalog values are illustrative placeholders for generic devices, not vendor datasheet values.
 Verify every number against the vendor datasheet before using a design.
 
-**Maximize**: every canvas toolbar has **⤢ Max** (after Export SVG): hides the module tabs and both side panes,
-leaving only the canvas; **⤡ Restore** or Esc brings them back. Session only (not saved); panes stay mounted
+**Zoom**: every canvas toolbar has **−**, the zoom level (click resets to 100 %) and **+**, before maximize;
+Ctrl+wheel zooms too. Steps 25 %–400 %. Zoom scales the drawing's layout (the scroll area grows with it) and
+keeps pointer actions (drag, drop, select) on target. Per canvas, not saved.
+
+**Maximize**: every canvas toolbar ends with an icon-only **⤢** (tooltip "Maximize"): hides the module tabs and
+both side panes, leaving only the canvas; **⤡** (tooltip "Restore panels") or Esc brings them back. Session only (not saved); panes stay mounted
 while hidden.
 
 **Color rule**: red, orange and yellow are reserved for **errors** (red) and **warnings** (yellow/orange). No
