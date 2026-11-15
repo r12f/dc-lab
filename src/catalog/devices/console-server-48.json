@@ -54,6 +54,18 @@
       "face": "front",
       "rows": 1,
       "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
     }
   ],
   "breakoutProfiles": [

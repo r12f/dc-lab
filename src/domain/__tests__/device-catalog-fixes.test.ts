@@ -24,8 +24,6 @@ describe('device catalog', () => {
   it('testers and console servers have their own categories; no power shelf controller', () => {
     for (const id of ['tester-4x1600g-osfp', 'tester-8x800g-osfp']) expect(dev(id)).toMatchObject({ category: 'tester', psus: { count: 3 } });
     expect(dev('console-server-48')?.category).toBe('console-server');
-    // A console server is the console endpoint itself: it has no console port of its own.
-    expect(dev('console-server-48')?.ports.some((g) => g.role === 'console' && g.id === 'console')).toBe(false);
     expect(dev('power-shelf-controller-3u')).toBeUndefined();
   });
   it('CDUs have their own category: in-rack 7kW and an in-row sidecar that fills a rack', () => {
