@@ -168,7 +168,7 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
               ) : null;
             })}
             {showCables && (
-              <CableRoutesDrawing lib={lib} routes={routeCables(lib, design, rack, geo)} selectedId={selectedCableId}
+              <CableRoutesDrawing lib={lib} design={design} routes={routeCables(lib, design, rack, geo)} selectedId={selectedCableId}
                 errorIds={new Set(issues.cables.keys())} onSelect={onSelectCable} />
             )}
             {/* Rack-wide problems: red frame around the rack body and the messages under the title. */}
