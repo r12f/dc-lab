@@ -32,6 +32,9 @@ interface Props {
 
 const HEADER_H = 1040;
 
+/** kW without trailing zeros: 0, 12.5, 400. */
+const kw = (w: number) => String(Math.round(w / 100) / 10);
+
 /**
  * One vertical row: header (name + power / budget, drag handle), tiles from north to south,
  * a front-side marker and assigned racks.
@@ -50,6 +53,10 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
   const headW = Math.min(row.tileDepthMm, HEADER_H - 40) - 80;
   const headCy = rect.y - HEADER_H + (HEADER_H - 40) / 2;
   const { upright, screen } = useLabels();
+  const powerLine = `${kw(powerW)}/${kw(budgetW)}kW`;
+  const tilesLine = `${used}/${row.tileCount} tiles`;
+  /** Largest font (≤ cap) at which `text` fits the header width. */
+  const fit = (text: string, cap: number) => Math.min(cap, headW / Math.max(1, text.length * 0.58));
 
   return (
     <g>
@@ -59,15 +66,13 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
           fill={rowSelected ? paint.selection : paint.frame} fillOpacity={rowSelected ? 0.35 : 1} />
         {/* Header lines stay upright on screen when the view is rotated (box is about square). */}
         <g transform={upright(cx, headCy)}>
-          <text x={cx} y={headCy - 330} fontSize={Math.min(230, headW / 4.5)} textAnchor="middle" fontWeight={700}
+          <text x={cx} y={headCy - 200} fontSize={fit(row.name, 260)} textAnchor="middle" fontWeight={700}
             fill={rowSelected ? paint.ink : paint.frameText}>{row.name}</text>
-          {/* Power and budget on separate lines so both stay legible at full-room zoom. */}
-          <text x={cx} y={headCy - 90} fontSize={Math.min(210, headW / 5.5)} textAnchor="middle" fontWeight={700}
-            fill={over ? paint.danger : rowSelected ? paint.ink : paint.frameText}>{formatPower(powerW)}</text>
-          <text x={cx} y={headCy + 120} fontSize={Math.min(170, headW / 7)} textAnchor="middle"
-            fill={over ? paint.danger : rowSelected ? paint.ink : paint.frameText}>{`of ${formatPower(budgetW)}`}</text>
-          <text x={cx} y={headCy + 340} fontSize={Math.min(170, headW / 7)} textAnchor="middle"
-            fill={rowSelected ? paint.ink : paint.frameText}>{`${used}/${row.tileCount} tiles`}</text>
+          {/* Power / budget and tiles: one compact line each, sized to fit the header. */}
+          <text x={cx} y={headCy + 90} fontSize={fit(powerLine, 210)} textAnchor="middle"
+            fill={over ? paint.danger : rowSelected ? paint.ink : paint.frameText}>{powerLine}</text>
+          <text x={cx} y={headCy + 340} fontSize={fit(tilesLine, 210)} textAnchor="middle"
+            fill={rowSelected ? paint.ink : paint.frameText}>{tilesLine}</text>
         </g>
       </g>
       {tiles.map((t) => {

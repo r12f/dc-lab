@@ -130,7 +130,8 @@ south (down), units are millimetres.
   - **In-row chiller racks** (rack kind `chiller`, full-height In-Row Chiller device): draw air from the hot
     aisle and blow it cooled into the cold aisle; drawn teal "CHILLER" in the row.
   - Each rack tile shows the design **abbreviation** (large), the rack label and its typical power.
-  - Each row header shows `name`, `power / budget` (red when over budget) and `used/total tiles`.
+  - Each row header shows `name`, `power/budget kW` (e.g. `0/400kW`, red when over budget) and `used/total tiles`
+    (`0/24 tiles`), each line sized to fit the header.
   - **Hover** a rack: tooltip with label, design, rack template, tiles, units used, devices, typical and
     max power, weight, warnings.
   - Click a tile to select it, click a rack to select it. **Ctrl-click** adds / removes tiles,
