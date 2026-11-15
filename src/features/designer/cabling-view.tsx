@@ -147,9 +147,16 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
 
   useEffect(() => {
     const up = () => { drag.current = undefined; };
+    // Escape clears the highlighted run and the selection (ignored while typing in a field).
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || (e.target as HTMLElement | null)?.closest('input, select, textarea')) return;
+      onSelectCable(undefined);
+      setSelection([]);
+    };
     window.addEventListener('pointerup', up);
-    return () => window.removeEventListener('pointerup', up);
-  }, []);
+    window.addEventListener('keydown', key);
+    return () => { window.removeEventListener('pointerup', up); window.removeEventListener('keydown', key); };
+  }, [onSelectCable]);
 
   const used = usedConnectors(design);
   // Highlighted run: the hovered one, else the selected one; other runs are dimmed.
@@ -225,7 +232,7 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
     e.preventDefault();
     setMessage(undefined);
     const runId = used.get(endpointKey(ep));
-    if (runId) { onSelectCable(runId); return; }
+    if (runId) { onSelectCable(runId === selectedCableId ? undefined : runId); return; }
     const adding = !selected.has(endpointKey(ep));
     drag.current = { adding };
     setSel(ep, adding);
@@ -270,7 +277,8 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
       </div>
       <p className="muted">Front and rear side by side (power inlets and PDU outlets included). Press on a connector and drag to select several; drag from a selected one to deselect. A = first device selected, B = the others; the cable repeats in port order. Click a cabled connector to open its run.</p>
       <svg ref={ref} viewBox={`0 0 ${width} ${height}`} width={width} className="drawing" style={{ touchAction: 'none' }}>
-        <rect width={width} height={height} fill={paint.paper} />
+        {/* Clicking empty space clears the highlighted run and the connector selection. */}
+        <rect width={width} height={height} fill={paint.paper} onPointerDown={() => { onSelectCable(undefined); setSelection([]); }} />
         {leftSide.length > 0 && <text x={CHANNEL_W + 4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>LEFT</text>}
         <text x={CHANNEL_W + leftW + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>FRONT</text>
         <text x={CHANNEL_W + rearX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>REAR</text>
@@ -340,7 +348,7 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
             <polyline key={ln.key} points={ln.points.map((pt) => pt.join(',')).join(' ')} fill="none" stroke={runColor.get(ln.runId)}
               strokeOpacity={!focusRun ? 0.85 : ln.runId === focusRun ? 1 : 0.12} strokeWidth={ln.runId === focusRun ? 3.5 : 1.5}
               onPointerEnter={() => setHoverRun(ln.runId)} onPointerLeave={() => setHoverRun(undefined)}
-              strokeLinejoin="round" style={{ cursor: 'pointer' }} onClick={() => onSelectCable(ln.runId)}>
+              strokeLinejoin="round" style={{ cursor: 'pointer' }} onClick={() => onSelectCable(ln.runId === selectedCableId ? undefined : ln.runId)}>
               <title>{`${endpointLabel(design, ln.a)} ↔ ${endpointLabel(design, ln.b)}`}</title>
             </polyline>
           ))}
