@@ -32,7 +32,7 @@ export function SideElementDrawing({ box, selected, onClick }: Props) {
         const r = sideSlotRect(box, i + 1);
         return (
           <rect key={i} x={r.x} y={r.y + 1} width={r.w} height={r.h - 2} rx={2}
-            fill="#fafafa" stroke={RACK_FRAME.sideLine} strokeOpacity={0.8} strokeDasharray="3 2" />
+            fill={RACK_FRAME.sideSlot} stroke={RACK_FRAME.sideLine} strokeOpacity={0.8} strokeDasharray="3 2" />
         );
       })}
       {/* Name sits above the box so devices in slots never cover it. */}

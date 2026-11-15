@@ -95,6 +95,8 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   hue — switches blue, console servers green, servers teal, patch panels lavender, power slate violet, fillers grey
   (normal-weight text), reserved space grey-blue dashed. The palette swatch uses the same fill and outline.
   Red / orange / yellow stay reserved for errors and warnings.
+  Two sets by the theme's scheme (`--rk-…` CSS variables): dark themes get deep muted fills of the same hues,
+  brighter outlines and light text, and a dark taupe frame / side pods.
 - Canvas: elevation (front/rear toggle) with side pods. Drag a device from the palette onto a unit or
   side slot — the pointer marks the device's middle and a tall device dropped near the top or bottom slides
   inside the rack; drag a placed device to move it; click to select.
