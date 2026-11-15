@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SHIPPED_CATALOG } from './catalog-fixture';
 import { normalizeProject } from '../project/serializer';
+import { footprintTiles } from '../rack/side-elements';
 
 const rack = (id: string) => SHIPPED_CATALOG.racks.find((r) => r.id === id)!;
 const kinds = (id: string) => rack(id).sideElements.map((e) => `${e.side}:${e.kind}`);
@@ -10,9 +11,9 @@ describe('network racks with and without sidepods', () => {
     for (const ru of ['42', '48']) {
       const id = `network-${ru}ru-600`;
       expect(kinds(id), id).toEqual(['left:pdu-bay', 'right:pdu-bay']);
-      expect(rack(id).footprintTiles.wide).toBe(1);
+      expect(footprintTiles(rack(id)).wide).toBe(1);
       const pods = rack(`${id}-sidepods`);
-      expect([pods.name, pods.units, pods.footprintTiles.wide]).toEqual([`Network Rack ${ru}RU (w/ Sidepods)`, Number(ru), 2]);
+      expect([pods.name, pods.units, footprintTiles(pods).wide]).toEqual([`Network Rack ${ru}RU (w/ Sidepods)`, Number(ru), 2]);
       expect(kinds(pods.id)).toEqual(['left:pdu-bay', 'left:sidepod', 'right:pdu-bay', 'right:sidepod']);
     }
   });

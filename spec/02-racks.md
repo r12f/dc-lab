@@ -7,7 +7,7 @@ Rack templates. One template = one JSON file (`schema: "dc-lab/rack@1"`).
 | `id`, `name`, `kind` | `kind`: `network`, `server`, `mgx`, `orv3`, `orw`, `custom` |
 | `units`, `unitSystem` | Usable mounting units and RU/OU |
 | `widthMm`, `depthMm`, `heightMm` | External dimensions of the rack body |
-| `footprintTiles` | `{ wide, deep }` — floor tiles the rack occupies in a row (including side elements). `wide` may be fractional in 0.5 steps (ORv3 = 1 tile) |
+| (footprint) | **Computed, not stored**: floor tiles the rack occupies in a row. wide = overall width (body + side elements outside it; PDU bays are inside and add nothing) / 600 mm, rounded up to half a tile; deep = depth / 600 mm, rounded up. E.g. 600 + 2×300 mm sidepods = 2 tiles; a 750 mm body = 1.5. A stored `footprintTiles` from older files is dropped. |
 | `emptyWeightKg`, `maxLoadKg` | Static weight and rated payload |
 | `maxPowerW` | Rated rack power |
 | `sideElements` | Boxes attached to the left/right of the rack body (see below) |

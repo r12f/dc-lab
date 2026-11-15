@@ -1,3 +1,4 @@
+import { footprintTiles, overallWidthMm } from '../../domain/rack/side-elements';
 import type { RackKind, RackTemplate } from '../../domain/rack/types';
 import { RACK_KINDS } from '../../domain/rack/types';
 import type { UnitSystem } from '../../domain/units';
@@ -50,12 +51,7 @@ export function RackInspector({ rack: r, readOnly, onChange, onDuplicate, select
             <NumberField label="Depth mm" value={r.depthMm} onChange={(depthMm) => set({ depthMm })} />
             <NumberField label="Height mm" value={r.heightMm} onChange={(heightMm) => set({ heightMm })} />
           </div>
-          <div className="row2">
-            <NumberField label="Tiles wide" value={r.footprintTiles.wide} min={0.5} step={0.5}
-              onChange={(wide) => set({ footprintTiles: { ...r.footprintTiles, wide } })} />
-            <NumberField label="Tiles deep" value={r.footprintTiles.deep} min={1}
-              onChange={(deep) => set({ footprintTiles: { ...r.footprintTiles, deep } })} />
-          </div>
+          <p className="muted">{`Footprint ${footprintTiles(r).wide} x ${footprintTiles(r).deep} tiles — computed: ${overallWidthMm(r.widthMm, r.sideElements)} mm wide (body + side elements outside it) x ${r.depthMm} mm deep, over 600 mm tiles.`}</p>
         </Section>
         <Section title="Limits">
           <div className="row3">

@@ -7,7 +7,8 @@ import { assignmentAt, assignmentProblem, startInTile, tilesUsed, tileWidthOf } 
 import type { DcLayout, Row } from '../layout/types';
 
 // Fractional widths are a template feature; a 1.5-tile project template exercises it.
-const wide15 = { ...BUILTIN_CATALOG_FOR_TESTS.racks.find((r) => r.id === 'orv3-44ou')!, id: 'rack-1-5', name: '1.5-tile rack', footprintTiles: { wide: 1.5, deep: 2 } };
+// 900 mm wide -> 1.5 tiles (computed from the width).
+const wide15 = { ...BUILTIN_CATALOG_FOR_TESTS.racks.find((r) => r.id === 'orv3-44ou')!, id: 'rack-1-5', name: '1.5-tile rack', widthMm: 900 };
 const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, { ...emptyProject(), racks: [wide15] });
 const orv3 = newDesign('o', '1.5-tile', 'rack-1-5');
 const net = newDesign('n', 'Net', 'network-42ru-600');

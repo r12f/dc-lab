@@ -47,7 +47,7 @@ south (down), units are millimetres.
 
 ## Rules
 
-- An assignment occupies `template.footprintTiles.wide` tiles starting at `startTile`. Widths can be fractional
+- An assignment occupies its template's computed footprint width in tiles (see Racks) starting at `startTile`. Widths can be fractional
   (e.g. a 1.5-tile template), so `startTile` can be fractional too: assigning on a tile partly filled by a previous rack
   starts the new rack where that one ends (two 1.5-tile racks fill 3 tiles exactly). Racks may not overlap.
   "Tiles used" sums the widths (e.g. `4.5/12 tiles`).

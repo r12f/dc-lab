@@ -1,5 +1,5 @@
 import type { RackTemplate } from '../../domain/rack/types';
-import { elementsOn, isInternal, overallWidthMm, SIDE_KINDS } from '../../domain/rack/side-elements';
+import { elementsOn, footprintTiles, isInternal, overallWidthMm, SIDE_KINDS } from '../../domain/rack/side-elements';
 import { paint } from '../../theme/paint';
 
 const TILE_PX = 60;
@@ -10,14 +10,13 @@ const TILE_MM = 600;
  * starting at the left edge of the first tile.
  */
 export function FootprintDrawing({ rack }: { rack: RackTemplate }) {
-  const { wide, deep } = rack.footprintTiles;
+  const { wide, deep } = footprintTiles(rack);
   const s = TILE_PX / TILE_MM;
   // Internal elements (PDU bays) sit inside the enclosure: drawn over the body edge, no extra width.
   const outside = rack.sideElements.filter((e) => !isInternal(e));
   const left = [...elementsOn(outside, 'left')].reverse(); // outermost first
   const right = elementsOn(outside, 'right');
   const overall = overallWidthMm(rack.widthMm, rack.sideElements);
-  const tilesW = wide * TILE_MM;
   let x = 0;
   const boxes = [
     ...left.map((e) => ({ key: e.id, w: e.widthMm, d: e.depthMm, label: e.name, kind: e.kind as string })),
@@ -61,11 +60,6 @@ export function FootprintDrawing({ rack }: { rack: RackTemplate }) {
       <text x={0} y={deep * TILE_PX + 16} fontSize={10} fill={paint.inkMuted}>
         {`Front ↓ · tile 600x600 mm · overall width ${overall} mm`}
       </text>
-      {overall > tilesW && (
-        <text x={0} y={deep * TILE_PX + 30} fontSize={10} fill={paint.danger}>
-          {`Exceeds ${wide} tile(s) (${tilesW} mm) — increase tiles wide`}
-        </text>
-      )}
     </g>
   );
 }

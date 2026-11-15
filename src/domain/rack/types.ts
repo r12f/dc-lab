@@ -35,7 +35,6 @@ export interface RackTemplate extends CatalogItem, HasProperties {
   widthMm: number;
   depthMm: number;
   heightMm: number;
-  footprintTiles: { wide: number; deep: number };
   emptyWeightKg: number;
   maxLoadKg: number;
   maxPowerW: number;
@@ -55,7 +54,6 @@ export function newRack(id: string): RackTemplate {
     widthMm: 600,
     depthMm: 1200,
     heightMm: 2000,
-    footprintTiles: { wide: 1, deep: 2 },
     emptyWeightKg: 150,
     maxLoadKg: 1000,
     maxPowerW: 15000,

@@ -3,7 +3,7 @@ import { Library } from '../library/library';
 import { emptyProject } from '../project/types';
 import { newDesign } from '../design/factory';
 import { defaultMount, placementProblem } from '../design/placement';
-import { defaultSideElements, newSideElement } from '../rack/side-elements';
+import { defaultSideElements, newSideElement, footprintTiles } from '../rack/side-elements';
 import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import { normalizeProject } from '../project/serializer';
 import type { DeviceDefinition } from '../device/types';
@@ -47,7 +47,7 @@ describe('default side elements', () => {
     const r = BUILTIN_CATALOG_FOR_TESTS.racks.find((x) => x.id === 'mgx-48ru-pdu-sidepods')!;
     expect(r.kind).toBe('mgx');
     expect(sides(r.sideElements)).toEqual(['left:pdu-bay', 'left:sidepod', 'right:pdu-bay', 'right:sidepod']);
-    expect(r.footprintTiles.wide).toBe(2); // 600 + 2x300 mm sidepods = 1200 mm = 2 tiles
+    expect(footprintTiles(r)).toEqual({ wide: 2, deep: 2 }); // 600 + 2x300 mm sidepods = 1200 mm = 2 tiles
   });
 });
 

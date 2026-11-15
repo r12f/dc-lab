@@ -7,10 +7,6 @@
   "widthMm": 1200,
   "depthMm": 1200,
   "heightMm": 2400,
-  "footprintTiles": {
-    "wide": 2,
-    "deep": 2
-  },
   "emptyWeightKg": 300,
   "maxLoadKg": 3000,
   "maxPowerW": 140000,

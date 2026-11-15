@@ -86,3 +86,21 @@ export const isInternal = (e: Pick<SideElement, 'kind'>): boolean => !!SIDE_KIND
 export function overallWidthMm(bodyWidthMm: number, elements: readonly SideElement[]): number {
   return bodyWidthMm + elements.filter((e) => !isInternal(e)).reduce((n, e) => n + e.widthMm, 0);
 }
+
+/** Raised-floor tile edge (mm). */
+export const FLOOR_TILE_MM = 600;
+
+/** Tiles for a length: rounded up to whole tiles, or half tiles when `half` (a row's rack pitch). */
+const tilesFor = (mm: number, half: boolean) => {
+  const t = mm / FLOOR_TILE_MM;
+  return Math.max(half ? 0.5 : 1, half ? Math.ceil(t * 2 - 1e-9) / 2 : Math.ceil(t - 1e-9));
+};
+
+/**
+ * Floor tiles a rack takes — **computed, not set**: wide = overall width (body + side elements outside it) over the
+ * 600 mm tile, rounded up to half a tile (two 900 mm racks share 3 tiles); deep = rack depth, rounded up to whole tiles.
+ * E.g. 600 mm body + 2 x 300 mm sidepods = 1200 mm = 2 tiles.
+ */
+export function footprintTiles(rack: { widthMm: number; depthMm: number; sideElements: readonly SideElement[] }): { wide: number; deep: number } {
+  return { wide: tilesFor(overallWidthMm(rack.widthMm, rack.sideElements), true), deep: tilesFor(rack.depthMm, false) };
+}

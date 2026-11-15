@@ -140,7 +140,10 @@ export function migratePlacement(p0: Json): Json {
 }
 
 /** Old `sidePods: { left, right }` slot counts -> one sidepod element per side holding those slots. */
-export function migrateRack(r: Json): Json {
+export function migrateRack(r0: Json): Json {
+  // Footprint tiles are computed from the dimensions now; a stored value is dropped.
+  const { footprintTiles: _f, ...r } = r0;
+  void _f;
   if (Array.isArray(r.sideElements)) return r;
   const pods = (r.sidePods as { left?: number; right?: number }) ?? {};
   const sideElements = (['left', 'right'] as const)

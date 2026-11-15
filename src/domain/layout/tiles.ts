@@ -1,16 +1,16 @@
 import type { Library } from '../library/library';
 import type { RackDesign } from '../design/types';
 import type { DcLayout, RackAssignment, Row } from './types';
+import { footprintTiles } from '../rack/side-elements';
 
 export type DesignLookup = (id: string) => RackDesign | undefined;
 
 const EPS = 1e-9;
 
-/** Tiles an assigned design occupies along the row (template footprint width; may be fractional, e.g. ORv3 = 1.5). */
+/** Tiles an assigned design occupies along the row: its template's computed footprint (may be half tiles, e.g. 1.5). */
 export function tileWidthOf(lib: Library, design: RackDesign | undefined): number {
   const rack = design && lib.racks.get(design.templateId);
-  const w = rack?.footprintTiles.wide ?? 1;
-  return w > 0 ? w : 1;
+  return rack ? footprintTiles(rack).wide : 1;
 }
 
 /** Half-open span [start, end) of an assignment along its row, in tiles. */
