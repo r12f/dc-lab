@@ -155,11 +155,12 @@ device — same item, height, breakout profile and port settings — with the ne
 right above the source, else at the closest free unit (0U devices: first free side slot). Cables are not copied.
 The copy becomes the selection; with no room the toolbar reports it.
 
-**Device filter (cabling view)**: while the cabling view is open, the inspector shows **Devices shown (n/m)**: a
-checkbox per placed device (fillers left out), with **All** / **None**. Unchecked devices are not drawn, and
-neither is any link with an end on one of them (a link is drawn only when both its devices are checked); the
-panel shows how many links are drawn. Drawing only: selection, Assign and cross-rack marks work on the full
-design. Kept per design for the session (not saved).
+**Device filter (cabling view)**: in the cabling view the canvas toolbar has a **Devices n/m ▾** button right
+before the zoom buttons (highlighted while some are hidden). It drops down a checkbox per placed device (fillers
+left out), the count of links drawn, and **All** / **None**; outside click or Escape closes it. Unchecked devices
+are not drawn, and neither is any link with an end on one of them (a link is drawn only when both its devices
+are checked). Drawing only: selection, Assign and cross-rack marks work on the full design. Kept per design for
+the session (not saved).
 
 **Cross-rack ports**: in the cabling view, **Mark cross-rack** marks the selected connectors as leaving the rack
 (`design.crossRack[]`, same endpoint shape as cable ends: placement + port + connector leg). The button reads

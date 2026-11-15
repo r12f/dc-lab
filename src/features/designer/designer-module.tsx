@@ -13,7 +13,7 @@ import { NewDesignForm } from './new-design-form';
 import { DevicePalette } from './device-palette';
 import { RackElevation } from './rack-elevation';
 import { CablingView } from './cabling-view';
-import { DeviceFilterPanel } from './device-filter-panel';
+import { DeviceFilterMenu } from './device-filter-menu';
 
 const NO_HIDDEN: Set<string> = new Set();
 import { DesignInspector, type InspectorTab } from './design-inspector';
@@ -119,6 +119,10 @@ export function DesignerModule() {
           <CanvasFrame
             title={design.name}
             exportName={`${design.id}-${view}`}
+            viewControls={view === 'cabling' && (
+              <DeviceFilterMenu lib={lib} design={design} hidden={hidden}
+                onChange={(h) => setHiddenBy((m) => ({ ...m, [design.id]: h }))} />
+            )}
             toolbar={
               <>
                 {message && <span className="toolbar-msg">{message}</span>}
@@ -169,11 +173,7 @@ export function DesignerModule() {
         design && (
           <DesignInspector lib={lib} design={design} editor={editor} placementId={placementId}
             onSelectPlacement={setPlacementId} tab={tab} onTabChange={setTab}
-            cableId={cableId} onSelectCable={setCableId} onError={report}
-            top={view === 'cabling' && (
-              <DeviceFilterPanel lib={lib} design={design} hidden={hidden}
-                onChange={(h) => setHiddenBy((m) => ({ ...m, [design.id]: h }))} />
-            )} />
+            cableId={cableId} onSelectCable={setCableId} onError={report} />
         )
       }
     />

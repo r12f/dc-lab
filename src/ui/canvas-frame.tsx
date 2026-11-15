@@ -7,6 +7,8 @@ interface Props {
   title: string;
   exportName: string;
   toolbar?: ReactNode;
+  /** View controls placed right before the zoom buttons (e.g. a filter dropdown). */
+  viewControls?: ReactNode;
   children(svgRef: RefObject<SVGSVGElement | null>): ReactNode;
 }
 
@@ -23,7 +25,7 @@ export function stepZoom(zoom: number, dir: 1 | -1): number {
  * Canvas area with a toolbar: zoom (− / % / +, Ctrl+wheel), "Export SVG" and maximize. Zoom uses CSS `zoom` on
  * the drawing, so the scroll area grows with it and pointer mapping (getScreenCTM) stays correct.
  */
-export function CanvasFrame({ title, exportName, toolbar, children }: Props) {
+export function CanvasFrame({ title, exportName, toolbar, viewControls, children }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const maximized = useMaximize((s) => s.maximized);
   const setMaximized = useMaximize((s) => s.setMaximized);
@@ -49,6 +51,7 @@ export function CanvasFrame({ title, exportName, toolbar, children }: Props) {
         <div className="spacer" />
         {toolbar}
         <Button onClick={() => svgRef.current && exportSvg(svgRef.current, exportName)}>Export SVG</Button>
+        {viewControls}
         <Button aria-label="Zoom out" title="Zoom out (Ctrl+wheel)" disabled={zoom <= ZOOM_STEPS[0]} onClick={() => setZoom((z) => stepZoom(z, -1))}>−</Button>
         <Button aria-label="Reset zoom" title="Reset zoom to 100 %" className="zoom-level" onClick={() => setZoom(1)}>{`${Math.round(zoom * 100)}%`}</Button>
         <Button aria-label="Zoom in" title="Zoom in (Ctrl+wheel)" disabled={zoom >= ZOOM_STEPS[ZOOM_STEPS.length - 1]} onClick={() => setZoom((z) => stepZoom(z, 1))}>+</Button>
