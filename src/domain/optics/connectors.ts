@@ -9,13 +9,18 @@ export function connectorFamily(connector: string): string {
   return FAMILY[c] ?? c;
 }
 
-/** IEC 60320 power connectors mate with their counterpart only: a C13 cord end plugs into a C14 inlet. */
-const POWER_MATE: Record<string, string> = { C13: 'C14', C14: 'C13', C15: 'C16', C16: 'C15', C19: 'C20', C20: 'C19' };
+/**
+ * IEC 60320 power connectors mate with their counterpart only: a C13 cord end plugs into a C14 inlet. A C13/C19
+ * combination outlet takes either a C14 or a C20 plug.
+ */
+const POWER_MATE: Record<string, string[]> = {
+  C13: ['C14'], C14: ['C13', 'C13/C19'], C15: ['C16'], C16: ['C15'], C19: ['C20'], C20: ['C19', 'C13/C19'], 'C13/C19': ['C14', 'C20'],
+};
 
 export function connectorsMate(a: string, b: string): boolean {
   const x = a.trim().toUpperCase();
   const y = b.trim().toUpperCase();
-  if (POWER_MATE[x] || POWER_MATE[y]) return POWER_MATE[x] === y;
+  if (POWER_MATE[x] || POWER_MATE[y]) return !!POWER_MATE[x]?.includes(y);
   return connectorFamily(a) === connectorFamily(b);
 }
 

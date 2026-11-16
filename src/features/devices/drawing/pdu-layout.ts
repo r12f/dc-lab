@@ -21,7 +21,6 @@ export interface PduLayout {
 
 const W = 180;
 const OUT = { w: 46, h: 32, gap: 6 };
-const COLS = 2;
 const BANK_PAD = 26;
 
 /** Vertical PDU strip: header (input, mgmt) then outlet banks stacked top to bottom. */
@@ -47,9 +46,11 @@ export function layoutPdu(device: DeviceDefinition): PduLayout {
     const y0 = y + BANK_PAD;
     for (const g of groups) {
       for (let i = 0; i < g.count; i++) {
-        const col = i % COLS;
+        // A vertical strip: one column of outlets unless the group asks for more (`rows` = outlets side by side).
+        const cols = Math.max(1, g.rows);
+        const col = i % cols;
         if (i > 0 && col === 0) row++;
-        const big = g.formFactor.toUpperCase() === 'C19';
+        const big = ['C19', 'C13/C19'].includes(g.formFactor.toUpperCase());
         ports.push({
           ref: formatPortRef({ groupId: g.id, index: i + 1 }), group: g, index: i + 1,
           x: 30 + col * (OUT.w + OUT.gap + 24), y: y0 + row * (OUT.h + OUT.gap), w: big ? OUT.w + 10 : OUT.w, h: OUT.h,

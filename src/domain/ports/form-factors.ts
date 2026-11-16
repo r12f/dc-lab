@@ -39,6 +39,8 @@ export const FORM_FACTORS: FormFactorSpec[] = [
   spec('RJ45', 'copper'),
   spec('C13', 'power'),
   spec('C19', 'power'),
+  // Combination outlet: takes a C14 or a C20 plug.
+  spec('C13/C19', 'power'),
   spec('C14', 'power'),
   spec('C20', 'power'),
 ];

@@ -239,3 +239,6 @@ empty; ports fill the remaining cells in order. Used for modules whose faceplate
 fiber-housing module with one 2x MMC slot top-left and a 3x3 block beside it (6 rows, holes 2-5: ports 1-2 the
 single slot, 3-20 the block). Edited as "Empty cells" in the port group editor; Devices canvas and Rack
 Designer cabling view both honour it.
+
+**C13/C19 combination outlet**: form factor `C13/C19` (power) takes either a C14 or a C20 plug. PDU outlets are drawn
+as one vertical column per group (`rows` > 1 puts that many outlets side by side).
