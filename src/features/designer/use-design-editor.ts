@@ -93,8 +93,15 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
     const bomItems = itemId ? { ...rest, [pickKey]: itemId } : rest;
     return { ...d, bomItems: Object.keys(bomItems).length ? bomItems : undefined };
   });
+  /** Marks a BOM line as adjustable by the system integrator (or not). */
+  const setSiAdjustable = (siKey: string, on: boolean) => mutate((d) => {
+    const { [siKey]: _old, ...rest } = d.bomSiAdjustable ?? {};
+    void _old;
+    const next = on ? { ...rest, [siKey]: true } : rest;
+    return { ...d, bomSiAdjustable: Object.keys(next).length ? next : undefined };
+  });
 
-  return { addDevice, moveTo, setRepeat, updatePlacement, duplicatePlacement: duplicatePlacementCmd, removePlacement, addCable, addCables, updateCable, removeCable, setCrossRack, rename, setAbbr, pickBomItem };
+  return { addDevice, moveTo, setRepeat, updatePlacement, duplicatePlacement: duplicatePlacementCmd, removePlacement, addCable, addCables, updateCable, removeCable, setCrossRack, rename, setAbbr, pickBomItem, setSiAdjustable };
 }
 
 export type DesignEditor = ReturnType<typeof useDesignEditor>;

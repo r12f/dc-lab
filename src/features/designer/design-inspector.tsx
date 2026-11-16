@@ -37,7 +37,7 @@ export function DesignInspector({ lib, design, editor, placementId, onSelectPlac
         value={tab}
         onChange={onTabChange}
       />
-      {tab === 'summary' && <RackSummaryPanel lib={lib} design={design} onPick={editor.pickBomItem} />}
+      {tab === 'summary' && <RackSummaryPanel lib={lib} design={design} onPick={editor.pickBomItem} onSiAdjustable={editor.setSiAdjustable} />}
       {tab === 'placement' && (placement ? (
         <PlacementPanel lib={lib} placement={placement} templateId={design.templateId} editor={editor}
           onRemoved={() => onSelectPlacement(undefined)} onError={onError} />

@@ -12,6 +12,12 @@ export interface BomLine {
   pickKey?: string;
   /** Id of the item (vendor product) the line uses. */
   itemId?: string;
+  /** True when the item is fixed on the cable run (cabling view), not picked in the BOM. */
+  itemFixed?: boolean;
+  /** Key of the line's "SI may adjust" flag (`RackDesign.bomSiAdjustable`). */
+  siKey?: string;
+  /** System integrator may optimise / adjust this line (e.g. cable length). */
+  siAdjustable?: boolean;
   qty: number;
   unitW: number;
   /** Cable length in metres (cables only). */

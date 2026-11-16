@@ -45,6 +45,11 @@ export interface CableRun {
   /** Manual length; undefined = auto (estimated from geometry). */
   lengthM?: number;
   quantity: number;
+  /**
+   * Item (vendor product) of the cable type fixed in the cabling view (e.g. a power cord colour per PDU bank).
+   * Overrides the BOM pick for this run; empty = the BOM decides.
+   */
+  itemId?: string;
 }
 
 export interface RackDesign {
@@ -68,4 +73,6 @@ export interface RackDesign {
    * `<cable id>@<length m>` for in-rack cables of one length. No pick = the item type's Generic item.
    */
   bomItems?: Record<string, string>;
+  /** BOM lines (by `BomLine.siKey`) the system integrator may optimise / adjust (e.g. cable length for bend radius). */
+  bomSiAdjustable?: Record<string, boolean>;
 }

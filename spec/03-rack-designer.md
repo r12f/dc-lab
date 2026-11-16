@@ -75,7 +75,7 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   rows in tree order with a leading **Level** column (rack as a whole = 0, rack frame / side elements / in-rack
   cables = 1, devices = 2, their optics and cables = 3); group rows carry only Level and Item.
   Columns: Item, Category, Vendor / Model (PN) — a picker per line: the item (vendor / PN) bought, Generic by
-  default, stored in `bomItems` (see spec/09); MSPN / MSF / power follow the pick — every custom property with `showInBom`, Qty, Unit W,
+  default, stored in `bomItems` (see spec/09); MSPN / MSF / power follow the pick; a cable run's own item wins — every custom property with `showInBom`, Qty, SI may adjust (checkbox), Unit W,
   Total W, Notes.
 
 ## UI

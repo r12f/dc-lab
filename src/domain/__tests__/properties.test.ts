@@ -30,7 +30,7 @@ describe('custom properties', () => {
     d.placements.push(newPlacement('p1', 'switch-64x800g-osfp', 'SW1', { kind: 'rack', position: 1, face: 'front' }));
     d.placements.push(newPlacement('p2', 'server-1u-compute', 'S1', { kind: 'rack', position: 5, face: 'front' }));
     const csv = bomToCsv(buildRackBom(lib, d), [lead, site, hidden]).split('\n');
-    expect(csv[0]).toBe('Item,Category,Vendor / Model (PN),Lead time,Site,Qty,Unit W,Total W,Notes');
+    expect(csv[0]).toBe('Item,Category,Vendor / Model (PN),Lead time,Site,Qty,SI may adjust,Unit W,Total W,Notes');
     expect(csv.find((l) => l.startsWith('Network Rack'))).toContain(',,B,1,');
     expect(csv.find((l) => l.startsWith('64x800G'))).toContain(',20 weeks,,1,');
     expect(csv.find((l) => l.startsWith('1U Compute'))).toContain(',8 weeks,,1,');

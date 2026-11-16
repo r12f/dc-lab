@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { BomNode } from '../domain/bom/rack-bom-tree';
-import { bomColumns } from '../domain/bom/columns';
+import { bomColumns, SI_HEADER } from '../domain/bom/columns';
 import { bomTreeToCsv } from '../domain/bom/csv';
 import { formatPower } from '../domain/units';
 import { downloadText } from '../io/download';
@@ -17,10 +17,12 @@ interface Props {
   itemsOf?(itemTypeId: string): ItemVariant[];
   /** Picks the item for a line (undefined = Generic). */
   onPick?(pickKey: string, itemId: string | undefined): void;
+  /** Sets a line's "SI may adjust" flag; with it the column is a checkbox. */
+  onSiAdjustable?(siKey: string, on: boolean): void;
 }
 
 /** BOM as an expandable tree table: the first column is indented by depth, groups collapse. */
-export function BomTreeTable({ root, filename, itemsOf, onPick }: Props) {
+export function BomTreeTable({ root, filename, itemsOf, onPick, onSiAdjustable }: Props) {
   const defs = useAppStore((s) => s.project.propertyDefs);
   const cols = bomColumns(defs);
   const [closed, setClosed] = useState<Set<string>>(new Set());
@@ -57,6 +59,18 @@ export function BomTreeTable({ root, filename, itemsOf, onPick }: Props) {
                     );
                   }
                   if (!l) return <td key={c.header} />;
+                  if (c.header === SI_HEADER && onSiAdjustable && l.siKey) {
+                    const key = l.siKey;
+                    return (
+                      <td key={c.header}>
+                        <input type="checkbox" checked={!!l.siAdjustable} title="System integrator may optimise / adjust this line (e.g. cable length)"
+                          onChange={(e) => onSiAdjustable(key, e.target.checked)} />
+                      </td>
+                    );
+                  }
+                  if (c.header === 'Vendor / Model (PN)' && l.itemFixed) {
+                    return <td key={c.header} title="Item fixed on the cable run (cabling view)">{`${l.vendorModel} (run)`}</td>;
+                  }
                   if (c.header === 'Vendor / Model (PN)' && onPick && itemsOf && l.itemTypeId && l.pickKey) {
                     const items = itemsOf(l.itemTypeId);
                     const key = l.pickKey;

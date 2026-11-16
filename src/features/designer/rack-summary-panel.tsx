@@ -9,7 +9,9 @@ import { BomTreeTable } from '../../ui/bom-tree-table';
 import { buildRackBomTree } from '../../domain/bom/rack-bom-tree';
 import { Section } from '../../ui/fields';
 
-export function RackSummaryPanel({ lib, design, onPick }: { lib: Library; design: RackDesign; onPick?(pickKey: string, itemId: string | undefined): void }) {
+export function RackSummaryPanel({ lib, design, onPick, onSiAdjustable }: {
+  lib: Library; design: RackDesign; onPick?(pickKey: string, itemId: string | undefined): void; onSiAdjustable?(siKey: string, on: boolean): void;
+}) {
   const m = computeRackMetrics(lib, design);
   const bom = buildRackBom(lib, design);
   const tree = buildRackBomTree(lib, design);
@@ -28,7 +30,7 @@ export function RackSummaryPanel({ lib, design, onPick }: { lib: Library; design
       ]} />
       <WarningList warnings={m.warnings} />
       <Section title="BOM">
-        {tree ? <BomTreeTable root={tree} filename={design.id} itemsOf={(id) => lib.variants.of(id)} onPick={onPick} /> : <BomTable lines={bom} filename={design.id} />}
+        {tree ? <BomTreeTable root={tree} filename={design.id} itemsOf={(id) => lib.variants.of(id)} onPick={onPick} onSiAdjustable={onSiAdjustable} /> : <BomTable lines={bom} filename={design.id} />}
       </Section>
     </>
   );

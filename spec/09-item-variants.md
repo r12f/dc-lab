@@ -33,6 +33,12 @@ An item type may have any number of items; there is no default item.
 - Everything else on the line is derived from the picked item, never edited in the BOM: vendor / PN, custom
   properties (MSPN, MSF…), and power / weight (`specs`) — also used by rack metrics (power, weight).
 - DC Layout BOM sums the rack BOMs, so it uses each design's picks.
+- **Item fixed on a cable run**: a cable run may fix its item in the cable editor (`CableRun.itemId`, e.g. a
+  power cord colour matching a PDU bank). It overrides the BOM pick for that run; such runs form their own BOM
+  line (shown "(run)", not pickable). Changing the run's cable type clears it.
+- **SI may adjust**: a BOM column with a per-line checkbox, stored per design in `bomSiAdjustable` (line key ->
+  true): the system integrator may optimise / adjust the line (e.g. a computed 2.5 m cable made 3 m for bend
+  radius). Exported in CSV as `Yes` / empty.
 
 ## UI (Devices, Optics & Cables)
 

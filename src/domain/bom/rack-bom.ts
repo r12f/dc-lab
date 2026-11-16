@@ -9,7 +9,7 @@ import { BomBuilder } from './bom-builder';
 import type { BomLine } from './types';
 import { memoByDesign } from '../design/memo';
 import { placedDevice, repeatCount } from '../design/sizing';
-import { bomItem, cableLengthPickKey } from '../design/bom-items';
+import { bomItem, cableLengthPickKey, cableRunItem } from '../design/bom-items';
 
 /**
  * Rack BOM. Device lines are keyed by item (vendor product); optic and cable lines use their item
@@ -21,7 +21,8 @@ export const buildRackBom = memoByDesign(computeBuildRackBom);
 function computeBuildRackBom(lib: Library, design: RackDesign): BomLine[] {
   const bom = new BomBuilder();
   const item = (itemTypeId: string, pickKey?: string) => bomItem(lib, design, itemTypeId, pickKey);
-  const pick = (itemTypeId: string, v: { id: string } | undefined, pickKey = itemTypeId) => ({ itemTypeId, pickKey, itemId: v?.id });
+  const pick = (itemTypeId: string, v: { id: string } | undefined, pickKey = itemTypeId, siKey = pickKey) =>
+    ({ itemTypeId, pickKey, itemId: v?.id, siKey, siAdjustable: !!design.bomSiAdjustable?.[siKey] });
   const rack = lib.racks.get(design.templateId);
   if (rack) {
     // The rack frame as bought: the item picked in the BOM (else Generic) (vendor / PN, its own property values).
@@ -59,9 +60,12 @@ function computeBuildRackBom(lib: Library, design: RackDesign): BomLine[] {
   for (const c of design.cables) {
     const media = lib.cableMedia.get(c.mediaId);
     const len = effectiveLengthM(lib, design, c);
-    const cv = item(c.mediaId, cableLengthPickKey(c.mediaId, len));
-    bom.add({ key: `cable:${c.mediaId}:${len}`, kind: 'cable', item: `${media?.name ?? c.mediaId} ${len} m`,
-      category: 'Cable', ...pick(c.mediaId, cv, cableLengthPickKey(c.mediaId, len)), vendorModel: variantLabel(cv), qty: c.quantity, unitW: 0,
+    const { item: cv, fixed } = cableRunItem(lib, design, c, len);
+    const lenKey = cableLengthPickKey(c.mediaId, len);
+    // Runs with an item fixed in the cabling view are their own line (no BOM pick).
+    const lineKey = fixed ? `${lenKey}#${cv?.id}` : lenKey;
+    bom.add({ key: `cable:${lineKey}`, kind: 'cable', item: `${media?.name ?? c.mediaId} ${len} m`,
+      category: 'Cable', ...pick(c.mediaId, cv, fixed ? undefined : lenKey, lineKey), itemFixed: fixed || undefined, ...(fixed ? { pickKey: undefined } : {}), vendorModel: variantLabel(cv), qty: c.quantity, unitW: 0,
       lengthM: len * c.quantity, notes: [], properties: cv?.properties });
   }
   return bom.build();

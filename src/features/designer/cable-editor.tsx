@@ -6,6 +6,8 @@ import { cableIssues } from '../../domain/design/connectors';
 import { cableSummary, describeEnd, fiberMap } from '../../domain/optics/fiber-map';
 import { Button } from '../../ui/button';
 import { NumberField, SelectField } from '../../ui/fields';
+import { variantLabel } from '../../domain/items/variants';
+import { GENERIC_SUFFIX } from '../../domain/items/types';
 import type { DesignEditor } from './use-design-editor';
 import { EndpointEditor } from './endpoint-editor';
 
@@ -52,11 +54,14 @@ export function CableEditor({ lib, design, editor, c }: Props) {
     <>
       <SelectField label="Cable" value={c.mediaId}
         options={media.map((x) => ({ value: x.id, label: `${x.name} · ${cableSummary(x)}` }))}
-        onChange={(mediaId) => set({ mediaId })} />
+        onChange={(mediaId) => set({ mediaId, itemId: undefined })} />
       {m && fm && (
         <p className="muted">{`A ${describeEnd(m.ends.a)} · B ${describeEnd(m.ends.b)} · ${m.mapping} · ${fm.links.length}F used`
           + `${fm.unusedA ? ` · ${fm.unusedA}F unused on A` : ''}${fm.unusedB ? ` · ${fm.unusedB}F unused on B` : ''}`}</p>
       )}
+      <SelectField label="Item (vendor / PN)" value={lib.variants.get(c.itemId)?.itemId === c.mediaId ? c.itemId ?? '' : ''}
+        options={[{ value: '', label: 'Decided in BOM' }, ...lib.variants.of(c.mediaId).map((v) => ({ value: v.id, label: v.id.endsWith(GENERIC_SUFFIX) ? 'Generic' : variantLabel(v) || v.id }))]}
+        onChange={(itemId) => set({ itemId: itemId || undefined })} />
       <EndList lib={lib} design={design} side="A" end={m?.ends.a} eps={c.from} onChange={(from) => set({ from })} />
       <EndList lib={lib} design={design} side="B" end={m?.ends.b} eps={c.to} onChange={(to) => set({ to })} />
       <div className="row2">
