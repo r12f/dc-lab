@@ -8,12 +8,12 @@ import { buildRackBomTree } from '../bom/rack-bom-tree';
 import type { ItemVariant } from '../items/types';
 
 describe('rack template items', () => {
-  it('a rack template has items; the default one is the BOM rack line (vendor / PN, properties)', () => {
+  it('a rack template has items; the one picked in the BOM is the rack frame line (vendor / PN, properties)', () => {
     const base = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
     expect(base.variants.of('network-42ru-600')[0]?.target).toBe('rack');
-    const item: ItemVariant = { id: 'r1', name: 'x', target: 'rack', itemId: 'network-42ru-600', vendor: 'Acme', model: 'RK-48', isDefault: true, properties: { pn: 'P-1' } };
+    const item: ItemVariant = { id: 'r1', name: 'x', target: 'rack', itemId: 'network-42ru-600', vendor: 'Acme', model: 'RK-48', properties: { pn: 'P-1' } };
     const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, { ...emptyProject(), variants: [item] });
-    const d = newDesign('d', 'D', 'network-42ru-600');
+    const d = { ...newDesign('d', 'D', 'network-42ru-600'), bomItems: { 'network-42ru-600': 'r1' } };
     const flat = buildRackBom(lib, d).find((l) => l.kind === 'rack')!;
     expect([flat.vendorModel, flat.properties?.pn]).toEqual(['Acme RK-48', 'P-1']);
     const frame = buildRackBomTree(lib, d)!.children[0].line!;

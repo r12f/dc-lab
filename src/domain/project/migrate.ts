@@ -348,8 +348,37 @@ function migrateVariants(p: Json): Json {
   };
 }
 
+/**
+ * Items moved from the design to the BOM: a placement's `variantId` and an item's `isDefault` became the design's
+ * BOM picks (`bomItems`, keyed by item type). A placement pick wins over a default; the most used one per type.
+ */
+function migrateBomItems(p: Json): Json {
+  const variants = (p.variants as Json[]) ?? [];
+  const defaults = variants.filter((v) => v.isDefault).map((v) => [String(v.itemId), String(v.id)] as const);
+  return {
+    ...p,
+    variants: variants.map(({ isDefault: _d, ...v }) => { void _d; return v; }),
+    rackDesigns: ((p.rackDesigns as Json[]) ?? []).map((d) => {
+      const picks: Record<string, string> = { ...Object.fromEntries(defaults), ...(d.bomItems as Record<string, string> | undefined) };
+      const votes = new Map<string, Map<string, number>>();
+      for (const pl of (d.placements as Json[]) ?? []) {
+        if (!pl.variantId) continue;
+        const m = votes.get(String(pl.deviceId)) ?? new Map<string, number>();
+        m.set(String(pl.variantId), (m.get(String(pl.variantId)) ?? 0) + 1);
+        votes.set(String(pl.deviceId), m);
+      }
+      for (const [type, m] of votes) picks[type] = [...m].sort((a, b) => b[1] - a[1])[0][0];
+      return {
+        ...d,
+        placements: ((d.placements as Json[]) ?? []).map(({ variantId: _v, ...pl }) => { void _v; return pl; }),
+        ...(Object.keys(picks).length ? { bomItems: picks } : {}),
+      };
+    }),
+  };
+}
+
 export function migrateProjectJson(raw: Json): Json {
-  const p = moveDirectOptics(migrateVariants(migrateRenames(raw)));
+  const p = migrateBomItems(moveDirectOptics(migrateVariants(migrateRenames(raw))));
   return {
     ...p,
     cableMedia: ((p.cableMedia as Json[]) ?? []).map(migrateCable),

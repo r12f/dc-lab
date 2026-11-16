@@ -15,8 +15,6 @@ export interface ItemVariant extends CatalogItem, HasProperties {
   vendor: string;
   /** Model / vendor PN. */
   model: string;
-  /** The item type's default item (used when a placement or BOM line does not pick one). */
-  isDefault?: boolean;
   /**
    * This product's own power / weight; unset fields inherit the item type's values. Devices: typical / max W and
    * weight. Optics: `typicalW` = module power. Cables: `typicalW` = power per active end (AEC / AOC).

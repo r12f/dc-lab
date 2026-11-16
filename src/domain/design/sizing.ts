@@ -3,6 +3,7 @@ import { isRepeatable, traitsOf } from '../device/categories';
 import type { Library } from '../library/library';
 import type { RackTemplate } from '../rack/types';
 import { withItemSpecs } from '../items/variants';
+import { bomItem } from './bom-items';
 import type { Placement, RackDesign } from './types';
 
 /** Copies stacked in a placement: its `repeat` for a repeatable device, else 1. */
@@ -30,8 +31,8 @@ export function sizedDevice(device: DeviceDefinition, rack: RackTemplate | undef
   };
 }
 
-/** The device of a placement as placed: a repeatable device with its copies (height, power, weight x n). */
+/** The device of a placement as placed: its BOM item's power / weight, a repeatable device with its copies (x n). */
 export function placedDevice(lib: Library, design: RackDesign, p: Placement): DeviceDefinition | undefined {
   const d = lib.devices.get(p.deviceId);
-  return d && sizedDevice(withItemSpecs(d, lib.variants.resolve(d.id, p.variantId)), lib.racks.get(design.templateId), p.repeat);
+  return d && sizedDevice(withItemSpecs(d, bomItem(lib, design, d.id)), lib.racks.get(design.templateId), p.repeat);
 }

@@ -10,9 +10,9 @@ Devices, optics and cables are organised in three levels:
 
 ## Model
 
-`ItemVariant` (`schema: "dc-lab/item@1"`): `id`, `target` (`device` | `optic` | `cable`), `itemId` (the item
-type), `vendor`, `model`, `properties`, `isDefault?`. Stored in the project's `variants[]`. An item type may
-have any number of items; the one marked `isDefault` (else the generic item) is its default.
+`ItemVariant` (`schema: "dc-lab/item@1"`): `id`, `target` (`device` | `rack` | `optic` | `cable`), `itemId` (the
+item type), `vendor`, `model`, `properties`, `specs?` (own power / weight). Stored in the project's `variants[]`.
+An item type may have any number of items; there is no default item.
 
 - Every item type has a generic item `<itemId>--generic` (vendor `Generic`, model = item type name),
   synthesized by the library. For built-in item types it is read-only like other built-ins (custom
@@ -21,12 +21,18 @@ have any number of items; the one marked `isDefault` (else the generic item) is 
 - Users add items to any item type, built-in or not, without duplicating the item type.
 - Custom properties with targets `device` / `optic` / `cable` apply to **items**; `rack` stays on racks.
 
-## Use
+## Use: design fixes item types, the BOM fixes items
 
-- Rack Designer placements choose an item (`variantId`; empty = default item). The placement panel lists
-  the item type's items.
-- BOM: device lines are keyed by item; `Vendor / Model (PN)` and custom property columns come from the
-  item. Optic and cable lines use the item type's default item.
+- A rack design places **item types** only (devices from the palette, optics / cables by port settings and
+  cable runs). Placements carry no item.
+- In the Rack Designer **BOM**, each line's `Vendor / Model (PN)` is a picker of the item type's items
+  (Generic + project items). The pick is stored per design in `RackDesign.bomItems` (pick key -> item id);
+  **Generic** = no pick. Keys: the item type id for devices, optics, port-attached cables and the rack frame
+  (one pick covers every line of that type in the design); `<cable id>@<length m>` for in-rack cables, so each
+  length can be a different PN (falls back to the cable type's pick, then Generic).
+- Everything else on the line is derived from the picked item, never edited in the BOM: vendor / PN, custom
+  properties (MSPN, MSF…), and power / weight (`specs`) — also used by rack metrics (power, weight).
+- DC Layout BOM sums the rack BOMs, so it uses each design's picks.
 
 ## UI (Devices, Optics & Cables)
 
@@ -36,18 +42,18 @@ have any number of items; the one marked `isDefault` (else the generic item) is 
   drawing, the item editor (vendor, model, custom properties) on top and the read-only/edited item type
   below.
 - Actions: **+ New** creates an item type (template picker); **+ Item** adds an item to the selected item
-  type; Duplicate / Delete act on the selection; **Make default** moves an item first.
+  type; Duplicate / Delete act on the selection.
 
 ## Migration
 
 Older projects stored `vendor`, `model` and `properties` on devices, optics and cables. On load each such
 project item type gets its generic item `<id>--generic` saved with those values. Property values that
 older projects stored under a built-in item type id are read as values of its generic item.
+Placement `variantId` and item `isDefault` (earlier models) become the design's `bomItems` picks on load
+(placement picks win, most used per type).
 
-**Optic and cable item power**: optic and cable items carry their own power too (`specs.typicalW`: module W for
-optics, W per active end for AEC / AOC cables; empty = the item type's). Ports pick no optic / cable item, so
-the item type's **default item** is the one counted: its power is used in rack metrics and BOM Unit W.
+**Item power**: items carry their own power (`specs.typicalW`: module W for optics, W per active end for AEC /
+AOC cables; devices also max W and weight; empty = the item type's). The BOM-picked item's values are used.
 
 **Rack template items**: rack templates have items too (Racks module: Item type | Items tabs, items under each
-template in the sidebar). The template's **default item** is the rack frame line in the Rack Designer BOM: its
-vendor / PN and its own property values (MSPN, MSF…).
+template in the sidebar); the BOM's rack frame line picks one.

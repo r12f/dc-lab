@@ -55,7 +55,7 @@ function PowerSpec({ lib, v, set, disabled }: { lib: Library; v: ItemVariant; se
   const inherited = v.target === 'optic' ? lib.optics.get(v.itemId)?.powerW : lib.cableMedia.get(v.itemId)?.powerWPerEnd;
   return (
     <Section title="Power">
-      <p className="muted">Empty = item type value. Applies where this is the item type's default item.</p>
+      <p className="muted">Empty = item type value. Used where a BOM picks this item.</p>
       <fieldset disabled={disabled} className="plain">
         <OverrideField label={v.target === 'optic' ? 'Power W' : 'Power per end W'} value={v.specs?.typicalW} inherited={inherited ?? 0}
           onChange={(x) => set({ specs: x === undefined ? undefined : { typicalW: x } })} />
@@ -64,14 +64,13 @@ function PowerSpec({ lib, v, set, disabled }: { lib: Library; v: ItemVariant; se
   );
 }
 
-/** Item (vendor product) editor: vendor, model / vendor PN, default flag, custom properties. */
+/** Item (vendor product) editor: vendor, model / vendor PN, power / weight, custom properties. */
 export function ItemVariantEditor({ lib, variant: v, itemTypeName, readOnly, commands, onDeleted }: Props) {
-  const isDefault = lib.variants.defaultOf(v.itemId)?.id === v.id;
   const set = (patch: Partial<ItemVariant>) => commands.save({ ...v, ...patch });
   return (
     <>
       <Section title="Item">
-        <p className="muted">{`Item of ${itemTypeName}${isDefault ? ' · default' : ''}`}</p>
+        <p className="muted">{`Item of ${itemTypeName} · picked per line in Rack Designer BOMs`}</p>
         {readOnly && <p className="muted">Generic item of a built-in item type: vendor and model are fixed. Add your own item with “+ Item”.</p>}
         <fieldset disabled={readOnly} className="plain">
           <div className="row2">
@@ -79,7 +78,6 @@ export function ItemVariantEditor({ lib, variant: v, itemTypeName, readOnly, com
             <TextField label="Model / Vendor PN" value={v.model} onChange={(model) => set({ model })} />
           </div>
         </fieldset>
-        {!isDefault && <Button onClick={() => commands.makeDefault(v)}>Make default</Button>}
       </Section>
       {v.target === 'device' && <DeviceSpecs lib={lib} v={v} set={set} disabled={readOnly} />}
       {(v.target === 'optic' || v.target === 'cable') && <PowerSpec lib={lib} v={v} set={set} disabled={readOnly} />}

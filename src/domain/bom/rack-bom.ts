@@ -9,6 +9,7 @@ import { BomBuilder } from './bom-builder';
 import type { BomLine } from './types';
 import { memoByDesign } from '../design/memo';
 import { placedDevice, repeatCount } from '../design/sizing';
+import { bomItem, cableLengthPickKey } from '../design/bom-items';
 
 /**
  * Rack BOM. Device lines are keyed by item (vendor product); optic and cable lines use their item
@@ -19,47 +20,48 @@ export const buildRackBom = memoByDesign(computeBuildRackBom);
 
 function computeBuildRackBom(lib: Library, design: RackDesign): BomLine[] {
   const bom = new BomBuilder();
-  const item = (itemId: string, variantId?: string) => lib.variants.resolve(itemId, variantId);
+  const item = (itemTypeId: string, pickKey?: string) => bomItem(lib, design, itemTypeId, pickKey);
+  const pick = (itemTypeId: string, v: { id: string } | undefined, pickKey = itemTypeId) => ({ itemTypeId, pickKey, itemId: v?.id });
   const rack = lib.racks.get(design.templateId);
   if (rack) {
-    // The rack frame as bought: the template's default item (vendor / PN, its own property values).
-    const rv = lib.variants.defaultOf(rack.id);
+    // The rack frame as bought: the item picked in the BOM (else Generic) (vendor / PN, its own property values).
+    const rv = item(rack.id);
     bom.add({ key: `rack:${rack.id}`, kind: 'rack', item: rack.name, category: RACK_KINDS[rack.kind],
-      vendorModel: variantLabel(rv), qty: 1, unitW: 0, notes: [], properties: { ...rack.properties, ...rv?.properties } });
+      ...pick(rack.id, rv), vendorModel: variantLabel(rv), qty: 1, unitW: 0, notes: [], properties: { ...rack.properties, ...rv?.properties } });
   }
   for (const p of design.placements) {
     const d = placedDevice(lib, design, p);
     if (!d) continue;
     // Reserved space holds units but is not hardware: nothing to buy.
     if (traitsOf(d.category).filler === 'reserved') continue;
-    const v = item(d.id, p.variantId);
+    const v = item(d.id);
     // A repeatable placement is n of the item.
     const n = repeatCount(d, p.repeat);
-    bom.add({ key: `device:${v?.id ?? d.id}`, kind: 'device', item: d.name, category: traitsOf(d.category).label,
+    bom.add({ key: `device:${d.id}`, kind: 'device', item: d.name, category: traitsOf(d.category).label, ...pick(d.id, v),
       vendorModel: variantLabel(v), qty: n, unitW: d.power.typicalW / n, notes: [n > 1 ? `${p.label} x${n}` : p.label], properties: v?.properties });
     const counts = portItemCounts(lib, d, p);
     for (const [cableId, n] of counts.cables) {
       const media = lib.cableMedia.get(cableId);
       const cv = item(cableId);
-      bom.add({ key: `portcable:${cableId}`, kind: 'cable', item: media?.name ?? cableId, category: 'Cable',
-        vendorModel: variantLabel(cv), qty: n, unitW: cablePowerWPerEnd(lib, media), notes: ['port-attached'], properties: cv?.properties });
+      bom.add({ key: `portcable:${cableId}`, kind: 'cable', item: media?.name ?? cableId, category: 'Cable', ...pick(cableId, cv),
+        vendorModel: variantLabel(cv), qty: n, unitW: cablePowerWPerEnd(cv, media), notes: ['port-attached'], properties: cv?.properties });
     }
     for (const [opticId, n] of counts.optics) {
       const o = lib.optics.get(opticId);
       if (!o) continue;
       const ov = item(o.id);
-      bom.add({ key: `optic:${o.id}`, kind: 'optic', item: o.name, category: 'Optic',
-        vendorModel: variantLabel(ov), qty: n, unitW: opticPowerW(lib, o),
+      bom.add({ key: `optic:${o.id}`, kind: 'optic', item: o.name, category: 'Optic', ...pick(o.id, ov),
+        vendorModel: variantLabel(ov), qty: n, unitW: opticPowerW(ov, o),
         notes: o.packaging === 'pigtail' && o.pigtail ? [`pigtail ${o.pigtail.count}x ${o.pigtail.connector} ${o.pigtail.lengthM} m`] : [],
         properties: ov?.properties });
     }
   }
   for (const c of design.cables) {
     const media = lib.cableMedia.get(c.mediaId);
-    const cv = item(c.mediaId);
     const len = effectiveLengthM(lib, design, c);
+    const cv = item(c.mediaId, cableLengthPickKey(c.mediaId, len));
     bom.add({ key: `cable:${c.mediaId}:${len}`, kind: 'cable', item: `${media?.name ?? c.mediaId} ${len} m`,
-      category: 'Cable', vendorModel: variantLabel(cv), qty: c.quantity, unitW: 0,
+      category: 'Cable', ...pick(c.mediaId, cv, cableLengthPickKey(c.mediaId, len)), vendorModel: variantLabel(cv), qty: c.quantity, unitW: 0,
       lengthM: len * c.quantity, notes: [], properties: cv?.properties });
   }
   return bom.build();

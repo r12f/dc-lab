@@ -15,7 +15,7 @@ interface Props {
 
 /** Items (vendor products) of an item type, with "+ Item". Shown at the top of the item type inspector. */
 export function ItemsSection({ lib, target, itemId, commands, onSelect }: Props) {
-  const def = lib.variants.defaultOf(itemId);
+  const def = lib.variants.defaultOf(itemId); // the Generic item
   const items = lib.variants.of(itemId);
   return (
     <Section title={`Items (${items.length})`} actions={<Button onClick={() => onSelect(commands.add(target, itemId))}>+ Item</Button>}>
@@ -24,7 +24,7 @@ export function ItemsSection({ lib, target, itemId, commands, onSelect }: Props)
         <div key={v.id} className="sidebar-item" onClick={() => onSelect(v.id)}>
           <span className="sidebar-item-name">{variantLabel(v) || '(no vendor / model)'}</span>
           {v.specs && <span className="badge" title="Overrides power / weight">{[v.specs.typicalW !== undefined && `${v.specs.typicalW} W`, v.specs.weightKg !== undefined && `${v.specs.weightKg} kg`].filter(Boolean).join(' · ') || 'specs'}</span>}
-          {v.id === def?.id && <span className="badge">default</span>}
+          {v.id === def?.id && <span className="badge">generic</span>}
           <Button className="btn-icon" variant="danger" disabled={!commands.canDelete(v)}
             title={commands.canDelete(v) ? `Delete ${variantLabel(v) || 'item'}` : 'Built-in items cannot be deleted'}
             onClick={(e) => { e.stopPropagation(); if (confirm(`Delete item "${variantLabel(v) || v.id}"?`)) commands.del(v); }}>✕</Button>

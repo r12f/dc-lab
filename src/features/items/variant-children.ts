@@ -3,13 +3,13 @@ import type { SidebarItem } from '../../ui/sidebar';
 import { variantLabel } from '../../domain/items/variants';
 import { toItemKey } from './item-key';
 
-/** Sidebar children of an item type: its items, default first, with vendor / model as the name. */
+/** Sidebar children of an item type: its items, Generic first, with vendor / model as the name. */
 export function variantChildren(lib: Library, itemId: string, path: string[]): SidebarItem[] {
-  const def = lib.variants.defaultOf(itemId);
+  const def = lib.variants.defaultOf(itemId); // the Generic item
   return lib.variants.of(itemId)
     .map((v) => ({
       id: toItemKey(v.id), name: variantLabel(v) || v.id, path,
-      badge: v.id === def?.id ? 'default' : undefined,
+      badge: v.id === def?.id ? 'generic' : undefined,
       keywords: `${v.vendor} ${v.model}`,
     }))
     .sort((a, b) => Number(!a.badge) - Number(!b.badge) || a.name.localeCompare(b.name));

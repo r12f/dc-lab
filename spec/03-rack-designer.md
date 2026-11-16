@@ -74,7 +74,8 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   same container merge (qty, labels in notes). Empty (Reserved) space is left out. CSV export follows the tree:
   rows in tree order with a leading **Level** column (rack as a whole = 0, rack frame / side elements / in-rack
   cables = 1, devices = 2, their optics and cables = 3); group rows carry only Level and Item.
-  Columns: Item, Category, Vendor / Model (PN), every custom property with `showInBom`, Qty, Unit W,
+  Columns: Item, Category, Vendor / Model (PN) — a picker per line: the item (vendor / PN) bought, Generic by
+  default, stored in `bomItems` (see spec/09); MSPN / MSF / power follow the pick — every custom property with `showInBom`, Qty, Unit W,
   Total W, Notes.
 
 ## UI
@@ -87,8 +88,8 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
   names); New (pick template), Duplicate, Delete.
 - Sidebar layout: rack designs on top, **device palette below taking the rest**; the boundary is draggable
   (double-click resets; height saved in app preferences).
-- Device palette: the Devices tree — Type → Item type → Items (vendor products); drag or double-click an
-  item type (default item) or a specific item. Only devices of the rack's unit system are listed (RU racks
+- Device palette: the Devices tree — Type → Item type; drag or double-click an item type. Items (vendor
+  / PN) are picked in the BOM, not when placing. Only devices of the rack's unit system are listed (RU racks
   take RU and 0U devices, OU racks OU and 0U); placing a device of the other system is rejected.
 - Colors (fixed, after the rack-elevation drawings): warm beige rails / unit column and side pods (`#f5efe6` /
   `#f2ece2`, tan lines); each device category is a light pastel fill, a mid-tone outline and dark text of the same

@@ -1,10 +1,11 @@
 import { cablePowerWPerEnd } from '../items/variants';
+import { bomItem } from './bom-items';
 import type { DeviceDefinition } from '../device/types';
 import type { Library } from '../library/library';
 import { allPortRefs, parsePortRef } from '../device/ports';
 import { findProfile } from '../device/breakout';
 import { resolvePort, type ResolvedPort } from '../device/port-settings';
-import type { Placement } from './types';
+import type { Placement, RackDesign } from './types';
 import { cablesPerPort } from '../ports/optic-match';
 
 /** Effective setting of one port of a placed device (instance > profile). */
@@ -34,9 +35,9 @@ export function portItemCounts(lib: Library, device: DeviceDefinition, placement
 }
 
 /** Power drawn by active direct-attach cable ends (AEC retimers, AOC optics) plugged into the placement's ports. */
-export function activeCableW(lib: Library, device: DeviceDefinition, placement: Placement): number {
+export function activeCableW(lib: Library, design: RackDesign, device: DeviceDefinition, placement: Placement): number {
   let w = 0;
-  for (const [cableId, n] of portItemCounts(lib, device, placement).cables) w += cablePowerWPerEnd(lib, lib.cableMedia.get(cableId)) * n;
+  for (const [cableId, n] of portItemCounts(lib, device, placement).cables) w += cablePowerWPerEnd(bomItem(lib, design, cableId), lib.cableMedia.get(cableId)) * n;
   return w;
 }
 

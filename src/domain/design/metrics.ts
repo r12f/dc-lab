@@ -7,6 +7,7 @@ import { activeCableW, opticCounts } from './optics';
 import { placementProblem } from './placement';
 import { placedDevice } from './sizing';
 import { memoByDesign } from './memo';
+import { bomItem } from './bom-items';
 
 export interface RackMetrics {
   totalUnits: number;
@@ -61,12 +62,12 @@ function rackMetrics(lib: Library, design: RackDesign): RackMetrics {
     for (const [opticId, n] of opticCounts(lib, device, p)) {
       const optic = lib.optics.get(opticId);
       if (!optic) continue;
-      const w = opticPowerW(lib, optic);
+      const w = opticPowerW(bomItem(lib, design, optic.id), optic);
       m.typicalW += w * n;
       m.maxW += w * n;
       m.deviceWeightKg += (optic.weightKg ?? 0) * n;
     }
-    const cableW = activeCableW(lib, device, p);
+    const cableW = activeCableW(lib, design, device, p);
     m.typicalW += cableW;
     m.maxW += cableW;
     const problem = placementProblem(lib, design, device, p.mount, p.id);

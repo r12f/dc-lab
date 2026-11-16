@@ -6,14 +6,21 @@ import { formatPower } from '../domain/units';
 import { downloadText } from '../io/download';
 import { useAppStore } from '../state/store';
 import { Button } from './button';
+import type { ItemVariant } from '../domain/items/types';
+import { variantLabel } from '../domain/items/variants';
+import { GENERIC_SUFFIX } from '../domain/items/types';
 
 interface Props {
   root: BomNode;
   filename: string;
+  /** Items (vendor products) of an item type; with `onPick`, each line's Vendor / Model (PN) becomes a picker. */
+  itemsOf?(itemTypeId: string): ItemVariant[];
+  /** Picks the item for a line (undefined = Generic). */
+  onPick?(pickKey: string, itemId: string | undefined): void;
 }
 
 /** BOM as an expandable tree table: the first column is indented by depth, groups collapse. */
-export function BomTreeTable({ root, filename }: Props) {
+export function BomTreeTable({ root, filename, itemsOf, onPick }: Props) {
   const defs = useAppStore((s) => s.project.propertyDefs);
   const cols = bomColumns(defs);
   const [closed, setClosed] = useState<Set<string>>(new Set());
@@ -50,6 +57,18 @@ export function BomTreeTable({ root, filename }: Props) {
                     );
                   }
                   if (!l) return <td key={c.header} />;
+                  if (c.header === 'Vendor / Model (PN)' && onPick && itemsOf && l.itemTypeId && l.pickKey) {
+                    const items = itemsOf(l.itemTypeId);
+                    const key = l.pickKey;
+                    return (
+                      <td key={c.header}>
+                        <select className="bom-pick" value={l.itemId ?? ''} title="Item (vendor / PN) bought for this line"
+                          onChange={(e) => onPick(key, e.target.value.endsWith(GENERIC_SUFFIX) ? undefined : e.target.value)}>
+                          {items.map((v) => <option key={v.id} value={v.id}>{v.id.endsWith(GENERIC_SUFFIX) ? 'Generic' : variantLabel(v) || v.id}</option>)}
+                        </select>
+                      </td>
+                    );
+                  }
                   const v = c.cell(l);
                   return <td key={c.header} className={c.numeric ? 'num' : undefined}>{c.header === 'Total W' && typeof v === 'number' ? formatPower(v) : v}</td>;
                 })}

@@ -6,6 +6,12 @@ export interface BomLine {
   item: string;
   category: string;
   vendorModel: string;
+  /** Item type the line buys (device / rack / optic / cable id); its items are the line's choices. */
+  itemTypeId?: string;
+  /** Key of the design's BOM item pick for this line (`RackDesign.bomItems`). */
+  pickKey?: string;
+  /** Id of the item (vendor product) the line uses. */
+  itemId?: string;
   qty: number;
   unitW: number;
   /** Cable length in metres (cables only). */

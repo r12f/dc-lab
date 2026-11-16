@@ -174,3 +174,5 @@ p.warn { color: var(--danger); margin: 4px 0; font-size: 12px; }
 .device-filter-list .check > span:first-of-type { flex: none; font-weight: 600; }
 .device-filter-list .check .muted { overflow: hidden; text-overflow: ellipsis; }
 .row-actions { display: flex; gap: 4px; }
+
+.bom-tree .bom-pick { width: 100%; min-width: 9em; font: inherit; }

@@ -31,7 +31,7 @@ interface Props {
   onSelect(id: string | undefined): void;
   selectedCableId?: string;
   onSelectCable(id: string | undefined): void;
-  onDropDevice(deviceId: string, mount: Mount, variantId?: string): void;
+  onDropDevice(deviceId: string, mount: Mount): void;
   onMove(placementId: string, mount: Mount): void;
   /** Draw cable runs (default true). */
   showCables?: boolean;
@@ -113,7 +113,7 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
 
   const onDrop = (e: DragEvent<SVGSVGElement>) => {
     e.preventDefault();
-    const [deviceId, variantId] = e.dataTransfer.getData(DEVICE_DRAG_TYPE).split('|');
+    const [deviceId] = e.dataTransfer.getData(DEVICE_DRAG_TYPE).split('|');
     if (!deviceId) return;
     const pt = svgPoint(e);
     const mount = mountAt(geoOf(pt.face), rack, pt.face, pt.x, pt.y);
@@ -124,7 +124,7 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
       const bottom = mount.position - Math.floor((units - 1) / 2);
       mount.position = Math.max(1, Math.min(rack.units - units + 1, bottom));
     }
-    onDropDevice(deviceId, mount, variantId || undefined);
+    onDropDevice(deviceId, mount);
   };
 
   const startDrag = (id: string, face: PortFace) => (e: PointerEvent<SVGGElement>) => {

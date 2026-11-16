@@ -21,7 +21,7 @@ export function useItemVariants(lib: Library) {
   };
   const duplicate = (v: ItemVariant): string => {
     const id = uniqueId(slugify(`${v.itemId}-item`), lib.variants.ids());
-    save({ ...structuredClone(v), id, isDefault: undefined, model: v.model ? `${v.model} (copy)` : '' });
+    save({ ...structuredClone(v), id, model: v.model ? `${v.model} (copy)` : '' });
     return id;
   };
   /** Items saved in the project can be deleted; the generic item synthesized for a built-in type cannot. */
@@ -29,14 +29,7 @@ export function useItemVariants(lib: Library) {
   const del = (v: ItemVariant) => {
     if (canDelete(v)) remove('variants', v.id);
   };
-  /** Marks `v` as its item type's default; saved siblings lose the mark. */
-  const makeDefault = (v: ItemVariant) => {
-    for (const x of lib.variants.of(v.itemId)) {
-      if (x.id !== v.id && x.isDefault) save({ ...x, isDefault: undefined });
-    }
-    save({ ...v, isDefault: true });
-  };
-  return { save, add, duplicate, del, canDelete, makeDefault, isReadOnly };
+  return { save, add, duplicate, del, canDelete, isReadOnly };
 }
 
 export type ItemVariantCommands = ReturnType<typeof useItemVariants>;

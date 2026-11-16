@@ -10,6 +10,7 @@ import { BomBuilder } from './bom-builder';
 import type { BomLine } from './types';
 import { memoByDesign } from '../design/memo';
 import { placedDevice, repeatCount } from '../design/sizing';
+import { bomItem, cableLengthPickKey } from '../design/bom-items';
 
 /**
  * A node of the rack BOM tree. Group nodes (rack frame, side elements, in-rack cables) structure
@@ -37,20 +38,21 @@ export const buildRackBomTree = memoByDesign(computeBuildRackBomTree);
 function computeBuildRackBomTree(lib: Library, design: RackDesign): BomNode | undefined {
   const rack = lib.racks.get(design.templateId);
   if (!rack) return undefined;
-  const item = (itemId: string, variantId?: string) => lib.variants.resolve(itemId, variantId);
+  const item = (itemTypeId: string, pickKey?: string) => bomItem(lib, design, itemTypeId, pickKey);
+  const pick = (itemTypeId: string, v: { id: string } | undefined, pickKey = itemTypeId) => ({ itemTypeId, pickKey, itemId: v?.id });
 
   const devicesIn = (placements: Placement[], scope: string): BomNode[] => {
     const groups = new Map<string, { line: BomLine; parts: BomBuilder }>();
     for (const p of placements) {
       const d = placedDevice(lib, design, p);
       if (!d || traitsOf(d.category).filler === 'reserved') continue;
-      const v = item(d.id, p.variantId);
-      const key = `${scope}:device:${v?.id ?? d.id}`;
+      const v = item(d.id);
+      const key = `${scope}:device:${d.id}`;
       const n = repeatCount(d, p.repeat);
       let g = groups.get(key);
       if (!g) {
         g = {
-          line: { key, kind: 'device', item: d.name, category: traitsOf(d.category).label, vendorModel: variantLabel(v),
+          line: { key, kind: 'device', item: d.name, category: traitsOf(d.category).label, ...pick(d.id, v), vendorModel: variantLabel(v),
             qty: 0, unitW: d.power.typicalW / n, notes: [], properties: v?.properties },
           parts: new BomBuilder(),
         };
@@ -63,14 +65,14 @@ function computeBuildRackBomTree(lib: Library, design: RackDesign): BomNode | un
         const o = lib.optics.get(opticId);
         if (!o) continue;
         const ov = item(o.id);
-        g.parts.add({ key: `${key}:optic:${o.id}`, kind: 'optic', item: o.name, category: 'Optic', vendorModel: variantLabel(ov),
-          qty: n, unitW: opticPowerW(lib, o), notes: [], properties: ov?.properties });
+        g.parts.add({ key: `${key}:optic:${o.id}`, kind: 'optic', item: o.name, category: 'Optic', ...pick(o.id, ov), vendorModel: variantLabel(ov),
+          qty: n, unitW: opticPowerW(ov, o), notes: [], properties: ov?.properties });
       }
       for (const [cableId, n] of counts.cables) {
         const media = lib.cableMedia.get(cableId);
         const cv = item(cableId);
-        g.parts.add({ key: `${key}:cable:${cableId}`, kind: 'cable', item: media?.name ?? cableId, category: 'Cable',
-          vendorModel: variantLabel(cv), qty: n, unitW: cablePowerWPerEnd(lib, media), notes: ['port-attached'], properties: cv?.properties });
+        g.parts.add({ key: `${key}:cable:${cableId}`, kind: 'cable', item: media?.name ?? cableId, category: 'Cable', ...pick(cableId, cv),
+          vendorModel: variantLabel(cv), qty: n, unitW: cablePowerWPerEnd(cv, media), notes: ['port-attached'], properties: cv?.properties });
       }
     }
     return [...groups.values()]
@@ -82,13 +84,13 @@ function computeBuildRackBomTree(lib: Library, design: RackDesign): BomNode | un
   };
 
   const inRack = design.placements.filter((p) => p.mount.kind === 'rack');
-  // The rack frame as bought: the template's default item (vendor / PN, its own property values).
-  const rackItem = lib.variants.defaultOf(rack.id);
+  // The rack frame as bought: the item picked in the BOM (else Generic) (vendor / PN, its own property values).
+  const rackItem = item(rack.id);
   const children: BomNode[] = [
     {
       key: 'frame', label: `Rack frame — ${rack.name}`,
       line: { key: `rack:${rack.id}`, kind: 'rack', item: rack.name, category: RACK_KINDS[rack.kind],
-        vendorModel: variantLabel(rackItem), qty: 1, unitW: 0, notes: [], properties: { ...rack.properties, ...rackItem?.properties } },
+        ...pick(rack.id, rackItem), vendorModel: variantLabel(rackItem), qty: 1, unitW: 0, notes: [], properties: { ...rack.properties, ...rackItem?.properties } },
       children: devicesIn(inRack, 'frame'),
     },
     ...rack.sideElements.map((e) => ({
@@ -101,10 +103,10 @@ function computeBuildRackBomTree(lib: Library, design: RackDesign): BomNode | un
   const cables = new BomBuilder();
   for (const c of design.cables) {
     const media = lib.cableMedia.get(c.mediaId);
-    const cv = item(c.mediaId);
     const len = effectiveLengthM(lib, design, c);
+    const cv = item(c.mediaId, cableLengthPickKey(c.mediaId, len));
     cables.add({ key: `cable:${c.mediaId}:${len}`, kind: 'cable', item: `${media?.name ?? c.mediaId} ${len} m`,
-      category: 'Cable', vendorModel: variantLabel(cv), qty: c.quantity, unitW: 0,
+      category: 'Cable', ...pick(c.mediaId, cv, cableLengthPickKey(c.mediaId, len)), vendorModel: variantLabel(cv), qty: c.quantity, unitW: 0,
       lengthM: len * c.quantity, notes: [], properties: cv?.properties });
   }
   const cableLines = cables.build();

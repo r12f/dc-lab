@@ -11,8 +11,6 @@ export type Mount =
 export interface Placement {
   id: string;
   deviceId: string;
-  /** Chosen item (vendor product) of the device item type; empty = the item type's default item. */
-  variantId?: string;
   label: string;
   mount: Mount;
   /** Repeatable devices only: copies stacked in this placement (default 1); occupies repeat x the item's height. */
@@ -64,4 +62,10 @@ export interface RackDesign {
    * Same endpoint shape as cable ends.
    */
   crossRack?: CableEndpoint[];
+  /**
+   * Items picked in the BOM: pick key -> item (vendor product) id. The design fixes item types; the BOM fixes
+   * the concrete items. Key = the item type id (devices, optics, port-attached cables, rack frame), or
+   * `<cable id>@<length m>` for in-rack cables of one length. No pick = the item type's Generic item.
+   */
+  bomItems?: Record<string, string>;
 }

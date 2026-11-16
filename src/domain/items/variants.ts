@@ -10,7 +10,7 @@ export interface VariantSource {
 
 /**
  * Items per item type: the generic item (synthesized unless the project saved one with that id),
- * then project items. Default = the one with `isDefault`, else the generic item.
+ * then project items. The generic item is what a BOM line uses until it picks another.
  */
 export class VariantIndex {
   private readonly byItem = new Map<string, VariantSource[]>();
@@ -56,7 +56,7 @@ export class VariantIndex {
 
   defaultOf(itemId: string): ItemVariant | undefined {
     const list = this.of(itemId);
-    return list.find((v) => v.isDefault) ?? list[0];
+    return list.find((v) => v.id === genericVariantId(itemId)) ?? list[0];
   }
 
   /** The chosen item if it belongs to the item type, else its default. */
@@ -81,18 +81,15 @@ export function withItemSpecs<T extends { power: { typicalW: number; maxW: numbe
   };
 }
 
-/**
- * Power of one optic module: its item's override when set, else the item type's. Ports pick no optic item, so the
- * optic type's default item is the one bought (as in the BOM).
- */
-export function opticPowerW(lib: { variants: { defaultOf(id: string): ItemVariant | undefined } }, o: { id: string; powerW: number }): number {
-  return lib.variants.defaultOf(o.id)?.specs?.typicalW ?? o.powerW;
+/** Power of one optic module: the item's override when set, else the item type's. */
+export function opticPowerW(item: ItemVariant | undefined, o: { powerW: number }): number {
+  return item?.specs?.typicalW ?? o.powerW;
 }
 
-/** Power per active end of a cable (AEC / AOC): its default item's override when set, else the item type's. */
-export function cablePowerWPerEnd(lib: { variants: { defaultOf(id: string): ItemVariant | undefined } }, c: { id: string; powerWPerEnd?: number } | undefined): number {
+/** Power per active end of a cable (AEC / AOC): the item's override when set, else the item type's. */
+export function cablePowerWPerEnd(item: ItemVariant | undefined, c: { powerWPerEnd?: number } | undefined): number {
   if (!c) return 0;
-  return lib.variants.defaultOf(c.id)?.specs?.typicalW ?? c.powerWPerEnd ?? 0;
+  return item?.specs?.typicalW ?? c.powerWPerEnd ?? 0;
 }
 
 /** "Acme SW-6400", or just the model when the vendor is generic. */

@@ -12,7 +12,7 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
   const mutate = (fn: (d: RackDesign) => RackDesign) => design && update('rackDesigns', design.id, fn);
 
   /** Places a device; returns an error message or the new placement id. */
-  const addDevice = (deviceId: string, mount?: Mount, variantId?: string): { error?: string; id?: string } => {
+  const addDevice = (deviceId: string, mount?: Mount): { error?: string; id?: string } => {
     const device = lib.devices.get(deviceId);
     if (!design || !device) return { error: 'Unknown device' };
     const target = mount ?? defaultMount(lib, design, device);
@@ -21,7 +21,7 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
     if (problem) return { error: problem };
     const id = uniqueId('p', design.placements.map((p) => p.id));
     const label = nextLabel(design, traitsOf(device.category).labelPrefix);
-    const placement = { ...newPlacement(id, deviceId, label, target), ...(variantId ? { variantId } : {}) };
+    const placement = newPlacement(id, deviceId, label, target);
     mutate((d) => ({ ...d, placements: [...d.placements, placement] }));
     return { id };
   };
@@ -86,8 +86,15 @@ export function useDesignEditor(lib: Library, design: RackDesign | undefined) {
   const setCrossRack = (crossRack: CableEndpoint[]) => mutate((d) => ({ ...d, crossRack }));
   const rename = (name: string) => mutate((d) => ({ ...d, name }));
   const setAbbr = (text: string) => mutate((d) => ({ ...d, abbr: cleanAbbr(text) }));
+  /** Picks the item (vendor product) a BOM line uses; the Generic item clears the pick. */
+  const pickBomItem = (pickKey: string, itemId: string | undefined) => mutate((d) => {
+    const { [pickKey]: _old, ...rest } = d.bomItems ?? {};
+    void _old;
+    const bomItems = itemId ? { ...rest, [pickKey]: itemId } : rest;
+    return { ...d, bomItems: Object.keys(bomItems).length ? bomItems : undefined };
+  });
 
-  return { addDevice, moveTo, setRepeat, updatePlacement, duplicatePlacement: duplicatePlacementCmd, removePlacement, addCable, addCables, updateCable, removeCable, setCrossRack, rename, setAbbr };
+  return { addDevice, moveTo, setRepeat, updatePlacement, duplicatePlacement: duplicatePlacementCmd, removePlacement, addCable, addCables, updateCable, removeCable, setCrossRack, rename, setAbbr, pickBomItem };
 }
 
 export type DesignEditor = ReturnType<typeof useDesignEditor>;
