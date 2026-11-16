@@ -11,6 +11,8 @@ export interface LegAnchor {
   gapBelow: number;
   /** Face block the connector is drawn in; its cables use that block's own left / right channels. */
   face: CablingFace;
+  /** Leaves straight sideways to the channel at its own height (side PDU strips) instead of via a device gap. */
+  sideways?: boolean;
 }
 
 /** Cable channels of one face block: x where its left / right channel starts, and their width. */
@@ -43,7 +45,7 @@ export function routeCablingLines(
   channels: Record<CablingFace, FaceChannels>,
   bandY: number,
 ): CablingLine[] {
-  const turn = (a: LegAnchor) => (a.y - a.gapAbove <= a.gapBelow - a.y ? a.gapAbove : a.gapBelow);
+  const turn = (a: LegAnchor) => (a.sideways ? a.y : a.y - a.gapAbove <= a.gapBelow - a.y ? a.gapAbove : a.gapBelow);
   const placed = runs.map((run) => {
     const pairs = run.from.flatMap((f, i) => run.to.map((t, j) => {
       const a = anchors.get(keyOf(f));

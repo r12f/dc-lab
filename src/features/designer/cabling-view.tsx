@@ -240,11 +240,15 @@ function computeCablingLayout(lib: Library, design: RackDesign, faces: readonly 
     for (const l of d.legs) {
       const k = endpointKey(l.ep);
       epByKey.set(k, l);
-      anchors.set(k, { x: l.x + l.w / 2, y: l.y + l.h / 2, gapAbove: d.y - ROW_GAP / 2, gapBelow: d.y + d.h + ROW_GAP / 2, face: blockOf(d) });
+      // Side PDUs are tall strips next to the channel: their cords leave sideways at the outlet's own height.
+      const side = leftSide.includes(d) || rightSide.includes(d);
+      anchors.set(k, { x: l.x + l.w / 2, y: l.y + l.h / 2, gapAbove: d.y - ROW_GAP / 2, gapBelow: d.y + d.h + ROW_GAP / 2, face: blockOf(d), sideways: side });
     }
   }
   const lines = routeCablingLines(design.cables, anchors, endpointKey, channels, BAND_Y);
-  const height = Math.max(y, SECTION_H + 30, ...[...leftSide, ...rightSide].map((d) => d.y + d.h + 4));
+  // Tall enough for every device and every routed line (lines below the last device turn in the gap under it).
+  const height = Math.max(y, SECTION_H + 30, ...devices.map((d) => d.y + d.h + ROW_GAP),
+    ...lines.flatMap((l) => l.points.map(([, py]) => py + 6)));
   return { faces, used, cross, runColor, devices, leftSide, rightSide, legOrder, epByKey, lines, leftX, frontX, rearX, rightX, width, height, channels };
 }
 

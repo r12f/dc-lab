@@ -211,3 +211,6 @@ both ends; clicking a line opens its run.
 **Highlight**: every run on a selected connector plus the run selected in the Cables tab is highlighted
 (hover changes nothing) — its lines drawn thick on top, its connectors outlined — and dims every other run. Clicking the selected run again, clicking empty space
 or pressing Escape clears the selected run (and the connector selection), so nothing stays highlighted.
+
+**Cabling view, side PDUs**: cords from side PDU outlets leave sideways to the channel at the outlet's own height
+(not via the gap below the tall PDU strip). The view is tall enough for every routed line.
