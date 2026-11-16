@@ -44,7 +44,7 @@ export function BomTreeTable({ root, filename, itemsOf, onPick, onSiAdjustable }
         <tbody>
           {rows.map(({ node, depth }) => {
             const l = node.line;
-            const caret = node.children.length ? (closed.has(node.key) ? '▸' : '▾') : '';
+            const caret = node.children.length ? (closed.has(node.key) ? '+' : '−') : '';
             return (
               <tr key={node.key} className={l ? undefined : 'group'} title={l?.notes.join(', ')}>
                 {cols.map((c, i) => {
