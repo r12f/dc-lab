@@ -27,15 +27,21 @@ const BANK_PAD = 26;
 export function layoutPdu(device: DeviceDefinition): PduLayout {
   const outlets = device.ports.filter((g) => g.role === 'outlet');
   const others = device.ports.filter((g) => g.role !== 'outlet');
+  // Header ports (mgmt, console, sensor…) wrap two per row so they stay inside the strip.
   const headerPorts: PortBox[] = [];
-  let hx = 16;
+  const HP = { w: 70, h: 28, gapX: 8, gapY: 6, perRow: 2, y0: 66 };
+  const x0 = (W - (HP.perRow * HP.w + (HP.perRow - 1) * HP.gapX)) / 2;
+  let n = 0;
   for (const g of others) {
-    for (let i = 0; i < g.count; i++) {
-      headerPorts.push({ ref: formatPortRef({ groupId: g.id, index: i + 1 }), group: g, index: i + 1, x: hx, y: 66, w: 70, h: 28 });
-      hx += 76;
+    for (let i = 0; i < g.count; i++, n++) {
+      const col = n % HP.perRow;
+      const row = Math.floor(n / HP.perRow);
+      headerPorts.push({ ref: formatPortRef({ groupId: g.id, index: i + 1 }), group: g, index: i + 1,
+        x: x0 + col * (HP.w + HP.gapX), y: HP.y0 + row * (HP.h + HP.gapY), w: HP.w, h: HP.h });
     }
   }
-  const headerH = 106;
+  const headerRows = Math.max(1, Math.ceil(n / HP.perRow));
+  const headerH = HP.y0 + headerRows * (HP.h + HP.gapY) + 6;
   const bankNames = [...new Set(outlets.map((g) => g.bank ?? '-'))];
   const banks: BankBlock[] = [];
   const ports: PortBox[] = [];
