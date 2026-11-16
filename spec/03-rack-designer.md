@@ -212,7 +212,8 @@ both ends; clicking a line opens its run.
 (hover changes nothing) — its lines drawn thick on top, its connectors outlined — and dims every other run. Clicking the selected run again, clicking empty space
 or pressing Escape clears the selected run (and the connector selection), so nothing stays highlighted.
 
-**Cabling view, line exits**: every cable (fiber, copper, power) drops just below its own connector, then runs
+**Cabling view, line exits**: every cable (fiber, copper, power) ends at the bottom edge of its connector (not its
+centre, so labels stay readable), drops just below it, then runs
 sideways to the channel — never across other ports, and not via the gap above / below the whole device. The view is tall enough for every routed line.
 
 **Cabling view, portless devices**: devices with no cable ports on either face (blanking panels, reserved space) are

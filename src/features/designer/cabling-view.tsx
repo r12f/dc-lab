@@ -41,7 +41,7 @@ interface Props {
  * (lanes / reach / connector, e.g. "4x200G", "DR4", "MPO-8"). Sized to stay compact so a 64-port face fits.
  */
 const PORT_HEAD = 11;
-const LEG_W = 36;
+const LEG_W = 42;
 const LEG_H = 32;
 const LEG_GAP = 2;
 const PORT_PAD = 2;
@@ -247,7 +247,8 @@ function computeCablingLayout(lib: Library, design: RackDesign, faces: readonly 
       const k = endpointKey(l.ep);
       epByKey.set(k, l);
       // Every cable drops just below its own connector, then runs sideways to the channel (never across other ports).
-      anchors.set(k, { x: l.x + l.w / 2, y: l.y + l.h / 2, gapAbove: d.y - ROW_GAP / 2, gapBelow: d.y + d.h + ROW_GAP / 2, face: blockOf(d),
+      // Lines end at the connector's bottom edge, so they never cover its label.
+      anchors.set(k, { x: l.x + l.w / 2, y: l.y + l.h, gapAbove: d.y - ROW_GAP / 2, gapBelow: d.y + d.h + ROW_GAP / 2, face: blockOf(d),
         exitY: l.y + l.h + 2 });
     }
   }
