@@ -51,8 +51,8 @@ export function BomTreeTable({ root, filename, itemsOf, onPick, onSiAdjustable }
                   if (i === 0) {
                     return (
                       <td key={c.header} style={{ paddingLeft: 4 + depth * 14 }}>
-                        <span className="caret" onClick={() => node.children.length && toggle(node.key)}
-                          style={{ cursor: node.children.length ? 'pointer' : undefined }}>{caret}</span>{' '}
+                        <span className="caret bom-caret" onClick={() => node.children.length && toggle(node.key)}
+                          style={{ cursor: node.children.length ? 'pointer' : undefined }}>{caret}</span>
                         {node.label}
                         {!l && node.children.length === 0 && <span className="muted"> — empty</span>}
                       </td>

@@ -176,3 +176,5 @@ p.warn { color: var(--danger); margin: 4px 0; font-size: 12px; }
 .row-actions { display: flex; gap: 4px; }
 
 .bom-tree .bom-pick { width: 100%; min-width: 9em; font: inherit; }
+/* Fixed-width caret slot (empty on leaves) so rows of one level share the same text indent. */
+.bom-tree .bom-caret { display: inline-block; width: 14px; text-align: center; }
