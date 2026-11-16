@@ -212,5 +212,5 @@ both ends; clicking a line opens its run.
 (hover changes nothing) — its lines drawn thick on top, its connectors outlined — and dims every other run. Clicking the selected run again, clicking empty space
 or pressing Escape clears the selected run (and the connector selection), so nothing stays highlighted.
 
-**Cabling view, side PDUs**: cords from side PDU outlets drop just below their outlet, then go sideways to the channel
-(not across other outlets, not via the gap below the tall PDU strip). The view is tall enough for every routed line.
+**Cabling view, line exits**: every cable (fiber, copper, power) drops just below its own connector, then runs
+sideways to the channel — never across other ports, and not via the gap above / below the whole device. The view is tall enough for every routed line.

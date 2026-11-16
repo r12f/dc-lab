@@ -240,10 +240,9 @@ function computeCablingLayout(lib: Library, design: RackDesign, faces: readonly 
     for (const l of d.legs) {
       const k = endpointKey(l.ep);
       epByKey.set(k, l);
-      // Side PDUs are tall strips next to the channel: their cords drop just below the outlet, then go sideways.
-      const side = leftSide.includes(d) || rightSide.includes(d);
+      // Every cable drops just below its own connector, then runs sideways to the channel (never across other ports).
       anchors.set(k, { x: l.x + l.w / 2, y: l.y + l.h / 2, gapAbove: d.y - ROW_GAP / 2, gapBelow: d.y + d.h + ROW_GAP / 2, face: blockOf(d),
-        ...(side ? { exitY: l.y + l.h + 2 } : {}) });
+        exitY: l.y + l.h + 2 });
     }
   }
   const lines = routeCablingLines(design.cables, anchors, endpointKey, channels, BAND_Y);
