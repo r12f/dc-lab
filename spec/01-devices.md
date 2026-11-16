@@ -242,3 +242,8 @@ Designer cabling view both honour it.
 
 **C13/C19 combination outlet**: form factor `C13/C19` (power) takes either a C14 or a C20 plug. PDU outlets are drawn
 as one vertical column per group (`rows` > 1 puts that many outlets side by side).
+
+**Printed port numbers** (`portNumbers`): when a faceplate's printed numbers do not follow the fill order, a port group
+lists the number of each port in fill order (counted from `firstNumber`), e.g. the 80x MMC-16 housing module: a 3x3
+block 1-9 and a lone top-left slot 10 -> `[1, 2, 3, 4, 5, 6, 10, 7, 8, 9]`. Names only: port refs (`group/index`) and
+cables are unchanged.

@@ -50,11 +50,14 @@ export function portCell(g: PortGroup, i: number, rows = Math.max(1, g.rows)): {
 
 /**
  * Display name of port `index` (1-based) of a group: a plain number, or with `subPorts` a number + letter
- * (subPorts 4: 1A 1B 1C 1D 2A…), counting from `firstNumber`. Port refs stay `group/index`.
+ * (subPorts 4: 1A 1B 1C 1D 2A…), counting from `firstNumber`; `portNumbers` overrides the number of each port.
+ * Port refs stay `group/index`.
  */
 export function portName(g: PortGroup, index: number): string {
   const first = g.firstNumber ?? 1;
   const sub = g.subPorts ?? 1;
+  const printed = g.portNumbers?.[index - 1];
+  if (printed !== undefined) return String(first - 1 + printed);
   if (sub <= 1) return String(first - 1 + index);
   const i = index - 1;
   return `${first + Math.floor(i / sub)}${String.fromCharCode(65 + (i % sub))}`;

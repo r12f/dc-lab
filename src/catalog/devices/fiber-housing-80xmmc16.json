@@ -33,6 +33,18 @@
       "fill": "row-major",
       "bottomUp": true,
       "firstNumber": 1,
+      "portNumbers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        10,
+        7,
+        8,
+        9
+      ],
       "connectorsPerPort": 2,
       "connectorLayout": "stacked"
     },
@@ -55,6 +67,18 @@
       "fill": "row-major",
       "bottomUp": true,
       "firstNumber": 11,
+      "portNumbers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        10,
+        7,
+        8,
+        9
+      ],
       "connectorsPerPort": 2,
       "connectorLayout": "stacked"
     },
@@ -77,6 +101,18 @@
       "fill": "row-major",
       "bottomUp": true,
       "firstNumber": 21,
+      "portNumbers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        10,
+        7,
+        8,
+        9
+      ],
       "connectorsPerPort": 2,
       "connectorLayout": "stacked"
     },
@@ -99,6 +135,18 @@
       "fill": "row-major",
       "bottomUp": true,
       "firstNumber": 31,
+      "portNumbers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        10,
+        7,
+        8,
+        9
+      ],
       "connectorsPerPort": 2,
       "connectorLayout": "stacked"
     },
@@ -121,6 +169,18 @@
       "fill": "row-major",
       "bottomUp": true,
       "firstNumber": 1,
+      "portNumbers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        10,
+        7,
+        8,
+        9
+      ],
       "connectorsPerPort": 2,
       "connectorLayout": "stacked"
     },
@@ -143,6 +203,18 @@
       "fill": "row-major",
       "bottomUp": true,
       "firstNumber": 11,
+      "portNumbers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        10,
+        7,
+        8,
+        9
+      ],
       "connectorsPerPort": 2,
       "connectorLayout": "stacked"
     },
@@ -165,6 +237,18 @@
       "fill": "row-major",
       "bottomUp": true,
       "firstNumber": 21,
+      "portNumbers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        10,
+        7,
+        8,
+        9
+      ],
       "connectorsPerPort": 2,
       "connectorLayout": "stacked"
     },
@@ -187,6 +271,18 @@
       "fill": "row-major",
       "bottomUp": true,
       "firstNumber": 31,
+      "portNumbers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        10,
+        7,
+        8,
+        9
+      ],
       "connectorsPerPort": 2,
       "connectorLayout": "stacked"
     }

@@ -63,6 +63,12 @@ export interface PortGroup {
   /** Number the group's names start at (e.g. 7 for the second column of 6 cassettes); default 1. */
   firstNumber?: number;
   /**
+   * Printed number of each port in fill order, when the faceplate does not number ports in fill order (e.g. a
+   * housing whose lone top-left slot is 10 after a 3x3 block 1-9): [1, 2, 3, 4, 5, 6, 10, 7, 8, 9]. Counted from
+   * `firstNumber` like the default numbering; names only — port refs stay `group/index`.
+   */
+  portNumbers?: number[];
+  /**
    * Fiber connector ports: cable connectors in one port (a housing slot holding 2x MMC-16); default 1. Each is a
    * connector leg cables attach to (endpoint `connector` 1..n).
    */

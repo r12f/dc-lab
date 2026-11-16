@@ -96,6 +96,11 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
         <NumberField label="First number" value={group.firstNumber ?? 1} min={0}
           onChange={(n) => set({ firstNumber: n !== 1 ? n : undefined })} />
       </div>
+      <TextField label="Port numbers in fill order (blank = 1, 2, 3…; e.g. 1, 2, 3, 4, 5, 6, 10, 7, 8, 9)"
+        value={(group.portNumbers ?? []).join(', ')} onChange={(v) => {
+          const nums = v.split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0);
+          set({ portNumbers: nums.length ? nums : undefined });
+        }} />
       {pluggable && formFactorSpec(group.formFactor).kind === 'cage' && (
         <SelectField<HeatSink> label="Heat sink (module must match)" value={heatSinkOf(group)}
           options={HEAT_SINKS.map((h) => ({ value: h, label: h === 'IHS' ? 'IHS (integrated)' : 'RHS (riding / cold plate)' }))}
