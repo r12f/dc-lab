@@ -79,7 +79,13 @@ function rackOrder(lib: Library, design: RackDesign) {
     const d = placedDevice(lib, design, p);
     return p.mount.position + (d && rack ? Math.max(1, unitsIn(d.height, rack.unitSystem)) : 1) - 1;
   };
-  return design.placements.filter((p) => p.mount.kind === 'rack').sort((a, b) => top(b) - top(a));
+  return design.placements.filter((p) => p.mount.kind === 'rack' && hasCablePorts(lib, design, p)).sort((a, b) => top(b) - top(a));
+}
+
+/** Devices with no cable ports on either face (blanking panels, reserved space…) are left out of the cabling view. */
+function hasCablePorts(lib: Library, design: RackDesign, p: Placement): boolean {
+  const d = placedDevice(lib, design, p);
+  return !!d && (cableGroupsOnFace(d, 'front').length > 0 || cableGroupsOnFace(d, 'rear').length > 0);
 }
 
 /** Side-mounted devices (vertical PDUs) on one side of the rack, top slot first — as in the elevation. */

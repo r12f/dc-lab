@@ -214,3 +214,6 @@ or pressing Escape clears the selected run (and the connector selection), so not
 
 **Cabling view, line exits**: every cable (fiber, copper, power) drops just below its own connector, then runs
 sideways to the channel — never across other ports, and not via the gap above / below the whole device. The view is tall enough for every routed line.
+
+**Cabling view, portless devices**: devices with no cable ports on either face (blanking panels, reserved space) are
+not drawn in the cabling view.
