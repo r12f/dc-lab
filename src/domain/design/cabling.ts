@@ -4,6 +4,7 @@ import { elementsOn, isInternal } from '../rack/side-elements';
 import { UNIT_MM, unitsIn } from '../units';
 import type { CableEndpoint, CableRoute, CableRun, RackDesign } from './types';
 import { placedDevice } from './sizing';
+import { parsePortRef } from '../device/ports';
 
 const SLACK_M = 0.5;
 const ROUND_M = 0.5;
@@ -29,7 +30,14 @@ function endpointPos(lib: Library, design: RackDesign, rack: RackTemplate, ep: C
   const el = rack.sideElements.find((e) => e.id === mount.elementId);
   if (!el) return undefined;
   const slotH = totalMm / Math.max(1, el.slots);
-  const heightMm = totalMm - (mount.slot - 0.5) * slotH;
+  // A vertical PDU's outlets run down the strip in port order: an outlet sits at its own height, not the strip's middle.
+  const outlets = d.ports.filter((g) => g.role === 'outlet');
+  const ref = parsePortRef(ep.portRef);
+  const og = ref && outlets.find((g) => g.id === ref.groupId);
+  const nOut = outlets.reduce((n, g) => n + g.count, 0);
+  const at = og && ref ? outlets.slice(0, outlets.indexOf(og)).reduce((n, g) => n + g.count, 0) + ref.index - 1 : undefined;
+  const top = totalMm - (mount.slot - 1) * slotH;
+  const heightMm = at !== undefined && nOut > 0 ? top - ((at + 0.5) / nOut) * slotH : top - slotH / 2;
   // Distance from the element centre to the body edge on its side, through nearer elements.
   const same = elementsOn(rack.sideElements, el.side);
   // Internal elements (PDU bays) sit inside the enclosure and add no distance for elements outside them.

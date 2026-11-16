@@ -217,3 +217,6 @@ sideways to the channel — never across other ports, and not via the gap above 
 
 **Cabling view, portless devices**: devices with no cable ports on either face (blanking panels, reserved space) are
 not drawn in the cabling view.
+
+**Cable length from a vertical PDU**: an outlet's height is its own position on the strip (outlets run top to bottom in
+port order), not the strip's middle.
