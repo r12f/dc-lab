@@ -58,7 +58,7 @@ const SECTION_H = 22;
 /** Ports per line on a side-mounted (vertical) device. */
 const SIDE_COLS = 2;
 /** Width of each cable channel: front and rear each have their own left and right channel. */
-const CHANNEL_W = 70;
+const CHANNEL_W = 100;
 /** y of the band above the devices where front-rear runs cross between the two face blocks. */
 const BAND_Y = SECTION_H - 3;
 /** Gap between device rows: cables run along it to their channel. */
