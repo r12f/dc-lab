@@ -37,9 +37,16 @@ describe('cross-rack routing', () => {
     // runs along the aisle tray centre (x = 2800)
     expect(pts.some((p) => p.x === 2800)).toBe(true);
   });
-  it('switches trays at their crossing', () => {
-    // From rack in row 1 near the floating tray to rack in row 2 far south: floating tray -> aisle tray.
+  it('enters the aisle tray beside the row, even when a floating tray runs over the rack', () => {
+    // Rack in row 1 right under the floating tray (y 4150): still enters the aisle tray (x 2800) at its own height.
     const pts = crossRoute(layout, plan, { x: 1600, y: 4150 }, { x: 4000, y: 9700 });
+    expect(pts[1]).toEqual({ x: 2800, y: 4150 });
+    expect(pts.every((p) => p.y === 4150 || p.x === 2800 || p.y === 9700)).toBe(true);
+  });
+  it('switches trays at their crossing', () => {
+    // Only the floating tray at one end: floating tray -> crossing -> aisle tray.
+    const only = { ...layout, trays: layout.trays.filter((t) => t.id !== 't1') };
+    const pts = crossRoute({ ...only, trays: [...only.trays, { id: 'tb', kind: 'data' as const, widthMm: 300, overId: 'h' }] }, plan, { x: 1600, y: 4150 }, { x: 4000, y: 9700 });
     expect(pts).toContainEqual({ x: 2800, y: 4150 });
   });
   it('falls back to a straight line without trays', () => {

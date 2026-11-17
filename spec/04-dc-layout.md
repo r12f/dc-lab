@@ -169,7 +169,7 @@ count at a time, B its B count; tried reversed when the cable runs the other way
 **Remove cables** drops the cables on the selected connectors. A connector takes one cross-rack cable.
 
 **Traces**: drawn in every mode, one thin line per rack pair (all its cables aggregated), from the midpoint of one rack's edge (the edge facing its route) to the other's — never through the rack, so rack labels stay readable. Each pair has its own colour from the layout palette (light themes: candy macaron mint / lavender / pistachio / rose-pink / aqua / periwinkle; dark: saturated greens and magentas; never an alert hue), ~2.6 px at any zoom over a paper casing. Traces sharing a tray are drawn on top of each other; every shared run (≥ 1 m, so not the short legs into racks) shows a badge with the number of traces on it (hover: pairs, cables, fibers). Path: from the rack centre to the
-nearest point of the nearest data tray (power trays carry none), along trays — switching tray only where two trays
+nearest point of the nearest aisle data tray — the tray beside the rack's row, even when a floating tray runs over the rack; a floating tray only when there is no aisle tray (power trays carry none), along trays — switching tray only where two trays
 cross — to the tray point nearest the other rack, then to it (shortest such path); a straight line when there is
 no tray. Hover shows the pair, cable count and fiber count (cable `fiberCount`, else A connectors × fibers). In
 cabling mode the A / B racks get an ink outline and an ink badge with the letter in paper colour (readable on the accent rack fill), and their pair's trace drawn strong. Removing a rack drops its cables;

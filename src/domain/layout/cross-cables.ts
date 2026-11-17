@@ -174,7 +174,7 @@ export function clipStart(points: Pt[], box: Box): Pt[] {
 }
 
 
-interface Seg { a: Pt; b: Pt }
+interface Seg { a: Pt; b: Pt; floating?: boolean }
 
 /** Centre line of each data tray (power trays carry no data cables). */
 function trayLines(layout: DcLayout, plan: FloorPlan): Seg[] {
@@ -183,8 +183,9 @@ function trayLines(layout: DcLayout, plan: FloorPlan): Seg[] {
     if (t.kind !== 'data') continue;
     const r = trayRect(plan, t);
     if (!r) continue;
-    if (r.widthMm >= r.depthMm) out.push({ a: { x: r.x, y: r.y + r.depthMm / 2 }, b: { x: r.x + r.widthMm, y: r.y + r.depthMm / 2 } });
-    else out.push({ a: { x: r.x + r.widthMm / 2, y: r.y }, b: { x: r.x + r.widthMm / 2, y: r.y + r.depthMm } });
+    const floating = !!t.floating;
+    if (r.widthMm >= r.depthMm) out.push({ a: { x: r.x, y: r.y + r.depthMm / 2 }, b: { x: r.x + r.widthMm, y: r.y + r.depthMm / 2 }, floating });
+    else out.push({ a: { x: r.x + r.widthMm / 2, y: r.y }, b: { x: r.x + r.widthMm / 2, y: r.y + r.depthMm }, floating });
   }
   return out;
 }
@@ -211,14 +212,17 @@ function cross(s: Seg, t: Seg): Pt | undefined {
 }
 
 /**
- * Path of a cable between two racks: from rack A straight to the nearest point of the nearest data tray, along trays
+ * Path of a cable between two racks: from rack A straight to the nearest point of the nearest aisle data tray (a
+ * floating tray only when there is no aisle tray), along trays
  * (switching trays only where they cross) to the tray point nearest rack B, then to rack B. Shortest by length
  * (Dijkstra over tray crossings and the two entry points). Straight line when the racks share no tray network.
  */
 export function crossRoute(layout: DcLayout, plan: FloorPlan, from: Pt, to: Pt): Pt[] {
   const lines = trayLines(layout, plan);
   if (!lines.length) return [from, to];
-  const near = (p: Pt) => lines.map((s, i) => ({ i, q: project(s, p) })).sort((u, v) => dist(u.q, p) - dist(v.q, p))[0];
+  // A rack enters the nearest tray along an aisle (the one beside its row); a floating tray only when there is none.
+  const near = (p: Pt) => lines.map((s, i) => ({ i, q: project(s, p), f: s.floating ? 1 : 0 }))
+    .sort((u, v) => u.f - v.f || dist(u.q, p) - dist(v.q, p))[0];
   const ea = near(from);
   const eb = near(to);
   // Nodes per tray: crossings with other trays plus the entry points on it.
