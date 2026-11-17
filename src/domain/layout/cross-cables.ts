@@ -142,13 +142,50 @@ export function cableFibers(media: CableMedia | undefined): number {
 
 export interface Pt { x: number; y: number }
 
-/** Centre of a rack on the plan (mm). */
-export function rackCenter(lib: Library, designs: DesignLookup, layout: DcLayout, plan: FloorPlan, a: RackAssignment): Pt | undefined {
+/** Footprint of a rack on the plan (mm). */
+export function rackRect(lib: Library, designs: DesignLookup, layout: DcLayout, plan: FloorPlan, a: RackAssignment) {
   const row = layout.rows.find((r) => r.id === a.rowId);
   const rect = plan.rects.get(a.rowId);
   if (!row || !rect) return undefined;
-  const r = tileRect(rect, row, a.startTile, tileWidthOf(lib, designs(a.designId)));
-  return { x: r.x + r.widthMm / 2, y: r.y + r.depthMm / 2 };
+  return tileRect(rect, row, a.startTile, tileWidthOf(lib, designs(a.designId)));
+}
+
+/** Centre of a rack on the plan (mm). */
+export function rackCenter(lib: Library, designs: DesignLookup, layout: DcLayout, plan: FloorPlan, a: RackAssignment): Pt | undefined {
+  const r = rackRect(lib, designs, layout, plan, a);
+  return r && { x: r.x + r.widthMm / 2, y: r.y + r.depthMm / 2 };
+}
+
+type Box = { x: number; y: number; widthMm: number; depthMm: number };
+const inside = (b: Box, p: Pt) => p.x > b.x + 1e-6 && p.x < b.x + b.widthMm - 1e-6 && p.y > b.y + 1e-6 && p.y < b.y + b.depthMm - 1e-6;
+
+/** Cuts the start of an orthogonal path (which begins inside `box`) where it leaves the box. */
+export function clipStart(points: Pt[], box: Box): Pt[] {
+  for (let i = 1; i < points.length; i++) {
+    if (inside(box, points[i])) continue;
+    const a = points[i - 1];
+    const b = points[i];
+    let p: Pt = b;
+    if (a.x === b.x) p = { x: a.x, y: Math.min(Math.max(b.y > a.y ? box.y + box.depthMm : box.y, Math.min(a.y, b.y)), Math.max(a.y, b.y)) };
+    else if (a.y === b.y) p = { x: Math.min(Math.max(b.x > a.x ? box.x + box.widthMm : box.x, Math.min(a.x, b.x)), Math.max(a.x, b.x)), y: a.y };
+    return [p, ...points.slice(i)];
+  }
+  return points;
+}
+
+/** Shifts an orthogonal path sideways by `o` mm (each segment moved across its own direction). */
+export function offsetPath(points: Pt[], o: number): Pt[] {
+  if (!o || points.length < 2) return points;
+  const horiz = (k: number) => points[k].y === points[k + 1].y;
+  return points.map((p, i) => {
+    let { x, y } = p;
+    for (const k of [i - 1, i]) {
+      if (k < 0 || k >= points.length - 1) continue;
+      if (horiz(k)) y = p.y + o;
+      else x = p.x + o;
+    }
+    return { x, y };
+  });
 }
 
 interface Seg { a: Pt; b: Pt }
@@ -266,10 +303,14 @@ export function crossTraces(lib: Library, designs: DesignLookup, layout: DcLayou
     if (!t) {
       const a = layout.assignments.find((r) => r.id === x);
       const b = layout.assignments.find((r) => r.id === y);
-      const pa = a && rackCenter(lib, designs, layout, plan, a);
-      const pb = b && rackCenter(lib, designs, layout, plan, b);
-      if (!a || !b || !pa || !pb) continue;
-      t = { key, a, b, points: crossRoute(layout, plan, pa, pb), cables: 0, fibers: 0 };
+      const ra = a && rackRect(lib, designs, layout, plan, a);
+      const rb = b && rackRect(lib, designs, layout, plan, b);
+      if (!a || !b || !ra || !rb) continue;
+      const mid = (r: Box) => ({ x: r.x + r.widthMm / 2, y: r.y + r.depthMm / 2 });
+      // Routed centre to centre, then cut at each rack's edge so the line never covers the rack label.
+      const full = crossRoute(layout, plan, mid(ra), mid(rb));
+      const points = clipStart(clipStart(full, ra).reverse(), rb).reverse();
+      t = { key, a, b, points, cables: 0, fibers: 0 };
       byPair.set(key, t);
     }
     t.cables += 1;

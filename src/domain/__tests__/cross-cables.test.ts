@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeFloorPlan } from '../layout/floor-plan';
-import { cableFibers, crossRackLayout, crossRoute } from '../layout/cross-cables';
+import { cableFibers, clipStart, crossRackLayout, crossRoute, offsetPath } from '../layout/cross-cables';
 import { Library } from '../library/library';
 import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import type { RackDesign } from '../design/types';
@@ -60,5 +60,14 @@ describe('cross-rack routing', () => {
     const [dev] = crossRackLayout(lib, design);
     expect(dev.faces.map((f) => f.face)).toEqual(['rear']);
     expect(dev.faces[0].groups.map((g) => [g.group.id, g.ports.size])).toEqual([['rm4', 0], ['rm3', 0], ['rm2', 1], ['rm1', 0]]);
+  });
+  it('starts a trace at the rack edge, not its centre', () => {
+    const box = { x: 0, y: 0, widthMm: 1200, depthMm: 600 };
+    expect(clipStart([{ x: 600, y: 300 }, { x: 2000, y: 300 }, { x: 2000, y: 5000 }], box))
+      .toEqual([{ x: 1200, y: 300 }, { x: 2000, y: 300 }, { x: 2000, y: 5000 }]);
+  });
+  it('offsets parallel traces sideways', () => {
+    expect(offsetPath([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }], 10))
+      .toEqual([{ x: 0, y: 10 }, { x: 110, y: 10 }, { x: 110, y: 100 }]);
   });
 });
