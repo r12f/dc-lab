@@ -212,7 +212,7 @@ p.warn { color: var(--danger); margin: 4px 0; font-size: 12px; }
 .cross-device { border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; }
 .cross-device-name { font-weight: 600; }
 .cross-group { margin-top: 4px; }
-.cross-grid { display: grid; gap: 3px; margin-top: 2px; justify-content: start; }
+.cross-grid { user-select: none; touch-action: none; display: grid; gap: 3px; margin-top: 2px; justify-content: start; }
 .cross-cell { display: flex; flex-direction: column; gap: 1px; }
 /* stacked connectors: connector 1 (A) at the bottom */
 .cross-cell.stacked { flex-direction: column-reverse; }

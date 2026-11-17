@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { CrossRackCable, CrossRackEnd, DcLayout } from '../../domain/layout/types';
 import type { DesignLookup } from '../../domain/layout/tiles';
@@ -39,11 +39,13 @@ export function CrossCablingPanel({ lib, designs, layout, selectedRackId, sides,
     onSides({ ...sides, [side]: selected.id });
     setSel({ ...sel, [side]: [] });
   };
-  const toggle = (side: 'a' | 'b', e: CrossRackEnd) => {
+  /** Selects (on) or deselects a connector; selection order is kept (it pairs A and B ends in order). */
+  const mark = (side: 'a' | 'b', e: CrossRackEnd, on: boolean) => setSel((cur) => {
     const k = crossEndKey(e);
-    const list = sel[side];
-    setSel({ ...sel, [side]: list.some((x) => crossEndKey(x) === k) ? list.filter((x) => crossEndKey(x) !== k) : [...list, e] });
-  };
+    const has = cur[side].some((x) => crossEndKey(x) === k);
+    if (has === on) return cur;
+    return { ...cur, [side]: on ? [...cur[side], e] : cur[side].filter((x) => crossEndKey(x) !== k) };
+  });
   const assign = () => {
     if (!plan || plan.error) return;
     const existing = layout.crossCables ?? [];
@@ -92,7 +94,7 @@ export function CrossCablingPanel({ lib, designs, layout, selectedRackId, sides,
       <div className="cross-sides">
         {(['a', 'b'] as const).map((side) => (
           <SideColumn key={side} lib={lib} designs={designs} layout={layout} side={side} rackId={sides[side]}
-            selected={sel[side]} used={used} onToggle={(e) => toggle(side, e)}
+            selected={sel[side]} used={used} onMark={(e, on) => mark(side, e, on)}
             onClear={() => setSel({ ...sel, [side]: [] })} />
         ))}
       </div>
@@ -100,10 +102,18 @@ export function CrossCablingPanel({ lib, designs, layout, selectedRackId, sides,
   );
 }
 
-function SideColumn({ lib, designs, layout, side, rackId, selected, used, onToggle, onClear }: {
+function SideColumn({ lib, designs, layout, side, rackId, selected, used, onMark, onClear }: {
   lib: Library; designs: DesignLookup; layout: DcLayout; side: 'a' | 'b'; rackId?: string;
-  selected: CrossRackEnd[]; used: Map<string, string>; onToggle(e: CrossRackEnd): void; onClear(): void;
+  selected: CrossRackEnd[]; used: Map<string, string>; onMark(e: CrossRackEnd, on: boolean): void; onClear(): void;
 }) {
+  // Press on a connector and sweep over others: they all take the pressed connector's new state (select / deselect).
+  const sweep = useRef<boolean | undefined>(undefined);
+  useEffect(() => {
+    const up = () => { sweep.current = undefined; };
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    return () => { window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
+  }, []);
   const rack = layout.assignments.find((a) => a.id === rackId);
   const design = rack && designs(rack.designId);
   const devices = useMemo(() => (design ? crossRackLayout(lib, design) : []), [lib, design]);
@@ -146,7 +156,15 @@ function SideColumn({ lib, designs, layout, side, rackId, selected, used, onTogg
                           return (
                             <button key={k} type="button" title={`${d.placement.label} ${label}${used.has(k) ? ' — cabled' : ''}`}
                               className={`cross-port${sel.has(k) ? ' selected' : ''}${used.has(k) ? ' used' : ''}`}
-                              onClick={() => onToggle(e)}>{label}</button>
+                              onPointerDown={(ev) => {
+                                if (ev.button !== 0) return;
+                                ev.preventDefault();
+                                // Release implicit (touch / pen) capture so pointerenter fires on the connectors swept over.
+                                (ev.currentTarget as Element).releasePointerCapture?.(ev.pointerId);
+                                sweep.current = !sel.has(k);
+                                onMark(e, sweep.current);
+                              }}
+                              onPointerEnter={() => { if (sweep.current !== undefined) onMark(e, sweep.current); }}>{label}</button>
                           );
                         })}
                       </div>
