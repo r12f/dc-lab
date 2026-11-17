@@ -27,7 +27,8 @@ interface Props {
   onHeaderPointerDown(e: PointerEvent<SVGElement>): void;
   /** Press on a rack: select it (Ctrl/Shift adds) and start dragging the selected racks. */
   onRackPointerDown(assignmentId: string, e: PointerEvent<SVGElement>): void;
-  onRackHover(assignmentId: string | undefined, e?: { clientX: number; clientY: number }): void;
+  /** Hover on a rack: its id and the rack's box on screen (the tooltip goes beside the rack, not at the pointer). */
+  onRackHover(assignmentId: string | undefined, box?: DOMRect): void;
 }
 
 const HEADER_H = 1040;
@@ -109,7 +110,7 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
           <g key={a.id} style={{ cursor: 'move' }}
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => onRackPointerDown(a.id, e)}
-            onPointerEnter={(e) => onRackHover(a.id, e)} onPointerMove={(e) => onRackHover(a.id, e)}
+            onPointerEnter={(e) => onRackHover(a.id, (e.currentTarget as Element).getBoundingClientRect())}
             onPointerLeave={() => onRackHover(undefined)}>
             <rect x={r.x + 30} y={r.y + 30} width={r.widthMm - 60} height={r.depthMm - 60} rx={40}
               fill={fill} stroke={sel ? paint.selection : paint.ink} strokeWidth={sel ? 60 : 20} />

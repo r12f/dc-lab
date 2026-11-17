@@ -49,7 +49,7 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
   const drag = useDragMove(lib, designs, stored, editor);
   const layout = drag.preview();
   const plan = computeFloorPlan(layout);
-  const [hover, setHover] = useState<{ id: string; x: number; y: number }>();
+  const [hover, setHover] = useState<{ id: string; box: DOMRect }>();
   const { widthMm, depthMm } = layout.room;
   const ws = layout.whitespace;
   const rotation = layout.viewRotation ?? 0;
@@ -144,7 +144,7 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
             <g key={r.id} opacity={ghost(r.id)}>
               <RowDrawing lib={lib} designs={designs} layout={layout} row={r} rect={b.rect} powerW={rowPower.get(r.id) ?? 0}
                 selection={selection} onSelect={onSelect} onHeaderPointerDown={startDrag('row', r.id)} onRackPointerDown={rackDown}
-                onRackHover={(id, e) => setHover(id && e ? { id, x: e.clientX, y: e.clientY } : undefined)} />
+                onRackHover={(id, box) => setHover(id && box ? { id, box } : undefined)} />
             </g>
           );
         })}
@@ -186,8 +186,8 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
           <text x={0} y={-PAD / 2 + 300} fontSize={220} fontWeight={700} fill={paint.danger} pointerEvents="none">{`Cannot move here — ${rackProblem}`}</text>
         )}
       </svg>
-      {hovered && <RackTooltip lines={rackSummary(lib, designs, hovered)} x={hover.x} y={hover.y} />}
-      {traceTip && !hovered && <RackTooltip lines={[traceTip.text]} x={traceTip.x} y={traceTip.y} />}
+      {hovered && <RackTooltip lines={rackSummary(lib, designs, hovered)} anchor={hover.box} />}
+      {traceTip && !hovered && <RackTooltip lines={[traceTip.text]} anchor={new DOMRect(traceTip.x, traceTip.y, 0, 0)} />}
     </>
   );
 }
