@@ -96,6 +96,10 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
         <NumberField label="First number" value={group.firstNumber ?? 1} min={0}
           onChange={(n) => set({ firstNumber: n !== 1 ? n : undefined })} />
       </div>
+      <label className="checkbox">
+        <input type="checkbox" checked={!!group.rightToLeft} onChange={(e) => set({ rightToLeft: e.target.checked || undefined })} />
+        Mirrored left to right (rear of a pass-through panel, seen from behind)
+      </label>
       <TextField label="Port numbers in fill order (blank = 1, 2, 3…; e.g. 1, 2, 3, 4, 5, 6, 10, 7, 8, 9)"
         value={(group.portNumbers ?? []).join(', ')} onChange={(v) => {
           const nums = v.split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0);

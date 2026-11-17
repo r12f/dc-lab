@@ -45,6 +45,7 @@ export function portCell(g: PortGroup, i: number, rows = Math.max(1, g.rows)): {
     col = Math.floor(cell / rows);
     row = cell % rows;
   }
+  if (g.rightToLeft) col = groupCols({ ...g, rightToLeft: undefined }, rows) - 1 - col;
   return { col, row: g.bottomUp ? rows - 1 - row : row };
 }
 

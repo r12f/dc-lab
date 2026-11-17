@@ -243,6 +243,11 @@ Designer cabling view both honour it.
 **C13/C19 combination outlet**: form factor `C13/C19` (power) takes either a C14 or a C20 plug. PDU outlets are drawn
 as one vertical column per group (`rows` > 1 puts that many outlets side by side).
 
+**Mirrored groups** (`rightToLeft`): the group's columns count from the right, so it is drawn left-right mirrored.
+Used on the rear of a pass-through panel (a fiber housing): seen from behind, rear port 1 sits behind front port 1,
+i.e. on the opposite side. When every group on a face is mirrored, the groups also run right to left (M1 rightmost).
+Port refs and numbers do not change; only the drawing does.
+
 **Printed port numbers** (`portNumbers`): when a faceplate's printed numbers do not follow the fill order, a port group
 lists the number of each port in fill order (counted from `firstNumber`), e.g. the 80x MMC-16 housing module: a 3x3
 block 1-9 and a lone top-left slot 10 -> `[1, 2, 3, 4, 5, 6, 10, 7, 8, 9]`. Names only: port refs (`group/index`) and

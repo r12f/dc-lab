@@ -56,6 +56,11 @@ export interface PortGroup {
   /** Rows count from the bottom: port 1 sits in the bottom row. */
   bottomUp?: boolean;
   /**
+   * Columns count from the right: the group is drawn left-right mirrored, as the rear of a pass-through panel
+   * (a fiber housing) is seen from behind.
+   */
+  rightToLeft?: boolean;
+  /**
    * Two-level port names: every `subPorts` ports share a number and take letters — 4 gives 1A 1B 1C 1D 2A… (a
    * cassette of 4 connectors). Unset / 1 = plain numbers.
    */

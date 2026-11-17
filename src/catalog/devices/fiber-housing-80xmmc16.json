@@ -182,7 +182,8 @@
         9
       ],
       "connectorsPerPort": 2,
-      "connectorLayout": "stacked"
+      "connectorLayout": "stacked",
+      "rightToLeft": true
     },
     {
       "id": "rm2",
@@ -216,7 +217,8 @@
         9
       ],
       "connectorsPerPort": 2,
-      "connectorLayout": "stacked"
+      "connectorLayout": "stacked",
+      "rightToLeft": true
     },
     {
       "id": "rm3",
@@ -250,7 +252,8 @@
         9
       ],
       "connectorsPerPort": 2,
-      "connectorLayout": "stacked"
+      "connectorLayout": "stacked",
+      "rightToLeft": true
     },
     {
       "id": "rm4",
@@ -284,7 +287,8 @@
         9
       ],
       "connectorsPerPort": 2,
-      "connectorLayout": "stacked"
+      "connectorLayout": "stacked",
+      "rightToLeft": true
     }
   ],
   "breakoutProfiles": [

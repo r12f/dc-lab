@@ -48,7 +48,10 @@ function layoutPorts(device: DeviceDefinition, face: PortFace, x0: number) {
   const labels: GroupLabel[] = [];
   let x = x0;
   let bottom = 0;
-  for (const g of groupsOnFace(device, face)) {
+  const faceGroups = groupsOnFace(device, face);
+  // A mirrored face (rear of a pass-through panel, seen from behind) also runs its groups right to left.
+  const ordered = faceGroups.length && faceGroups.every((g) => g.rightToLeft) ? [...faceGroups].reverse() : faceGroups;
+  for (const g of ordered) {
     const rows = Math.max(1, g.rows);
     const cols = groupCols(g, rows);
     const { w, h } = portSize(g);
