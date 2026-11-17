@@ -26,9 +26,16 @@ export interface CrossPortGroup {
   ports: Map<number, (number | undefined)[]>;
 }
 
+export interface CrossFace {
+  face: 'front' | 'rear';
+  /** Every cable port group of the face, in drawing order (left to right), so the face reads like the faceplate. */
+  groups: CrossPortGroup[];
+}
+
 export interface CrossDevice {
   placement: Placement;
-  groups: CrossPortGroup[];
+  /** Faces with at least one cross-rack connector. */
+  faces: CrossFace[];
 }
 
 /**
@@ -50,8 +57,9 @@ export function crossRackLayout(lib: Library, design: RackDesign): CrossDevice[]
     const mine = marks.filter((m) => m.placementId === p.id);
     const device = mine.length ? placedDevice(lib, design, p) : undefined;
     if (!device) continue;
-    const groups: CrossPortGroup[] = [];
+    const faces: CrossFace[] = [];
     for (const face of ['front', 'rear'] as const) {
+      const groups: CrossPortGroup[] = [];
       for (const g of drawOrder(cableGroupsOnFace(device, face))) {
         const ports = new Map<number, (number | undefined)[]>();
         for (const m of mine) {
@@ -61,10 +69,11 @@ export function crossRackLayout(lib: Library, design: RackDesign): CrossDevice[]
           list.push(m.connector);
           ports.set(r.index, list.sort((a, b) => (a ?? 0) - (b ?? 0)));
         }
-        if (ports.size) groups.push({ group: g, ports });
+        groups.push({ group: g, ports });
       }
+      if (groups.some((g) => g.ports.size)) faces.push({ face, groups });
     }
-    if (groups.length) out.push({ placement: p, groups });
+    if (faces.length) out.push({ placement: p, faces });
   }
   return out;
 }

@@ -129,7 +129,11 @@ function SideColumn({ lib, designs, layout, side, rackId, selected, used, onMark
       {rack && devices.map((d) => (
         <div key={d.placement.id} className="cross-device">
           <div className="cross-device-name">{d.placement.label}</div>
-          {d.groups.map(({ group, ports }) => {
+          {d.faces.map(({ face, groups }) => (
+          <div key={face} className="cross-face">
+          {d.faces.length > 1 && <div className="muted cross-face-name">{face}</div>}
+          <div className="cross-face-groups">
+          {groups.map(({ group, ports }) => {
             // Same grid as the faceplate / cabling view (portCell: fill order, holes, bottom-up, mirrored);
             // ports without a cross-rack connector are blank cells so positions stay recognisable.
             const rows = Math.max(1, group.rows);
@@ -174,6 +178,9 @@ function SideColumn({ lib, designs, layout, side, rackId, selected, used, onMark
               </div>
             );
           })}
+          </div>
+          </div>
+          ))}
         </div>
       ))}
     </div>

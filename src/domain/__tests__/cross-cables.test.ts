@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { computeFloorPlan } from '../layout/floor-plan';
-import { cableFibers, crossRoute } from '../layout/cross-cables';
+import { cableFibers, crossRackLayout, crossRoute } from '../layout/cross-cables';
+import { Library } from '../library/library';
+import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
+import type { RackDesign } from '../design/types';
+import { emptyProject } from '../project/types';
 import type { DcLayout } from '../layout/types';
 
 // Two rows with a hot aisle between them, an aisle tray over it and a floating tray across both rows.
@@ -45,5 +49,16 @@ describe('cross-rack routing', () => {
   it('counts fibers from the cable', () => {
     expect(cableFibers({ fiberCount: 160 } as never)).toBe(160);
     expect(cableFibers({ ends: { a: { count: 2, connector: 'MPO-8', fibers: 8 } } } as never)).toBe(16);
+  });
+  it('lays out a housing rear like its faceplate: all modules, right to left', () => {
+    const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
+    const design: RackDesign = {
+      id: 'd', name: 'D', abbr: 'D', templateId: lib.racks.items()[0].id, cables: [],
+      placements: [{ id: 'fh', deviceId: 'fiber-housing-80xmmc16', label: 'FH1', mount: { kind: 'rack', position: 1, face: 'front' }, portSettings: {}, groupSettings: {} }],
+      crossRack: [{ placementId: 'fh', portRef: 'rm2/1', connector: 1 }],
+    };
+    const [dev] = crossRackLayout(lib, design);
+    expect(dev.faces.map((f) => f.face)).toEqual(['rear']);
+    expect(dev.faces[0].groups.map((g) => [g.group.id, g.ports.size])).toEqual([['rm4', 0], ['rm3', 0], ['rm2', 1], ['rm1', 0]]);
   });
 });
