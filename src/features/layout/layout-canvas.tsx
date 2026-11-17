@@ -170,9 +170,11 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
           const t = tileRect(rr, row, a.startTile, tileWidthOf(lib, designs(a.designId)));
           return (
             <g key={id} pointerEvents="none">
-              <rect x={t.x} y={t.y} width={t.widthMm} height={t.depthMm} fill="none" stroke={paint.selection} strokeWidth={90} />
+              <rect x={t.x} y={t.y} width={t.widthMm} height={t.depthMm} fill="none" stroke={paint.ink} strokeWidth={90} />
+              {/* Badge in ink with paper text: reads on any rack fill (racks are drawn in the accent colour). */}
+              <circle cx={t.x + t.widthMm / 2} cy={t.y + t.depthMm / 2} r={360} fill={paint.ink} stroke={paint.paper} strokeWidth={60} />
               <text x={t.x + t.widthMm / 2} y={t.y + t.depthMm / 2 + 150} fontSize={420} fontWeight={800} textAnchor="middle"
-                fill={paint.selection} transform={labelTransform(rotation, t.x + t.widthMm / 2, t.y + t.depthMm / 2 + 150, 'upright')}>
+                fill={paint.paper} transform={labelTransform(rotation, t.x + t.widthMm / 2, t.y + t.depthMm / 2 + 150, 'upright')}>
                 {i === 0 ? 'A' : 'B'}
               </text>
             </g>
