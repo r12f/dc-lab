@@ -74,6 +74,8 @@ export function CrossCablingPanel({ lib, designs, layout, selectedRackId, sides,
             {`Set B${selected ? ` = ${selected.label}` : ''}`}
           </Button>
         </div>
+        <Button disabled={!sides.a && !sides.b} title="Swap A and B sides (selected connectors swap with them)"
+          onClick={() => { onSides({ a: sides.b, b: sides.a }); setSel({ a: sel.b, b: sel.a }); }}>⇅ Swap A ↔ B</Button>
         <SelectField<string> label={`Cable (${cables.length} fit)`} value={media}
           options={cables.length ? cables.map((m) => ({ value: m.id, label: m.name })) : [{ value: '', label: 'No cable fits' }]}
           onChange={setMediaId} />

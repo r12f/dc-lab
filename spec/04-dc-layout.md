@@ -160,7 +160,7 @@ view, `design.crossRack`). They are stored on the layout: `layout.crossCables[]`
 end `{ assignmentId, placementId, portRef, connector }` (the rack in this layout + the connector in its design).
 
 **Cabling mode** (toolbar latch `⇄ Cabling`): the right side bar becomes two columns, **A side** and **B side**.
-Select a rack on the plan and press *Set A* / *Set B*; that side lists the rack's cross-rack connectors laid out like
+Select a rack on the plan and press *Set A* / *Set B* (*Swap A ↔ B* exchanges the two racks and their picked connectors); that side lists the rack's cross-rack connectors laid out like
 its cabling view: devices top to bottom (devices without a cross-rack connector left out), each device's port groups
 in drawing order (mirrored faces right to left), each group drawn on its faceplate grid (same cells as the faceplate and cabling view: fill order, holes, bottom-up, mirroring; stacked connectors A at the bottom), ports that are not cross-rack shown as faint dashed placeholders so every position stays recognisable; connectors labelled by printed port name + A/B. Pick connectors on
 both sides; the cable list shows only cables whose ends fit (connector, gender, fiber type; one side picked = cables
