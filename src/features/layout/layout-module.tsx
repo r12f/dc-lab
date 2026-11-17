@@ -13,6 +13,8 @@ import { LayoutToolbar, LayoutViewControls } from './layout-toolbar';
 import { useLayoutShortcuts } from './use-layout-shortcuts';
 import { useLayoutEditor } from './use-layout-editor';
 import type { LayoutSelection } from './selection';
+import { Button } from '../../ui/button';
+import { CrossCablingPanel, type CrossSides } from './cross-cabling-panel';
 
 export function LayoutModule() {
   const lib = useLibrary();
@@ -23,6 +25,8 @@ export function LayoutModule() {
   const upsert = useAppStore((s) => s.upsert);
   const remove = useAppStore((s) => s.remove);
   const [sel, setSel] = useState<LayoutSelection>();
+  const [cabling, setCabling] = useState(false);
+  const [sides, setSides] = useState<CrossSides>({});
 
   const layout = layouts.find((l) => l.id === selectedId);
   const editor = useLayoutEditor(lib, designs, layout);
@@ -64,15 +68,25 @@ export function LayoutModule() {
           <CanvasFrame title={layout.name} exportName={layout.id}
             fitKey={`${layout.id}:${layout.room.widthMm}x${layout.room.depthMm}:${layout.viewRotation ?? 0}`}
             toolbar={<LayoutToolbar layout={layout} editor={editor} selection={sel} onSelect={setSel} />}
-            viewControls={<LayoutViewControls editor={editor} />}>
-            {(ref) => <LayoutCanvas ref={ref} lib={lib} designs={designs} layout={layout} editor={editor} selection={sel} onSelect={setSel} />}
+            viewControls={<>
+              <Button variant={cabling ? 'primary' : 'default'} aria-pressed={cabling}
+                title="Cabling view: cross-rack cables between racks (A / B sides in the right panel)"
+                onClick={() => setCabling(!cabling)}>⇄ Cabling</Button>
+              <LayoutViewControls editor={editor} />
+            </>}>
+            {(ref) => <LayoutCanvas ref={ref} lib={lib} designs={designs} layout={layout} editor={editor} selection={sel} onSelect={setSel}
+              crossSides={cabling ? [sides.a, sides.b].filter((x): x is string => !!x) : undefined} />}
           </CanvasFrame>
         ) : (
           <EmptyCanvas text="Select or create a DC layout." />
         )
       }
-      inspector={layout && <LayoutInspector lib={lib} designs={designs} layout={layout} editor={editor}
-        selection={sel} onSelect={setSel} />}
+      inspector={layout && (cabling
+        ? <CrossCablingPanel lib={lib} designs={designs} layout={layout}
+            selectedRackId={sel?.kind === 'assignment' && sel.ids.length === 1 ? sel.ids[0] : undefined}
+            sides={sides} onSides={setSides} onChange={editor.setCrossCables} />
+        : <LayoutInspector lib={lib} designs={designs} layout={layout} editor={editor}
+            selection={sel} onSelect={setSel} />)}
     />
   );
 }

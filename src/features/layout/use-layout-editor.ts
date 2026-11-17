@@ -115,6 +115,7 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
     ...l,
     assignments: l.assignments.filter((a) => !ids.includes(a.id))
       .map((a) => (a.serves?.some((x) => ids.includes(x)) ? { ...a, serves: a.serves.filter((x) => !ids.includes(x)) } : a)),
+    crossCables: l.crossCables?.filter((c) => ![...c.from, ...c.to].some((e) => ids.includes(e.assignmentId))),
   }));
   /** Moves racks together by rows (in row order) and tiles; all or none. Returns the problem when they do not fit. */
   const moveRacks = (ids: string[], dRow: number, dTile: number): string | undefined => {
@@ -136,6 +137,8 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
   const relabel = (id: string, label: string) =>
     mutate((l) => ({ ...l, assignments: l.assignments.map((a) => (a.id === id ? { ...a, label } : a)) }));
 
+  /** Replaces the layout's cross-rack cables. */
+  const setCrossCables = (crossCables: DcLayout['crossCables']) => mutate((l) => ({ ...l, crossCables }));
   const setRoom = (room: DcLayout['room']) => mutate((l) => ({ ...l, room }));
   const setWhitespace = (whitespace: Rect) => mutate((l) => ({ ...l, whitespace }));
   const rename = (name: string) => mutate((l) => ({ ...l, name }));
@@ -144,7 +147,7 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
 
   return {
     addRow, addAisle, addCrossAisle, addTray, addFloating, moveFloatingTray, addFacility, updateElement, updateElements, duplicate, removeElement, removeElements, reorder, setSequence, moveTray, moveFacility,
-    assign, assignTiles, unassign, unassignAll, moveRacks, changeDesign, relabel, setServes, setRoom, setWhitespace, rename, setFacilityLinks, rotateView, addDoor: addDoorTo, moveDoor,
+    assign, assignTiles, unassign, unassignAll, moveRacks, changeDesign, relabel, setServes, setRoom, setWhitespace, rename, setFacilityLinks, rotateView, addDoor: addDoorTo, moveDoor, setCrossCables,
   };
 }
 

@@ -110,7 +110,7 @@ export function endpointLeg(lib: Library, design: RackDesign, ep: CableEndpoint)
 }
 
 /** True when a cable end fits a leg: connector mates; fiber type matches the reach; direct-attach speed matches. */
-function endFits(media: CableMedia, side: 'a' | 'b', leg: PortLeg | undefined): boolean {
+export function endFits(media: CableMedia, side: 'a' | 'b', leg: PortLeg | undefined): boolean {
   if (!leg) return false;
   const end = media.ends[side];
   if (!connectorsMate(end.connector, leg.connector)) return false;

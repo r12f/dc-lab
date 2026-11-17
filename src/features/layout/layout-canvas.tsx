@@ -6,7 +6,8 @@ import type { DcLayout } from '../../domain/layout/types';
 import type { DesignLookup } from '../../domain/layout/tiles';
 import { computeDcMetrics } from '../../domain/layout/metrics';
 import { computeFacilityLoads, facilityCapacityKw } from '../../domain/layout/facility-load';
-import { computeFloorPlan, trayRect } from '../../domain/layout/floor-plan';
+import { computeFloorPlan, tileRect, trayRect } from '../../domain/layout/floor-plan';
+import { tileWidthOf } from '../../domain/layout/tiles';
 import { clickSelect, isSelected, type DragKind, type ElementKind, type LayoutSelection } from './selection';
 import type { LayoutEditor } from './use-layout-editor';
 import { RowDrawing } from './row-drawing';
@@ -18,6 +19,7 @@ import { AISLE_COLORS, FACILITY_COLORS, TRAY_COLORS } from './layout-colors';
 import { paint } from '../../theme/paint';
 import { labelTransform, planTransform, viewSize } from '../../domain/layout/view-rotation';
 import { ViewRotationContext } from './view-context';
+import { CrossTraces } from './cross-traces';
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -27,6 +29,8 @@ interface Props {
   editor: LayoutEditor;
   selection?: LayoutSelection;
   onSelect(sel: LayoutSelection | undefined): void;
+  /** Cross-rack cabling mode: racks set as A / B sides (drawn highlighted). */
+  crossSides?: string[];
 }
 
 const PAD = 1200;
@@ -40,7 +44,8 @@ export const PX_PER_MM = 0.1;
 /** Grab width (mm) of an aisle's resize edge. */
 const HANDLE_MM = 200;
 
-export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, selection, onSelect }: Props) {
+export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, selection, onSelect, crossSides }: Props) {
+  const [traceTip, setTraceTip] = useState<{ text: string; x: number; y: number }>();
   const drag = useDragMove(lib, designs, stored, editor);
   const layout = drag.preview();
   const plan = computeFloorPlan(layout);
@@ -154,6 +159,24 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
             </g>
           );
         })}
+        <CrossTraces lib={lib} designs={designs} layout={layout} plan={plan} highlight={crossSides}
+          onHover={(text, e) => setTraceTip(text && e ? { text, x: e.clientX, y: e.clientY } : undefined)} />
+        {crossSides?.map((id, i) => {
+          const a = layout.assignments.find((x) => x.id === id);
+          const row = a && layout.rows.find((r) => r.id === a.rowId);
+          const rr = a && row && plan.rects.get(row.id);
+          if (!a || !row || !rr) return null;
+          const t = tileRect(rr, row, a.startTile, tileWidthOf(lib, designs(a.designId)));
+          return (
+            <g key={id} pointerEvents="none">
+              <rect x={t.x} y={t.y} width={t.widthMm} height={t.depthMm} fill="none" stroke={paint.selection} strokeWidth={90} />
+              <text x={t.x + t.widthMm / 2} y={t.y + t.depthMm / 2 + 150} fontSize={420} fontWeight={800} textAnchor="middle"
+                fill={paint.selection} transform={labelTransform(rotation, t.x + t.widthMm / 2, t.y + t.depthMm / 2 + 150, 'upright')}>
+                {i === 0 ? 'A' : 'B'}
+              </text>
+            </g>
+          );
+        })}
         </g>
         </ViewRotationContext.Provider>
         {rackProblem && (
@@ -161,6 +184,7 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
         )}
       </svg>
       {hovered && <RackTooltip lines={rackSummary(lib, designs, hovered)} x={hover.x} y={hover.y} />}
+      {traceTip && !hovered && <RackTooltip lines={[traceTip.text]} x={traceTip.x} y={traceTip.y} />}
     </>
   );
 }

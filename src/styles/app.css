@@ -204,3 +204,17 @@ p.warn { color: var(--danger); margin: 4px 0; font-size: 12px; }
   line-height: 14px; text-align: center; vertical-align: middle; font-size: 13px; font-weight: 600; color: var(--text); }
 .bom-tree .bom-caret:not(:empty) { border: 1px solid var(--border); border-radius: 3px; }
 .bom-tree .bom-caret:not(:empty):hover { background: var(--surface-hover); }
+
+/* DC Layout cross-rack cabling side bar: A / B columns of cross-rack connectors */
+.cross-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 12px 12px; }
+.cross-side { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.cross-side-head { display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+.cross-device { border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; }
+.cross-device-name { font-weight: 600; }
+.cross-group { margin-top: 4px; }
+.cross-ports { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.cross-port { width: auto; min-width: 34px; padding: 2px 4px; font-size: 11px; border: 1px solid var(--border); border-radius: 3px;
+  background: var(--panel); color: var(--text); cursor: pointer; }
+.cross-port.used { background: color-mix(in srgb, var(--accent) 25%, var(--panel)); }
+.cross-port.selected { outline: 2px solid var(--accent); border-color: var(--accent); font-weight: 700; }
+button.link { width: auto; background: none; border: none; padding: 0; color: var(--accent); cursor: pointer; text-align: left; }

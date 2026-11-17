@@ -102,6 +102,23 @@ export interface RackAssignment {
   serves?: string[];
 }
 
+/** One end connector of a cross-rack cable: a cross-rack connector of a rack placed in the layout. */
+export interface CrossRackEnd {
+  /** Rack (assignment) in this layout. */
+  assignmentId: string;
+  placementId: string;
+  portRef: string;
+  connector?: number;
+}
+
+/** A cable between two racks of the layout (trunk), from cross-rack connectors of rack A to those of rack B. */
+export interface CrossRackCable {
+  id: string;
+  mediaId: string;
+  from: CrossRackEnd[];
+  to: CrossRackEnd[];
+}
+
 export interface DcLayout {
   schema?: typeof LAYOUT_SCHEMA;
   id: string;
@@ -120,4 +137,6 @@ export interface DcLayout {
   doors: Door[];
   /** View rotation, clockwise degrees (display only; the plan itself stays north-up). Default 0. */
   viewRotation?: ViewRotation;
+  /** Cables between racks, on the racks' cross-rack connectors. */
+  crossCables?: CrossRackCable[];
 }

@@ -152,3 +152,25 @@ south (down), units are millimetres.
 - Inspector: room and rack-area fields, layout warnings, group selections, selected element(s) editor,
   tile assignment, DC BOM.
 - Export SVG (tooltip and drag previews are not exported).
+
+## Cross-rack cabling
+
+Cables between racks (trunks) attach to the racks' **cross-rack connectors** (marked in the Rack Designer cabling
+view, `design.crossRack`). They are stored on the layout: `layout.crossCables[]` = `{ id, mediaId, from, to }`, each
+end `{ assignmentId, placementId, portRef, connector }` (the rack in this layout + the connector in its design).
+
+**Cabling mode** (toolbar latch `⇄ Cabling`): the right side bar becomes two columns, **A side** and **B side**.
+Select a rack on the plan and press *Set A* / *Set B*; that side lists the rack's cross-rack connectors laid out like
+its cabling view: devices top to bottom (devices without a cross-rack connector left out), each device's port groups
+in drawing order (mirrored faces right to left), connectors by printed port name (+ A/B leg). Pick connectors on
+both sides; the cable list shows only cables whose ends fit (connector, gender, fiber type; one side picked = cables
+with an end that fits it). **Assign** repeats the cable over the selection in order (A ends taken the cable's A
+count at a time, B its B count; tried reversed when the cable runs the other way). Cabled connectors are shaded;
+**Remove cables** drops the cables on the selected connectors. A connector takes one cross-rack cable.
+
+**Traces**: drawn in every mode, one line per rack pair (all its cables aggregated). Path: from the rack centre to the
+nearest point of the nearest data tray (power trays carry none), along trays — switching tray only where two trays
+cross — to the tray point nearest the other rack, then to it (shortest such path); a straight line when there is
+no tray. Hover shows the pair, cable count and fiber count (cable `fiberCount`, else A connectors × fibers). In
+cabling mode the A / B racks are outlined and their pair's trace drawn strong. Removing a rack drops its cables;
+cables whose ends are no longer marked cross-rack are not drawn.
