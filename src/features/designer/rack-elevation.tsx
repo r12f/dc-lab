@@ -38,6 +38,8 @@ interface Props {
   /** Device filter: links touching these placements are not drawn, the devices are dimmed. */
   /** Device / cable-type filter: hidden devices drawn faded, their links and hidden cable types not drawn. */
   filter?: ViewFilter;
+  /** Rack info above each face: design name + face, rack, units, power, weight (default shown). */
+  showInfo?: boolean;
   /** Faces shown (default both). */
   faces?: readonly PortFace[];
 }
@@ -74,7 +76,7 @@ export function rackDeviceOnFace(lib: Library, design: RackDesign, p: Placement,
   return !!d && !!rack && (isFullDepth(d, rack) || cableGroupsOnFace(d, deviceFaceSeenFrom(p, face)).length > 0);
 }
 
-export function RackElevation({ ref, lib, design, selectedId, onSelect, selectedCableId, onSelectCable, onDropDevice, onMove, showCables = true, filter, faces = FACES }: Props) {
+export function RackElevation({ ref, lib, design, selectedId, onSelect, selectedCableId, onSelectCable, onDropDevice, onMove, showCables = true, filter, faces = FACES, showInfo = true }: Props) {
   const [drag, setDrag] = useState<DragState>();
   const rack = lib.racks.get(design.templateId);
   // Links follow the device / cable filters (same object when nothing is hidden, so the drawing stays memoized).
@@ -170,12 +172,14 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
   const draggedDevice = dragged && lib.devices.get(dragged.deviceId);
   const previewBad = !!(preview && draggedDevice && placementProblem(lib, design, draggedDevice, preview, drag?.id));
 
-  const h = geo.height + 14 + issues.rack.length * 12;
+  // Rack info hidden: the drawing starts just above the side element names (top 40 px cut off).
+  const top = showInfo ? -10 : 36;
+  const h = geo.height + 14 + issues.rack.length * 12 - (top + 10);
   const totalW = (faces.includes('front') ? panelW : 0) + (faces.includes('rear') ? geoRear.width + 20 : 0);
   return (
     <svg
       ref={ref}
-      viewBox={`-10 -10 ${totalW} ${h}`}
+      viewBox={`-10 ${top} ${totalW} ${h}`}
       width={totalW * 1.4}
       className="drawing"
       onDragOver={(e) => e.preventDefault()}
@@ -183,14 +187,14 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >
-      <rect x={-10} y={-10} width={totalW} height={h} fill={paint.paper} onPointerDown={() => { onSelect(undefined); onSelectCable(undefined); }} />
+      <rect x={-10} y={top} width={totalW} height={h} fill={paint.paper} onPointerDown={() => { onSelect(undefined); onSelectCable(undefined); }} />
       {faces.map((face) => (
         <g key={face} transform={offsetOf(face) ? `translate(${offsetOf(face)} 0)` : undefined}>
           <RackFrame
             rack={rackOf(face)}
             geo={geoOf(face)}
-            title={`${design.name} — ${face}`}
-            subtitle={`${rack.name} · ${metrics.usedUnits}/${metrics.totalUnits} ${rack.unitSystem} · ${formatPower(metrics.typicalW)} typ · ${formatWeight(metrics.totalWeightKg)}`}
+            title={showInfo ? `${design.name} — ${face}` : ''}
+            subtitle={showInfo ? `${rack.name} · ${metrics.usedUnits}/${metrics.totalUnits} ${rack.unitSystem} · ${formatPower(metrics.typicalW)} typ · ${formatWeight(metrics.totalWeightKg)}` : undefined}
           >
             {visibleOn(face).map((p) => {
               const device = placedDevice(lib, design, p);

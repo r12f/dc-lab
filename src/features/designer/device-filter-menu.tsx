@@ -55,12 +55,21 @@ export function CableTypeMenu({ lib, design, filter, onChange }: FilterProps) {
 const FACE_LABEL: Record<PortFace, string> = { front: 'Front', rear: 'Rear' };
 
 /** "Views n/2": front and / or rear shown (at least one). */
-export function FaceMenu({ faces, onChange }: { faces: readonly PortFace[]; onChange(faces: PortFace[]): void }) {
+/** Views: front / rear (at least one) and the rack info header (title + rack, units, power, weight) above them. */
+export function FaceMenu({ faces, onChange, showInfo = true, onShowInfo }: {
+  faces: readonly PortFace[]; onChange(faces: PortFace[]): void; showInfo?: boolean; onShowInfo?(show: boolean): void;
+}) {
   const all: PortFace[] = ['front', 'rear'];
+  const hidden = new Set<string>(all.filter((f) => !faces.includes(f)));
+  if (!showInfo) hidden.add('info');
   return (
-    <CheckMenu label="Views" title="Show the front view, the rear view, or both" noBulk compact minChecked={1}
-      items={all.map((f) => ({ id: f, label: FACE_LABEL[f] }))}
-      hidden={new Set(all.filter((f) => !faces.includes(f)))}
-      onChange={(h) => onChange(all.filter((f) => !h.has(f)))} />
+    <CheckMenu label="Views" title="Show the front view, the rear view, or both, and the rack info above them" noBulk compact
+      items={[...all.map((f) => ({ id: f, label: FACE_LABEL[f] })), ...(onShowInfo ? [{ id: 'info', label: 'Rack info' }] : [])]}
+      hidden={hidden}
+      onChange={(h) => {
+        const next = all.filter((f) => !h.has(f));
+        if (next.length) onChange(next); // one face always stays
+        onShowInfo?.(!h.has('info'));
+      }} />
   );
 }

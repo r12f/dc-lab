@@ -38,6 +38,7 @@ export function DesignerModule() {
   // Device / cable-type filter per design, faces shown (session only).
   const [filterBy, setFilterBy] = useState<Record<string, ViewFilter>>({});
   const [faces, setFaces] = useState<PortFace[]>(BOTH_FACES);
+  const [showInfo, setShowInfo] = useState(true);
   const [message, setMessage] = useState<string>();
 
   const design = designs.find((d) => d.id === selectedId);
@@ -125,7 +126,7 @@ export function DesignerModule() {
             exportName={`${design.id}-${view}`}
             viewControls={(
               <>
-                <FaceMenu faces={faces} onChange={setFaces} />
+                <FaceMenu faces={faces} onChange={setFaces} showInfo={view === 'elevation' ? showInfo : undefined} onShowInfo={view === 'elevation' ? setShowInfo : undefined} />
                 <DeviceFilterMenu lib={lib} design={design} filter={filter} onChange={setFilter} />
                 <CableTypeMenu lib={lib} design={design} filter={filter} onChange={setFilter} />
               </>
@@ -166,6 +167,7 @@ export function DesignerModule() {
                 onMove={(id, mount) => report(editor.moveTo(id, mount))}
                 filter={filter}
                 faces={faces}
+                showInfo={showInfo}
               />
             )}
           </CanvasFrame>

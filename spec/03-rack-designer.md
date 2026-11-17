@@ -186,7 +186,8 @@ for the session (not saved).
 
 **Views (Elevation and Cabling)**: a **Views n/2 ▾** dropdown (toolbar order: Views, Devices, Cables, then zoom) with Front and Rear (both by default; at least one
 stays checked). With one face only that panel / block is drawn, starting at the left edge; the Cabling view's
-side PDUs belong to the rear block. Session only.
+side PDUs belong to the rear block. Session only. In the Elevation view the menu also has **Rack info**: unchecked hides the header above
+each face (design name — face, rack, units, power, weight) and the drawing starts right above the side element names.
 
 **Cross-rack ports**: in the cabling view, **Mark cross-rack** marks the selected connectors as leaving the rack
 (`design.crossRack[]`, same endpoint shape as cable ends: placement + port + connector leg). The button reads
