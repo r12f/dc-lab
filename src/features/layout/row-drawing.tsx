@@ -29,6 +29,8 @@ interface Props {
   onRackPointerDown(assignmentId: string, e: PointerEvent<SVGElement>): void;
   /** Hover on a rack: its id and the rack's box on screen (the tooltip goes beside the rack, not at the pointer). */
   onRackHover(assignmentId: string | undefined, box?: DOMRect): void;
+  /** Row label header (name, power, tiles); hidden from the View menu. */
+  showHeader?: boolean;
 }
 
 const HEADER_H = 1040;
@@ -40,7 +42,7 @@ const kw = (w: number) => String(Math.round(w / 100) / 10);
  * One vertical row: header (name + power / budget, drag handle), tiles from north to south,
  * a front-side marker and assigned racks.
  */
-export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection, onSelect, onHeaderPointerDown, onRackPointerDown, onRackHover }: Props) {
+export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection, onSelect, onHeaderPointerDown, onRackPointerDown, onRackHover, showHeader = true }: Props) {
   const tiles = Array.from({ length: row.tileCount }, (_, i) => i);
   const assignments = layout.assignments.filter((a) => a.rowId === row.id);
   const length = row.tileCount * row.tileWidthMm;
@@ -61,7 +63,7 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
 
   return (
     <g>
-      <g style={{ cursor: 'move' }} onPointerDown={onHeaderPointerDown} onClick={(e) => e.stopPropagation()}>
+      {showHeader && <g style={{ cursor: 'move' }} onPointerDown={onHeaderPointerDown} onClick={(e) => e.stopPropagation()}>
         <title>{`${row.name} · ${used}/${row.tileCount} rack tiles — drag sideways to reorder, Ctrl-click to multi-select`}</title>
         <rect x={rect.x} y={rect.y - HEADER_H} width={row.tileDepthMm} height={HEADER_H - 40} rx={60}
           fill={rowSelected ? paint.selection : paint.frame} fillOpacity={rowSelected ? 0.35 : 1} />
@@ -75,7 +77,7 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
           <text x={cx} y={headCy + 340} fontSize={fit(tilesLine, 210)} textAnchor="middle"
             fill={rowSelected ? paint.ink : paint.frameText}>{tilesLine}</text>
         </g>
-      </g>
+      </g>}
       {tiles.map((t) => {
         const r = tileRect(rect, row, t);
         const sel = isTileSelected(selection, row.id, t);

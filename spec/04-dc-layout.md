@@ -174,3 +174,7 @@ cross — to the tray point nearest the other rack, then to it (shortest such pa
 no tray. Hover shows the pair, cable count and fiber count (cable `fiberCount`, else A connectors × fibers). In
 cabling mode the A / B racks get an ink outline and an ink badge with the letter in paper colour (readable on the accent rack fill), and their pair's trace drawn strong. Removing a rack drops its cables;
 cables whose ends are no longer marked cross-rack are not drawn. The trace hover target covers only the tray part (not the legs into the racks), and cabling mode shows no rack tooltip, so racks stay clickable.
+
+**View menu** (toolbar, before rotation): checkboxes for Trays, Floating trays, Row labels and Cables. Drawing only:
+a hidden tray still routes cable traces (they keep following it), hidden row labels drop the row headers (and their
+drag handle), hidden cables drop the cross-rack traces. Not saved in the layout.

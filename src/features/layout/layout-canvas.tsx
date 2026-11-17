@@ -20,6 +20,9 @@ import { paint } from '../../theme/paint';
 import { labelTransform, planTransform, viewSize } from '../../domain/layout/view-rotation';
 import { ViewRotationContext } from './view-context';
 import { CrossTraces } from './cross-traces';
+import type { LayoutViewItem } from './layout-view';
+
+const NONE_HIDDEN: ReadonlySet<LayoutViewItem> = new Set();
 
 interface Props {
   ref?: Ref<SVGSVGElement>;
@@ -31,6 +34,8 @@ interface Props {
   onSelect(sel: LayoutSelection | undefined): void;
   /** Cross-rack cabling mode: racks set as A / B sides (drawn highlighted). */
   crossSides?: string[];
+  /** Layers hidden from the View menu (drawing only). */
+  hidden?: ReadonlySet<LayoutViewItem>;
 }
 
 const PAD = 1200;
@@ -44,7 +49,7 @@ export const PX_PER_MM = 0.1;
 /** Grab width (mm) of an aisle's resize edge. */
 const HANDLE_MM = 200;
 
-export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, selection, onSelect, crossSides }: Props) {
+export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, selection, onSelect, crossSides, hidden = NONE_HIDDEN }: Props) {
   const [traceTip, setTraceTip] = useState<{ text: string; x: number; y: number }>();
   const drag = useDragMove(lib, designs, stored, editor);
   const layout = drag.preview();
@@ -142,7 +147,7 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
           const r = layout.rows.find((x) => x.id === b.id)!;
           return (
             <g key={r.id} opacity={ghost(r.id)}>
-              <RowDrawing lib={lib} designs={designs} layout={layout} row={r} rect={b.rect} powerW={rowPower.get(r.id) ?? 0}
+              <RowDrawing lib={lib} designs={designs} layout={layout} row={r} rect={b.rect} powerW={rowPower.get(r.id) ?? 0} showHeader={!hidden.has('row-labels')}
                 selection={selection} onSelect={onSelect} onHeaderPointerDown={startDrag('row', r.id)} onRackPointerDown={rackDown}
                 onRackHover={(id, box) => setHover(id && box ? { id, box } : undefined)} />
             </g>
@@ -150,7 +155,7 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
         })}
         <FeedLines layout={layout} plan={plan} loads={computeFacilityLoads(lib, designs, layout)}
           highlight={(fid, tid) => isSel('facility', fid) || isSel('row', tid) || isSel('aisle', tid)} />
-        {layout.trays.map((t) => {
+        {layout.trays.filter((t) => !hidden.has(t.floating ? 'floating-trays' : 'trays')).map((t) => {
           const rect = trayRect(plan, t);
           return rect && (
             <g key={t.id} opacity={ghost(t.id)}>
@@ -160,8 +165,8 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
             </g>
           );
         })}
-        <CrossTraces lib={lib} designs={designs} layout={layout} plan={plan} highlight={crossSides}
-          onHover={(text, e) => setTraceTip(text && e ? { text, x: e.clientX, y: e.clientY } : undefined)} />
+        {!hidden.has('cables') && <CrossTraces lib={lib} designs={designs} layout={layout} plan={plan} highlight={crossSides}
+          onHover={(text, e) => setTraceTip(text && e ? { text, x: e.clientX, y: e.clientY } : undefined)} />}
         {crossSides?.map((id, i) => {
           const a = layout.assignments.find((x) => x.id === id);
           const row = a && layout.rows.find((r) => r.id === a.rowId);

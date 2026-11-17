@@ -15,6 +15,8 @@ import { useLayoutEditor } from './use-layout-editor';
 import type { LayoutSelection } from './selection';
 import { Button } from '../../ui/button';
 import { CrossCablingPanel, type CrossSides } from './cross-cabling-panel';
+import { CheckMenu } from '../../ui/check-menu';
+import { LAYOUT_VIEW_ITEMS, type LayoutViewItem } from './layout-view';
 
 export function LayoutModule() {
   const lib = useLibrary();
@@ -27,6 +29,7 @@ export function LayoutModule() {
   const [sel, setSel] = useState<LayoutSelection>();
   const [cabling, setCabling] = useState(false);
   const [sides, setSides] = useState<CrossSides>({});
+  const [hiddenView, setHiddenView] = useState<Set<string>>(new Set());
 
   const layout = layouts.find((l) => l.id === selectedId);
   const editor = useLayoutEditor(lib, designs, layout);
@@ -72,10 +75,13 @@ export function LayoutModule() {
               <Button variant={cabling ? 'primary' : 'default'} aria-pressed={cabling}
                 title="Cabling view: cross-rack cables between racks (A / B sides in the right panel)"
                 onClick={() => setCabling(!cabling)}>⇄ Cabling</Button>
+              <CheckMenu label="View" items={LAYOUT_VIEW_ITEMS} hidden={hiddenView} onChange={setHiddenView} noBulk compact
+                title="Show or hide trays, floating trays, row labels and cable traces (drawing only; cables keep following hidden trays)" />
               <LayoutViewControls editor={editor} />
             </>}>
             {(ref) => <LayoutCanvas ref={ref} lib={lib} designs={designs} layout={layout} editor={editor} selection={sel} onSelect={setSel}
-              crossSides={cabling ? [sides.a, sides.b].filter((x): x is string => !!x) : undefined} />}
+              crossSides={cabling ? [sides.a, sides.b].filter((x): x is string => !!x) : undefined}
+              hidden={hiddenView as ReadonlySet<LayoutViewItem>} />}
           </CanvasFrame>
         ) : (
           <EmptyCanvas text="Select or create a DC layout." />
