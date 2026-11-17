@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeFloorPlan } from '../layout/floor-plan';
-import { cableFibers, clipStart, crossRackLayout, crossRoute, offsetPath } from '../layout/cross-cables';
+import { cableFibers, clipStart, crossRackLayout, crossRoute, traceBundles } from '../layout/cross-cables';
 import { Library } from '../library/library';
 import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import type { RackDesign } from '../design/types';
@@ -66,8 +66,17 @@ describe('cross-rack routing', () => {
     expect(clipStart([{ x: 600, y: 300 }, { x: 2000, y: 300 }, { x: 2000, y: 5000 }], box))
       .toEqual([{ x: 1200, y: 300 }, { x: 2000, y: 300 }, { x: 2000, y: 5000 }]);
   });
-  it('offsets parallel traces sideways', () => {
-    expect(offsetPath([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }], 10))
-      .toEqual([{ x: 0, y: 10 }, { x: 110, y: 10 }, { x: 110, y: 100 }]);
+  it('counts traces on shared runs', () => {
+    const b = traceBundles([
+      { key: 'p', points: [{ x: 0, y: 0 }, { x: 0, y: 1000 }, { x: 500, y: 1000 }] },
+      { key: 'q', points: [{ x: 0, y: 400 }, { x: 0, y: 1000 }] },
+      { key: 'r', points: [{ x: 0, y: 600 }, { x: 0, y: 2000 }] },
+    ]);
+    expect(b.map((x) => [x.a.y, x.b.y, x.keys.join('')])).toEqual([[400, 600, 'pq'], [600, 1000, 'pqr']]);
+  });
+  it('a trace from a rack in a row starts at the midpoint of the rack edge facing the tray', () => {
+    const box = { x: 7800, y: 3600, widthMm: 1200, depthMm: 600 };
+    const pts = clipStart([{ x: 8400, y: 3900 }, { x: 9600, y: 3900 }, { x: 9600, y: 9000 }], box);
+    expect(pts[0]).toEqual({ x: 9000, y: 3900 });
   });
 });

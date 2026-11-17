@@ -173,20 +173,6 @@ export function clipStart(points: Pt[], box: Box): Pt[] {
   return points;
 }
 
-/** Shifts an orthogonal path sideways by `o` mm (each segment moved across its own direction). */
-export function offsetPath(points: Pt[], o: number): Pt[] {
-  if (!o || points.length < 2) return points;
-  const horiz = (k: number) => points[k].y === points[k + 1].y;
-  return points.map((p, i) => {
-    let { x, y } = p;
-    for (const k of [i - 1, i]) {
-      if (k < 0 || k >= points.length - 1) continue;
-      if (horiz(k)) y = p.y + o;
-      else x = p.x + o;
-    }
-    return { x, y };
-  });
-}
 
 interface Seg { a: Pt; b: Pt }
 
@@ -289,6 +275,7 @@ export interface CrossTrace {
   fibers: number;
 }
 
+
 /** One trace per rack pair with cross-rack cables between them (all cables of the pair aggregated). */
 export function crossTraces(lib: Library, designs: DesignLookup, layout: DcLayout, plan = computeFloorPlan(layout)): CrossTrace[] {
   const byPair = new Map<string, CrossTrace>();
@@ -307,7 +294,8 @@ export function crossTraces(lib: Library, designs: DesignLookup, layout: DcLayou
       const rb = b && rackRect(lib, designs, layout, plan, b);
       if (!a || !b || !ra || !rb) continue;
       const mid = (r: Box) => ({ x: r.x + r.widthMm / 2, y: r.y + r.depthMm / 2 });
-      // Routed centre to centre, then cut at each rack's edge so the line never covers the rack label.
+      // Routed centre to centre, then cut at each rack's edge: the first / last leg is straight from the centre, so
+      // the cut lands on the midpoint of the edge facing the route and the line never covers the rack label.
       const full = crossRoute(layout, plan, mid(ra), mid(rb));
       const points = clipStart(clipStart(full, ra).reverse(), rb).reverse();
       t = { key, a, b, points, cables: 0, fibers: 0 };
@@ -329,4 +317,60 @@ export function pruneCrossCables(designs: DesignLookup, layout: DcLayout): DcLay
   };
   const kept = layout.crossCables.filter((c) => [...c.from, ...c.to].every(ok));
   return kept.length === layout.crossCables.length ? layout : { ...layout, crossCables: kept };
+}
+
+export interface TraceBundle {
+  /** Run of a horizontal / vertical line shared by several traces. */
+  a: Pt;
+  b: Pt;
+  /** Keys of the traces drawn over it. */
+  keys: string[];
+}
+
+/**
+ * Where traces overlap: every maximal run of the plan that two or more traces share, with the traces on it. Traces are
+ * drawn on top of each other (no lanes); the bundle count is shown on the run instead.
+ */
+export function traceBundles(traces: { key: string; points: Pt[] }[]): TraceBundle[] {
+  const r = (v: number) => Math.round(v * 1000) / 1000;
+  // line -> trace key -> intervals along it
+  const lines = new Map<string, { horizontal: boolean; at: number; spans: { key: string; lo: number; hi: number }[] }>();
+  for (const t of traces) {
+    for (let i = 1; i < t.points.length; i++) {
+      const p = t.points[i - 1];
+      const q = t.points[i];
+      if (r(p.y) === r(q.y) && r(p.x) !== r(q.x)) {
+        const k = `h${r(p.y)}`;
+        const l = lines.get(k) ?? { horizontal: true, at: r(p.y), spans: [] };
+        l.spans.push({ key: t.key, lo: r(Math.min(p.x, q.x)), hi: r(Math.max(p.x, q.x)) });
+        lines.set(k, l);
+      } else if (r(p.x) === r(q.x) && r(p.y) !== r(q.y)) {
+        const k = `v${r(p.x)}`;
+        const l = lines.get(k) ?? { horizontal: false, at: r(p.x), spans: [] };
+        l.spans.push({ key: t.key, lo: r(Math.min(p.y, q.y)), hi: r(Math.max(p.y, q.y)) });
+        lines.set(k, l);
+      }
+    }
+  }
+  const out: TraceBundle[] = [];
+  for (const l of lines.values()) {
+    const cuts = [...new Set(l.spans.flatMap((x) => [x.lo, x.hi]))].sort((x, y) => x - y);
+    let run: { lo: number; hi: number; keys: string[] } | undefined;
+    const flush = () => {
+      if (run && run.keys.length > 1) {
+        const pt = (v: number) => (l.horizontal ? { x: v, y: l.at } : { x: l.at, y: v });
+        out.push({ a: pt(run.lo), b: pt(run.hi), keys: run.keys });
+      }
+      run = undefined;
+    };
+    for (let i = 1; i < cuts.length; i++) {
+      const lo = cuts[i - 1];
+      const hi = cuts[i];
+      const keys = [...new Set(l.spans.filter((x) => x.lo <= lo && x.hi >= hi).map((x) => x.key))].sort();
+      if (run && run.hi === lo && run.keys.join('|') === keys.join('|')) run.hi = hi;
+      else { flush(); run = { lo, hi, keys }; }
+    }
+    flush();
+  }
+  return out;
 }
