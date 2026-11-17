@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { computeFloorPlan } from '../layout/floor-plan';
 import { cableFibers, clipStart, crossPairLengths, crossRackLayout, crossRoute, traceBundles } from '../layout/cross-cables';
-import { buildDcBom } from '../layout/metrics';
+import { buildDcBom, buildDcBomGroups } from '../layout/metrics';
 import { Library } from '../library/library';
 import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import type { RackDesign } from '../design/types';
@@ -115,5 +115,8 @@ describe('cross-rack routing', () => {
       expect(picked.itemId).toBe(pick.id);
     }
     expect(lines[0].pickKey).toBe(`${mmc.id}@${len}`);
+    const g = buildDcBomGroups(lib, designs, l);
+    expect(g.crossRack.map((x) => x.key)).toEqual(lines.map((x) => x.key));
+    expect(g.inRack.some((x) => x.notes.includes('cross-rack'))).toBe(false);
   });
 });

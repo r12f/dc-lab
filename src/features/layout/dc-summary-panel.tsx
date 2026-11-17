@@ -2,13 +2,15 @@ import { formatTiles } from '../../domain/layout/tiles';
 import type { Library } from '../../domain/library/library';
 import type { DcLayout } from '../../domain/layout/types';
 import type { DesignLookup } from '../../domain/layout/tiles';
-import { buildDcBom, computeDcMetrics } from '../../domain/layout/metrics';
+import { buildDcBomGroups, computeDcMetrics } from '../../domain/layout/metrics';
+import type { BomNode } from '../../domain/bom/rack-bom-tree';
+import { BomTreeTable } from '../../ui/bom-tree-table';
 import { infraGroups } from '../../domain/layout/infra';
 import { formatPower, formatWeight } from '../../domain/units';
 import { Section } from '../../ui/fields';
 import { StatGrid, WarningList } from '../../ui/stat-grid';
-import { BomTable } from '../../ui/bom-table';
 import type { LayoutEditor } from './use-layout-editor';
+import type { BomLine } from '../../domain/bom/types';
 
 /** Power / CDU groups: capacity of the sidecars vs max power of the IT racks they serve. */
 function InfraTable({ lib, designs, layout }: { lib: Library; designs: DesignLookup; layout: DcLayout }) {
@@ -29,6 +31,21 @@ function InfraTable({ lib, designs, layout }: { lib: Library; designs: DesignLoo
       </tbody>
     </table>
   );
+}
+
+/**
+ * DC BOM tree: "In-rack" — everything the racks hold (items picked per rack design in the Rack Designer, read-only
+ * here) — and "Cross-rack cables" — cables between racks, whose items are picked here.
+ */
+function dcBomTree(lib: Library, designs: DesignLookup, layout: DcLayout): BomNode {
+  const { inRack, crossRack } = buildDcBomGroups(lib, designs, layout);
+  const leaf = (l: BomLine, pickable: boolean): BomNode => ({ key: l.key, label: l.item, line: pickable ? l : { ...l, pickKey: undefined }, children: [] });
+  return {
+    key: `dc:${layout.id}`, label: layout.name, children: [
+      { key: 'dc:in-rack', label: 'In-rack (items picked in the Rack Designer)', children: inRack.map((l) => leaf(l, false)) },
+      { key: 'dc:cross-rack', label: 'Cross-rack cables', children: crossRack.map((l) => leaf(l, true)) },
+    ],
+  };
 }
 
 export function DcSummaryPanel({ lib, designs, layout, editor }: { lib: Library; designs: DesignLookup; layout: DcLayout; editor?: LayoutEditor }) {
@@ -62,7 +79,7 @@ export function DcSummaryPanel({ lib, designs, layout, editor }: { lib: Library;
         <WarningList warnings={m.warnings} />
       </Section>
       <Section title="DC BOM">
-        <BomTable lines={buildDcBom(lib, designs, layout)} filename={layout.id}
+        <BomTreeTable filename={layout.id} root={dcBomTree(lib, designs, layout)}
           itemsOf={(id) => lib.variants.of(id)} onPick={editor?.pickBomItem} />
       </Section>
     </>

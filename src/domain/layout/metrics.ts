@@ -73,6 +73,14 @@ export function crossCableItem(lib: Library, layout: DcLayout, mediaId: string, 
   return lib.variants.defaultOf(mediaId);
 }
 
+/** DC BOM in two groups: what the racks hold (bought with the racks; items picked in the Rack Designer) and the cables
+ * between racks (items picked here). */
+export function buildDcBomGroups(lib: Library, designs: DesignLookup, layout: DcLayout): { inRack: BomLine[]; crossRack: BomLine[] } {
+  const all = buildDcBom(lib, designs, layout);
+  const cross = (l: BomLine) => l.notes.includes('cross-rack');
+  return { inRack: all.filter((l) => !cross(l)), crossRack: all.filter(cross) };
+}
+
 export function buildDcBom(lib: Library, designs: DesignLookup, layout: DcLayout): BomLine[] {
   const counts = new Map<string, number>();
   for (const a of layout.assignments) counts.set(a.designId, (counts.get(a.designId) ?? 0) + 1);
