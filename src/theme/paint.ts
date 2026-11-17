@@ -57,6 +57,39 @@ const FRAME_SETS = {
   dark: { rail: '#2a2825', railLine: '#4a4640', railText: '#c9c4bb', side: '#262421', sideLine: '#5e5850', sideText: '#bdb7ad', sideSlot: '#1e1d1b' },
 } as const;
 
+/**
+ * DC Layout racks and cable traces per scheme. Light: a macaron palette — soft pastel racks with a deeper outline and
+ * dark text of the same hue, traces in muted macaron tones (mint, lavender, pistachio, lilac, sea-glass, periwinkle).
+ * Dark: deep muted racks of the same hues with light text, saturated traces. No red / orange / yellow (reserved for errors and warnings).
+ */
+const LAYOUT_SETS = {
+  light: {
+    rackIt: '#cfdcf3', rackItLine: '#8ea3cc', rackItText: '#2c3a5a',
+    rackPower: '#ddd8ee', rackPowerLine: '#9a92bf', rackPowerText: '#36305a',
+    rackCdu: '#cdebe2', rackCduLine: '#7fb8a8', rackCduText: '#1f4a40',
+    rackChiller: '#d2e8ef', rackChillerLine: '#7fafc0', rackChillerText: '#1f4250',
+    trace0: '#4fa58c', trace1: '#8f7fcf', trace2: '#7fa85a', trace3: '#b47fc4', trace4: '#3f9a9c', trace5: '#6f86c9',
+  },
+  dark: {
+    rackIt: '#2f4a73', rackItLine: '#7d9cd1', rackItText: '#e3ecfa',
+    rackPower: '#3b3a52', rackPowerLine: '#9890c4', rackPowerText: '#ebe8f7',
+    rackCdu: '#1f4a43', rackCduLine: '#6fb9a6', rackCduText: '#dcf3ec',
+    rackChiller: '#1e4352', rackChillerLine: '#6fadc2', rackChillerText: '#dceff5',
+    trace0: '#10B981', trace1: '#D946EF', trace2: '#84CC16', trace3: '#A78BFA', trace4: '#2DD4BF', trace5: '#E879F9',
+  },
+} as const;
+
+/** DC Layout paints (theme-scheme aware): `--lay-…` variables. */
+export const LAYOUT_PAINT = {
+  rack: {
+    it: { fill: 'var(--lay-rack-it)', stroke: 'var(--lay-rack-it-line)', text: 'var(--lay-rack-it-text)' },
+    power: { fill: 'var(--lay-rack-power)', stroke: 'var(--lay-rack-power-line)', text: 'var(--lay-rack-power-text)' },
+    cdu: { fill: 'var(--lay-rack-cdu)', stroke: 'var(--lay-rack-cdu-line)', text: 'var(--lay-rack-cdu-text)' },
+    chiller: { fill: 'var(--lay-rack-chiller)', stroke: 'var(--lay-rack-chiller-line)', text: 'var(--lay-rack-chiller-text)' },
+  },
+  traces: [0, 1, 2, 3, 4, 5].map((i) => `var(--lay-trace${i})`),
+} as const;
+
 /** `--rk-…` CSS variables of the rack colors for a scheme (merged into the theme's variables). */
 export function rackColorVars(scheme: 'light' | 'dark'): Record<string, string> {
   const v: Record<string, string> = {};
@@ -65,6 +98,7 @@ export function rackColorVars(scheme: 'light' | 'dark'): Record<string, string> 
     Object.assign(v, { [`--rk-${cat}-fill`]: fill, [`--rk-${cat}-stroke`]: stroke, [`--rk-${cat}-text`]: text });
   }
   for (const [k, c] of Object.entries(FRAME_SETS[scheme])) v[`--rk-frame-${k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}`] = c;
+  for (const [k, c] of Object.entries(LAYOUT_SETS[scheme])) v[`--lay-${k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}`] = c;
   return v;
 }
 

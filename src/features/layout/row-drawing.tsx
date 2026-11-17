@@ -6,12 +6,11 @@ import { tileRect } from '../../domain/layout/floor-plan';
 import { computeRackMetrics } from '../../domain/design/metrics';
 import { formatPower } from '../../domain/units';
 import { clickTile, isSelected, isTileSelected, type LayoutSelection } from './selection';
-import { paint } from '../../theme/paint';
+import { LAYOUT_PAINT, paint } from '../../theme/paint';
 import { useLabels } from './view-context';
 import { assignmentRole, servedRacks } from '../../domain/layout/infra';
 
 /** Fill of infrastructure racks: power amber, CDU cyan (as their facility colors); IT racks use the accent. */
-const INFRA_FILL = { power: '#475569', cdu: '#06B6D4', chiller: '#0E7490' } as const;
 
 interface Props {
   lib: Library;
@@ -96,7 +95,7 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
         const power = design ? computeRackMetrics(lib, design).typicalW : 0;
         const sel = isSelected(selection, 'assignment', a.id);
         const role = assignmentRole(lib, designs, a);
-        const fill = role === 'it' ? paint.accent : INFRA_FILL[role];
+        const look = LAYOUT_PAINT.rack[role];
         // Racks served by the selected power / CDU rack get a dashed ring in that rack's color.
         const selInfra = selection?.kind === 'assignment' && selection.ids.length === 1 ? layout.assignments.find((x) => x.id === selection.ids[0]) : undefined;
         const servedBySel = !!selInfra && selInfra.id !== a.id && assignmentRole(lib, designs, selInfra) !== 'it'
@@ -115,16 +114,16 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
             onPointerEnter={(e) => onRackHover(a.id, (e.currentTarget as Element).getBoundingClientRect())}
             onPointerLeave={() => onRackHover(undefined)}>
             <rect x={r.x + 30} y={r.y + 30} width={r.widthMm - 60} height={r.depthMm - 60} rx={40}
-              fill={fill} stroke={sel ? paint.selection : paint.ink} strokeWidth={sel ? 60 : 20} />
+              fill={look.fill} stroke={sel ? paint.selection : look.stroke} strokeWidth={sel ? 60 : 24} />
             {servedBySel && selRole !== 'it' && (
               <rect x={r.x + 90} y={r.y + 90} width={r.widthMm - 180} height={r.depthMm - 180} rx={30} fill="none"
-                stroke={INFRA_FILL[selRole]} strokeWidth={50} strokeDasharray="120 80" pointerEvents="none" />
+                stroke={LAYOUT_PAINT.rack[selRole].stroke} strokeWidth={50} strokeDasharray="120 80" pointerEvents="none" />
             )}
             <g transform={upright(mx, my)} pointerEvents="none">
             <text x={mx} y={my - font * 0.55} fontSize={Math.min(font * 1.5, (sb.w - 80) / (abbr.length * 0.72))} textAnchor="middle"
-              fill={paint.onAccent} fontWeight={800} pointerEvents="none">{abbr}</text>
-            <text x={mx} y={my + font * 0.75} fontSize={font * 0.8} textAnchor="middle" fill={paint.onAccent} fontWeight={600} pointerEvents="none">{a.label}</text>
-            <text x={mx} y={my + font * 1.7} fontSize={font * 0.75} textAnchor="middle" fill={paint.onAccent} opacity={0.85} pointerEvents="none">{role === 'it' ? formatPower(power) : role === 'power' ? 'POWER' : role === 'cdu' ? 'CDU' : 'CHILLER'}</text>
+              fill={look.text} fontWeight={800} pointerEvents="none">{abbr}</text>
+            <text x={mx} y={my + font * 0.75} fontSize={font * 0.8} textAnchor="middle" fill={look.text} fontWeight={600} pointerEvents="none">{a.label}</text>
+            <text x={mx} y={my + font * 1.7} fontSize={font * 0.75} textAnchor="middle" fill={look.text} opacity={0.85} pointerEvents="none">{role === 'it' ? formatPower(power) : role === 'power' ? 'POWER' : role === 'cdu' ? 'CDU' : 'CHILLER'}</text>
             </g>
           </g>
         );

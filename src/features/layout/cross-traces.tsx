@@ -4,15 +4,11 @@ import type { DcLayout } from '../../domain/layout/types';
 import type { DesignLookup } from '../../domain/layout/tiles';
 import { crossTraces, traceBundles, type CrossTrace } from '../../domain/layout/cross-cables';
 import type { FloorPlan } from '../../domain/layout/floor-plan';
-import { paint } from '../../theme/paint';
+import { LAYOUT_PAINT, paint } from '../../theme/paint';
 import { useLabels } from './view-context';
 
-/**
- * Trace colours, one per rack pair in turn: deep greens and magentas, far from the rack fill (theme accent), the tray
- * blue, the aisle violet / blue and the alert hues (red / orange / yellow); each line has a paper casing so it reads
- * over racks, trays and aisles in light and dark themes.
- */
-export const TRACE_COLORS = ['#059669', '#C026D3', '#65A30D', '#0F766E', '#A21CAF', '#15803D'];
+/** Trace colours, one per rack pair in turn (per theme scheme: macaron tones in light themes); paper-cased lines. */
+export const TRACE_COLORS = LAYOUT_PAINT.traces;
 /** Line width on screen (px, the same at any zoom). */
 const LINE_PX = 2.6;
 /** Shortest shared run (mm) that gets a count badge, and the badge size (mm). */
