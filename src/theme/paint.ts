@@ -59,16 +59,16 @@ const FRAME_SETS = {
 
 /**
  * DC Layout racks and cable traces per scheme. Light: a macaron palette — soft pastel racks with a deeper outline and
- * dark text of the same hue, traces in muted macaron tones (mint, lavender, pistachio, lilac, sea-glass, periwinkle).
+ * dark text of the same hue, traces in candy macaron tones (mint, lavender, pistachio, rose-pink, aqua, periwinkle).
  * Dark: deep muted racks of the same hues with light text, saturated traces. No red / orange / yellow (reserved for errors and warnings).
  */
 const LAYOUT_SETS = {
   light: {
-    rackIt: '#cfdcf3', rackItLine: '#8ea3cc', rackItText: '#2c3a5a',
-    rackPower: '#ddd8ee', rackPowerLine: '#9a92bf', rackPowerText: '#36305a',
-    rackCdu: '#cdebe2', rackCduLine: '#7fb8a8', rackCduText: '#1f4a40',
-    rackChiller: '#d2e8ef', rackChillerLine: '#7fafc0', rackChillerText: '#1f4250',
-    trace0: '#4fa58c', trace1: '#8f7fcf', trace2: '#7fa85a', trace3: '#b47fc4', trace4: '#3f9a9c', trace5: '#6f86c9',
+    rackIt: '#c9dbff', rackItLine: '#6f8fe8', rackItText: '#1f2f6b',
+    rackPower: '#e5d5ff', rackPowerLine: '#9a6fe6', rackPowerText: '#3b2170',
+    rackCdu: '#bdf2dc', rackCduLine: '#3fbf8f', rackCduText: '#0f4d37',
+    rackChiller: '#c2ecfb', rackChillerLine: '#40b2dc', rackChillerText: '#0f4157',
+    trace0: '#26c49b', trace1: '#9a66f2', trace2: '#78c63c', trace3: '#e467b8', trace4: '#1fb8cf', trace5: '#6b84f5',
   },
   dark: {
     rackIt: '#2f4a73', rackItLine: '#7d9cd1', rackItText: '#e3ecfa',

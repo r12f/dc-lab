@@ -168,7 +168,7 @@ with an end that fits it). **Assign** repeats the cable over the selection in or
 count at a time, B its B count; tried reversed when the cable runs the other way). Cabled connectors are shaded;
 **Remove cables** drops the cables on the selected connectors. A connector takes one cross-rack cable.
 
-**Traces**: drawn in every mode, one thin line per rack pair (all its cables aggregated), from the midpoint of one rack's edge (the edge facing its route) to the other's — never through the rack, so rack labels stay readable. Each pair has its own colour from the layout palette (light themes: macaron mint / lavender / pistachio / lilac / sea-glass / periwinkle; dark: saturated greens and magentas; never an alert hue), ~2.6 px at any zoom over a paper casing. Traces sharing a tray are drawn on top of each other; every shared run (≥ 1 m, so not the short legs into racks) shows a badge with the number of traces on it (hover: pairs, cables, fibers). Path: from the rack centre to the
+**Traces**: drawn in every mode, one thin line per rack pair (all its cables aggregated), from the midpoint of one rack's edge (the edge facing its route) to the other's — never through the rack, so rack labels stay readable. Each pair has its own colour from the layout palette (light themes: candy macaron mint / lavender / pistachio / rose-pink / aqua / periwinkle; dark: saturated greens and magentas; never an alert hue), ~2.6 px at any zoom over a paper casing. Traces sharing a tray are drawn on top of each other; every shared run (≥ 1 m, so not the short legs into racks) shows a badge with the number of traces on it (hover: pairs, cables, fibers). Path: from the rack centre to the
 nearest point of the nearest data tray (power trays carry none), along trays — switching tray only where two trays
 cross — to the tray point nearest the other rack, then to it (shortest such path); a straight line when there is
 no tray. Hover shows the pair, cable count and fiber count (cable `fiberCount`, else A connectors × fibers). In
@@ -180,5 +180,5 @@ a hidden tray still routes cable traces (they keep following it), hidden row lab
 drag handle), hidden cables drop the cross-rack traces. Not saved in the layout.
 
 **Colours**: racks and traces use a per-scheme layout palette (`--lay-…` variables). Light themes use macaron
-pastels — IT racks soft periwinkle, power lilac-grey, CDU mint, chiller sea-glass, each with a deeper outline and dark
+candy pastels — IT racks periwinkle, power lavender, CDU mint, chiller sky, each with a deeper outline and dark
 text of the same hue; dark themes use deep muted racks of the same hues with light text. Red / orange / yellow stay reserved for problems.
