@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { categoryStyle, LAYOUT_PAINT, RACK_FRAME, rackColorVars } from '../../theme/paint';
+import { THEMES } from '../../theme/registry';
+import { themeToCssVars } from '../../theme/css-vars';
 import { DEVICE_CATEGORIES } from '../device/categories';
 
 describe('rack colors per scheme', () => {
@@ -17,9 +19,16 @@ describe('rack colors per scheme', () => {
   it('every DC Layout rack and trace paint is defined for light and dark', () => {
     const used = [...Object.values(LAYOUT_PAINT.rack).flatMap((r) => Object.values(r)), ...LAYOUT_PAINT.traces]
       .map((p) => /var\((--[^)]+)\)/.exec(p)![1]);
-    for (const scheme of ['light', 'dark'] as const) {
-      const v = rackColorVars(scheme);
-      for (const k of used) expect(v[k], `${scheme} ${k}`).toBeTruthy();
+    for (const theme of THEMES) {
+      const v = themeToCssVars(theme);
+      for (const k of used) expect(v[k], `${theme.id} ${k}`).toBeTruthy();
+    }
+  });
+  it('only the light and dark themes take the layout palette; others keep their accent racks', () => {
+    for (const theme of THEMES) {
+      const v = themeToCssVars(theme);
+      if (theme.id === 'light' || theme.id === 'dark') expect(v['--lay-rack-it']).not.toBe(theme.general.accent);
+      else expect(v['--lay-rack-it']).toBe(theme.general.accent);
     }
   });
 });

@@ -64,14 +64,27 @@ const FRAME_SETS = {
  */
 const LAYOUT_SETS = {
   light: {
-    rackIt: '#c9dbff', rackItLine: '#6f8fe8', rackItText: '#1f2f6b',
-    rackPower: '#e5d5ff', rackPowerLine: '#9a6fe6', rackPowerText: '#3b2170',
-    rackCdu: '#bdf2dc', rackCduLine: '#3fbf8f', rackCduText: '#0f4d37',
-    rackChiller: '#c2ecfb', rackChillerLine: '#40b2dc', rackChillerText: '#0f4157',
+    rackIt: '#9cc2ff', rackItLine: '#5b8ef0', rackItText: '#14275e',
+    // IT racks: one candy colour per rack design (blue, pink, mint, lavender, aqua, lilac)
+    rackIt0: '#a9c8ff', rackIt0Line: '#5b8ef0', rackIt0Text: '#14275e',
+    rackIt1: '#ffc2e2', rackIt1Line: '#e46fae', rackIt1Text: '#5e1440',
+    rackIt2: '#a6f0cf', rackIt2Line: '#2fb985', rackIt2Text: '#0b4431',
+    rackIt3: '#d9c2ff', rackIt3Line: '#9466ec', rackIt3Text: '#2f1566',
+    rackIt4: '#a5ecf5', rackIt4Line: '#25afc4', rackIt4Text: '#0b3f48',
+    rackIt5: '#f3c4f7', rackIt5Line: '#c162cf', rackIt5Text: '#4f1659',
+    rackPower: '#cfb0ff', rackPowerLine: '#9466ec', rackPowerText: '#2f1566',
+    rackCdu: '#8fe6c4', rackCduLine: '#2fb985', rackCduText: '#0b4431',
+    rackChiller: '#93dcf7', rackChillerLine: '#2fa9d6', rackChillerText: '#0b3b50',
     trace0: '#26c49b', trace1: '#9a66f2', trace2: '#78c63c', trace3: '#e467b8', trace4: '#1fb8cf', trace5: '#6b84f5',
   },
   dark: {
     rackIt: '#2f4a73', rackItLine: '#7d9cd1', rackItText: '#e3ecfa',
+    rackIt0: '#2f4a73', rackIt0Line: '#7d9cd1', rackIt0Text: '#e3ecfa',
+    rackIt1: '#2f4a73', rackIt1Line: '#7d9cd1', rackIt1Text: '#e3ecfa',
+    rackIt2: '#2f4a73', rackIt2Line: '#7d9cd1', rackIt2Text: '#e3ecfa',
+    rackIt3: '#2f4a73', rackIt3Line: '#7d9cd1', rackIt3Text: '#e3ecfa',
+    rackIt4: '#2f4a73', rackIt4Line: '#7d9cd1', rackIt4Text: '#e3ecfa',
+    rackIt5: '#2f4a73', rackIt5Line: '#7d9cd1', rackIt5Text: '#e3ecfa',
     rackPower: '#3b3a52', rackPowerLine: '#9890c4', rackPowerText: '#ebe8f7',
     rackCdu: '#1f4a43', rackCduLine: '#6fb9a6', rackCduText: '#dcf3ec',
     rackChiller: '#1e4352', rackChillerLine: '#6fadc2', rackChillerText: '#dceff5',
@@ -88,7 +101,34 @@ export const LAYOUT_PAINT = {
     chiller: { fill: 'var(--lay-rack-chiller)', stroke: 'var(--lay-rack-chiller-line)', text: 'var(--lay-rack-chiller-text)' },
   },
   traces: [0, 1, 2, 3, 4, 5].map((i) => `var(--lay-trace${i})`),
+  /** IT rack look by design (light theme: a candy colour per design; other themes: all the same). */
+  itRack: (i: number) => {
+    const n = ((i % 6) + 6) % 6;
+    return { fill: `var(--lay-rack-it${n})`, stroke: `var(--lay-rack-it${n}-line)`, text: `var(--lay-rack-it${n}-text)` };
+  },
 } as const;
+
+/**
+ * `--lay-…` variables for a theme: the light / dark themes get the layout palette above; every other theme keeps its
+ * own look — IT racks in the theme accent with on-accent text and ink outline, infra racks in fixed slate / cyan —
+ * and the scheme's trace colours.
+ */
+export function layoutColorVars(theme: { id: string; scheme: 'light' | 'dark'; general: { accent: string; onAccent: string }; canvas: { ink: string } }): Record<string, string> {
+  const base: Record<string, string> = { ...LAYOUT_SETS[theme.scheme] };
+  if (theme.id !== 'light' && theme.id !== 'dark') {
+    Object.assign(base, {
+      rackIt: theme.general.accent, rackItLine: theme.canvas.ink, rackItText: theme.general.onAccent,
+      ...Object.fromEntries([0, 1, 2, 3, 4, 5].flatMap((i) => [
+        [`rackIt${i}`, theme.general.accent], [`rackIt${i}Line`, theme.canvas.ink], [`rackIt${i}Text`, theme.general.onAccent]])),
+      rackPower: '#475569', rackPowerLine: theme.canvas.ink, rackPowerText: theme.general.onAccent,
+      rackCdu: '#06b6d4', rackCduLine: theme.canvas.ink, rackCduText: theme.general.onAccent,
+      rackChiller: '#0e7490', rackChillerLine: theme.canvas.ink, rackChillerText: theme.general.onAccent,
+    });
+  }
+  const v: Record<string, string> = {};
+  for (const [k, c] of Object.entries(base)) v[`--lay-${k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}`] = c;
+  return v;
+}
 
 /** `--rk-…` CSS variables of the rack colors for a scheme (merged into the theme's variables). */
 export function rackColorVars(scheme: 'light' | 'dark'): Record<string, string> {
@@ -98,7 +138,6 @@ export function rackColorVars(scheme: 'light' | 'dark'): Record<string, string> 
     Object.assign(v, { [`--rk-${cat}-fill`]: fill, [`--rk-${cat}-stroke`]: stroke, [`--rk-${cat}-text`]: text });
   }
   for (const [k, c] of Object.entries(FRAME_SETS[scheme])) v[`--rk-frame-${k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}`] = c;
-  for (const [k, c] of Object.entries(LAYOUT_SETS[scheme])) v[`--lay-${k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}`] = c;
   return v;
 }
 

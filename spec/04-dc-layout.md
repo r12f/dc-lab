@@ -179,6 +179,6 @@ cables whose ends are no longer marked cross-rack are not drawn. The trace hover
 a hidden tray still routes cable traces (they keep following it), hidden row labels drop the row headers (and their
 drag handle), hidden cables drop the cross-rack traces. Not saved in the layout.
 
-**Colours**: racks and traces use a per-scheme layout palette (`--lay-…` variables). Light themes use macaron
-candy pastels — IT racks periwinkle, power lavender, CDU mint, chiller sky, each with a deeper outline and dark
-text of the same hue; dark themes use deep muted racks of the same hues with light text. Red / orange / yellow stay reserved for problems.
+**Colours**: racks and traces use a layout palette (`--lay-…` variables). Only the Light and Dark themes take the palette below for racks; every other theme keeps IT racks in its own accent (infra racks slate / cyan) — traces follow the theme's scheme. Light uses candy macaron
+pastels — IT racks one candy colour per rack design (blue, pink, mint, lavender, aqua, lilac, by design id order); infra racks: power lavender, CDU mint, chiller sky, each with a deeper outline and dark
+text of the same hue; the Dark theme uses deep muted racks of the same hues with light text. Red / orange / yellow stay reserved for problems.

@@ -1,5 +1,5 @@
 import type { Theme } from './types';
-import { rackColorVars } from './paint';
+import { layoutColorVars, rackColorVars } from './paint';
 
 /** Flattens a theme into CSS custom properties, e.g. `--surface-panel`, `--tab-focused-bg`, `--palette-0`. */
 export function themeToCssVars(theme: Theme): Record<string, string> {
@@ -16,6 +16,8 @@ export function themeToCssVars(theme: Theme): Record<string, string> {
   highlightPalette.forEach((c, i) => (vars[`--palette-${i}`] = c));
   // Rack elevation / palette colors: a light or dark set by scheme.
   Object.assign(vars, rackColorVars(theme.scheme));
+  // DC Layout racks / traces: own palette in the light and dark themes, the theme's accent elsewhere.
+  Object.assign(vars, layoutColorVars(theme));
   return vars;
 }
 

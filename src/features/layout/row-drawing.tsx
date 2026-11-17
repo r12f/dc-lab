@@ -43,6 +43,7 @@ const kw = (w: number) => String(Math.round(w / 100) / 10);
  */
 export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection, onSelect, onHeaderPointerDown, onRackPointerDown, onRackHover, showHeader = true }: Props) {
   const tiles = Array.from({ length: row.tileCount }, (_, i) => i);
+  const itDesigns = [...new Set(layout.assignments.filter((x) => assignmentRole(lib, designs, x) === 'it').map((x) => x.designId))].sort();
   const assignments = layout.assignments.filter((a) => a.rowId === row.id);
   const length = row.tileCount * row.tileWidthMm;
   const frontX = row.frontFacing === 'east' ? rect.x + rect.widthMm : rect.x;
@@ -95,7 +96,8 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
         const power = design ? computeRackMetrics(lib, design).typicalW : 0;
         const sel = isSelected(selection, 'assignment', a.id);
         const role = assignmentRole(lib, designs, a);
-        const look = LAYOUT_PAINT.rack[role];
+        // IT racks: one colour per rack design (by the design's order among the layout's IT designs).
+        const look = role === 'it' ? LAYOUT_PAINT.itRack(itDesigns.indexOf(a.designId)) : LAYOUT_PAINT.rack[role];
         // Racks served by the selected power / CDU rack get a dashed ring in that rack's color.
         const selInfra = selection?.kind === 'assignment' && selection.ids.length === 1 ? layout.assignments.find((x) => x.id === selection.ids[0]) : undefined;
         const servedBySel = !!selInfra && selInfra.id !== a.id && assignmentRole(lib, designs, selInfra) !== 'it'
