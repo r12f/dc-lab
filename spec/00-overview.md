@@ -24,6 +24,7 @@ built-in catalog), [06-architecture.md](06-architecture.md) (code structure) and
   font family on its root (text otherwise falls back to a serif outside the app).
 - **Right inspector** edits the selected item / sub-item.
 - Sidebar and inspector widths are resizable by dragging the pane borders (180–1600 px, double-click resets; the canvas always keeps at least 240 px, side panes shrink on narrow windows).
+- Sidebar and inspector are **collapsible**: « / » in the pane's bottom outer corner (or Ctrl+[ / Ctrl+]) folds it to a thin rail; click the rail (or the shortcut) to expand. Shared by every module and remembered with the pane widths; collapsed panes stay mounted, so their state survives.
   Widths are shared by all modules except Rack Designer, whose inspector keeps its own width (default 640 px, so
   the BOM fits). All are saved as app preferences (`dc-lab:prefs`), restored on next launch.
 

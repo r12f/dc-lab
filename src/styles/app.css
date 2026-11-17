@@ -140,6 +140,20 @@ details.card > summary { cursor: pointer; font-weight: 600; }
 .splitter { position: relative; z-index: 5; width: 6px; margin: 0 -3px; cursor: col-resize; }
 .splitter:hover, body.resizing .splitter { background: color-mix(in srgb, var(--accent) 50%, transparent); }
 body.resizing { cursor: col-resize; user-select: none; }
+/* Collapsible side panes: a small toggle in the pane's bottom outer corner (clear of the pane headers' buttons);
+   collapsed = a thin clickable rail. */
+.pane-wrap { position: relative; display: flex; min-height: 0; min-width: 0; }
+.pane-wrap > .sidebar, .pane-wrap > .inspector { flex: 1; min-width: 0; }
+.pane-toggle { position: absolute; bottom: 6px; z-index: 6; width: 18px; height: 18px; padding: 0; line-height: 16px; font-size: 12px;
+  border: 1px solid var(--border); border-radius: 4px; background: var(--panel); color: var(--muted); cursor: pointer; opacity: .8; }
+.pane-toggle:hover { opacity: 1; color: var(--text); }
+.pane-toggle-left { right: 14px; }
+.pane-toggle-right { left: 8px; }
+.pane-rail { border: 0; padding: 6px 0 0; margin: 0; background: var(--panel); color: var(--muted); cursor: pointer; font-size: 13px;
+  display: flex; align-items: flex-start; justify-content: center; min-height: 0; }
+.pane-rail:hover { color: var(--text); background: color-mix(in srgb, var(--accent) 15%, var(--panel)); }
+.pane-rail-left { border-right: 1px solid var(--border); }
+.pane-rail-right { border-left: 1px solid var(--border); }
 .splitter-h { width: auto; height: 6px; margin: -3px 0; cursor: row-resize; flex: none; }
 body.resizing-rows { cursor: row-resize; user-select: none; }
 body.resizing-rows .splitter-h { background: color-mix(in srgb, var(--accent) 50%, transparent); }

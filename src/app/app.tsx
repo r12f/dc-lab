@@ -4,6 +4,7 @@ import { useMaximize } from '../state/maximize';
 import { MODULES } from './modules';
 import { TopBar } from './top-bar';
 import { useApplyTheme } from '../theme/use-theme';
+import { usePreferences } from '../state/preferences';
 
 export function App() {
   useApplyTheme();
@@ -18,6 +19,17 @@ export function App() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [maximized, setMaximized]);
+  // Ctrl+[ / Ctrl+] collapse or expand the sidebar / inspector.
+  const togglePane = usePreferences((s) => s.togglePane);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+      if (e.key === '[') { e.preventDefault(); togglePane('sidebar'); }
+      else if (e.key === ']') { e.preventDefault(); togglePane('inspector'); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [togglePane]);
   return (
     <div className={`app${maximized ? ' maximized' : ''}`}>
       {!maximized && <TopBar />}

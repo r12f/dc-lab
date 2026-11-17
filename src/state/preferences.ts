@@ -15,7 +15,15 @@ export interface Preferences {
   /** Height (px) of the item list above a sidebar's lower pane (Rack Designer: designs above the palette). */
   sidebarListHeight: number;
   setSidebarListHeight(px: number): void;
+  /** Side panes collapsed to a thin rail (shared by every module, remembered). */
+  collapsed: PaneCollapse;
+  togglePane(pane: keyof PaneCollapse): void;
   resetPanes(): void;
+}
+
+export interface PaneCollapse {
+  sidebar: boolean;
+  inspector: boolean;
 }
 
 export interface PaneWidths {
@@ -27,6 +35,7 @@ export const DEFAULT_PANES: PaneWidths = { sidebar: 260, inspector: 360 };
 /** Default inspector width per module where the shared default is too narrow. */
 export const DEFAULT_INSPECTOR_WIDTHS: Record<string, number> = { designer: 640 };
 export const DEFAULT_SIDEBAR_LIST_HEIGHT = 180;
+export const NO_COLLAPSE: PaneCollapse = { sidebar: false, inspector: false };
 export const LIST_HEIGHT_LIMITS = { min: 60, max: 1200 };
 /** Inspector can grow to most of a wide screen so faceplates and port boxes stay legible. */
 export const PANE_LIMITS = { min: 180, max: 1600 };
@@ -58,7 +67,9 @@ export const usePreferences = create<Preferences>()(
       setTheme: (themeId) => set({ themeId }),
       panes: DEFAULT_PANES,
       setPaneWidth: (pane, px) => set((s) => ({ panes: { ...s.panes, [pane]: clampPane(px) } })),
-      resetPanes: () => set({ panes: DEFAULT_PANES, inspectorWidths: {}, sidebarListHeight: DEFAULT_SIDEBAR_LIST_HEIGHT }),
+      resetPanes: () => set({ panes: DEFAULT_PANES, inspectorWidths: {}, sidebarListHeight: DEFAULT_SIDEBAR_LIST_HEIGHT, collapsed: NO_COLLAPSE }),
+      collapsed: NO_COLLAPSE,
+      togglePane: (pane) => set((s) => ({ collapsed: { ...s.collapsed, [pane]: !s.collapsed[pane] } })),
       inspectorWidths: {},
       setInspectorWidth: (module, px) => set((s) => {
         const next = { ...s.inspectorWidths };
@@ -72,10 +83,10 @@ export const usePreferences = create<Preferences>()(
     }),
     {
       name: 'dc-lab:prefs',
-      partialize: (s) => ({ themeId: s.themeId, panes: s.panes, inspectorWidths: s.inspectorWidths, sidebarListHeight: s.sidebarListHeight }),
+      partialize: (s) => ({ themeId: s.themeId, panes: s.panes, inspectorWidths: s.inspectorWidths, sidebarListHeight: s.sidebarListHeight, collapsed: s.collapsed }),
       merge: (stored, current) => {
         const s = (stored ?? {}) as Partial<Preferences>;
-        return { ...current, ...s, panes: { ...DEFAULT_PANES, ...s.panes }, inspectorWidths: s.inspectorWidths ?? {} };
+        return { ...current, ...s, panes: { ...DEFAULT_PANES, ...s.panes }, inspectorWidths: s.inspectorWidths ?? {}, collapsed: { ...NO_COLLAPSE, ...s.collapsed } };
       },
     },
   ),
