@@ -66,16 +66,16 @@ export function CrossCablingPanel({ lib, designs, layout, selectedRackId, sides,
     <div className="inspector-inner">
       <Section title="Cross-rack cabling">
         <p className="muted">Select a rack on the plan and set it as A or B side; its cross-rack connectors are listed below. Pick connectors on both sides, then a cable.</p>
-        <div className="row2">
+        <div className="row3 cross-set">
           <Button disabled={!selected} title={selected ? `Set ${selected.label} as A side` : 'Select a rack on the plan'} onClick={() => setSide('a')}>
             {`Set A${selected ? ` = ${selected.label}` : ''}`}
           </Button>
+          <Button disabled={!sides.a && !sides.b} title="Swap A and B sides (selected connectors swap with them)"
+            onClick={() => { onSides({ a: sides.b, b: sides.a }); setSel({ a: sel.b, b: sel.a }); }}>⇄</Button>
           <Button disabled={!selected} title={selected ? `Set ${selected.label} as B side` : 'Select a rack on the plan'} onClick={() => setSide('b')}>
             {`Set B${selected ? ` = ${selected.label}` : ''}`}
           </Button>
         </div>
-        <Button disabled={!sides.a && !sides.b} title="Swap A and B sides (selected connectors swap with them)"
-          onClick={() => { onSides({ a: sides.b, b: sides.a }); setSel({ a: sel.b, b: sel.a }); }}>⇅ Swap A ↔ B</Button>
         <SelectField<string> label={`Cable (${cables.length} fit)`} value={media}
           options={cables.length ? cables.map((m) => ({ value: m.id, label: m.name })) : [{ value: '', label: 'No cable fits' }]}
           onChange={setMediaId} />
