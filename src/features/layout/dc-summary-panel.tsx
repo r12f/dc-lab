@@ -42,7 +42,7 @@ function dcBomTree(lib: Library, designs: DesignLookup, layout: DcLayout): BomNo
   const leaf = (l: BomLine, pickable: boolean): BomNode => ({ key: l.key, label: l.item, line: pickable ? l : { ...l, pickKey: undefined }, children: [] });
   return {
     key: `dc:${layout.id}`, label: layout.name, children: [
-      { key: 'dc:in-rack', label: 'In-rack (items picked in the Rack Designer)', children: inRack.map((l) => leaf(l, false)) },
+      { key: 'dc:in-rack', label: 'In-rack items', children: inRack.map((l) => leaf(l, false)) },
       { key: 'dc:items', label: 'DC items', children: [
         { key: 'dc:floor', label: 'Facility Items', children: dc.facilities.map((l) => leaf(l, true)) },
         { key: 'dc:cross-rack', label: 'Cross-rack cables', children: dc.crossRack.map((l) => leaf(l, true)) },
