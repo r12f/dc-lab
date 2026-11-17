@@ -378,3 +378,26 @@ export function traceBundles(traces: { key: string; points: Pt[] }[]): TraceBund
   }
   return out;
 }
+
+/** Slack added to every cross-rack cable (service loop, both ends) and the length step (m). */
+const CROSS_SLACK_M = 1;
+const CROSS_ROUND_M = 0.5;
+
+/**
+ * Estimated length (m) of every cable between a rack pair: up from each rack top into the trays (rack height at both
+ * ends), along the trace's tray route on the plan, plus slack, rounded up to 0.5 m. Keyed by trace key.
+ */
+export function crossPairLengths(lib: Library, designs: DesignLookup, layout: DcLayout, plan = computeFloorPlan(layout)): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const t of crossTraces(lib, designs, layout, plan)) {
+    let mm = 0;
+    for (let i = 1; i < t.points.length; i++) mm += Math.abs(t.points[i].x - t.points[i - 1].x) + Math.abs(t.points[i].y - t.points[i - 1].y);
+    const h = (a: RackAssignment) => { const d = designs(a.designId); return (d && lib.racks.get(d.templateId)?.heightMm) ?? 0; };
+    mm += h(t.a) + h(t.b);
+    out.set(t.key, Math.ceil((mm / 1000 + CROSS_SLACK_M) / CROSS_ROUND_M) * CROSS_ROUND_M);
+  }
+  return out;
+}
+
+/** Pair key of a cross-rack cable (same as its trace). */
+export const crossPairKey = (c: CrossRackCable) => [c.from[0]?.assignmentId, c.to[0]?.assignmentId].sort().join('|');

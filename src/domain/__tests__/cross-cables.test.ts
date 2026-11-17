@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { computeFloorPlan } from '../layout/floor-plan';
-import { cableFibers, clipStart, crossRackLayout, crossRoute, traceBundles } from '../layout/cross-cables';
+import { cableFibers, clipStart, crossPairLengths, crossRackLayout, crossRoute, traceBundles } from '../layout/cross-cables';
+import { buildDcBom } from '../layout/metrics';
 import { Library } from '../library/library';
 import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import type { RackDesign } from '../design/types';
@@ -85,5 +86,27 @@ describe('cross-rack routing', () => {
     const box = { x: 7800, y: 3600, widthMm: 1200, depthMm: 600 };
     const pts = clipStart([{ x: 8400, y: 3900 }, { x: 9600, y: 3900 }, { x: 9600, y: 9000 }], box);
     expect(pts[0]).toEqual({ x: 9000, y: 3900 });
+  });
+  it('puts cross-rack cables in the DC BOM, one line per cable type and estimated length', () => {
+    const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
+    const rack = lib.racks.items()[0];
+    const mmc = lib.cableMedia.items().find((m) => m.ends.a.connector === 'MMC-16' && m.ends.b.connector === 'MMC-16')!;
+    const design: RackDesign = {
+      id: 'd', name: 'D', abbr: 'D', templateId: rack.id, cables: [],
+      placements: [{ id: 'fh', deviceId: 'fiber-housing-80xmmc16', label: 'FH1', mount: { kind: 'rack', position: 1, face: 'front' }, portSettings: {}, groupSettings: {} }],
+      crossRack: [1, 2].map((c) => ({ placementId: 'fh', portRef: 'rm1/1', connector: c })),
+    };
+    const designs = (id: string) => (id === 'd' ? design : undefined);
+    const l: DcLayout = {
+      ...layout,
+      assignments: [{ id: 'a', rowId: 'r1', startTile: 0, designId: 'd', label: 'A' }, { id: 'b', rowId: 'r2', startTile: 5, designId: 'd', label: 'B' }],
+      crossCables: [1, 2].map((c) => ({ id: `x${c}`, mediaId: mmc.id,
+        from: [{ assignmentId: 'a', placementId: 'fh', portRef: 'rm1/1', connector: c }],
+        to: [{ assignmentId: 'b', placementId: 'fh', portRef: 'rm1/1', connector: c }] })),
+    };
+    const len = crossPairLengths(lib, designs, l).get('a|b')!;
+    expect(len).toBeGreaterThan(2 * rack.heightMm / 1000);
+    const lines = buildDcBom(lib, designs, l).filter((x) => x.notes.includes('cross-rack'));
+    expect(lines.map((x) => [x.item, x.qty])).toEqual([[`${mmc.name} ${len} m`, 2]]);
   });
 });

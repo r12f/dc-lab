@@ -175,6 +175,10 @@ no tray. Hover shows the pair, cable count and fiber count (cable `fiberCount`, 
 cabling mode the A / B racks get an ink outline and an ink badge with the letter in paper colour (readable on the accent rack fill), and their pair's trace drawn strong. Removing a rack drops its cables;
 cables whose ends are no longer marked cross-rack are not drawn. The trace hover target covers only the tray part (not the legs into the racks), and cabling mode shows no rack tooltip, so racks stay clickable.
 
+**BOM**: the DC BOM adds every cross-rack cable (`cross-rack` note), one line per cable type and length. Length per
+rack pair = up out of each rack into the trays (rack height at both ends) + the trace's tray route on the plan + 1 m
+slack, rounded up to 0.5 m. Items: the cable type's Generic item.
+
 **View menu** (toolbar, before rotation): checkboxes for Trays, Floating trays, Row labels and Cables. Drawing only:
 a hidden tray still routes cable traces (they keep following it), hidden row labels drop the row headers (and their
 drag handle), hidden cables drop the cross-rack traces. Not saved in the layout.

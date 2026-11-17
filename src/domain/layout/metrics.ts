@@ -2,6 +2,8 @@ import type { Library } from '../library/library';
 import { computeRackMetrics, type RackMetrics } from '../design/metrics';
 import { buildRackBom } from '../bom/rack-bom';
 import { BomBuilder } from '../bom/bom-builder';
+import { crossPairKey, crossPairLengths, pruneCrossCables } from './cross-cables';
+import { variantLabel } from '../items/variants';
 import type { BomLine } from '../bom/types';
 import type { DcLayout } from './types';
 import { tileWidthOf, type DesignLookup } from './tiles';
@@ -69,6 +71,17 @@ export function buildDcBom(lib: Library, designs: DesignLookup, layout: DcLayout
   for (const [id, n] of counts) {
     const d = designs(id);
     if (d) bom.addAll(buildRackBom(lib, d), n);
+  }
+  // Cables between racks (cross-rack cabling), one line per cable type and estimated length.
+  const lengths = crossPairLengths(lib, designs, layout);
+  for (const c of pruneCrossCables(designs, layout).crossCables ?? []) {
+    const len = lengths.get(crossPairKey(c));
+    if (len === undefined) continue;
+    const media = lib.cableMedia.get(c.mediaId);
+    const v = lib.variants.defaultOf(c.mediaId);
+    bom.add({ key: `xcable:${c.mediaId}@${len}`, kind: 'cable', item: `${media?.name ?? c.mediaId} ${len} m`, category: 'Cable',
+      itemTypeId: c.mediaId, itemId: v?.id, vendorModel: variantLabel(v), qty: 1, unitW: 0, lengthM: len,
+      notes: ['cross-rack'], properties: v?.properties });
   }
   return bom.build();
 }
