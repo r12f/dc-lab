@@ -8,12 +8,13 @@ import { paint } from '../../theme/paint';
 import { useLabels } from './view-context';
 
 /**
- * Trace colours, one per rack pair in turn: distinct from the rack fill (theme accent), the data tray blue and the
- * alert hues (red / orange / yellow); each line has a thin paper casing so it reads over racks, trays and aisles.
+ * Trace colours, one per rack pair in turn: deep greens and magentas, far from the rack fill (theme accent), the tray
+ * blue, the aisle violet / blue and the alert hues (red / orange / yellow); each line has a paper casing so it reads
+ * over racks, trays and aisles in light and dark themes.
  */
-export const TRACE_COLORS = ['#10B981', '#8B5CF6', '#06B6D4', '#84CC16', '#6366F1', '#14B8A6', '#D946EF', '#22C55E'];
+export const TRACE_COLORS = ['#059669', '#C026D3', '#65A30D', '#0F766E', '#A21CAF', '#15803D'];
 /** Line width on screen (px, the same at any zoom). */
-const LINE_PX = 1.6;
+const LINE_PX = 2.6;
 /** Shortest shared run (mm) that gets a count badge, and the badge size (mm). */
 const MIN_RUN = 1000;
 const BADGE_FONT = 130;
@@ -56,14 +57,14 @@ export function CrossTraces({ lib, designs, layout, plan, highlight, onHover }: 
     <g data-cross-traces="">
       {/* casings first, then lines, then hover targets, then badges (SVG has no z-index) */}
       {drawn.map(({ t, points, strong }) => (
-        <polyline key={`c${t.key}`} points={str(points)} fill="none" stroke={paint.paper} strokeWidth={LINE_PX + 2} vectorEffect="non-scaling-stroke"
+        <polyline key={`c${t.key}`} points={str(points)} fill="none" stroke={paint.paper} strokeWidth={LINE_PX + 3} vectorEffect="non-scaling-stroke"
           strokeOpacity={strong ? 0.9 : 0.3} strokeLinejoin="round" pointerEvents="none" />
       ))}
       {drawn.map(({ t, points, color, strong }) => (
         <g key={`l${t.key}`} pointerEvents="none" opacity={strong ? 1 : 0.35}>
           <polyline points={str(points)} fill="none" stroke={color} strokeWidth={over === t.key ? LINE_PX * 2.5 : LINE_PX}
             vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-          {[points[0], points[points.length - 1]].map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={45} fill={color} />)}
+          {[points[0], points[points.length - 1]].map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={60} fill={color} stroke={paint.paper} strokeWidth={15} />)}
         </g>
       ))}
       {drawn.map(({ t, points }) => (
