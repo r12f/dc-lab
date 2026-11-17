@@ -229,3 +229,4 @@ button.link { width: auto; background: none; border: none; padding: 0; color: va
 /* port groups of a face side by side, left to right as on the faceplate */
 .cross-face-groups { display: flex; flex-wrap: nowrap; gap: 10px; overflow-x: auto; align-items: flex-start; }
 .cross-face-groups .cross-group { flex: none; }
+.cross-side-title { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }

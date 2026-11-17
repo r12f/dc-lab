@@ -121,9 +121,14 @@ function SideColumn({ lib, designs, layout, side, rackId, selected, used, onMark
   return (
     <div className="cross-side">
       <div className="cross-side-head">
-        <strong>{`${side.toUpperCase()} side`}</strong>
+        {/* Title and clear share one line; clear is always laid out (hidden when nothing is picked) so the
+            connectors below never move when it appears. */}
+        <div className="cross-side-title">
+          <strong>{`${side.toUpperCase()} side`}</strong>
+          <button type="button" className="link" style={{ visibility: selected.length ? 'visible' : 'hidden' }}
+            disabled={!selected.length} onClick={onClear}>{`clear ${selected.length}`}</button>
+        </div>
         <span className="muted">{rack ? `${rack.label} · ${design?.name ?? '?'}` : 'not set'}</span>
-        {selected.length > 0 && <button type="button" className="link" onClick={onClear}>{`clear ${selected.length}`}</button>}
       </div>
       {rack && !devices.length && <p className="muted">No cross-rack connectors in this rack (mark them in the Rack Designer cabling view).</p>}
       {rack && devices.map((d) => (
