@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 /** Gap (px) between the anchor (the hovered rack) and the tooltip. */
 const GAP = 16;
@@ -37,10 +38,13 @@ export function RackTooltip({ lines, anchor }: { lines: string[]; anchor: DOMRec
     else setPos({ left: clampX(anchor.left), top: Math.max(8, anchor.top - GAP - h) });
   }, [shown, anchor.left, anchor.top, anchor.right, anchor.bottom, anchor.width, anchor.height, lines.length]);
   if (!shown) return null;
-  return (
+  // Portal to <body>: the canvas sits in a CSS-`zoom`ed wrapper, which would scale a fixed tooltip's left/top
+  // (at 30 % zoom the tooltip landed far above / left of the rack).
+  return createPortal(
     <div ref={box} className="tooltip" style={pos ? { left: pos.left, top: pos.top } : { left: -9999, top: -9999 }}>
       <strong>{lines[0]}</strong>
       {lines.slice(1).map((l, i) => <div key={i} className={l.startsWith('⚠') ? 'error' : l.startsWith('  ') ? 'muted' : ''}>{l}</div>)}
-    </div>
+    </div>,
+    document.body,
   );
 }
