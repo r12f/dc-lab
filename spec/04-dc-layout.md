@@ -102,7 +102,9 @@ south (down), units are millimetres.
     offset 200 mm.
   - **Drag** a row (by its header) or an aisle sideways to **reorder** it in the sequence, or down / up into
     another row block; the plan re-packs live while dragging (cross aisles are not dragged). **Drag** a tray onto
-    another aisle or cross aisle to move it there (the inspector also sets its offset). **Drag** a floating tray to
+    another aisle or cross aisle to move it there (the inspector also sets its offset). **Drag an aisle's east edge** (a cross
+    aisle's south edge; the cursor turns into a resize arrow and the edge highlights) to change its width — snapped
+    to 100 mm, at least 300 mm; rows east / blocks south move along live. Aisles are labelled with their width. **Drag** a floating tray to
     slide it north–south (snapped to 100 mm, kept in the room); the inspector sets its From / To bands, Y and width. **Drag** a
     facility to move it freely (snapped to 100 mm, kept inside the room). A click without movement
     just selects.

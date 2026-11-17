@@ -17,7 +17,8 @@ export type RackSelection = { kind: 'assignment'; ids: string[] };
 
 export type ElementSelection = Extract<LayoutSelection, { kind: ElementKind }>;
 
-export type DragKind = ElementKind | 'assignment';
+/** `aisle-width`: an aisle's width handle (east edge; a cross aisle's south edge). */
+export type DragKind = ElementKind | 'assignment' | 'aisle-width';
 
 export const ELEMENT_KINDS: ElementKind[] = ['row', 'aisle', 'tray', 'facility', 'door'];
 

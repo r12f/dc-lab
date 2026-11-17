@@ -37,6 +37,9 @@ export const PX_PER_MM = 0.1;
  * Room plan in millimetres (1 SVG unit = 1 mm), north up. Draw order (SVG has no z-index):
  * room, rack area, facilities, aisles, rows, then overhead trays on top.
  */
+/** Grab width (mm) of an aisle's resize edge. */
+const HANDLE_MM = 200;
+
 export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, selection, onSelect }: Props) {
   const drag = useDragMove(lib, designs, stored, editor);
   const layout = drag.preview();
@@ -55,7 +58,8 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
     e.stopPropagation();
     const additive = e.ctrlKey || e.metaKey || e.shiftKey;
     // Pressing an already-selected element keeps the multi-selection (so it can be dragged).
-    if (additive || !isSelected(selection, kind, id)) onSelect(clickSelect(selection, kind, id, additive));
+    const sel = kind === 'aisle-width' ? 'aisle' : kind;
+    if (additive || !isSelected(selection, sel, id)) onSelect(clickSelect(selection, sel, id, additive));
     setHover(undefined);
     drag.start(kind, id)(e);
   };
@@ -113,9 +117,18 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
           const a = layout.aisles.find((x) => x.id === b.id)!;
           return (
             <g key={a.id} opacity={ghost(a.id)}>
-              <AreaDrawing rect={b.rect} fill={AISLE_COLORS[a.kind]} label={`${a.kind}${b.cross ? ' cross' : ''} aisle`} cursor={b.cross ? 'pointer' : 'move'}
+              <AreaDrawing rect={b.rect} fill={AISLE_COLORS[a.kind]} label={`${a.kind}${b.cross ? ' cross' : ''} aisle ${a.widthMm} mm`} cursor={b.cross ? 'pointer' : 'move'}
                 selected={isSel('aisle', a.id)}
                 onPointerDown={startDrag('aisle', a.id)} />
+              {/* Width handle: drag the east edge (cross aisle: south edge) to resize; the plan re-packs live. */}
+              <rect data-export="skip" className="resize-handle"
+                x={b.cross ? b.rect.x : b.rect.x + b.rect.widthMm - HANDLE_MM / 2} y={b.cross ? b.rect.y + b.rect.depthMm - HANDLE_MM / 2 : b.rect.y}
+                width={b.cross ? b.rect.widthMm : HANDLE_MM} height={b.cross ? HANDLE_MM : b.rect.depthMm}
+                fill={paint.selection} fillOpacity={0} style={{ cursor: b.cross ? 'ns-resize' : 'ew-resize' }}
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={startDrag('aisle-width', a.id)}>
+                <title>{`Drag to change the width (${a.widthMm} mm)`}</title>
+              </rect>
             </g>
           );
         })}

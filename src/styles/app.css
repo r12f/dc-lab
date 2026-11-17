@@ -142,6 +142,7 @@ details.card > summary { cursor: pointer; font-weight: 600; }
 body.resizing { cursor: col-resize; user-select: none; }
 /* Collapsible side panes: a small toggle in the pane's bottom outer corner (clear of the pane headers' buttons);
    collapsed = a thin clickable rail. */
+.resize-handle:hover { fill-opacity: .45; }
 .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 2px 8px; }
 .pane-wrap { position: relative; display: flex; min-height: 0; min-width: 0; }
 .pane-wrap > .sidebar, .pane-wrap > .inspector { flex: 1; min-width: 0; }

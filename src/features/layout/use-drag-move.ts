@@ -32,12 +32,16 @@ function planSpace(svg: SVGSVGElement): SVGGraphicsElement {
 /** Threshold (mm) before a press becomes a drag, so a click still just selects. */
 const DRAG_START_MM = 150;
 
+/** Aisle width after dragging its edge by `d` mm: snapped to 100 mm, at least 300 mm. */
+export const aisleWidth = (w: number, d: number) => Math.max(300, snap(w + d));
+
 /**
  * Pointer-driven arrangement on the layout SVG:
  * - row / aisle: dragged to a new slot in the sequence — sideways, or into another row block (the plan re-packs live);
  * - aisle tray: dragged onto another aisle / cross aisle; floating tray: slid north–south;
  * - rack(s): the selected racks move together by whole rows and tiles (all or none);
- * - facility: moved freely (snapped, kept in the room); door: along the walls.
+ * - facility: moved freely (snapped, kept in the room); door: along the walls;
+ * - aisle width handle: its east edge (a cross aisle's south edge) resized, snapped to 100 mm, at least 300 mm.
  * `preview` is the layout as it would be after release; render it while dragging.
  */
 export function useDragMove(lib: Library, designs: DesignLookup, layout: DcLayout, editor: LayoutEditor) {
@@ -105,6 +109,12 @@ export function useDragMove(lib: Library, designs: DesignLookup, layout: DcLayou
         const overId = nearestBand(plan, drag.x, drag.y);
         return overId ? { ...layout, trays: layout.trays.map((x) => (x.id === drag.id ? { ...x, overId, offsetMm: x.overId === overId ? x.offsetMm : undefined } : x)) } : layout;
       }
+      case 'aisle-width': {
+        const a = layout.aisles.find((x) => x.id === drag.id);
+        if (!a) return layout;
+        const widthMm = aisleWidth(a.widthMm, a.cross ? dy : dx);
+        return { ...layout, aisles: layout.aisles.map((x) => (x.id === drag.id ? { ...x, widthMm } : x)) };
+      }
       case 'assignment': {
         const s = rackStep(drag);
         const r = moveAssignments(lib, designs, layout, drag.ids, s.dRow, s.dTile);
@@ -136,6 +146,9 @@ export function useDragMove(lib: Library, designs: DesignLookup, layout: DcLayou
       const t = p.trays.find((x) => x.id === d.id);
       if (t?.floating) editor.moveFloatingTray(d.id, t.y ?? 0);
       else if (t?.overId) editor.moveTray(d.id, t.overId);
+    } else if (d.kind === 'aisle-width') {
+      const a = p.aisles.find((x) => x.id === d.id);
+      if (a) editor.updateElement('aisles', d.id, { widthMm: a.widthMm });
     } else if (d.kind === 'assignment') {
       const s = rackStep(d);
       editor.moveRacks(d.ids, s.dRow, s.dTile);

@@ -112,3 +112,11 @@ describe('moving several racks', () => {
     expect(r.changed).toBe(0);
   });
 });
+
+describe('aisle width drag', () => {
+  it('snaps to 100 mm and keeps at least 300 mm', async () => {
+    const { aisleWidth } = await import('../../features/layout/use-drag-move');
+    expect(aisleWidth(1200, 260)).toBe(1500);
+    expect(aisleWidth(1200, -2000)).toBe(300);
+  });
+});
