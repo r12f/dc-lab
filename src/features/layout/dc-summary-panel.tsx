@@ -8,6 +8,7 @@ import { formatPower, formatWeight } from '../../domain/units';
 import { Section } from '../../ui/fields';
 import { StatGrid, WarningList } from '../../ui/stat-grid';
 import { BomTable } from '../../ui/bom-table';
+import type { LayoutEditor } from './use-layout-editor';
 
 /** Power / CDU groups: capacity of the sidecars vs max power of the IT racks they serve. */
 function InfraTable({ lib, designs, layout }: { lib: Library; designs: DesignLookup; layout: DcLayout }) {
@@ -30,7 +31,7 @@ function InfraTable({ lib, designs, layout }: { lib: Library; designs: DesignLoo
   );
 }
 
-export function DcSummaryPanel({ lib, designs, layout }: { lib: Library; designs: DesignLookup; layout: DcLayout }) {
+export function DcSummaryPanel({ lib, designs, layout, editor }: { lib: Library; designs: DesignLookup; layout: DcLayout; editor?: LayoutEditor }) {
   const m = computeDcMetrics(lib, designs, layout);
   return (
     <>
@@ -61,7 +62,8 @@ export function DcSummaryPanel({ lib, designs, layout }: { lib: Library; designs
         <WarningList warnings={m.warnings} />
       </Section>
       <Section title="DC BOM">
-        <BomTable lines={buildDcBom(lib, designs, layout)} filename={layout.id} />
+        <BomTable lines={buildDcBom(lib, designs, layout)} filename={layout.id}
+          itemsOf={(id) => lib.variants.of(id)} onPick={editor?.pickBomItem} />
       </Section>
     </>
   );

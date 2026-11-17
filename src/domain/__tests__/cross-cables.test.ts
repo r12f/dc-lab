@@ -108,5 +108,12 @@ describe('cross-rack routing', () => {
     expect(len).toBeGreaterThan(2 * rack.heightMm / 1000);
     const lines = buildDcBom(lib, designs, l).filter((x) => x.notes.includes('cross-rack'));
     expect(lines.map((x) => [x.item, x.qty])).toEqual([[`${mmc.name} ${len} m`, 2]]);
+    // An item picked in the DC BOM for that cable type and length is used on the line.
+    const pick = lib.variants.of(mmc.id).find((v) => !v.id.endsWith('--generic'));
+    if (pick) {
+      const picked = buildDcBom(lib, designs, { ...l, bomItems: { [`${mmc.id}@${len}`]: pick.id } }).find((x) => x.notes.includes('cross-rack'))!;
+      expect(picked.itemId).toBe(pick.id);
+    }
+    expect(lines[0].pickKey).toBe(`${mmc.id}@${len}`);
   });
 });

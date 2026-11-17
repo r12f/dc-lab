@@ -137,6 +137,12 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
   const relabel = (id: string, label: string) =>
     mutate((l) => ({ ...l, assignments: l.assignments.map((a) => (a.id === id ? { ...a, label } : a)) }));
 
+  /** DC BOM item pick for cross-rack cables (`<cable id>@<length>`); undefined = Generic. */
+  const pickBomItem = (key: string, itemId: string | undefined) => mutate((l) => {
+    const bomItems = { ...(l.bomItems ?? {}) };
+    if (itemId) bomItems[key] = itemId; else delete bomItems[key];
+    return { ...l, bomItems };
+  });
   /** Replaces the layout's cross-rack cables. */
   const setCrossCables = (crossCables: DcLayout['crossCables']) => mutate((l) => ({ ...l, crossCables }));
   const setRoom = (room: DcLayout['room']) => mutate((l) => ({ ...l, room }));
@@ -147,7 +153,7 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
 
   return {
     addRow, addAisle, addCrossAisle, addTray, addFloating, moveFloatingTray, addFacility, updateElement, updateElements, duplicate, removeElement, removeElements, reorder, setSequence, moveTray, moveFacility,
-    assign, assignTiles, unassign, unassignAll, moveRacks, changeDesign, relabel, setServes, setRoom, setWhitespace, rename, setFacilityLinks, rotateView, addDoor: addDoorTo, moveDoor, setCrossCables,
+    assign, assignTiles, unassign, unassignAll, moveRacks, changeDesign, relabel, setServes, setRoom, setWhitespace, rename, setFacilityLinks, rotateView, addDoor: addDoorTo, moveDoor, setCrossCables, pickBomItem,
   };
 }
 

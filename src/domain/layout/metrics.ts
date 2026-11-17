@@ -64,6 +64,15 @@ export function computeDcMetrics(lib: Library, designs: DesignLookup, layout: Dc
   return m;
 }
 
+/** Item bought for cross-rack cables of one type and length: the DC BOM pick (length key, then type), else Generic. */
+export function crossCableItem(lib: Library, layout: DcLayout, mediaId: string, pickKey: string) {
+  for (const k of [pickKey, mediaId]) {
+    const v = lib.variants.get(layout.bomItems?.[k] ?? '');
+    if (v && v.itemId === mediaId) return v;
+  }
+  return lib.variants.defaultOf(mediaId);
+}
+
 export function buildDcBom(lib: Library, designs: DesignLookup, layout: DcLayout): BomLine[] {
   const counts = new Map<string, number>();
   for (const a of layout.assignments) counts.set(a.designId, (counts.get(a.designId) ?? 0) + 1);
@@ -78,9 +87,10 @@ export function buildDcBom(lib: Library, designs: DesignLookup, layout: DcLayout
     const len = lengths.get(crossPairKey(c));
     if (len === undefined) continue;
     const media = lib.cableMedia.get(c.mediaId);
-    const v = lib.variants.defaultOf(c.mediaId);
-    bom.add({ key: `xcable:${c.mediaId}@${len}`, kind: 'cable', item: `${media?.name ?? c.mediaId} ${len} m`, category: 'Cable',
-      itemTypeId: c.mediaId, itemId: v?.id, vendorModel: variantLabel(v), qty: 1, unitW: 0, lengthM: len,
+    const pickKey = `${c.mediaId}@${len}`;
+    const v = crossCableItem(lib, layout, c.mediaId, pickKey);
+    bom.add({ key: `xcable:${pickKey}`, kind: 'cable', item: `${media?.name ?? c.mediaId} ${len} m`, category: 'Cable',
+      itemTypeId: c.mediaId, pickKey, itemId: v?.id, vendorModel: variantLabel(v), qty: 1, unitW: 0, lengthM: len,
       notes: ['cross-rack'], properties: v?.properties });
   }
   return bom.build();

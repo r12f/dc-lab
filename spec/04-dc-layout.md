@@ -177,7 +177,8 @@ cables whose ends are no longer marked cross-rack are not drawn. The trace hover
 
 **BOM**: the DC BOM adds every cross-rack cable (`cross-rack` note), one line per cable type and length. Length per
 rack pair = up out of each rack into the trays (rack height at both ends) + the trace's tray route on the plan + 1 m
-slack, rounded up to 0.5 m. Items: the cable type's Generic item.
+slack, rounded up to 0.5 m. Each line's Vendor / Model (PN) is a picker like the Rack Designer BOM: the item picked
+per cable type and length (`layout.bomItems`, key `<cable id>@<length m>`), else Generic.
 
 **View menu** (toolbar, before rotation): checkboxes for Trays, Floating trays, Row labels and Cables. Drawing only:
 a hidden tray still routes cable traces (they keep following it), hidden row labels drop the row headers (and their
