@@ -1,5 +1,5 @@
 import type { RackTemplate } from '../../domain/rack/types';
-import { elementsOn, footprintTiles, isInternal, overallWidthMm, SIDE_KINDS } from '../../domain/rack/side-elements';
+import { elementsOn, footprintTiles, isInternal, overallWidthMm } from '../../domain/rack/side-elements';
 import { paint } from '../../theme/paint';
 
 const TILE_PX = 60;
@@ -19,9 +19,9 @@ export function FootprintDrawing({ rack }: { rack: RackTemplate }) {
   const overall = overallWidthMm(rack.widthMm, rack.sideElements);
   let x = 0;
   const boxes = [
-    ...left.map((e) => ({ key: e.id, w: e.widthMm, d: e.depthMm, label: e.name, kind: e.kind as string })),
-    { key: 'body', w: rack.widthMm, d: rack.depthMm, label: 'Rack', kind: 'body' },
-    ...right.map((e) => ({ key: e.id, w: e.widthMm, d: e.depthMm, label: e.name, kind: e.kind as string })),
+    ...left.map((e) => ({ key: e.id, w: e.widthMm, d: e.depthMm, label: e.name, kind: 'side', dashed: !e.accepts })),
+    { key: 'body', w: rack.widthMm, d: rack.depthMm, label: 'Rack', kind: 'body', dashed: false },
+    ...right.map((e) => ({ key: e.id, w: e.widthMm, d: e.depthMm, label: e.name, kind: 'side', dashed: !e.accepts })),
   ].map((b) => {
     const out = { ...b, x };
     x += b.w;
@@ -32,7 +32,7 @@ export function FootprintDrawing({ rack }: { rack: RackTemplate }) {
     let edge = side === 'left' ? bodyX : bodyX + rack.widthMm;
     for (const e of elementsOn(rack.sideElements, side).filter(isInternal)) {
       const x = side === 'left' ? edge : edge - e.widthMm;
-      boxes.push({ key: e.id, w: e.widthMm, d: e.depthMm, label: `${e.name} (inside rack)`, kind: e.kind, x });
+      boxes.push({ key: e.id, w: e.widthMm, d: e.depthMm, label: `${e.name} (inside rack)`, kind: 'side', dashed: !e.accepts, x });
       edge = side === 'left' ? edge + e.widthMm : edge - e.widthMm;
     }
   }
@@ -47,7 +47,7 @@ export function FootprintDrawing({ rack }: { rack: RackTemplate }) {
       <line x1={wide * TILE_PX} x2={wide * TILE_PX} y1={-4} y2={deep * TILE_PX + 4} stroke={paint.ink} strokeDasharray="3 3" />
       {boxes.map((b) => {
         const body = b.kind === 'body';
-        const dashed = !body && SIDE_KINDS[b.kind as keyof typeof SIDE_KINDS].dashed;
+        const dashed = !body && b.dashed;
         return (
           <g key={b.key}>
             <title>{`${b.label} ${b.w}x${b.d} mm`}</title>

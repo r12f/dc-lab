@@ -10,7 +10,7 @@ describe('power cord length from a vertical PDU', () => {
   it('uses the outlet\'s own height on the strip: a top outlet to a top device is shorter than a bottom outlet', () => {
     const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
     const rack = lib.racks.get('network-48ru-600')!;
-    const bay = rack.sideElements.find((e) => e.kind === 'pdu-bay')!;
+    const bay = rack.sideElements.find((e) => e.accepts?.includes('pdu'))!;
     const pdu = lib.devices.items().find((x) => x.category === 'pdu' && x.height.units === 0 && x.ports.some((g) => g.role === 'outlet' && g.count >= 6))!;
     const og = pdu.ports.filter((g) => g.role === 'outlet');
     const last = og[og.length - 1];

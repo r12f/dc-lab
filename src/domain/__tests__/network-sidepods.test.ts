@@ -4,7 +4,7 @@ import { normalizeProject } from '../project/serializer';
 import { footprintTiles } from '../rack/side-elements';
 
 const rack = (id: string) => SHIPPED_CATALOG.racks.find((r) => r.id === id)!;
-const kinds = (id: string) => rack(id).sideElements.map((e) => `${e.side}:${e.kind}`);
+const kinds = (id: string) => rack(id).sideElements.map((e) => `${e.side}:${e.inside ? 'pdu-bay' : 'sidepod'}`);
 
 describe('network racks with and without sidepods', () => {
   it('plain 42RU / 48RU have only a PDU bay each side, 1 tile wide; "(w/ Sidepods)" add a sidepod each side', () => {

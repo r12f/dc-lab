@@ -1,8 +1,10 @@
 import type { RackTemplate } from '../../domain/rack/types';
 import {
-  elementsOn, newSideElement, SIDE_ELEMENT_KINDS, SIDE_KINDS,
-  type SideElement, type SideElementKind, type SideName,
+  acceptsLabel, elementsOn, FACE_LABELS, newSideElement, overallWidthMm, SIDE_PRESET_IDS, SIDE_PRESETS,
+  type SideElement, type SideFaces, type SideName, type SidePresetId,
 } from '../../domain/rack/side-elements';
+import { DEVICE_CATEGORIES, traitsOf } from '../../domain/device/categories';
+import type { DeviceCategory } from '../../domain/device/types';
 import { uniqueId } from '../../domain/ids';
 import { Button } from '../../ui/button';
 import { NumberField, Section, SelectField, TextField } from '../../ui/fields';
@@ -15,28 +17,57 @@ interface Props {
   onSelect(id: string | undefined): void;
 }
 
-const kindOptions = SIDE_ELEMENT_KINDS.map((k) => ({ value: k, label: SIDE_KINDS[k].label }));
+const presetOptions = SIDE_PRESET_IDS.map((k) => ({ value: k, label: SIDE_PRESETS[k].label }));
+const faceOptions = (Object.keys(FACE_LABELS) as SideFaces[]).map((k) => ({ value: k, label: FACE_LABELS[k] }));
+const ANY = 'any';
+const NONE = 'none';
+const SOME = 'some';
+const acceptOptions = [
+  { value: ANY, label: 'Any device' }, { value: NONE, label: 'Nothing (space only)' }, { value: SOME, label: 'Only these categories…' },
+];
+const rackCategories = DEVICE_CATEGORIES.filter((c) => !traitsOf(c).facility);
 
 function ElementForm({ el, set }: { el: SideElement; set(patch: Partial<SideElement>): void }) {
+  const mode = !el.accepts ? ANY : el.accepts.length === 0 ? NONE : SOME;
+  const toggle = (c: DeviceCategory) => {
+    const cur = el.accepts ?? [];
+    set({ accepts: cur.includes(c) ? cur.filter((x) => x !== c) : [...cur, c] });
+  };
   return (
     <>
-      <div className="row2">
-        <TextField label="Name" value={el.name} onChange={(name) => set({ name })} />
-        <SelectField<SideElementKind> label="Kind" value={el.kind} options={kindOptions} onChange={(kind) => set({ kind })} />
+      <TextField label="Name" value={el.name} onChange={(name) => set({ name })} />
+      <div className="row3">
+        <NumberField label="Width mm" value={el.widthMm} min={1} onChange={(widthMm) => set({ widthMm })} />
+        <NumberField label="Depth mm" value={el.depthMm} min={10} onChange={(depthMm) => set({ depthMm })} />
+        <NumberField label="Weight kg" value={el.weightKg} min={0} onChange={(weightKg) => set({ weightKg })} />
       </div>
       <div className="row3">
-        <NumberField label="Width mm" value={el.widthMm} min={10} onChange={(widthMm) => set({ widthMm })} />
-        <NumberField label="Depth mm" value={el.depthMm} min={10} onChange={(depthMm) => set({ depthMm })} />
+        <SelectField<SideFaces> label="Faces" value={el.faces} options={faceOptions} onChange={(faces) => set({ faces })} />
+        <SelectField label="Accepts" value={mode} options={acceptOptions}
+          onChange={(m) => set({ accepts: m === ANY ? undefined : m === NONE ? [] : (el.accepts?.length ? el.accepts : ['pdu']) })} />
         <NumberField label="Slots" value={el.slots} min={0} onChange={(slots) => set({ slots })} />
       </div>
-      <NumberField label="Weight kg" value={el.weightKg} min={0} onChange={(weightKg) => set({ weightKg })} />
+      {mode === SOME && (
+        <div className="check-grid">
+          {rackCategories.map((c) => (
+            <label key={c} className="check">
+              <input type="checkbox" checked={!!el.accepts?.includes(c)} onChange={() => toggle(c)} />
+              <span>{traitsOf(c).label}</span>
+            </label>
+          ))}
+        </div>
+      )}
+      <label className="check" title="Between the rails and the side panel: adds no width to the rack footprint">
+        <input type="checkbox" checked={!!el.inside} onChange={(e) => set({ inside: e.target.checked || undefined })} />
+        <span>Inside the rack enclosure (adds no width)</span>
+      </label>
     </>
   );
 }
 
 /** Add, edit, reorder and remove boxes on each side of the rack. */
 export function SideElementsEditor({ rack, onChange, selectedId, onSelect }: Props) {
-  const [kind, setKind] = useState<SideElementKind>('sidepod');
+  const [kind, setKind] = useState<SidePresetId>('sidepod');
   const list = rack.sideElements;
   const setList = (sideElements: SideElement[]) => onChange({ ...rack, sideElements });
   const add = (side: SideName) => {
@@ -60,15 +91,15 @@ export function SideElementsEditor({ rack, onChange, selectedId, onSelect }: Pro
   return (
     <Section title="Side elements">
       <div className="row3">
-        <SelectField<SideElementKind> label="New kind" value={kind} options={kindOptions} onChange={setKind} />
+        <SelectField<SidePresetId> label="New (preset)" value={kind} options={presetOptions} onChange={setKind} />
         <Button onClick={() => add('left')}>+ Left</Button>
         <Button onClick={() => add('right')}>+ Right</Button>
       </div>
-      {list.length === 0 && <p className="muted">No side elements. Add sidepods, PDU bays or cable managers.</p>}
+      <p className="muted">{`A side space is a box of some width: it accepts some devices (or none), is open to the front, rear or both, and adds its width to the rack unless inside the enclosure. Overall width: ${overallWidthMm(rack.widthMm, list)} mm. Presets only fill in starting values.`}</p>
       {(['left', 'right'] as const).map((side) => elementsOn(list, side).map((el, i, same) => (
         <details key={el.id} className="card" open={el.id === selectedId}
           onToggle={(e) => (e.currentTarget as HTMLDetailsElement).open && onSelect(el.id)}>
-          <summary>{`${side === 'left' ? 'L' : 'R'}${i + 1} · ${el.name} · ${el.widthMm} mm · ${el.slots} slot(s)`}</summary>
+          <summary>{`${side === 'left' ? 'L' : 'R'}${i + 1} · ${el.name} · ${el.widthMm} mm${el.inside ? ' (inside)' : ''} · ${FACE_LABELS[el.faces]} · takes ${acceptsLabel(el)}`}</summary>
           <ElementForm el={el} set={(patch) => update(el.id, patch)} />
           <div className="row3">
             <Button disabled={i === 0} onClick={() => move(el, -1)} title="Move toward the rack body">Inward</Button>

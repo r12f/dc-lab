@@ -48,7 +48,7 @@ describe('rack BOM tree', () => {
     // Root = the rack as a whole (the design); rack frame = the template, as the rack item line.
     expect([t.label, t.line]).toEqual(['D', undefined]);
     expect(t.children.map((c) => c.label)).toEqual([
-      'Rack frame — Network Rack 42RU', 'PDU bay L (PDU bay)', 'PDU bay R (PDU bay)',
+      'Rack frame — Network Rack 42RU', 'PDU bay L', 'PDU bay R',
     ]);
     expect(t.children[0].line).toMatchObject({ kind: 'rack', item: 'Network Rack 42RU', qty: 1 });
     const frame = t.children[0];

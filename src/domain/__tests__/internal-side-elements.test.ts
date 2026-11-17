@@ -12,7 +12,7 @@ const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
 describe('PDU bays are inside the rack', () => {
   it('add no footprint width; sidepods do', () => {
     const r = lib.racks.get('network-42ru-600-sidepods')!;
-    expect(r.sideElements.filter(isInternal).map((e) => e.kind)).toEqual(['pdu-bay', 'pdu-bay']);
+    expect(r.sideElements.filter(isInternal).map((e) => e.id)).toEqual(['pdu-bay-l', 'pdu-bay-r']);
     expect(overallWidthMm(r.widthMm, r.sideElements)).toBe(600 + 300 + 300);
   });
   it('a sidepod device is no farther from the channel because of the PDU bay', () => {

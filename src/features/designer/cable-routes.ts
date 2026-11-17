@@ -2,7 +2,7 @@ import type { Library } from '../../domain/library/library';
 import type { CableEndpoint, CableRoute, CableRun, Placement, RackDesign } from '../../domain/design/types';
 import type { PortFace } from '../../domain/device/types';
 import { findGroup, parsePortRef } from '../../domain/device/ports';
-import { REAR_ONLY_KINDS } from '../../domain/rack/side-elements';
+import { onFace } from '../../domain/rack/side-elements';
 import type { RackTemplate } from '../../domain/rack/types';
 import type { RackGeometry } from '../../drawing/rack-geometry';
 import { placementRect } from './placed-device';
@@ -29,7 +29,7 @@ export interface CableLink {
 
 /**
  * Rack face a cable end is on: its port group's face, flipped for a rear-mounted device; a device in a rear-only
- * side element (PDU bay) is on the rear. Undefined when unknown (no port picked) or for other side elements
+ * side element open to one face only (PDU bay: rear) is on that face. Undefined when unknown (no port picked) or for other side elements
  * (reachable from both faces).
  */
 export function endpointFace(lib: Library, design: RackDesign, ep: CableEndpoint): PortFace | undefined {
@@ -38,7 +38,7 @@ export function endpointFace(lib: Library, design: RackDesign, ep: CableEndpoint
   if (p.mount.kind === 'side') {
     const id = p.mount.elementId;
     const el = lib.racks.get(design.templateId)?.sideElements.find((e) => e.id === id);
-    return el && REAR_ONLY_KINDS.has(el.kind) ? 'rear' : undefined;
+    return !el || el.faces === 'both' ? undefined : onFace(el, 'front') ? 'front' : 'rear';
   }
   const d = lib.devices.get(p.deviceId);
   const ref = parsePortRef(ep.portRef);

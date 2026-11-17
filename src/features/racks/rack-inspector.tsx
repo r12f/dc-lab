@@ -22,7 +22,7 @@ interface Props {
 const kindOptions = (Object.keys(RACK_KINDS) as RackKind[]).map((k) => ({ value: k, label: RACK_KINDS[k] }));
 const systemOptions: { value: UnitSystem; label: string }[] = [{ value: 'RU', label: 'RU' }, { value: 'OU', label: 'OU' }];
 
-const sideSignature = (els: { side: string; kind: string; widthMm: number }[]) => els.map((e) => `${e.side}:${e.kind}:${e.widthMm}`).join();
+const sideSignature = (els: { side: string; faces: string; inside?: boolean; widthMm: number }[]) => els.map((e) => `${e.side}:${e.faces}:${!!e.inside}:${e.widthMm}`).join();
 
 /** Changing kind swaps in that kind's default side elements, unless the user customised them. */
 function withKind(r: RackTemplate, kind: RackKind): Partial<RackTemplate> {

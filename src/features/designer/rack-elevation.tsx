@@ -17,7 +17,7 @@ import { mountAt } from './mount-at';
 import { paint } from '../../theme/paint';
 import { cableGutter, routeCables } from './cable-routes';
 import { CableRoutesDrawing } from './cable-routes-drawing';
-import { REAR_ONLY_KINDS } from '../../domain/rack/side-elements';
+import { onFace } from '../../domain/rack/side-elements';
 import { visibleCables, type ViewFilter } from '../../domain/design/device-filter';
 import { placedDevice } from '../../domain/design/sizing';
 import { cableGroupsOnFace } from '../../domain/device/ports';
@@ -85,11 +85,13 @@ export function RackElevation({ ref, lib, design, selectedId, onSelect, selected
   // PDU bays are on the rear: the front panel leaves them out (and the PDUs in them).
   // No cable drawn (all filtered out / hidden): no channels either.
   const gutter = showCables && cableDesign.cables.length > 0 ? cableGutter(lib, cableDesign, CABLE_GUTTER) : 0;
-  const geoRear = rackGeometry(rack, gutter);
-  const rackFront = { ...rack, sideElements: rack.sideElements.filter((e) => !REAR_ONLY_KINDS.has(e.kind)) };
+  // Each face shows only the side spaces open to it (a PDU bay: rear; a cable manager: front).
+  const rackRear = { ...rack, sideElements: rack.sideElements.filter((e) => onFace(e, 'rear')) };
+  const rackFront = { ...rack, sideElements: rack.sideElements.filter((e) => onFace(e, 'front')) };
+  const geoRear = rackGeometry(rackRear, gutter);
   const geoFront = rackGeometry(rackFront, gutter);
   const geoOf = (face: PortFace) => (face === 'rear' ? geoRear : geoFront);
-  const rackOf = (face: PortFace) => (face === 'rear' ? rack : rackFront);
+  const rackOf = (face: PortFace) => (face === 'rear' ? rackRear : rackFront);
   const geo = geoRear;
   const metrics = computeRackMetrics(lib, design);
   const issues = designIssues(lib, design);

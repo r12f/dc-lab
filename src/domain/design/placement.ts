@@ -2,7 +2,7 @@ import type { DeviceDefinition, PortFace } from '../device/types';
 import { traitsOf } from '../device/categories';
 import { sizedDevice } from './sizing';
 import type { RackTemplate } from '../rack/types';
-import { SIDE_KINDS } from '../rack/side-elements';
+import { acceptsLabel, sideAccepts, sidePriority } from '../rack/side-elements';
 import { unitsIn } from '../units';
 import type { Library } from '../library/library';
 import type { Mount, Placement, RackDesign } from './types';
@@ -58,7 +58,7 @@ export function placementProblem(
   if (mount.kind === 'side') {
     const el = rack.sideElements.find((e) => e.id === mount.elementId);
     if (!el) return 'Unknown side element';
-    if (!SIDE_KINDS[el.kind].accepts(device)) return `${el.name} does not accept ${traitsOf(device.category).label}`;
+    if (!sideAccepts(el, device)) return `${el.name} does not accept ${traitsOf(device.category).label} (takes ${acceptsLabel(el)})`;
     if (mount.slot < 1 || mount.slot > el.slots) return `${el.name} has no slot ${mount.slot}`;
     const taken = design.placements.some(
       (p) => p.id !== ignoreId && p.mount.kind === 'side' && p.mount.elementId === mount.elementId && p.mount.slot === mount.slot,
@@ -136,11 +136,11 @@ export function duplicatePlacement(lib: Library, design: RackDesign, id: string,
   return { ...structuredClone(src), id: newId, label, mount };
 }
 
-/** First free side-element slot that accepts the device; dedicated kinds (e.g. PDU bay) first. */
+/** First free side-element slot that accepts the device; the most specific space (e.g. PDU bay) first. */
 export function firstFreeSideSlot(lib: Library, design: RackDesign, device: DeviceDefinition): Mount | undefined {
   const rack = lib.racks.get(design.templateId);
   if (!rack) return undefined;
-  const ordered = [...rack.sideElements].sort((a, b) => SIDE_KINDS[a.kind].priority - SIDE_KINDS[b.kind].priority);
+  const ordered = [...rack.sideElements].sort((a, b) => sidePriority(a) - sidePriority(b));
   for (const el of ordered) {
     for (let slot = 1; slot <= el.slots; slot++) {
       const mount: Mount = { kind: 'side', elementId: el.id, slot };

@@ -16,18 +16,39 @@ Rack templates. One template = one JSON file (`schema: "dc-lab/rack@1"`).
 
 ## Side elements
 
-A rack can have any number of boxes on either side. Each box is one **side element**:
+A rack can have any number of spaces on either side. Each is one **side element** — all the same kind of thing: a
+box of some width that may hold some devices. There is no element "kind"; what tells a PDU bay from a sidepod or a
+cable manager is only its fields:
 
 | Field | Meaning |
 |---|---|
 | `id`, `name` | Identity, e.g. `"Sidepod L"` |
-| `kind` | `sidepod`, `pdu-bay`, `cable-manager`, `other` |
+| `accepts` | Device categories that mount in it; missing = any device, `[]` = nothing (space only: cable manager, side panel, manifold) |
+| `faces` | `both`, `front` or `rear`: the rack faces it is open to. It and its devices show only on those faces (PDU bay, manifold, power busbar: rear; cable manager, patch panel holder: front); a cable end in a one-face space is on that face |
+| `inside` | Sits inside the rack enclosure (between rails and side panel): adds no width |
 | `side` | `left` or `right` |
 | `widthMm`, `depthMm` | Physical size; width is drawn to scale next to the rack |
 | `slots` | Vertical mounting positions inside the box (0 = nothing mounts) |
 | `weightKg` | Empty weight, added to the rack weight |
 
-Elements on one side are ordered from the rack body outward (first = adjacent to the rack).
+Elements on one side are ordered from the rack body outward (first = adjacent to the rack). The rack's overall width
+(and so its footprint) is the body plus every element not `inside`. Default placement of a 0U device tries the most
+specific space first (fewest accepted categories: a PDU bay before a sidepod taking anything).
+
+"+ Left / + Right" start from a **preset** (starting values only, all editable):
+
+| Preset | Width | Accepts | Faces | Inside |
+|---|---|---|---|---|
+| Sidepod | 300 | any | both | no |
+| PDU bay | 100 | PDU | rear | yes |
+| Cable manager | 150 | nothing | front | no |
+| Patch panel holder | 150 | Patch / Fiber Housing | front | no |
+| Side panel | 20 | nothing | both | no |
+| Manifold | 100 | nothing | rear | yes |
+| Power busbar | 80 | nothing | rear | yes |
+
+Older files: `kind` loads as these fields (`pdu-bay` → PDUs, rear, inside; `cable-manager` → nothing, front;
+`sidepod` → any, both; `other` → zero-U capable categories, both).
 
 Defaults by rack kind (built-in templates follow these):
 
@@ -57,14 +78,7 @@ rack that mount devices in a sidepod move to the (w/ Sidepods) template on load;
 footprint view draws PDU bays over the body edges. In-rack cable length counts no distance through a PDU bay
 for a sidepod outside it. The former built-in `network-48ru-800` is now `network-48ru-600`; projects are migrated.
 
-Kind traits (registry):
-
-| Kind | Drawn as | Accepts |
-|---|---|---|
-| `sidepod` | dashed outline | any device |
-| `pdu-bay` | solid outline | PDUs |
-| `cable-manager` | solid, hatched | nothing |
-| `other` | solid outline | zero-U capable devices |
+Drawing: a space taking any device has a dashed outline, one holding nothing is hatched, others solid.
 
 Empty slots are drawn as dashed boxes inside the element; slots exist only where the user defines them.
 

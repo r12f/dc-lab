@@ -3,7 +3,7 @@ import { footprintTiles } from '../rack/side-elements';
 import { normalizeProject } from '../project/serializer';
 import { SHIPPED_CATALOG } from './catalog-fixture';
 
-const el = (kind: 'sidepod' | 'pdu-bay', widthMm: number) => ({ id: kind, name: kind, kind, side: 'left' as const, widthMm, depthMm: 1200, slots: 1, weightKg: 0 });
+const el = (kind: 'sidepod' | 'pdu-bay', widthMm: number) => ({ id: kind, name: kind, side: 'left' as const, widthMm, depthMm: 1200, slots: 1, weightKg: 0, faces: 'both' as const, inside: kind === 'pdu-bay' });
 
 it('footprint tiles are computed: body + outside side elements over 600 mm, half tiles; PDU bays add nothing', () => {
   expect(footprintTiles({ widthMm: 600, depthMm: 1200, sideElements: [el('pdu-bay', 100), el('sidepod', 300), el('sidepod', 300)] })).toEqual({ wide: 2, deep: 2 });

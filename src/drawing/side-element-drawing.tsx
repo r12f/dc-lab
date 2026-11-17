@@ -1,4 +1,4 @@
-import { SIDE_KINDS } from '../domain/rack/side-elements';
+import { acceptsLabel, FACE_LABELS } from '../domain/rack/side-elements';
 import { paint, RACK_FRAME } from '../theme/paint';
 import { sideSlotRect, type SideElementBox } from './rack-geometry';
 
@@ -11,12 +11,13 @@ interface Props {
 /** One side element: outline per kind, dashed empty slots, vertical name. */
 export function SideElementDrawing({ box, selected, onClick }: Props) {
   const { element: e } = box;
-  const traits = SIDE_KINDS[e.kind];
+  // Holds nothing (cable manager, side panel): hatched; takes any device (sidepod): dashed.
+  const traits = { hatched: e.accepts?.length === 0, dashed: !e.accepts };
   const cx = box.x + box.w / 2;
   const hatchId = `hatch-${e.id}`;
   return (
     <g onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
-      <title>{`${e.name} · ${traits.label} · ${e.widthMm}x${e.depthMm} mm · ${e.slots} slot(s)`}</title>
+      <title>{`${e.name} · ${e.widthMm}x${e.depthMm} mm · ${e.slots} slot(s) · takes ${acceptsLabel(e)} · ${FACE_LABELS[e.faces]}${e.inside ? ' · inside the rack' : ''}`}</title>
       {traits.hatched && (
         <defs>
           <pattern id={hatchId} width={8} height={8} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">

@@ -3,7 +3,6 @@ import type { Library } from '../library/library';
 import type { Placement, RackDesign } from '../design/types';
 import { portItemCounts } from '../design/optics';
 import { RACK_KINDS } from '../rack/types';
-import { SIDE_KINDS } from '../rack/side-elements';
 import { effectiveLengthM } from '../design/cabling';
 import { cablePowerWPerEnd, opticPowerW, variantLabel } from '../items/variants';
 import { BomBuilder } from './bom-builder';
@@ -96,7 +95,7 @@ function computeBuildRackBomTree(lib: Library, design: RackDesign): BomNode | un
     },
     ...rack.sideElements.map((e) => ({
       key: `side:${e.id}`,
-      label: `${e.name} (${SIDE_KINDS[e.kind].label})`,
+      label: e.name,
       children: devicesIn(design.placements.filter((p) => p.mount.kind === 'side' && p.mount.elementId === e.id), `side:${e.id}`),
     })),
   ];

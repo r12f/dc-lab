@@ -1,3 +1,4 @@
+import { migrateSideKind } from '../rack/side-elements';
 import { abbrFromName, cleanAbbr } from '../design/abbr';
 import type { PortRole } from '../device/types';
 
@@ -144,12 +145,13 @@ export function migrateRack(r0: Json): Json {
   // Footprint tiles are computed from the dimensions now; a stored value is dropped.
   const { footprintTiles: _f, ...r } = r0;
   void _f;
-  if (Array.isArray(r.sideElements)) return r;
+  // Side element `kind` -> what it accepts, which faces it is open to, inside the enclosure or not.
+  if (Array.isArray(r.sideElements)) return { ...r, sideElements: (r.sideElements as Json[]).map(migrateSideKind) };
   const pods = (r.sidePods as { left?: number; right?: number }) ?? {};
   const sideElements = (['left', 'right'] as const)
     .filter((side) => (pods[side] ?? 0) > 0)
     .map((side) => ({
-      id: `sidepod-${side}`, name: `Sidepod ${side === 'left' ? 'L' : 'R'}`, kind: 'sidepod', side,
+      id: `sidepod-${side}`, name: `Sidepod ${side === 'left' ? 'L' : 'R'}`, faces: 'both', side,
       widthMm: 100, depthMm: Number(r.depthMm ?? 1200), slots: pods[side], weightKg: 0,
     }));
   const { sidePods: _s, ...rest } = r;

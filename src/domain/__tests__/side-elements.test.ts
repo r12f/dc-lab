@@ -3,7 +3,7 @@ import { Library } from '../library/library';
 import { emptyProject } from '../project/types';
 import { newDesign } from '../design/factory';
 import { defaultMount, placementProblem } from '../design/placement';
-import { defaultSideElements, newSideElement, footprintTiles } from '../rack/side-elements';
+import { defaultSideElements, newSideElement, footprintTiles, onFace } from '../rack/side-elements';
 import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import { normalizeProject } from '../project/serializer';
 import type { DeviceDefinition } from '../device/types';
@@ -28,13 +28,13 @@ const lib = new Library(
 
 describe('default side elements', () => {
   it('network racks: a PDU bay on each side (+ a sidepod each with sidepods); server racks: none', () => {
-    expect(defaultSideElements('network', 1200).map((e) => `${e.side}:${e.kind}`)).toEqual(['left:pdu-bay', 'right:pdu-bay']);
+    expect(defaultSideElements('network', 1200).map((e) => `${e.side}:${e.inside ? 'pdu-bay' : 'sidepod'}`)).toEqual(['left:pdu-bay', 'right:pdu-bay']);
     const els = defaultSideElements('network', 1200, true);
-    expect(els.map((e) => `${e.side}:${e.kind}`)).toEqual(['left:pdu-bay', 'left:sidepod', 'right:pdu-bay', 'right:sidepod']);
+    expect(els.map((e) => `${e.side}:${e.inside ? 'pdu-bay' : 'sidepod'}`)).toEqual(['left:pdu-bay', 'left:sidepod', 'right:pdu-bay', 'right:sidepod']);
     for (const k of ['server', 'mgx', 'orv3', 'orw']) expect(defaultSideElements(k, 1200)).toEqual([]);
   });
   it('built-in templates follow the defaults', () => {
-    const sides = (els: { side: string; kind: string }[]) => els.map((e) => `${e.side}:${e.kind}`);
+    const sides = (els: { side: string; inside?: boolean }[]) => els.map((e) => `${e.side}:${e.inside ? 'pdu-bay' : 'sidepod'}`);
     // "(PDU+SidePods)" / "(w/ Sidepods)" variants carry network-rack side elements with sidepods (MGX too).
     for (const r of BUILTIN_CATALOG_FOR_TESTS.racks) {
       const pods = /\(PDU\+SidePods\)|\(w\/ Sidepods\)/.test(r.name);
@@ -42,7 +42,7 @@ describe('default side elements', () => {
       expect(sides(r.sideElements), r.id).toEqual(sides(defaultSideElements(kind, r.depthMm, pods)));
     }
   });
-  const sides = (els: { side: string; kind: string }[]) => els.map((e) => `${e.side}:${e.kind}`);
+  const sides = (els: { side: string; inside?: boolean }[]) => els.map((e) => `${e.side}:${e.inside ? 'pdu-bay' : 'sidepod'}`);
   it('MGX (PDU+SidePods) is an MGX rack with a PDU bay + sidepod on each side, 2 tiles wide', () => {
     const r = BUILTIN_CATALOG_FOR_TESTS.racks.find((x) => x.id === 'mgx-48ru-pdu-sidepods')!;
     expect(r.kind).toBe('mgx');
@@ -61,6 +61,26 @@ describe('side elements', () => {
     expect(placementProblem(lib, design, s, { kind: 'side', elementId: 'bay', slot: 1 })).toMatch(/does not accept/);
     expect(placementProblem(lib, design, s, { kind: 'side', elementId: 'pod', slot: 1 })).toBeUndefined();
     expect(placementProblem(lib, design, s, { kind: 'side', elementId: 'cm', slot: 1 })).toMatch(/does not accept|no slot/);
+  });
+  it('a space is just width + what it accepts + faces + inside; old kinds load as those fields', () => {
+    const p = normalizeProject({ racks: [{ id: 'x', depthMm: 1000, sideElements: [
+      { id: 'b', name: 'B', kind: 'pdu-bay', side: 'left', widthMm: 100, depthMm: 1000, slots: 1, weightKg: 0 },
+      { id: 'c', name: 'C', kind: 'cable-manager', side: 'right', widthMm: 150, depthMm: 1000, slots: 0, weightKg: 0 },
+      { id: 's', name: 'S', kind: 'sidepod', side: 'right', widthMm: 300, depthMm: 1000, slots: 1, weightKg: 0 },
+    ] }] });
+    const [b, c, sp] = p.racks[0].sideElements;
+    expect(b).toMatchObject({ faces: 'rear', inside: true, accepts: ['pdu'] });
+    expect(c).toMatchObject({ faces: 'front', accepts: [] });
+    expect(sp).toMatchObject({ faces: 'both' });
+    expect(sp).not.toHaveProperty('accepts');
+    for (const e of p.racks[0].sideElements) expect(e).not.toHaveProperty('kind');
+    // Width: body + spaces not inside.
+    expect(footprintTiles({ widthMm: 600, depthMm: 1000, sideElements: p.racks[0].sideElements }).wide).toBe(2);
+  });
+  it('faces decide where a space and its devices show: rear-only PDU bay, front-only holder', () => {
+    expect(onFace(newSideElement('b', 'pdu-bay', 'left', 1200), 'front')).toBe(false);
+    expect(onFace(newSideElement('h', 'patch-panel-holder', 'left', 1200), 'rear')).toBe(false);
+    expect(onFace(newSideElement('s', 'sidepod', 'left', 1200), 'rear')).toBe(true);
   });
   it('migrates legacy sidePods and side mounts', () => {
     const p = normalizeProject({
