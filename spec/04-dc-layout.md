@@ -68,7 +68,7 @@ south (down), units are millimetres.
 
 ## Derived data
 
-- Per rack: label and typical power drawn on the canvas; full summary in a hover tooltip.
+- Per rack: label and typical power drawn on the canvas; full summary in a hover tooltip, shown after ~0.6 s of hovering and 48 px away from the pointer (flipped near the window edge), never taking clicks, so neighbouring racks stay visible and clickable.
 - Per row: tiles used, power vs. budget — drawn on the canvas above each row and in the inspector.
 - DC totals: racks, typical/max power, weight; DC BOM = sum of rack BOMs.
 
