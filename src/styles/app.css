@@ -145,14 +145,21 @@ body.resizing { cursor: col-resize; user-select: none; }
 .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 2px 8px; }
 .pane-wrap { position: relative; display: flex; min-height: 0; min-width: 0; }
 .pane-wrap > .sidebar, .pane-wrap > .inspector { flex: 1; min-width: 0; }
-.pane-toggle { position: absolute; bottom: 6px; z-index: 6; width: 18px; height: 18px; padding: 0; line-height: 16px; font-size: 12px;
-  border: 1px solid var(--border); border-radius: 4px; background: var(--panel); color: var(--muted); cursor: pointer; opacity: .8; }
-.pane-toggle:hover { opacity: 1; color: var(--text); }
-.pane-toggle-left { right: 14px; }
-.pane-toggle-right { left: 8px; }
-.pane-rail { border: 0; padding: 6px 0 0; margin: 0; background: var(--panel); color: var(--muted); cursor: pointer; font-size: 13px;
-  display: flex; align-items: flex-start; justify-content: center; min-height: 0; }
-.pane-rail:hover { color: var(--text); background: color-mix(in srgb, var(--accent) 15%, var(--panel)); }
+.pane-toggle { position: absolute; top: 50%; transform: translateY(-50%); z-index: 6; width: 16px; height: 56px; padding: 0;
+  font-size: 13px; font-weight: 700; line-height: 1; border: 1px solid var(--accent); background: var(--accent); color: var(--general-on-accent, #fff);
+  cursor: pointer; opacity: .85; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+.pane-toggle:hover { opacity: 1; }
+/* Tabs stick out of the pane's inner edge onto the canvas. */
+.pane-toggle-left { right: -16px; border-radius: 0 6px 6px 0; }
+.pane-toggle-right { left: -16px; border-radius: 6px 0 0 6px; }
+.pane-rail { border: 0; padding: 10px 0; margin: 0; background: var(--panel); color: var(--text); cursor: pointer; font-size: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 0; }
+.pane-rail b { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 4px;
+  background: var(--accent); color: var(--general-on-accent, #fff); font-size: 13px; }
+.pane-rail span { writing-mode: vertical-rl; letter-spacing: .05em; color: var(--muted); }
+.pane-rail-left span { transform: rotate(180deg); }
+.pane-rail:hover { background: color-mix(in srgb, var(--accent) 18%, var(--panel)); }
+.pane-rail:hover span { color: var(--text); }
 .pane-rail-left { border-right: 1px solid var(--border); }
 .pane-rail-right { border-left: 1px solid var(--border); }
 .splitter-h { width: auto; height: 6px; margin: -3px 0; cursor: row-resize; flex: none; }

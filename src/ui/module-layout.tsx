@@ -11,7 +11,7 @@ interface Props {
   module?: string;
 }
 
-const RAIL = 22;
+const RAIL = 28;
 
 /** Three-pane module layout: sidebar | canvas | inspector, with resizable, collapsible side panes. */
 export function ModuleLayout({ sidebar, canvas, inspector, module }: Props) {
@@ -56,7 +56,7 @@ export function ModuleLayout({ sidebar, canvas, inspector, module }: Props) {
         <>
           <aside className="sidebar" hidden>{sidebar}</aside>
           <button type="button" className="pane-rail pane-rail-left" title="Expand sidebar (Ctrl+[)" aria-label="Expand sidebar"
-            onClick={() => togglePane('sidebar')}>»</button>
+            onClick={() => togglePane('sidebar')}><b>»</b><span>Sidebar</span></button>
         </>
       )}
       {showSide ? (
@@ -78,7 +78,7 @@ export function ModuleLayout({ sidebar, canvas, inspector, module }: Props) {
           <span />
           <aside className="inspector" hidden>{inspector}</aside>
           <button type="button" className="pane-rail pane-rail-right" title="Expand inspector (Ctrl+])" aria-label="Expand inspector"
-            onClick={() => togglePane('inspector')}>«</button>
+            onClick={() => togglePane('inspector')}><b>«</b><span>Inspector</span></button>
         </>
       ))}
     </div>
