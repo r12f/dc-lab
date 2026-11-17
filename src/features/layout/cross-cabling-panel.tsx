@@ -3,7 +3,7 @@ import type { Library } from '../../domain/library/library';
 import type { CrossRackCable, CrossRackEnd, DcLayout } from '../../domain/layout/types';
 import type { DesignLookup } from '../../domain/layout/tiles';
 import { applicableCrossCables, crossEndKey, crossRackLayout, planCrossCables, usedCrossEnds } from '../../domain/layout/cross-cables';
-import { portName } from '../../domain/device/ports';
+import { groupCols, portCell, portName } from '../../domain/device/ports';
 import { uniqueId } from '../../domain/ids';
 import { Button } from '../../ui/button';
 import { Section, SelectField } from '../../ui/fields';
@@ -117,23 +117,43 @@ function SideColumn({ lib, designs, layout, side, rackId, selected, used, onTogg
       {rack && devices.map((d) => (
         <div key={d.placement.id} className="cross-device">
           <div className="cross-device-name">{d.placement.label}</div>
-          {d.groups.map(({ group, ports }) => (
-            <div key={group.id} className="cross-group">
-              <div className="muted">{group.label}</div>
-              <div className="cross-ports">
-                {[...ports.entries()].sort((x, y) => x[0] - y[0]).map(([index, legs]) => legs.map((c) => {
-                  const e: CrossRackEnd = { assignmentId: rack.id, placementId: d.placement.id, portRef: `${group.id}/${index}`, connector: c };
-                  const k = crossEndKey(e);
-                  const name = `${portName(group, index)}${c && legs.length > 1 ? String.fromCharCode(64 + c) : ''}`;
-                  return (
-                    <button key={k} type="button" title={`${d.placement.label} ${name}${used.has(k) ? ' — cabled' : ''}`}
-                      className={`cross-port${sel.has(k) ? ' selected' : ''}${used.has(k) ? ' used' : ''}`}
-                      onClick={() => onToggle(e)}>{name}</button>
-                  );
-                }))}
+          {d.groups.map(({ group, ports }) => {
+            // Same grid as the faceplate / cabling view (portCell: fill order, holes, bottom-up, mirrored);
+            // ports without a cross-rack connector are blank cells so positions stay recognisable.
+            const rows = Math.max(1, group.rows);
+            const cols = groupCols(group, rows);
+            const legsPer = Math.max(group.connectorsPerPort ?? 1, ...[...ports.values()].flat().map((c) => c ?? 1));
+            const stacked = group.connectorLayout === 'stacked' && legsPer > 1;
+            return (
+              <div key={group.id} className="cross-group">
+                <div className="muted">{group.label}</div>
+                <div className="cross-grid" style={{ gridTemplateColumns: `repeat(${cols}, auto)`, gridTemplateRows: `repeat(${rows}, auto)` }}>
+                  {Array.from({ length: group.count }, (_, i) => {
+                    const index = i + 1;
+                    const { col, row } = portCell(group, i, rows);
+                    const marked = ports.get(index);
+                    const name = portName(group, index);
+                    const legs = Array.from({ length: legsPer }, (_, k) => (legsPer > 1 ? k + 1 : undefined));
+                    return (
+                      <div key={index} className={`cross-cell${stacked ? ' stacked' : ''}`} style={{ gridColumn: col + 1, gridRow: row + 1 }}>
+                        {legs.map((c) => {
+                          const label = `${name}${c ? String.fromCharCode(64 + c) : ''}`;
+                          if (!marked?.includes(c)) return <span key={c ?? 0} className="cross-port blank" title={`${label} — not cross-rack`}>{label}</span>;
+                          const e: CrossRackEnd = { assignmentId: rack.id, placementId: d.placement.id, portRef: `${group.id}/${index}`, connector: c };
+                          const k = crossEndKey(e);
+                          return (
+                            <button key={k} type="button" title={`${d.placement.label} ${label}${used.has(k) ? ' — cabled' : ''}`}
+                              className={`cross-port${sel.has(k) ? ' selected' : ''}${used.has(k) ? ' used' : ''}`}
+                              onClick={() => onToggle(e)}>{label}</button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ))}
     </div>

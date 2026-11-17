@@ -212,7 +212,11 @@ p.warn { color: var(--danger); margin: 4px 0; font-size: 12px; }
 .cross-device { border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; }
 .cross-device-name { font-weight: 600; }
 .cross-group { margin-top: 4px; }
-.cross-ports { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.cross-grid { display: grid; gap: 3px; margin-top: 2px; justify-content: start; }
+.cross-cell { display: flex; flex-direction: column; gap: 1px; }
+/* stacked connectors: connector 1 (A) at the bottom */
+.cross-cell.stacked { flex-direction: column-reverse; }
+.cross-port.blank { opacity: 0.35; cursor: default; border-style: dashed; text-align: center; }
 .cross-port { width: auto; min-width: 34px; padding: 2px 4px; font-size: 11px; border: 1px solid var(--border); border-radius: 3px;
   background: var(--panel); color: var(--text); cursor: pointer; }
 .cross-port.used { background: color-mix(in srgb, var(--accent) 25%, var(--panel)); }
