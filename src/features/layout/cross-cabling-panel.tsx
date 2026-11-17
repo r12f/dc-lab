@@ -64,6 +64,17 @@ export function CrossCablingPanel({ lib, designs, layout, selectedRackId, sides,
     setSel({ a: [], b: [] });
   };
   const usedSel = [...sel.a, ...sel.b].filter((e) => used.has(crossEndKey(e)));
+  // Far ends of the cables on the selected connectors: highlighted on the other side.
+  const peers = useMemo(() => {
+    const ids = new Set([...sel.a, ...sel.b].map((e) => used.get(crossEndKey(e))).filter(Boolean));
+    const picked = new Set([...sel.a, ...sel.b].map(crossEndKey));
+    const out = new Set<string>();
+    for (const c of layout.crossCables ?? []) {
+      if (!ids.has(c.id)) continue;
+      for (const e of [...c.from, ...c.to]) if (!picked.has(crossEndKey(e))) out.add(crossEndKey(e));
+    }
+    return out;
+  }, [sel, used, layout]);
   return (
     <div className="inspector-inner">
       <Section title="Cross-rack cabling">
@@ -94,7 +105,7 @@ export function CrossCablingPanel({ lib, designs, layout, selectedRackId, sides,
       <div className="cross-sides">
         {(['a', 'b'] as const).map((side) => (
           <SideColumn key={side} lib={lib} designs={designs} layout={layout} side={side} rackId={sides[side]}
-            selected={sel[side]} used={used} onMark={(e, on) => mark(side, e, on)}
+            selected={sel[side]} used={used} peers={peers} onMark={(e, on) => mark(side, e, on)}
             onClear={() => setSel({ ...sel, [side]: [] })} />
         ))}
       </div>
@@ -102,9 +113,9 @@ export function CrossCablingPanel({ lib, designs, layout, selectedRackId, sides,
   );
 }
 
-function SideColumn({ lib, designs, layout, side, rackId, selected, used, onMark, onClear }: {
+function SideColumn({ lib, designs, layout, side, rackId, selected, used, peers, onMark, onClear }: {
   lib: Library; designs: DesignLookup; layout: DcLayout; side: 'a' | 'b'; rackId?: string;
-  selected: CrossRackEnd[]; used: Map<string, string>; onMark(e: CrossRackEnd, on: boolean): void; onClear(): void;
+  selected: CrossRackEnd[]; used: Map<string, string>; peers: Set<string>; onMark(e: CrossRackEnd, on: boolean): void; onClear(): void;
 }) {
   // Press on a connector and sweep over others: they all take the pressed connector's new state (select / deselect).
   const sweep = useRef<boolean | undefined>(undefined);
@@ -164,7 +175,7 @@ function SideColumn({ lib, designs, layout, side, rackId, selected, used, onMark
                           const k = crossEndKey(e);
                           return (
                             <button key={k} type="button" title={`${d.placement.label} ${label}${used.has(k) ? ' — cabled' : ''}`}
-                              className={`cross-port${sel.has(k) ? ' selected' : ''}${used.has(k) ? ' used' : ''}`}
+                              className={`cross-port${sel.has(k) ? ' selected' : ''}${peers.has(k) ? ' peer' : ''}${used.has(k) ? ' used' : ''}`}
                               onPointerDown={(ev) => {
                                 if (ev.button !== 0) return;
                                 ev.preventDefault();
