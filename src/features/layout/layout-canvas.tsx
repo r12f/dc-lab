@@ -80,7 +80,8 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
   };
   const ghost = (id: string) => (drag.dragging?.id === id ? 0.6 : 1);
   const rackProblem = drag.rackProblem();
-  const hovered = hover && !drag.dragging && layout.assignments.find((a) => a.id === hover.id);
+  // Cabling mode: no rack tooltip (it hides the racks being picked as A / B sides).
+  const hovered = hover && !drag.dragging && !crossSides && layout.assignments.find((a) => a.id === hover.id);
 
   return (
     <>

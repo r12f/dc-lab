@@ -28,7 +28,9 @@ export function CrossTraces({ lib, designs, layout, plan, highlight, onHover }: 
               strokeOpacity={strong ? 0.9 : 0.3} strokeLinejoin="round" pointerEvents="none" />
             <circle cx={t.points[0].x} cy={t.points[0].y} r={110} fill={paint.selection} pointerEvents="none" />
             <circle cx={t.points[t.points.length - 1].x} cy={t.points[t.points.length - 1].y} r={110} fill={paint.selection} pointerEvents="none" />
-            <polyline data-export="skip" points={pts} fill="none" stroke="transparent" strokeWidth={300}
+            {/* Hover target only along the trays: the legs into the racks would cover the racks and steal their clicks. */}
+            <polyline data-export="skip" points={(t.points.length > 2 ? t.points.slice(1, -1) : t.points).map((p) => `${p.x},${p.y}`).join(' ')}
+              fill="none" stroke="transparent" strokeWidth={200}
               onPointerEnter={(e) => { setOver(t.key); onHover(text, e); }}
               onPointerMove={(e) => onHover(text, e)}
               onPointerLeave={() => { setOver(undefined); onHover(undefined); }}>
