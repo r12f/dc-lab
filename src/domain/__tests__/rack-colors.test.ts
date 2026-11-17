@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { categoryStyle, LAYOUT_PAINT, RACK_FRAME, rackColorVars } from '../../theme/paint';
+import { categoryStyle, LAYOUT_PAINT, layoutColorVars, RACK_FRAME, rackColorVars } from '../../theme/paint';
 import { THEMES } from '../../theme/registry';
 import { themeToCssVars } from '../../theme/css-vars';
 import { DEVICE_CATEGORIES } from '../device/categories';
@@ -24,11 +24,10 @@ describe('rack colors per scheme', () => {
       for (const k of used) expect(v[k], `${theme.id} ${k}`).toBeTruthy();
     }
   });
-  it('only the light and dark themes take the layout palette; others keep their accent racks', () => {
+  it('every theme takes the layout palette of its scheme, with a distinct colour per IT rack design', () => {
     for (const theme of THEMES) {
       const v = themeToCssVars(theme);
-      if (theme.id === 'light' || theme.id === 'dark') expect(v['--lay-rack-it']).not.toBe(theme.general.accent);
-      else expect(v['--lay-rack-it']).toBe(theme.general.accent);
+      expect(v['--lay-rack-it0']).toBe(layoutColorVars({ scheme: theme.scheme })['--lay-rack-it0']);
+      expect(new Set([0, 1, 2, 3, 4, 5].map((i) => v[`--lay-rack-it${i}`])).size).toBe(6);
     }
-  });
-});
+  });});

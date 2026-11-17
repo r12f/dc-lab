@@ -16,7 +16,7 @@ export function themeToCssVars(theme: Theme): Record<string, string> {
   highlightPalette.forEach((c, i) => (vars[`--palette-${i}`] = c));
   // Rack elevation / palette colors: a light or dark set by scheme.
   Object.assign(vars, rackColorVars(theme.scheme));
-  // DC Layout racks / traces: own palette in the light and dark themes, the theme's accent elsewhere.
+  // DC Layout racks / traces: the light or dark layout palette by scheme.
   Object.assign(vars, layoutColorVars(theme));
   return vars;
 }

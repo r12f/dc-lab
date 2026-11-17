@@ -60,7 +60,7 @@ const FRAME_SETS = {
 /**
  * DC Layout racks and cable traces per scheme. Light: a macaron palette — soft pastel racks with a deeper outline and
  * dark text of the same hue, traces in candy macaron tones (mint, lavender, pistachio, rose-pink, aqua, periwinkle).
- * Dark: deep muted racks of the same hues with light text, saturated traces. No red / orange / yellow (reserved for errors and warnings).
+ * Dark: deep candy racks of the same hues with light text, saturated traces. Every theme takes the set of its scheme. No red / orange / yellow (reserved for errors and warnings).
  */
 const LAYOUT_SETS = {
   light: {
@@ -79,12 +79,13 @@ const LAYOUT_SETS = {
   },
   dark: {
     rackIt: '#2f4a73', rackItLine: '#7d9cd1', rackItText: '#e3ecfa',
-    rackIt0: '#2f4a73', rackIt0Line: '#7d9cd1', rackIt0Text: '#e3ecfa',
-    rackIt1: '#2f4a73', rackIt1Line: '#7d9cd1', rackIt1Text: '#e3ecfa',
-    rackIt2: '#2f4a73', rackIt2Line: '#7d9cd1', rackIt2Text: '#e3ecfa',
-    rackIt3: '#2f4a73', rackIt3Line: '#7d9cd1', rackIt3Text: '#e3ecfa',
-    rackIt4: '#2f4a73', rackIt4Line: '#7d9cd1', rackIt4Text: '#e3ecfa',
-    rackIt5: '#2f4a73', rackIt5Line: '#7d9cd1', rackIt5Text: '#e3ecfa',
+    // IT racks: one deep candy colour per rack design (blue, pink, mint, lavender, aqua, lilac)
+    rackIt0: '#2c4a7e', rackIt0Line: '#7fa6f2', rackIt0Text: '#e4edff',
+    rackIt1: '#6a2c52', rackIt1Line: '#f08cc4', rackIt1Text: '#ffe6f3',
+    rackIt2: '#1f5444', rackIt2Line: '#5fd6a8', rackIt2Text: '#dcf8ec',
+    rackIt3: '#46336f', rackIt3Line: '#b394f5', rackIt3Text: '#efe6ff',
+    rackIt4: '#1d5560', rackIt4Line: '#5fd2e2', rackIt4Text: '#dcf6fa',
+    rackIt5: '#5c2f66', rackIt5Line: '#d98ae6', rackIt5Text: '#fbe6ff',
     rackPower: '#3b3a52', rackPowerLine: '#9890c4', rackPowerText: '#ebe8f7',
     rackCdu: '#1f4a43', rackCduLine: '#6fb9a6', rackCduText: '#dcf3ec',
     rackChiller: '#1e4352', rackChillerLine: '#6fadc2', rackChillerText: '#dceff5',
@@ -109,24 +110,12 @@ export const LAYOUT_PAINT = {
 } as const;
 
 /**
- * `--lay-…` variables for a theme: the light / dark themes get the layout palette above; every other theme keeps its
- * own look — IT racks in the theme accent with on-accent text and ink outline, infra racks in fixed slate / cyan —
- * and the scheme's trace colours.
+ * `--lay-…` variables for a theme: the light set for every light theme, the dark set for every dark theme (racks get
+ * a candy colour per design, traces a candy colour per rack pair).
  */
-export function layoutColorVars(theme: { id: string; scheme: 'light' | 'dark'; general: { accent: string; onAccent: string }; canvas: { ink: string } }): Record<string, string> {
-  const base: Record<string, string> = { ...LAYOUT_SETS[theme.scheme] };
-  if (theme.id !== 'light' && theme.id !== 'dark') {
-    Object.assign(base, {
-      rackIt: theme.general.accent, rackItLine: theme.canvas.ink, rackItText: theme.general.onAccent,
-      ...Object.fromEntries([0, 1, 2, 3, 4, 5].flatMap((i) => [
-        [`rackIt${i}`, theme.general.accent], [`rackIt${i}Line`, theme.canvas.ink], [`rackIt${i}Text`, theme.general.onAccent]])),
-      rackPower: '#475569', rackPowerLine: theme.canvas.ink, rackPowerText: theme.general.onAccent,
-      rackCdu: '#06b6d4', rackCduLine: theme.canvas.ink, rackCduText: theme.general.onAccent,
-      rackChiller: '#0e7490', rackChillerLine: theme.canvas.ink, rackChillerText: theme.general.onAccent,
-    });
-  }
+export function layoutColorVars(theme: { scheme: 'light' | 'dark' }): Record<string, string> {
   const v: Record<string, string> = {};
-  for (const [k, c] of Object.entries(base)) v[`--lay-${k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}`] = c;
+  for (const [k, c] of Object.entries(LAYOUT_SETS[theme.scheme])) v[`--lay-${k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}`] = c;
   return v;
 }
 
