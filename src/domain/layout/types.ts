@@ -140,8 +140,9 @@ export interface DcLayout {
   /** Cables between racks, on the racks' cross-rack connectors. */
   crossCables?: CrossRackCable[];
   /**
-   * Items picked in the DC BOM for cross-rack cables: pick key -> item (vendor product) id. Key = `<cable id>@<length m>`
-   * (one cable type at one length), falling back to the cable id. No pick = the cable type's Generic item.
+   * Items picked in the DC BOM for DC items: pick key -> item (vendor product) id. Cross-rack cables: `<cable id>@<length m>`
+   * (one cable type at one length), falling back to the cable id; floor equipment (facility items): the item type id.
+   * No pick = the item type's Generic item.
    */
   bomItems?: Record<string, string>;
 }

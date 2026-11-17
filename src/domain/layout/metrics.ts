@@ -73,12 +73,24 @@ export function crossCableItem(lib: Library, layout: DcLayout, mediaId: string, 
   return lib.variants.defaultOf(mediaId);
 }
 
-/** DC BOM in two groups: what the racks hold (bought with the racks; items picked in the Rack Designer) and the cables
- * between racks (items picked here). */
-export function buildDcBomGroups(lib: Library, designs: DesignLookup, layout: DcLayout): { inRack: BomLine[]; crossRack: BomLine[] } {
+/** Item bought for a DC-level item type (floor PDU, cooling unit…): the DC BOM pick, else Generic. */
+export function dcItem(lib: Library, layout: DcLayout, itemTypeId: string) {
+  const v = lib.variants.get(layout.bomItems?.[itemTypeId] ?? '');
+  return v && v.itemId === itemTypeId ? v : lib.variants.defaultOf(itemTypeId);
+}
+
+/**
+ * DC BOM in two groups: what the racks hold (bought with the racks; items picked per design in the Rack Designer)
+ * and the DC items — equipment on the floor (facilities with an item: floor PDUs, cooling units…) and cables between
+ * racks — whose items are picked in the DC BOM.
+ */
+export function buildDcBomGroups(lib: Library, designs: DesignLookup, layout: DcLayout): { inRack: BomLine[]; dc: { facilities: BomLine[]; crossRack: BomLine[] } } {
   const all = buildDcBom(lib, designs, layout);
-  const cross = (l: BomLine) => l.notes.includes('cross-rack');
-  return { inRack: all.filter((l) => !cross(l)), crossRack: all.filter(cross) };
+  const has = (n: string) => (l: BomLine) => l.notes.includes(n);
+  return {
+    inRack: all.filter((l) => !has('cross-rack')(l) && !has('dc-floor')(l)),
+    dc: { facilities: all.filter(has('dc-floor')), crossRack: all.filter(has('cross-rack')) },
+  };
 }
 
 export function buildDcBom(lib: Library, designs: DesignLookup, layout: DcLayout): BomLine[] {
@@ -88,6 +100,15 @@ export function buildDcBom(lib: Library, designs: DesignLookup, layout: DcLayout
   for (const [id, n] of counts) {
     const d = designs(id);
     if (d) bom.addAll(buildRackBom(lib, d), n);
+  }
+  // Equipment on the DC floor: facilities that are an item (floor PDU, cooling unit…), one line per item type.
+  for (const f of layout.facilities) {
+    const d = f.deviceId ? lib.devices.get(f.deviceId) : undefined;
+    if (!d) continue;
+    const v = dcItem(lib, layout, d.id);
+    bom.add({ key: `dcfloor:${d.id}`, kind: 'device', item: d.name, category: d.category,
+      itemTypeId: d.id, pickKey: d.id, itemId: v?.id, vendorModel: variantLabel(v), qty: 1, unitW: 0,
+      notes: ['dc-floor', f.name], properties: v?.properties });
   }
   // Cables between racks (cross-rack cabling), one line per cable type and estimated length.
   const lengths = crossPairLengths(lib, designs, layout);

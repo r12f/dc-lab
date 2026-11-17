@@ -35,15 +35,18 @@ function InfraTable({ lib, designs, layout }: { lib: Library; designs: DesignLoo
 
 /**
  * DC BOM tree: "In-rack" — everything the racks hold (items picked per rack design in the Rack Designer, read-only
- * here) — and "Cross-rack cables" — cables between racks, whose items are picked here.
+ * here) — and "DC items" — floor equipment (PDUs, cooling…) and cross-rack cables, whose items are picked here.
  */
 function dcBomTree(lib: Library, designs: DesignLookup, layout: DcLayout): BomNode {
-  const { inRack, crossRack } = buildDcBomGroups(lib, designs, layout);
+  const { inRack, dc } = buildDcBomGroups(lib, designs, layout);
   const leaf = (l: BomLine, pickable: boolean): BomNode => ({ key: l.key, label: l.item, line: pickable ? l : { ...l, pickKey: undefined }, children: [] });
   return {
     key: `dc:${layout.id}`, label: layout.name, children: [
       { key: 'dc:in-rack', label: 'In-rack (items picked in the Rack Designer)', children: inRack.map((l) => leaf(l, false)) },
-      { key: 'dc:cross-rack', label: 'Cross-rack cables', children: crossRack.map((l) => leaf(l, true)) },
+      { key: 'dc:items', label: 'DC items', children: [
+        { key: 'dc:floor', label: 'Floor equipment (PDU, cooling…)', children: dc.facilities.map((l) => leaf(l, true)) },
+        { key: 'dc:cross-rack', label: 'Cross-rack cables', children: dc.crossRack.map((l) => leaf(l, true)) },
+      ] },
     ],
   };
 }

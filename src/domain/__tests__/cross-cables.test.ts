@@ -116,7 +116,19 @@ describe('cross-rack routing', () => {
     }
     expect(lines[0].pickKey).toBe(`${mmc.id}@${len}`);
     const g = buildDcBomGroups(lib, designs, l);
-    expect(g.crossRack.map((x) => x.key)).toEqual(lines.map((x) => x.key));
+    expect(g.dc.crossRack.map((x) => x.key)).toEqual(lines.map((x) => x.key));
     expect(g.inRack.some((x) => x.notes.includes('cross-rack'))).toBe(false);
+  });
+  it('lists floor equipment (facilities with an item) as pickable DC items', () => {
+    const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
+    const pdu = lib.devices.items().find((d) => d.category === 'dc-pdu')!;
+    const l: DcLayout = { ...layout, facilities: [
+      { id: 'f1', kind: 'pdu', name: 'PDU-A', deviceId: pdu.id, x: 0, y: 0, widthMm: 600, depthMm: 600 },
+      { id: 'f2', kind: 'pdu', name: 'PDU-B', deviceId: pdu.id, x: 0, y: 0, widthMm: 600, depthMm: 600 },
+      { id: 'f3', kind: 'other', name: 'Desk', x: 0, y: 0, widthMm: 600, depthMm: 600 },
+    ] };
+    const g = buildDcBomGroups(lib, () => undefined, l);
+    expect(g.dc.facilities.map((x) => [x.itemTypeId, x.qty, x.pickKey])).toEqual([[pdu.id, 2, pdu.id]]);
+    expect(g.inRack).toEqual([]);
   });
 });
