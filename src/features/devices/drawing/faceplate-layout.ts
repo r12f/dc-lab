@@ -1,5 +1,5 @@
 import type { DeviceDefinition, PortFace, PortGroup } from '../../../domain/device/types';
-import { formatPortRef, groupCols, groupsOnFace, portCell } from '../../../domain/device/ports';
+import { drawOrder, formatPortRef, groupCols, groupsOnFace, portCell } from '../../../domain/device/ports';
 import { groupTitle } from './group-title';
 
 export interface Box {
@@ -48,10 +48,8 @@ function layoutPorts(device: DeviceDefinition, face: PortFace, x0: number) {
   const labels: GroupLabel[] = [];
   let x = x0;
   let bottom = 0;
-  const faceGroups = groupsOnFace(device, face);
   // A mirrored face (rear of a pass-through panel, seen from behind) also runs its groups right to left.
-  const ordered = faceGroups.length && faceGroups.every((g) => g.rightToLeft) ? [...faceGroups].reverse() : faceGroups;
-  for (const g of ordered) {
+  for (const g of drawOrder(groupsOnFace(device, face))) {
     const rows = Math.max(1, g.rows);
     const cols = groupCols(g, rows);
     const { w, h } = portSize(g);

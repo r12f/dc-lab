@@ -64,6 +64,11 @@ export function portName(g: PortGroup, index: number): string {
   return `${first + Math.floor(i / sub)}${String.fromCharCode(65 + (i % sub))}`;
 }
 
+/** Groups of one face in drawing order, left to right: a face whose groups are all mirrored runs right to left. */
+export function drawOrder(groups: PortGroup[]): PortGroup[] {
+  return groups.length && groups.every((g) => g.rightToLeft) ? [...groups].reverse() : groups;
+}
+
 /** Number of grid columns a group spans (holes included). */
 export function groupCols(g: PortGroup, rows = Math.max(1, g.rows)): number {
   if (!g.count) return 0;

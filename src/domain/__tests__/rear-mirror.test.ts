@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { portCell } from '../device/ports';
+import { cableGroupsOnFace, drawOrder, portCell } from '../device/ports';
 import type { PortGroup } from '../device/types';
 import { layoutFace } from '../../features/devices/drawing/faceplate-layout';
 import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
@@ -21,5 +21,10 @@ describe('rightToLeft port groups', () => {
       expect(r.y).toBe(f.y);
       expect(r.x + r.w / 2).toBeCloseTo(front.width - (f.x + f.w / 2), 5);
     }
+  });
+  it('cabling view draws the housing rear modules right to left', () => {
+    const d = BUILTIN_CATALOG_FOR_TESTS.devices.find((x) => x.id === 'fiber-housing-80xmmc16')!;
+    expect(drawOrder(cableGroupsOnFace(d, 'rear')).map((g) => g.id)).toEqual(['rm4', 'rm3', 'rm2', 'rm1']);
+    expect(drawOrder(cableGroupsOnFace(d, 'front')).map((g) => g.id)).toEqual(['fm1', 'fm2', 'fm3', 'fm4']);
   });
 });

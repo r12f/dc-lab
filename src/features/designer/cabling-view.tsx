@@ -6,7 +6,7 @@ import type { DeviceDefinition, PortFace, PortGroup } from '../../domain/device/
 import { applicableCables, deviceFaceSeenFrom, endpointKey, planCable, splitSelection, usedConnectors } from '../../domain/design/cable-assign';
 import { endpointLabel } from '../../domain/design/connectors';
 import { resolvePlacedPort } from '../../domain/design/optics';
-import { cableGroupsOnFace, formatPortRef, groupCols, portCell, portName } from '../../domain/device/ports';
+import { cableGroupsOnFace, drawOrder, formatPortRef, groupCols, portCell, portName } from '../../domain/device/ports';
 import { portLegs, type PortLeg } from '../../domain/ports/legs';
 import { groupTitle } from '../devices/drawing/group-title';
 import { unitsIn } from '../../domain/units';
@@ -111,8 +111,8 @@ function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: Port
   const legs: LegBox[] = [];
   const titles: DeviceLayout['titles'] = [];
   const groups = face === 'all'
-    ? [...cableGroupsOnFace(device, 'front'), ...cableGroupsOnFace(device, 'rear')]
-    : cableGroupsOnFace(device, deviceFaceSeenFrom(p, face));
+    ? [...drawOrder(cableGroupsOnFace(device, 'front')), ...drawOrder(cableGroupsOnFace(device, 'rear'))]
+    : drawOrder(cableGroupsOnFace(device, deviceFaceSeenFrom(p, face)));
   let x = x0 + (vertical ? PAD : LABEL_W);
   let gy = y0 + (vertical ? 34 : 0);
   let bottom = y0 + 34;
