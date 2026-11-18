@@ -138,6 +138,9 @@ Drawing strategy is selected by device shape:
 - **PDU** (`dc-pdu`, category label; shares the PDU folder): room-level PDU item, picked by PDU facilities in DC Layout (supply capacity = their
   default max power); hidden from the Rack Designer palette.
 - **Chiller** (`chiller`): full-height device with cooling capacity / pump power; fills a chiller rack.
+- **MGX rack-scale parts** (built-in): 3RU 110 kW Power Shelf (6 PSUs, energy storage); 1RU liquid-cooled GPU
+  Compute Tray (2x 200G QSFP112 frontend, 4x 1.6T OSFP backend, busbar-fed); 1RU liquid-cooled Scale-up Switch
+  Tray (no front ports: scale-up runs over the rack spine); 1RU Leak Tray.
 - **Default breakout profile** (`defaultProfileId`): every device has one. Built-in switches ship "Default (max
   speed, no module)": every cage at its native (maximum) speed with no module (empty cage; the connector is the
   cage form factor, so DAC / AEC / AOC fit in Rack Designer). Other built-ins (servers, testers) keep their DR

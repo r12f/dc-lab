@@ -1,10 +1,10 @@
 {
   "schema": "dc-lab/device@1",
   "id": "power-shelf-mgx-110kw",
-  "name": "110kW Power Shelf",
+  "name": "3RU 110kW Power Shelf",
   "category": "power-shelf",
   "height": {
-    "units": 1,
+    "units": 3,
     "system": "RU"
   },
   "depthMm": 800,
@@ -29,5 +29,6 @@
       "overrides": {}
     }
   ],
-  "defaultProfileId": "default"
+  "defaultProfileId": "default",
+  "notes": "6 PSUs with built-in energy storage."
 }

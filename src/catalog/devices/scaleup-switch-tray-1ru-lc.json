@@ -1,0 +1,27 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "scaleup-switch-tray-1ru-lc",
+  "name": "1RU Liquid-Cooled Scale-up Switch Tray",
+  "category": "switch",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 0,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [],
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default",
+      "groupDefaults": {},
+      "overrides": {}
+    }
+  ],
+  "defaultProfileId": "default",
+  "notes": "Powered from the rack busbar. Scale-up links to the GPU trays run over the rack spine, so no front ports."
+}

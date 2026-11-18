@@ -10,6 +10,16 @@ describe('device catalog', () => {
     expect(psus).toHaveLength(6);
     expect(new Set(psus.map((b) => b.y)).size).toBe(1);
   });
+  it('110kW power shelf is 3RU', () => {
+    expect(dev('power-shelf-mgx-110kw')?.height.units).toBe(3);
+  });
+  it('GPU compute tray: 1RU, 2x 200G frontend + 4x 1.6T backend; scale-up switch tray and leak tray have no ports', () => {
+    const g = dev('gpu-tray-1ru-lc')!;
+    expect(g.height.units).toBe(1);
+    expect(g.ports.map((p) => [p.id, p.count, p.speedGbps])).toEqual([['fe', 2, 200], ['be', 4, 1600]]);
+    expect(dev('scaleup-switch-tray-1ru-lc')?.ports).toEqual([]);
+    expect(dev('leak-tray')?.ports).toEqual([]);
+  });
   it('64x1.6T switch: busbar-fed (no PSUs), mgmt + BMC + console RJ45 and a 100G QSFP28', () => {
     const d = dev('switch-64x1600g-osfp')!;
     expect(d.psus).toBeUndefined();
