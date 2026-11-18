@@ -3,7 +3,7 @@ import { parseMode } from '../../../domain/device/breakout';
 
 /** Light tints so port text (dark) stays readable; the hue only hints the fan-out. */
 /** Port colors never use red / orange / yellow: those mean error / warning. */
-const FANOUT_COLORS: Record<number, string> = { 1: '#e0f2fe', 2: '#dbeafe', 4: '#dcfce7', 8: '#ede9fe' };
+const FANOUT_COLORS: Record<number, string> = { 1: '#f5f6f8', 2: '#dbeafe', 4: '#dcfce7', 8: '#ede9fe' };
 
 /** Fill for a data port, keyed by breakout fan-out. */
 export function modeColor(mode: string): string {
@@ -12,13 +12,13 @@ export function modeColor(mode: string): string {
 }
 
 export const ROLE_COLORS: Record<PortRole, string> = {
-  data: '#e0f2fe',
+  data: '#f5f6f8',
   service: '#cffafe',
   mgmt: '#ecfccb',
   console: '#e0e7ff',
   laser: '#f3e8ff',
-  outlet: '#f1f5f9',
-  inlet: '#f1f5f9',
+  outlet: '#f5f6f8',
+  inlet: '#f5f6f8',
 };
 
 export const PHASE_COLORS: Record<Phase, string> = {
