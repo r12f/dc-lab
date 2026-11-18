@@ -12,7 +12,8 @@ import { groupTitle } from '../devices/drawing/group-title';
 import { unitsIn } from '../../domain/units';
 import { placedDevice } from '../../domain/design/sizing';
 import { categoryStyle, paint } from '../../theme/paint';
-import { cableTint, LEG_EMPTY, LEG_LINE, modeColor, ROLE_COLORS } from '../devices/drawing/port-style';
+import { LEG_STYLE, modeColor, roleColor, type LegStyle } from '../devices/drawing/port-style';
+import { useTheme } from '../../theme/use-theme';
 import { ROLE_TRAITS } from '../../domain/device/roles';
 import { Button } from '../../ui/button';
 import { SelectField } from '../../ui/fields';
@@ -276,7 +277,7 @@ function LegBlock({ l, fill, ink, stroke, strokeWidth, cross }: { l: LegBox; fil
   const y0 = y + h / 2 - ((lines.length - 1) * 9) / 2 + 3;
   return (
     <>
-      <rect data-k={endpointKey(l.ep)} x={x} y={y} width={w} height={h} rx={2} fill={fill} stroke={stroke} strokeWidth={strokeWidth} pointerEvents="all" />
+      <rect data-k={endpointKey(l.ep)} x={x} y={y} width={w} height={h} rx={2} fill={fill} stroke={stroke} strokeWidth={strokeWidth} pointerEvents={fill === 'none' ? 'all' : undefined} />
       {cross && <text x={x + w - 2} y={y + 8} fontSize={8} fontWeight={700} textAnchor="end" fill={ink} pointerEvents="none">⇄</text>}
       {lines.map((s, k) => (
         <text key={k} x={cx} y={y0 + k * 9} fontSize={Math.min(8, (w - 4) / Math.max(1, s.length * 0.58))} fontWeight={k === 0 ? 700 : 500}
@@ -286,47 +287,52 @@ function LegBlock({ l, fill, ink, stroke, strokeWidth, cross }: { l: LegBox; fil
   );
 }
 
-/** Cross-rack connectors not yet cabled: a light teal of their own, set off from the category colors. */
-const CROSS_FILL = '#a5f3fc';
-const legFill = (L: CablingLayout, k: string) => {
+/** Dark / other themes: the cabling view's own fixed dark device palette. */
+const DARK_DEVICE = { fill: '#1e293b', stroke: '#475569', text: '#cbd5e1' };
+/** Cross-rack connectors not yet cabled: a teal of their own (light theme: a light teal), set off from the rest. */
+const CROSS_FILL = { light: '#a5f3fc', dark: '#0e7490' } as const;
+/** Connector fill as in the rack elevation's port glyph: cable color (tinted on light), cross-rack teal, or empty. */
+const legFill = (L: CablingLayout, k: string, ls: LegStyle, light: boolean) => {
   const runId = L.used.get(k);
-  // Empty connector cells as in the rack elevation's port glyph.
-  return runId ? cableTint(L.runColor.get(runId)!) : L.cross.has(k) ? CROSS_FILL : LEG_EMPTY;
+  return runId ? ls.tint(L.runColor.get(runId)!) : L.cross.has(k) ? CROSS_FILL[light ? 'light' : 'dark'] : light ? ls.empty : '#334155';
 };
-/** Text on a connector: dark on every fill (cable tint, cross-rack teal, empty cell). */
-const legInk = (_L: CablingLayout, _k: string) => '#0f172a';
+/** Connector text: dark on a cable color (and on light cross-rack teal), else the scheme's empty-cell ink. */
+const legInk = (L: CablingLayout, k: string, ls: LegStyle, light: boolean) =>
+  L.used.has(k) || (light && L.cross.has(k)) ? '#0f172a' : L.cross.has(k) ? '#e2e8f0' : ls.emptyInk;
 
 /**
  * The selection-independent drawing: device boxes, ports, connectors and cable lines. Memoized on the layout, so
  * selecting, dragging or highlighting never re-renders these thousands of elements; events are delegated
  * (`data-k` = connector key, `data-run` = run id).
  */
-const CablingBase = memo(function CablingBase({ L }: { L: CablingLayout }) {
+const CablingBase = memo(function CablingBase({ L, light }: { L: CablingLayout; light: boolean }) {
+  const ls = LEG_STYLE[light ? 'light' : 'dark'];
   return (
     <>
       {L.devices.map((d) => {
         // Same category colors as the rack elevation (theme-scheme aware): device block, ports on the paper color.
-        const cs = categoryStyle(d.device.category);
+        const cs = light ? categoryStyle(d.device.category) : DARK_DEVICE;
         return (
           <g key={`${d.face}:${d.p.id}`}>
             <rect x={d.x + 2} y={d.y} width={d.w - 2} height={d.h} rx={4} fill={cs.fill} stroke={cs.stroke} />
-            <text x={d.x + 8} y={d.y + 17} fontSize={12} fontWeight={700} fill={cs.text}>{d.p.label}</text>
-            <text x={d.x + 8} y={d.y + 30} fontSize={9} fill={cs.text} opacity={0.8}>
+            <text x={d.x + 8} y={d.y + 17} fontSize={12} fontWeight={700} fill={light ? cs.text : '#f8fafc'}>{d.p.label}</text>
+            <text x={d.x + 8} y={d.y + 30} fontSize={9} fill={cs.text} opacity={light ? 0.8 : undefined}>
               {d.device.name.length > 24 ? `${d.device.name.slice(0, 23)}…` : d.device.name}
             </text>
-            {d.legs.length === 0 && <text x={d.x + 8} y={d.y + d.h - 4} fontSize={8} fill={cs.text} opacity={0.6}>{`no ${d.face} ports`}</text>}
-            {d.titles.map((t) => <text key={`${t.x}`} x={t.x} y={t.y} fontSize={9} fontWeight={600} fill={cs.text}>{t.text}</text>)}
+            {d.legs.length === 0 && <text x={d.x + 8} y={d.y + d.h - 4} fontSize={8} fill={light ? cs.text : '#94a3b8'} opacity={light ? 0.6 : undefined}>{`no ${d.face} ports`}</text>}
+            {d.titles.map((t) => <text key={`${t.x}`} x={t.x} y={t.y} fontSize={9} fontWeight={600} fill={light ? cs.text : '#e2e8f0'}>{t.text}</text>)}
             {d.ports.map((pt) => (
               <g key={`${pt.group.id}/${pt.index}`}>
                 {/* Port colors as in the rack elevation: tinted by breakout fan-out (pluggable) or role, dark text. */}
                 <rect x={pt.x} y={pt.y} width={pt.w} height={pt.h} rx={2}
-                  fill={ROLE_TRAITS[pt.group.role].pluggable ? modeColor(pt.mode) : ROLE_COLORS[pt.group.role]} stroke="#0f172a" />
-                <text x={pt.x + pt.w / 2} y={pt.y + 9} fontSize={9} fontWeight={700} textAnchor="middle" fill="#0f172a">{portName(pt.group, pt.index)}</text>
+                  fill={light ? (ROLE_TRAITS[pt.group.role].pluggable ? modeColor(pt.mode, true) : roleColor(pt.group.role, true)) : '#0f172a'}
+                  stroke={light ? '#0f172a' : '#475569'} />
+                <text x={pt.x + pt.w / 2} y={pt.y + 9} fontSize={9} fontWeight={700} textAnchor="middle" fill={light ? '#0f172a' : '#e2e8f0'}>{portName(pt.group, pt.index)}</text>
               </g>
             ))}
             {d.legs.map((l) => {
               const k = endpointKey(l.ep);
-              return <LegBlock key={k} l={l} fill={legFill(L, k)} ink={legInk(L, k)} stroke={LEG_LINE} strokeWidth={1} cross={L.cross.has(k)} />;
+              return <LegBlock key={k} l={l} fill={legFill(L, k, ls, light)} ink={legInk(L, k, ls, light)} stroke={light ? ls.line : '#0f172a'} strokeWidth={1} cross={L.cross.has(k)} />;
             })}
           </g>
         );
@@ -334,7 +340,7 @@ const CablingBase = memo(function CablingBase({ L }: { L: CablingLayout }) {
       {/* Assigned cables: one line per A-B connector pair, in the cable's colour. */}
       {L.lines.map((ln) => (
         <polyline key={ln.key} data-run={ln.runId} points={ln.points.map((pt) => pt.join(',')).join(' ')} fill="none"
-          stroke={cableTint(L.runColor.get(ln.runId)!, 0.45)} strokeWidth={1.5} strokeLinejoin="round" style={{ cursor: 'pointer' }} />
+          stroke={light ? ls.tint(L.runColor.get(ln.runId)!) : L.runColor.get(ln.runId)} strokeOpacity={light ? undefined : 0.85} strokeWidth={1.5} strokeLinejoin="round" style={{ cursor: 'pointer' }} />
       ))}
     </>
   );
@@ -373,6 +379,7 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
   // Drawing uses the filtered design (stable object per filter, so the layout cache holds); edits use the full one.
   const shown = useMemo(() => visibleDesign(lib, design, filter), [lib, design, filter]);
   const L = cablingLayout(lib, shown, faces);
+  const light = useTheme().scheme === 'light';
   const { used, cross, devices, legOrder, epByKey, leftSide, rightSide, leftX, frontX, rearX, rightX, width, height, channels } = L;
   const selected = new Set(selection.map(endpointKey));
   const focus = focusedRuns(design.cables, used, selected, selectedCableId);
@@ -487,6 +494,7 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
         {/* Each face block's own left / right cable channels: labelled only, on the same paper as the rest. */}
         {L.faces.flatMap((f) => [channels[f].left, channels[f].right]).map((x) => (
           <g key={`ch${x}`}>
+            {!light && <rect x={x} y={SECTION_H} width={CHANNEL_W} height={height - SECTION_H} fill={paint.inkMuted} fillOpacity={0.06} />}
             <text x={x + CHANNEL_W / 2} y={height - 4} fontSize={8} textAnchor="middle" fill={paint.inkMuted}>cable channel</text>
           </g>
         ))}
@@ -494,7 +502,7 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
         {L.faces.length === 2 && <line x1={leftX - BLOCK_GAP / 2} y1={0} x2={leftX - BLOCK_GAP / 2} y2={height} stroke={paint.inkMuted} strokeDasharray="4 3" />}
         {devices.length === 0 && <text x={10} y={SECTION_H + 16} fontSize={12} fill={paint.inkMuted}>No devices placed.</text>}
         <g onPointerDown={basePointerDown} onPointerOver={basePointerOver} onPointerLeave={() => setHover(undefined)}>
-          <CablingBase L={L} />
+          <CablingBase L={L} light={light} />
         </g>
         {/* Overlay (cheap, re-rendered on selection): veil over everything when runs are highlighted, then the
             highlighted runs, A/B device outlines and the selected connectors on top. */}
@@ -506,7 +514,7 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
           ))}
           {[...L.used].filter(([, r]) => focus.has(r)).map(([k]) => epByKey.get(k)).filter((l): l is LegBox => !!l).map((l) => {
             const k = endpointKey(l.ep);
-            return <LegBlock key={`f${k}`} l={l} fill={legFill(L, k)} ink="#0f172a" stroke="#fff" strokeWidth={2} cross={cross.has(k)} />;
+            return <LegBlock key={`f${k}`} l={l} fill={legFill(L, k, LEG_STYLE[light ? 'light' : 'dark'], light)} ink="#0f172a" stroke="#fff" strokeWidth={2} cross={cross.has(k)} />;
           })}
           {devices.filter((d) => sideOf(d.p.id)).map((d) => (
             <g key={`ab${d.face}:${d.p.id}`}>

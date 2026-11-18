@@ -3,7 +3,8 @@ import { groupConnector } from '../../../domain/device/port-label';
 import { portName } from '../../../domain/device/ports';
 import type { PortBox } from './faceplate-layout';
 import type { DrawingContext } from './types';
-import { cableTint, LEG_EMPTY, LEG_LINE, modeColor, ROLE_COLORS, speedLabel } from './port-style';
+import { LEG_STYLE, modeColor, roleColor, speedLabel } from './port-style';
+import { useTheme } from '../../../theme/use-theme';
 import { ROLE_TRAITS } from '../../../domain/device/roles';
 import { formFactorSpec } from '../../../domain/ports/form-factors';
 import { portConnectors } from '../../../domain/ports/optic-match';
@@ -30,7 +31,8 @@ const GAP = 2;
  * ("MPO-12" / "DR4"). An empty cage is one cell with the cage itself as the connector ("OSFP": DAC / AEC / AOC
  * plug in there). Filled with the attached cable's color.
  */
-function LegCells({ box, legs, color }: { box: PortBox; legs: PortLeg[]; color?: string }) {
+function LegCells({ box, legs, color, light }: { box: PortBox; legs: PortLeg[]; color?: string; light: boolean }) {
+  const ls = LEG_STYLE[light ? 'light' : 'dark'];
   const n = legs.length;
   // Stacked connectors (housing slots): connector 1 at the bottom, the rest above it.
   const stacked = box.group.connectorLayout === 'stacked' && n > 1;
@@ -38,7 +40,7 @@ function LegCells({ box, legs, color }: { box: PortBox; legs: PortLeg[]; color?:
   const top = box.y + CELL_TOP;
   const areaH = box.h - CELL_TOP - INSET;
   const h = stacked ? (areaH - GAP * (n - 1)) / n : areaH;
-  const ink = '#0f172a';
+  const ink = color ? '#0f172a' : ls.emptyInk;
   const fit = (s: string, max: number) => Math.max(5, Math.min(max, (w - 3) / Math.max(1, s.length * 0.6)));
   return (
     <g pointerEvents="none">
@@ -48,7 +50,7 @@ function LegCells({ box, legs, color }: { box: PortBox; legs: PortLeg[]; color?:
         const reach = stacked ? '' : l.reach ?? '';
         return (
           <g key={i}>
-            <rect x={x} y={y} width={w} height={h} rx={2} fill={color ? cableTint(color) : LEG_EMPTY} stroke={LEG_LINE} strokeWidth={0.8} />
+            <rect x={x} y={y} width={w} height={h} rx={2} fill={color ? ls.tint(color) : ls.empty} stroke={ls.line} strokeWidth={0.8} />
             <text x={x + w / 2} y={y + h * (reach ? 0.42 : 0.62)} fontSize={fit(genderedConnector(l.connector, l.cableGender), 8)} textAnchor="middle" fill={ink} fontWeight={700}>{genderedConnector(l.connector, l.cableGender)}</text>
             {reach && <text x={x + w / 2} y={y + h * 0.85} fontSize={fit(reach, 8)} textAnchor="middle" fill={ink} fontWeight={500}>{reach}</text>}
           </g>
@@ -61,7 +63,8 @@ function LegCells({ box, legs, color }: { box: PortBox; legs: PortLeg[]; color?:
 export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
   const r = ctx.resolve(box.ref);
   const pluggable = ROLE_TRAITS[box.group.role].pluggable;
-  const fill = pluggable && r ? modeColor(r.mode) : ROLE_COLORS[box.group.role];
+  const light = useTheme().scheme === 'light';
+  const fill = pluggable && r ? modeColor(r.mode, light) : roleColor(box.group.role, light);
   const sel = ctx.selectedPorts.has(box.ref);
   const optic = r?.optic;
   const cable = r?.cableId ? ctx.lib.cableMedia.get(r.cableId) : undefined;
@@ -100,7 +103,7 @@ export function PortGlyph({ box, ctx }: { box: PortBox; ctx: DrawingContext }) {
         <>
           {t(15, 12, '#0f172a', portName(box.group, box.index), true)}
           {t(27, fitFont(iface, box.w, 10), '#1e293b', iface, true)}
-          {legs.length > 0 && <LegCells box={box} legs={legs} color={cable?.color} />}
+          {legs.length > 0 && <LegCells box={box} legs={legs} color={cable?.color} light={light} />}
         </>
       ) : (
         <>
