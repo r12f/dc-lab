@@ -11,7 +11,7 @@ import { portLegs, type PortLeg } from '../../domain/ports/legs';
 import { groupTitle } from '../devices/drawing/group-title';
 import { unitsIn } from '../../domain/units';
 import { placedDevice } from '../../domain/design/sizing';
-import { paint } from '../../theme/paint';
+import { categoryStyle, paint } from '../../theme/paint';
 import { Button } from '../../ui/button';
 import { SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
@@ -284,10 +284,14 @@ function LegBlock({ l, fill, ink, stroke, strokeWidth, cross }: { l: LegBox; fil
   );
 }
 
+/** Cross-rack connectors not yet cabled: a teal of their own, set off from the category colors. */
+const CROSS_FILL = '#0e7490';
 const legFill = (L: CablingLayout, k: string) => {
   const runId = L.used.get(k);
-  return runId ? L.runColor.get(runId)! : L.cross.has(k) ? '#0e7490' : '#334155';
+  return runId ? L.runColor.get(runId)! : L.cross.has(k) ? CROSS_FILL : paint.slot;
 };
+/** Text on a connector: dark on a cable color, white on cross-rack teal, the device's text color on an empty slot. */
+const legInk = (L: CablingLayout, k: string, text: string) => (L.used.has(k) ? '#0f172a' : L.cross.has(k) ? '#ffffff' : text);
 
 /**
  * The selection-independent drawing: device boxes, ports, connectors and cable lines. Memoized on the layout, so
@@ -297,27 +301,31 @@ const legFill = (L: CablingLayout, k: string) => {
 const CablingBase = memo(function CablingBase({ L }: { L: CablingLayout }) {
   return (
     <>
-      {L.devices.map((d) => (
-        <g key={`${d.face}:${d.p.id}`}>
-          <rect x={d.x + 2} y={d.y} width={d.w - 2} height={d.h} rx={4} fill="#1e293b" stroke="#475569" />
-          <text x={d.x + 8} y={d.y + 17} fontSize={12} fontWeight={700} fill="#f8fafc">{d.p.label}</text>
-          <text x={d.x + 8} y={d.y + 30} fontSize={9} fill="#cbd5e1">
-            {d.device.name.length > 24 ? `${d.device.name.slice(0, 23)}…` : d.device.name}
-          </text>
-          {d.legs.length === 0 && <text x={d.x + 8} y={d.y + d.h - 4} fontSize={8} fill="#94a3b8">{`no ${d.face} ports`}</text>}
-          {d.titles.map((t) => <text key={`${t.x}`} x={t.x} y={t.y} fontSize={9} fontWeight={600} fill="#e2e8f0">{t.text}</text>)}
-          {d.ports.map((pt) => (
-            <g key={`${pt.group.id}/${pt.index}`}>
-              <rect x={pt.x} y={pt.y} width={pt.w} height={pt.h} rx={2} fill="#0f172a" stroke="#475569" />
-              <text x={pt.x + pt.w / 2} y={pt.y + 9} fontSize={9} fontWeight={700} textAnchor="middle" fill="#e2e8f0">{portName(pt.group, pt.index)}</text>
-            </g>
-          ))}
-          {d.legs.map((l) => {
-            const k = endpointKey(l.ep);
-            return <LegBlock key={k} l={l} fill={legFill(L, k)} ink={L.used.has(k) ? '#0f172a' : '#e2e8f0'} stroke="#0f172a" strokeWidth={1} cross={L.cross.has(k)} />;
-          })}
-        </g>
-      ))}
+      {L.devices.map((d) => {
+        // Same category colors as the rack elevation (theme-scheme aware): device block, ports on the paper color.
+        const cs = categoryStyle(d.device.category);
+        return (
+          <g key={`${d.face}:${d.p.id}`}>
+            <rect x={d.x + 2} y={d.y} width={d.w - 2} height={d.h} rx={4} fill={cs.fill} stroke={cs.stroke} />
+            <text x={d.x + 8} y={d.y + 17} fontSize={12} fontWeight={700} fill={cs.text}>{d.p.label}</text>
+            <text x={d.x + 8} y={d.y + 30} fontSize={9} fill={cs.text} opacity={0.8}>
+              {d.device.name.length > 24 ? `${d.device.name.slice(0, 23)}…` : d.device.name}
+            </text>
+            {d.legs.length === 0 && <text x={d.x + 8} y={d.y + d.h - 4} fontSize={8} fill={cs.text} opacity={0.6}>{`no ${d.face} ports`}</text>}
+            {d.titles.map((t) => <text key={`${t.x}`} x={t.x} y={t.y} fontSize={9} fontWeight={600} fill={cs.text}>{t.text}</text>)}
+            {d.ports.map((pt) => (
+              <g key={`${pt.group.id}/${pt.index}`}>
+                <rect x={pt.x} y={pt.y} width={pt.w} height={pt.h} rx={2} fill={paint.paper} stroke={cs.stroke} />
+                <text x={pt.x + pt.w / 2} y={pt.y + 9} fontSize={9} fontWeight={700} textAnchor="middle" fill={cs.text}>{portName(pt.group, pt.index)}</text>
+              </g>
+            ))}
+            {d.legs.map((l) => {
+              const k = endpointKey(l.ep);
+              return <LegBlock key={k} l={l} fill={legFill(L, k)} ink={legInk(L, k, cs.text)} stroke={cs.stroke} strokeWidth={1} cross={L.cross.has(k)} />;
+            })}
+          </g>
+        );
+      })}
       {/* Assigned cables: one line per A-B connector pair, in the cable's colour. */}
       {L.lines.map((ln) => (
         <polyline key={ln.key} data-run={ln.runId} points={ln.points.map((pt) => pt.join(',')).join(' ')} fill="none"
