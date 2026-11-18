@@ -27,3 +27,7 @@ export const PHASE_COLORS: Record<Phase, string> = {
 
 export { speedLabel } from '../../../domain/device/breakout';
 
+/** Connector cells (a port's cable legs): empty cell, outline, and the opacity of a cable color drawn on one. */
+export const LEG_EMPTY = '#f8fafc';
+export const LEG_LINE = '#94a3b8';
+export const LEG_TINT = 0.55;

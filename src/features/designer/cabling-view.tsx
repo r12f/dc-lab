@@ -12,7 +12,7 @@ import { groupTitle } from '../devices/drawing/group-title';
 import { unitsIn } from '../../domain/units';
 import { placedDevice } from '../../domain/design/sizing';
 import { categoryStyle, paint } from '../../theme/paint';
-import { modeColor, ROLE_COLORS } from '../devices/drawing/port-style';
+import { LEG_EMPTY, LEG_LINE, LEG_TINT, modeColor, ROLE_COLORS } from '../devices/drawing/port-style';
 import { ROLE_TRAITS } from '../../domain/device/roles';
 import { Button } from '../../ui/button';
 import { SelectField } from '../../ui/fields';
@@ -276,7 +276,9 @@ function LegBlock({ l, fill, ink, stroke, strokeWidth, cross }: { l: LegBox; fil
   const y0 = y + h / 2 - ((lines.length - 1) * 9) / 2 + 3;
   return (
     <>
-      <rect data-k={endpointKey(l.ep)} x={x} y={y} width={w} height={h} rx={2} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
+      {/* A cable's color is tinted (drawn at LEG_TINT over white) so the connector text stays the focus. */}
+      <rect data-k={endpointKey(l.ep)} x={x} y={y} width={w} height={h} rx={2} fill="#ffffff" stroke={stroke} strokeWidth={strokeWidth} />
+      <rect x={x} y={y} width={w} height={h} rx={2} fill={fill} fillOpacity={LEG_TINT} pointerEvents="none" />
       {cross && <text x={x + w - 2} y={y + 8} fontSize={8} fontWeight={700} textAnchor="end" fill={ink} pointerEvents="none">⇄</text>}
       {lines.map((s, k) => (
         <text key={k} x={cx} y={y0 + k * 9} fontSize={Math.min(8, (w - 4) / Math.max(1, s.length * 0.58))} fontWeight={k === 0 ? 700 : 500}
@@ -286,15 +288,15 @@ function LegBlock({ l, fill, ink, stroke, strokeWidth, cross }: { l: LegBox; fil
   );
 }
 
-/** Cross-rack connectors not yet cabled: a teal of their own, set off from the category colors. */
-const CROSS_FILL = '#0e7490';
+/** Cross-rack connectors not yet cabled: a light teal of their own, set off from the category colors. */
+const CROSS_FILL = '#a5f3fc';
 const legFill = (L: CablingLayout, k: string) => {
   const runId = L.used.get(k);
   // Empty connector cells as in the rack elevation's port glyph.
-  return runId ? L.runColor.get(runId)! : L.cross.has(k) ? CROSS_FILL : '#1e293b';
+  return runId ? L.runColor.get(runId)! : L.cross.has(k) ? CROSS_FILL : LEG_EMPTY;
 };
-/** Text on a connector: dark on a cable color, light on cross-rack teal and on an empty cell. */
-const legInk = (L: CablingLayout, k: string) => (L.used.has(k) ? '#0f172a' : '#e2e8f0');
+/** Text on a connector: dark on every fill (cable tint, cross-rack teal, empty cell). */
+const legInk = (_L: CablingLayout, _k: string) => '#0f172a';
 
 /**
  * The selection-independent drawing: device boxes, ports, connectors and cable lines. Memoized on the layout, so
@@ -326,7 +328,7 @@ const CablingBase = memo(function CablingBase({ L }: { L: CablingLayout }) {
             ))}
             {d.legs.map((l) => {
               const k = endpointKey(l.ep);
-              return <LegBlock key={k} l={l} fill={legFill(L, k)} ink={legInk(L, k)} stroke="#334155" strokeWidth={1} cross={L.cross.has(k)} />;
+              return <LegBlock key={k} l={l} fill={legFill(L, k)} ink={legInk(L, k)} stroke={LEG_LINE} strokeWidth={1} cross={L.cross.has(k)} />;
             })}
           </g>
         );
@@ -334,7 +336,7 @@ const CablingBase = memo(function CablingBase({ L }: { L: CablingLayout }) {
       {/* Assigned cables: one line per A-B connector pair, in the cable's colour. */}
       {L.lines.map((ln) => (
         <polyline key={ln.key} data-run={ln.runId} points={ln.points.map((pt) => pt.join(',')).join(' ')} fill="none"
-          stroke={L.runColor.get(ln.runId)} strokeOpacity={0.85} strokeWidth={1.5} strokeLinejoin="round" style={{ cursor: 'pointer' }} />
+          stroke={L.runColor.get(ln.runId)} strokeOpacity={0.5} strokeWidth={1.5} strokeLinejoin="round" style={{ cursor: 'pointer' }} />
       ))}
     </>
   );
