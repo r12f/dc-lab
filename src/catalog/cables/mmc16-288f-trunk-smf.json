@@ -1,0 +1,24 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "mmc16-288f-trunk-smf",
+  "name": "18x MMC-16F to 18x MMC-16F SMF trunk (288F, Type B)",
+  "type": "fiber-sm",
+  "fiberCount": 288,
+  "mapping": "straight",
+  "polarity": "B",
+  "color": "#0f766e",
+  "ends": {
+    "a": {
+      "count": 18,
+      "connector": "MMC-16",
+      "fibers": 16,
+      "gender": "female"
+    },
+    "b": {
+      "count": 18,
+      "connector": "MMC-16",
+      "fibers": 16,
+      "gender": "female"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "mmc16-144f-trunk-smf",
+  "name": "9x MMC-16F to 9x MMC-16F SMF trunk (144F, Type B)",
+  "type": "fiber-sm",
+  "fiberCount": 144,
+  "mapping": "straight",
+  "polarity": "B",
+  "color": "#0d9488",
+  "ends": {
+    "a": {
+      "count": 9,
+      "connector": "MMC-16",
+      "fibers": 16,
+      "gender": "female"
+    },
+    "b": {
+      "count": 9,
+      "connector": "MMC-16",
+      "fibers": 16,
+      "gender": "female"
+    }
+  }
+}
