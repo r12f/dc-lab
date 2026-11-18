@@ -65,6 +65,5 @@ permission once per session. A file that no longer exists is dropped from the li
 disabled elsewhere).
 
 **Save writes to the open file**: Save writes in place to the file the project was opened from / last saved to,
-no dialog; only Save As (or a project never saved to a file) asks for a file. The bound file survives a reload
-(its handle is kept in IndexedDB `dc-lab` / `recent-files`, key `current`), so Save after a reload still writes
-to it (the browser may ask once for write permission). New clears the binding.
+no dialog; only Save As (or a project never saved to a file) asks for a file. Nothing of the project is kept in
+the browser: a page reload starts empty, and the file is opened again (Open ▾ lists it). New clears the binding.

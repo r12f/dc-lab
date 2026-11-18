@@ -5,14 +5,11 @@ import { parseProjectFile, serializeProject } from '../domain/project/serializer
 import { slugify } from '../domain/ids';
 import { projectFiles } from '../io/gateway';
 import { isAbort } from '../io/file-gateway';
-import { forgetFile, loadCurrentFile, readRecent, rememberFile, storeCurrentFile, supportsRecentFiles } from '../io/recent-files';
+import { forgetFile, readRecent, rememberFile } from '../io/recent-files';
 
 /** Handle behind a file ref (File System Access API only). */
 const handleOf = (ref: unknown): FileSystemFileHandle | undefined => (ref as { handle?: FileSystemFileHandle } | undefined)?.handle;
 const remember = (ref: unknown) => { const h = handleOf(ref); if (h) void rememberFile(h).catch(() => undefined); };
-
-/** Restoring the bound file from the last session (once per page load). */
-let restored: Promise<void> | undefined;
 
 function report(e: unknown, action: string) {
   if (!isAbort(e)) alert(`${action} failed: ${(e as Error).message}`);
@@ -26,20 +23,13 @@ export function useProjectFile() {
   const setProject = useAppStore((s) => s.setProject);
   const bindFile = useAppStore((s) => s.bindFile);
 
-  // The bound file survives reloads (the project itself comes back from autosave): Save keeps writing to it
-  // instead of asking for a file again. Restored once on start; stored whenever the binding changes.
+  // Nothing is kept in the browser: a page reload drops the project, so warn while there are unsaved changes.
   useEffect(() => {
-    if (!supportsRecentFiles()) return;
-    if (!restored) {
-      // Restore first; storing the (still empty) binding before that would erase the saved one.
-      restored = loadCurrentFile().then((h) => {
-        const s = useAppStore.getState();
-        if (h && !s.file) s.bindFile({ name: h.name, handle: h } as never, s.project);
-      }).catch(() => undefined);
-      return;
-    }
-    void restored.then(() => storeCurrentFile(handleOf(useAppStore.getState().file))).catch(() => undefined);
-  }, [file]);
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
 
   const confirmDiscard = () => !dirty || confirm('Discard unsaved changes to the current project?');
 

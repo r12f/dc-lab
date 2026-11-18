@@ -40,4 +40,4 @@ Build: `npm run build` emits `dist/` (relative base) deployed to GitHub Pages by
   the cabling view draws its devices, connectors and lines once per design (memoized), with delegated events and
   one hover read-out instead of per-element tooltips; the selection / highlight is a light overlay on top.
 - The Cables tab builds the editor only for the open run.
-- The project autosave to `localStorage` is debounced (400 ms, flushed before unload).
+- The project is not persisted in the browser; only the module tab is kept in `localStorage`.

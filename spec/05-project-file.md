@@ -17,8 +17,7 @@ A single JSON file (`*.dclab.json`):
 ```
 
 - **Open** replaces the current project and remembers the chosen file.
-- **Save** writes back to the remembered file. With no file yet (new project, or after a page reload)
-  Save behaves like Save As.
+- **Save** writes back to the remembered file. With no file yet (new project) Save behaves like Save As.
 - **Save As** asks for a file location and name, writes there, and remembers it.
 - **⟳ Reload** (next to Open ▾, Ctrl+R): re-reads the open file from disk after editing it outside the app and
   replaces the project with it (no prompt); disabled until a file is open.
@@ -27,7 +26,9 @@ A single JSON file (`*.dclab.json`):
   (Firefox, Safari) fall back to opening with an upload dialog and saving as a download.
 - **Open** is a clean start: the current project (and its unsaved changes) is replaced by the file, with no
   prompt; Save then writes to that file. There is no Import (merge) action.
-- The working project is also autosaved to `localStorage`.
+- The project is never stored in the browser (no `localStorage` autosave): a page reload starts with an empty
+  project and the file is opened again (Open / Open ▾ recent). Only the open module tab survives a reload.
+  While there are unsaved changes, leaving or reloading the page asks for confirmation.
 
 `hiddenBuiltins` is kept for file compatibility and always loads empty: built-in items cannot be deleted, and
 ones hidden by older versions come back.

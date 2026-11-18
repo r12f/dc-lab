@@ -44,27 +44,6 @@ async function writeList(list: RecentFile[]): Promise<void> {
   });
 }
 
-/** The file the project is bound to, kept across reloads so Save keeps writing to it. */
-export async function storeCurrentFile(handle: FileSystemFileHandle | undefined): Promise<void> {
-  const d = await db();
-  return new Promise((resolve, reject) => {
-    const tx = d.transaction(STORE, 'readwrite');
-    if (handle) tx.objectStore(STORE).put(handle, 'current');
-    else tx.objectStore(STORE).delete('current');
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-export async function loadCurrentFile(): Promise<FileSystemFileHandle | undefined> {
-  const d = await db();
-  return new Promise((resolve, reject) => {
-    const req = d.transaction(STORE).objectStore(STORE).get('current');
-    req.onsuccess = () => resolve(req.result as FileSystemFileHandle | undefined);
-    req.onerror = () => reject(req.error);
-  });
-}
-
 export function supportsRecentFiles(): boolean {
   return typeof indexedDB !== 'undefined' && typeof window !== 'undefined' && 'showOpenFilePicker' in window;
 }
