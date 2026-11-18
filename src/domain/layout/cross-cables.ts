@@ -102,6 +102,9 @@ export function planCrossCables(
   const build = (x: CrossRackEnd[], y: CrossRackEnd[]): CrossPlan => {
     const na = media.ends.a.count;
     const nb = media.ends.b.count;
+    // Fewer connectors than one cable has on both sides: one cable, its other legs stay spare (a 20-leg trunk on
+    // 16 switch ports).
+    if (x.length <= na && y.length <= nb) return { cables: [{ mediaId, from: x, to: y }] };
     if (x.length % na) return { cables: [], error: `${x.length} connectors is not a multiple of ${na} (cable A end)` };
     if (y.length % nb) return { cables: [], error: `${y.length} connectors is not a multiple of ${nb} (cable B end)` };
     if (x.length / na !== y.length / nb) return { cables: [], error: `${x.length / na} cable(s) on one side but ${y.length / nb} on the other` };
