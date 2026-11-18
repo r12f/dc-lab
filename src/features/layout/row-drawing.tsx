@@ -9,6 +9,8 @@ import { clickTile, isSelected, isTileSelected, type LayoutSelection } from './s
 import { LAYOUT_PAINT, paint } from '../../theme/paint';
 import { useLabels } from './view-context';
 import { assignmentRole, servedRacks } from '../../domain/layout/infra';
+import type { TileRef } from '../../domain/layout/assign';
+import { RACK_DRAG_TYPE } from './rack-palette';
 
 /** Fill of infrastructure racks: power amber, CDU cyan (as their facility colors); IT racks use the accent. */
 
@@ -30,6 +32,8 @@ interface Props {
   onRackHover(assignmentId: string | undefined, box?: DOMRect): void;
   /** Row label header (name, power, tiles); hidden from the View menu. */
   showHeader?: boolean;
+  /** A rack design dropped from the rack palette on one of this row's tiles. */
+  onDropRack?(designId: string, tile: TileRef): void;
 }
 
 const HEADER_H = 1040;
@@ -41,7 +45,7 @@ const kw = (w: number) => String(Math.round(w / 100) / 10);
  * One vertical row: header (name + power / budget, drag handle), tiles from north to south,
  * a front-side marker and assigned racks.
  */
-export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection, onSelect, onHeaderPointerDown, onRackPointerDown, onRackHover, showHeader = true }: Props) {
+export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection, onSelect, onHeaderPointerDown, onRackPointerDown, onRackHover, showHeader = true, onDropRack }: Props) {
   const tiles = Array.from({ length: row.tileCount }, (_, i) => i);
   const itDesigns = [...new Set(layout.assignments.filter((x) => assignmentRole(lib, designs, x) === 'it').map((x) => x.designId))].sort();
   const assignments = layout.assignments.filter((a) => a.rowId === row.id);
@@ -86,7 +90,15 @@ export function RowDrawing({ lib, designs, layout, row, rect, powerW, selection,
             fill={sel ? paint.selection : paint.slot} fillOpacity={sel ? 0.5 : 1}
             stroke={rowSelected ? paint.selection : paint.inkMuted} strokeOpacity={rowSelected ? 1 : 0.5} strokeWidth={12}
             style={{ cursor: 'pointer' }}
-            onClick={(e) => { e.stopPropagation(); onSelect(clickTile(selection, row.id, t, { toggle: e.ctrlKey || e.metaKey, range: e.shiftKey })); }} />
+            onClick={(e) => { e.stopPropagation(); onSelect(clickTile(selection, row.id, t, { toggle: e.ctrlKey || e.metaKey, range: e.shiftKey })); }}
+            onDragOver={(e) => { if (e.dataTransfer.types.includes(RACK_DRAG_TYPE)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } }}
+            onDrop={(e) => {
+              const id = e.dataTransfer.getData(RACK_DRAG_TYPE);
+              if (!id) return;
+              e.preventDefault();
+              e.stopPropagation();
+              onDropRack?.(id, { rowId: row.id, tile: t });
+            }} />
         );
       })}
       <line x1={frontX} x2={frontX} y1={rect.y} y2={rect.y + length} stroke={paint.accent} strokeWidth={50} />

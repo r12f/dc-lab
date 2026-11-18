@@ -46,6 +46,8 @@ html, body, #root { height: 100%; margin: 0; }
 .sidebar-group-title { font-size: 11px; text-transform: uppercase; color: var(--muted); padding: 8px 12px 4px; letter-spacing: .04em; }
 .sidebar-item, .palette-item { display: flex; align-items: center; gap: 6px; padding: 5px 12px; cursor: pointer; }
 .sidebar-item:hover, .palette-item:hover { background: var(--surface-hover); }
+.palette-item.active { background: var(--surface-selected); color: var(--dialog-selected-fg); }
+.palette-action { display: flex; align-items: center; gap: 8px; margin: 0 12px 4px; }
 .sidebar-item.active { background: var(--surface-selected); color: var(--dialog-selected-fg); }
 .sidebar-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sidebar-head-actions { display: flex; align-items: center; gap: 4px; }

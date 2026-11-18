@@ -21,6 +21,7 @@ import { labelTransform, planTransform, viewSize } from '../../domain/layout/vie
 import { ViewRotationContext } from './view-context';
 import { CrossTraces } from './cross-traces';
 import type { LayoutViewItem } from './layout-view';
+import type { TileRef } from '../../domain/layout/assign';
 
 const NONE_HIDDEN: ReadonlySet<LayoutViewItem> = new Set();
 
@@ -36,6 +37,8 @@ interface Props {
   crossSides?: string[];
   /** Layers hidden from the View menu (drawing only). */
   hidden?: ReadonlySet<LayoutViewItem>;
+  /** A rack design dragged from the rack palette and dropped on a row tile. */
+  onDropRack?(designId: string, tile: TileRef): void;
 }
 
 const PAD = 1200;
@@ -49,7 +52,7 @@ export const PX_PER_MM = 0.1;
 /** Grab width (mm) of an aisle's resize edge. */
 const HANDLE_MM = 200;
 
-export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, selection, onSelect, crossSides, hidden = NONE_HIDDEN }: Props) {
+export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, selection, onSelect, crossSides, hidden = NONE_HIDDEN, onDropRack }: Props) {
   const [traceTip, setTraceTip] = useState<{ text: string; x: number; y: number }>();
   const drag = useDragMove(lib, designs, stored, editor);
   const layout = drag.preview();
@@ -148,7 +151,7 @@ export function LayoutCanvas({ ref, lib, designs, layout: stored, editor, select
           return (
             <g key={r.id} opacity={ghost(r.id)}>
               <RowDrawing lib={lib} designs={designs} layout={layout} row={r} rect={b.rect} powerW={rowPower.get(r.id) ?? 0} showHeader={!hidden.has('row-labels')}
-                selection={selection} onSelect={onSelect} onHeaderPointerDown={startDrag('row', r.id)} onRackPointerDown={rackDown}
+                selection={selection} onSelect={onSelect} onHeaderPointerDown={startDrag('row', r.id)} onRackPointerDown={rackDown} onDropRack={onDropRack}
                 onRackHover={(id, box) => setHover(id && box ? { id, box } : undefined)} />
             </g>
           );

@@ -17,6 +17,9 @@ import { Button } from '../../ui/button';
 import { CrossCablingPanel, type CrossSides } from './cross-cabling-panel';
 import { CheckMenu } from '../../ui/check-menu';
 import { LAYOUT_VIEW_ITEMS, type LayoutViewItem } from './layout-view';
+import { RackPalette } from './rack-palette';
+import { assignmentAt } from '../../domain/layout/tiles';
+import type { TileRef } from '../../domain/layout/assign';
 
 export function LayoutModule() {
   const lib = useLibrary();
@@ -30,6 +33,8 @@ export function LayoutModule() {
   const [cabling, setCabling] = useState(false);
   const [sides, setSides] = useState<CrossSides>({});
   const [hiddenView, setHiddenView] = useState<Set<string>>(new Set());
+  const [picked, setPicked] = useState<string>();
+  const rackDesigns = useAppStore((s) => s.project.rackDesigns);
 
   const layout = layouts.find((l) => l.id === selectedId);
   const editor = useLayoutEditor(lib, designs, layout);
@@ -39,6 +44,15 @@ export function LayoutModule() {
     const l = newLayout(uniqueId(slugify('dc layout'), layouts.map((x) => x.id)), 'New DC layout');
     upsert('layouts', l);
     select('layout', l.id);
+  };
+  const selTiles: TileRef[] = sel?.kind === 'tile' ? sel.tiles : [];
+  const freeTiles = layout ? selTiles.filter((t) => !assignmentAt(lib, designs, layout, t.rowId, t.tile)).length : 0;
+  /** Assigns a design to tiles (palette Assign / drop): reports what was placed and what was skipped. */
+  const assignTo = (tiles: TileRef[], designId: string) => {
+    const r = editor.assignTiles(tiles, designId);
+    if (r.ids.length) setSel({ kind: 'assignment', ids: r.ids });
+    const n = `${r.ids.length} rack${r.ids.length === 1 ? '' : 's'} assigned`;
+    return { error: r.ids.length === 0, lines: r.skipped.length ? [`${n}; skipped:`, ...r.skipped] : [n] };
   };
   const duplicate = (id: string) => {
     const src = layouts.find((l) => l.id === id);
@@ -64,6 +78,8 @@ export function LayoutModule() {
           onDuplicate={duplicate}
           onDelete={(id) => { remove('layouts', id); select('layout', undefined); }}
           emptyText="Create a DC layout."
+          lower={layout && <RackPalette lib={lib} designs={rackDesigns} picked={picked} onPick={setPicked}
+            freeTiles={freeTiles} onAssign={(id) => assignTo(selTiles, id)} />}
         />
       }
       canvas={
@@ -80,6 +96,7 @@ export function LayoutModule() {
               <LayoutViewControls editor={editor} />
             </>}>
             {(ref) => <LayoutCanvas ref={ref} lib={lib} designs={designs} layout={layout} editor={editor} selection={sel} onSelect={setSel}
+              onDropRack={(designId, tile) => { const r = assignTo([tile], designId); if (r.error) alert(r.lines.join('\n')); }}
               crossSides={cabling ? [sides.a, sides.b].filter((x): x is string => !!x) : undefined}
               hidden={hiddenView as ReadonlySet<LayoutViewItem>} />}
           </CanvasFrame>

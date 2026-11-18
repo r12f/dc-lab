@@ -58,10 +58,6 @@ interface Props {
 
 /** Assign a rack design to the selected tile(s), or edit the selected assignment. */
 export function TilePanel({ lib, designs, layout, editor, selection, onSelect }: Props) {
-  const allDesigns = useAppStore((s) => s.project.rackDesigns);
-  const [designId, setDesignId] = useState(allDesigns[0]?.id ?? '');
-  const [message, setMessage] = useState<{ error: boolean; lines: string[] }>();
-
   // One tile covered by a rack: edit that rack.
   const single = selection.kind === 'tile' && selection.tiles.length === 1 ? selection.tiles[0] : undefined;
   const assignment = selection.kind === 'assignment'
@@ -88,31 +84,19 @@ export function TilePanel({ lib, designs, layout, editor, selection, onSelect }:
     );
   }
   if (selection.kind !== 'tile') return null;
-  if (allDesigns.length === 0) return <p className="muted">Create a rack design in Rack Designer first.</p>;
   const sel: TileSelection = selection;
   const free = sel.tiles.filter((t) => !assignmentAt(lib, designs, layout, t.rowId, t.tile));
   const rowName = (id: string) => layout.rows.find((r) => r.id === id)?.name ?? id;
   const title = sel.tiles.length === 1
     ? `${rowName(sel.tiles[0].rowId)} · tile ${sel.tiles[0].tile + 1}`
     : `${sel.tiles.length} tiles selected · ${free.length} free`;
-  const assign = () => {
-    const r = editor.assignTiles(sel.tiles, designId);
-    if (r.ids.length) onSelect(undefined);
-    setMessage(r.skipped.length
-      ? { error: r.ids.length === 0, lines: [`${r.ids.length} rack${r.ids.length === 1 ? '' : 's'} assigned; skipped:`, ...r.skipped] }
-      : { error: false, lines: [`${r.ids.length} rack${r.ids.length === 1 ? '' : 's'} assigned`] });
-  };
   return (
     <div className="card">
       <strong>{title}</strong>
       <p className="muted">Ctrl-click tiles to add or remove them; Shift-click selects the run from the last tile in that row.</p>
-      <SelectField label="Rack design" value={designId}
-        options={allDesigns.map((d) => ({ value: d.id, label: `${d.abbr} · ${d.name} (${formatTiles(tileWidthOf(lib, d))} tiles)` }))}
-        onChange={setDesignId} />
-      {message && message.lines.map((l, i) => <p key={i} className={message.error ? 'error' : 'muted'}>{l}</p>)}
-      <Button variant="primary" disabled={!designId || free.length === 0} onClick={assign}>
-        {free.length > 1 ? `Assign ${free.length} racks` : 'Assign rack'}
-      </Button>
+      <p className="muted">{free.length
+        ? 'Pick a rack in the Rack palette (left) and press Assign, or drag a rack onto a tile.'
+        : 'No free tile selected.'}</p>
     </div>
   );
 }

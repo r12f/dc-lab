@@ -137,9 +137,13 @@ south (down), units are millimetres.
   - **Hover** a rack: tooltip with label, design, rack template, tiles, units used, devices, typical and
     max power, weight, warnings.
   - Click a tile to select it, click a rack to select it. **Ctrl-click** adds / removes tiles,
-    **Shift-click** adds the run from the last selected tile in that row. With several tiles selected the
-    inspector assigns one design to all of them in row / tile order, each rack starting where its tile is free;
-    tiles already taken (including by a wide rack just placed) or too short are skipped and listed.
+    **Shift-click** adds the run from the last selected tile in that row.
+  - **Rack palette** (left sidebar, below the layout list, like the Rack Designer's device palette): every rack
+    design, grouped by rack template, filterable, each with its tile width and typical power. Click a rack to pick
+    it: an **Assign** button appears above the list (its line is always reserved, so the list never moves) and
+    assigns the picked design to the selected tiles in row / tile order, each rack starting where its tile is free;
+    tiles already taken (including by a wide rack just placed) or too short are skipped and listed. **Drag** a rack
+    from the palette onto a row tile to assign it there. The new racks become the selection.
   - **Several racks**: Ctrl- or Shift-click racks to add / remove them (any rows). **Drag** a selected rack and
     the whole selection moves with it by whole rows (in row order, across row blocks) and tiles; the inspector
     also has ↑ / ↓ tile, ← / → row and a rows / tiles move. A move is **all or none**: when any rack would leave its
