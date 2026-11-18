@@ -3,7 +3,7 @@ import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 
 describe('trunk cables', () => {
   it('connector counts carry the fiber count on both ends, and the name states them', () => {
-    for (const id of ['mpo8-mmc16-160f-trunk-smf', 'mmc16-288f-trunk-smf', 'mmc16-144f-trunk-smf', 'mpo8-160f-trunk-smf', 'mpo24-288f-trunk-smf']) {
+    for (const id of ['mmc16-mpo8-160f-trunk-smf', 'mmc16-288f-trunk-smf', 'mmc16-144f-trunk-smf', 'mpo8-160f-trunk-smf', 'mpo24-288f-trunk-smf']) {
       const c = BUILTIN_CATALOG_FOR_TESTS.cableMedia.find((x) => x.id === id)!;
       const { a, b } = c.ends;
       expect(a.count * a.fibers!, id).toBe(c.fiberCount);

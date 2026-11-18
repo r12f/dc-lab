@@ -73,7 +73,7 @@ Examples (all built-in):
 | 2x2 shuffle | 2x MPO-8 | 2x MPO-8 | shuffle (4F from each A to each B) |
 | 2x MMC-16 → 4x MPO-8 shuffle | 2x MMC-16 | 4x MPO-8 | shuffle (4F from each A to each B) |
 | 160F MPO-8 trunk | 20x MPO-8 (male) | 20x MPO-8 (male) | straight |
-| 160F MPO-8 → MMC-16 trunk | 20x MPO-8 (female) | 10x MMC-16 (male) | straight (2 MPO-8 per MMC-16) |
+| 160F MMC-16 → MPO-8 trunk | 10x MMC-16 (male) | 20x MPO-8 (female) | straight (2 MPO-8 per MMC-16) |
 | 288F MMC-16 trunk | 18x MMC-16 (female) | 18x MMC-16 (female) | straight |
 | 144F MMC-16 trunk | 9x MMC-16 (female) | 9x MMC-16 (female) | straight |
 | Asymmetric MMC-16 → MPO-8 | 1x MMC-16 (16F) | 1x MPO-8 (8F) | straight, 8 A fibers unused |
