@@ -166,11 +166,13 @@ function SideColumn({ lib, designs, layout, side, rackId, selected, used, peers,
                     const { col, row } = portCell(group, i, rows);
                     const marked = ports.get(index);
                     const name = portName(group, index);
-                    const legs = Array.from({ length: legsPer }, (_, k) => (legsPer > 1 ? k + 1 : undefined));
+                    // One-leg ports keep the mark's own connector (fiber ports and module cages mark leg 1, RJ45 none);
+                    // only multi-leg ports get a letter per leg.
+                    const legs = legsPer > 1 ? Array.from({ length: legsPer }, (_, k) => k + 1) : [marked?.[0]];
                     return (
                       <div key={index} className={`cross-cell${stacked ? ' stacked' : ''}`} style={{ gridColumn: col + 1, gridRow: row + 1 }}>
                         {legs.map((c) => {
-                          const label = `${name}${c ? String.fromCharCode(64 + c) : ''}`;
+                          const label = `${name}${c && legsPer > 1 ? String.fromCharCode(64 + c) : ''}`;
                           if (!marked?.includes(c)) return <span key={c ?? 0} className="cross-port blank" title={`${label} — not cross-rack`}>{label}</span>;
                           const e: CrossRackEnd = { assignmentId: rack.id, placementId: d.placement.id, portRef: `${group.id}/${index}`, connector: c };
                           const k = crossEndKey(e);
