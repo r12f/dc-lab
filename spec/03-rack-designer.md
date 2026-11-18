@@ -40,7 +40,8 @@ A **rack design** (`schema: "dc-lab/rack-design@1"`) is a rack template populate
 - **Estimated length** (auto mode): horizontal run from each endpoint to the chosen side channel
   (half the rack body width for rack-mounted devices; for side-mounted devices the distance through the
   side elements to the body edge, plus the full body width when they sit on the opposite side), plus the
-  vertical distance between the endpoints' heights (RU/OU centre or side-slot centre), plus 0.5 m slack;
+  vertical distance between the endpoints' heights (RU/OU centre or side-slot centre), plus 0.2 m slack
+  (bend radius at both ends; rounding up adds the rest);
   rounded up to the next 0.5 m. A manual length overrides it.
 - **Drawing**: the elevation draws **links**, not single cables: all runs joining the same set of devices on
   the same side channel are one link (one device pair = at most one line per side, however many cables; a

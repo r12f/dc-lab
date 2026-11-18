@@ -6,7 +6,8 @@ import type { CableEndpoint, CableRoute, CableRun, RackDesign } from './types';
 import { placedDevice } from './sizing';
 import { parsePortRef } from '../device/ports';
 
-const SLACK_M = 0.5;
+/** Slack for bend radius at both ends; rounding up to ROUND_M adds the rest (0.5 m slack on top double-counted it). */
+const SLACK_M = 0.2;
 const ROUND_M = 0.5;
 
 /** Physical position of an endpoint: height above the rack floor (mm) and horizontal distance to each channel (mm). */

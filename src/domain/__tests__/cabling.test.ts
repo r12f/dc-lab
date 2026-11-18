@@ -22,7 +22,7 @@ const run = (from: string, to: string, route: 'left' | 'right'): CableRun =>
 
 describe('in-rack cabling', () => {
   it('rack to rack: half body each end + 20 RU vertical + slack, rounded up', () => {
-    // 300 + 300 + 20 * 44.45 = 1489 mm -> 1.489 + 0.5 = 1.989 -> 2.0 m
+    // 300 + 300 + 20 * 44.45 = 1489 mm -> 1.489 + 0.2 = 1.689 -> 2.0 m
     expect(estimateLengthM(lib, d, run('a', 'b', 'left'))).toBe(2);
   });
   it('side-mounted device: route on its own side is shorter than across the rack', () => {

@@ -19,11 +19,12 @@ describe('PDU bays are inside the rack', () => {
     const d = newDesign('d', 'D', 'network-42ru-600-sidepods');
     d.placements.push(
       newPlacement('s', 'switch-48x1g-mgmt', 'S', { kind: 'side', elementId: 'sidepod-l', slot: 1 }),
-      newPlacement('p', 'pdu-vertical-3ph', 'P', { kind: 'side', elementId: 'pdu-bay-l', slot: 1 }),
+      newPlacement('r', 'switch-48x1g-mgmt', 'R', { kind: 'rack', position: 28, face: 'front' }),
     );
-    const run = (from: string) => ({ from: [{ placementId: from, portRef: '' }], to: [{ placementId: 'p', portRef: '' }], route: 'left' as const });
+    const run = (from: string) => ({ from: [{ placementId: from, portRef: '' }], to: [{ placementId: 'r', portRef: '' }], route: 'left' as const });
     // Sidepod centre: 150 mm (half its width), not 100 + 150 through the PDU bay.
-    // sidepod 150 + bay 50 + 0 vertical + 0.5 slack = 0.7 -> 1.0 m
+    // sidepod 150 + rack half body 300 + vertical (27.5 - 21) RU = 289 mm + 0.2 slack = 0.939 -> 1.0 m
+    // (through the bay it would be 1.039 -> 1.5 m)
     expect(estimateLengthM(lib, d, run('s'))).toBe(1);
   });
 });
