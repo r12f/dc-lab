@@ -1,0 +1,84 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "fiber-housing-2ru-288xmmc16",
+  "name": "2RU Fiber Housing 288x MMC-16 (48x 6-port adapters)",
+  "category": "patch-panel",
+  "height": {
+    "units": 2,
+    "system": "RU"
+  },
+  "depthMm": 301.5,
+  "weightKg": 0,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0
+  },
+  "ports": [
+    {
+      "id": "ft",
+      "label": "Front top 1-144",
+      "role": "data",
+      "formFactor": "MMC-16",
+      "count": 144,
+      "speedGbps": 0,
+      "lanes": 16,
+      "face": "front",
+      "rows": 6,
+      "breakoutModes": [],
+      "firstNumber": 1,
+      "cableGender": "male"
+    },
+    {
+      "id": "fb",
+      "label": "Front bottom 145-288",
+      "role": "data",
+      "formFactor": "MMC-16",
+      "count": 144,
+      "speedGbps": 0,
+      "lanes": 16,
+      "face": "front",
+      "rows": 6,
+      "breakoutModes": [],
+      "firstNumber": 145,
+      "cableGender": "male"
+    },
+    {
+      "id": "rt",
+      "label": "Rear top 1-144",
+      "role": "data",
+      "formFactor": "MMC-16",
+      "count": 144,
+      "speedGbps": 0,
+      "lanes": 16,
+      "face": "rear",
+      "rows": 6,
+      "breakoutModes": [],
+      "firstNumber": 1,
+      "cableGender": "female"
+    },
+    {
+      "id": "rb",
+      "label": "Rear bottom 145-288",
+      "role": "data",
+      "formFactor": "MMC-16",
+      "count": 144,
+      "speedGbps": 0,
+      "lanes": 16,
+      "face": "rear",
+      "rows": 6,
+      "breakoutModes": [],
+      "firstNumber": 145,
+      "cableGender": "female"
+    }
+  ],
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default",
+      "groupDefaults": {},
+      "overrides": {}
+    }
+  ],
+  "defaultProfileId": "default",
+  "notes": "2RU panel, 482 mm wide, 301.5 mm deep. 48x 6-port MMC adapters: 24 columns (A-X) in a top and a bottom row, each column one adapter of 6 ports stacked. Ports number down each column, left to right: top row 1-144 (column A 1-6), bottom row 145-288. Front takes male, rear takes female."
+}
