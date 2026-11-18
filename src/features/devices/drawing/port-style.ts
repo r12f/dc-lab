@@ -27,7 +27,19 @@ export const PHASE_COLORS: Record<Phase, string> = {
 
 export { speedLabel } from '../../../domain/device/breakout';
 
-/** Connector cells (a port's cable legs): empty cell, outline, and the opacity of a cable color drawn on one. */
-export const LEG_EMPTY = '#f8fafc';
+/** Connector cells (a port's cable legs): empty cell (a faint grey) and outline. */
+export const LEG_EMPTY = '#e9edf2';
 export const LEG_LINE = '#94a3b8';
-export const LEG_TINT = 0.55;
+
+/**
+ * A cable color lightened toward white (`amount` 0 = unchanged, 1 = white): connector cells and cable lines use it
+ * so a saturated cable color never overpowers the drawing. Solid (not opacity), so overlapping lines stay light.
+ * Non-hex colors (CSS variables) come back unchanged.
+ */
+export function cableTint(color: string, amount = 0.5): string {
+  const m = /^#([0-9a-f]{6})$/i.exec(color);
+  if (!m) return color;
+  const n = parseInt(m[1], 16);
+  const ch = (s: number) => Math.round(((n >> s) & 255) + (255 - ((n >> s) & 255)) * amount).toString(16).padStart(2, '0');
+  return `#${ch(16)}${ch(8)}${ch(0)}`;
+}

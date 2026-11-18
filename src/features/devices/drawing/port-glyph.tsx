@@ -3,7 +3,7 @@ import { groupConnector } from '../../../domain/device/port-label';
 import { portName } from '../../../domain/device/ports';
 import type { PortBox } from './faceplate-layout';
 import type { DrawingContext } from './types';
-import { LEG_EMPTY, LEG_LINE, LEG_TINT, modeColor, ROLE_COLORS, speedLabel } from './port-style';
+import { cableTint, LEG_EMPTY, LEG_LINE, modeColor, ROLE_COLORS, speedLabel } from './port-style';
 import { ROLE_TRAITS } from '../../../domain/device/roles';
 import { formFactorSpec } from '../../../domain/ports/form-factors';
 import { portConnectors } from '../../../domain/ports/optic-match';
@@ -48,8 +48,7 @@ function LegCells({ box, legs, color }: { box: PortBox; legs: PortLeg[]; color?:
         const reach = stacked ? '' : l.reach ?? '';
         return (
           <g key={i}>
-            <rect x={x} y={y} width={w} height={h} rx={2} fill={LEG_EMPTY} stroke={LEG_LINE} strokeWidth={0.8} />
-            {color && <rect x={x} y={y} width={w} height={h} rx={2} fill={color} fillOpacity={LEG_TINT} />}
+            <rect x={x} y={y} width={w} height={h} rx={2} fill={color ? cableTint(color) : LEG_EMPTY} stroke={LEG_LINE} strokeWidth={0.8} />
             <text x={x + w / 2} y={y + h * (reach ? 0.42 : 0.62)} fontSize={fit(genderedConnector(l.connector, l.cableGender), 8)} textAnchor="middle" fill={ink} fontWeight={700}>{genderedConnector(l.connector, l.cableGender)}</text>
             {reach && <text x={x + w / 2} y={y + h * 0.85} fontSize={fit(reach, 8)} textAnchor="middle" fill={ink} fontWeight={500}>{reach}</text>}
           </g>
