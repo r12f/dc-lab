@@ -484,10 +484,9 @@ export function CablingView({ ref, lib, design, editor, selectedCableId, onSelec
         {L.faces.includes('front') && <text x={frontX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>FRONT</text>}
         {L.faces.includes('rear') && <text x={rearX + 4} y={14} fontSize={12} fontWeight={700} fill={paint.ink}>REAR</text>}
         {rightSide.length > 0 && <text x={rightX + 4} y={14} fontSize={11} fontWeight={700} fill={paint.ink}>RIGHT</text>}
-        {/* Each face block's own left / right cable channels. */}
+        {/* Each face block's own left / right cable channels: labelled only, on the same paper as the rest. */}
         {L.faces.flatMap((f) => [channels[f].left, channels[f].right]).map((x) => (
           <g key={`ch${x}`}>
-            <rect x={x} y={SECTION_H} width={CHANNEL_W} height={height - SECTION_H} fill={paint.inkMuted} fillOpacity={0.06} />
             <text x={x + CHANNEL_W / 2} y={height - 4} fontSize={8} textAnchor="middle" fill={paint.inkMuted}>cable channel</text>
           </g>
         ))}
