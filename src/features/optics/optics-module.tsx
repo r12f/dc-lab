@@ -72,7 +72,7 @@ export function OpticsModule() {
   return (
     <ModuleLayout
       sidebar={
-        <Sidebar title="Optics & Cables" items={items} filterable selectedId={selKey}
+        <Sidebar title="Optics & Cables" items={items} filterable defaultCollapsed selectedId={selKey}
           onSelect={(k) => (fromItemKey(k) ? selectKey('optics', k) : cat.choose(fromKey(k)))}
           onNew={() => setMenuOpen((o) => !o)}
           onDuplicate={(k) => (variant ? chooseItem(variants.duplicate(variant)) : withRef(k, cat.duplicate))}

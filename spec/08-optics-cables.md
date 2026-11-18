@@ -10,7 +10,8 @@ per item (`src/catalog/optics/`, `src/catalog/cables/`); project items are store
 - **Sidebar**: one tree, filterable. Top level: `Optic Module / <family> / <speed>`, then one folder per cable
   type — `DAC`, `AEC`, `AOC`, `Power`, `Single-mode fiber (SMF)`, `Multimode fiber (MMF)`, `Other`. DAC / AEC / AOC
   are sorted by speed (low to high), other cables by name. Cable rows show no ends badge (the name carries it);
-  folders keep their item count.
+  folders keep their item count. Folders start **collapsed**; the folders holding the selected item open, a click
+  toggles any folder, and typing a filter opens every folder.
 - **Fiber cable names** spell out both ends with counts and gender, the fiber type and the cable kind, then
   fiber count and polarity; gender is suffixed to the connector (`MPO-8F`, `MPO-8M`, as everywhere else):
   `MPO-12F to 4x LC SMF breakout (8F, Type B)`, `20x MPO-8M to 20x MPO-8M SMF trunk (160F, Type B)`.

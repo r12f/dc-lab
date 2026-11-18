@@ -24,13 +24,19 @@ interface Props {
   lower?: ReactNode;
   emptyText?: string;
   filterable?: boolean;
+  /** Folders start collapsed (folders holding the selected item still open). */
+  defaultCollapsed?: boolean;
 }
 
 interface TreeProps {
   node: TreeNode;
   depth: number;
   selectedId?: string;
-  collapsed: Set<string>;
+  /** Folders the user flipped from their default state. */
+  toggled: Set<string>;
+  defaultCollapsed: boolean;
+  /** Folder keys on the path to the selected item. */
+  selectedPath: Set<string>;
   /** Items whose children are shown. */
   expanded: Set<string>;
   forceOpen: boolean;
@@ -64,20 +70,22 @@ function ItemRow({ item, depth, selectedId, open, onExpand, onSelect }: {
   );
 }
 
-function Tree({ node, depth, selectedId, collapsed, expanded, forceOpen, onToggle, onExpand, onSelect }: TreeProps) {
+function Tree(props: TreeProps) {
+  const { node, depth, selectedId, toggled, defaultCollapsed, selectedPath, expanded, forceOpen, onExpand, onSelect } = props;
   const indent = { paddingLeft: 12 + depth * 12 };
   return (
     <>
       {node.folders.map((f) => {
-        const open = forceOpen || !collapsed.has(f.key);
+        const base = defaultCollapsed ? selectedPath.has(f.key) : true;
+        const open = forceOpen || base !== toggled.has(f.key);
         return (
           <div key={f.key}>
-            <div className="tree-folder" style={indent} onClick={() => onToggle(f.key)}>
+            <div className="tree-folder" style={indent} onClick={() => props.onToggle(f.key)}>
               <span className="caret">{open ? '▾' : '▸'}</span>
               <span className="sidebar-item-name">{f.label}</span>
               <span className="badge">{countItems(f)}</span>
             </div>
-            {open && <Tree {...{ node: f, depth: depth + 1, selectedId, collapsed, expanded, forceOpen, onToggle, onExpand, onSelect }} />}
+            {open && <Tree {...props} node={f} depth={depth + 1} />}
           </div>
         );
       })}
@@ -91,17 +99,19 @@ function Tree({ node, depth, selectedId, collapsed, expanded, forceOpen, onToggl
 
 /** Filterable, collapsible tree of items with New / Duplicate / Delete actions. */
 export function Sidebar(props: Props) {
-  const { title, items, selectedId, onSelect, onNew, onDuplicate, onDelete, canDelete, header, footer, emptyText, filterable, lower } = props;
+  const { title, items, selectedId, onSelect, onNew, onDuplicate, onDelete, canDelete, header, footer, emptyText, filterable, lower, defaultCollapsed = false } = props;
   const listHeight = usePreferences((s) => s.sidebarListHeight);
   const setListHeight = usePreferences((s) => s.setSidebarListHeight);
   const [filter, setFilter] = useState('');
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [toggled, setToggled] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const visible = items.filter((i) => matchesFilter(i, filter));
   const selected = items.flatMap((i) => [i, ...(i.children ?? [])]).find((i) => i.id === selectedId);
+  const selectedOwner = items.find((i) => i.id === selectedId || i.children?.some((c) => c.id === selectedId));
+  const selectedPath = new Set((selectedOwner?.path ?? []).map((_, n, p) => `/${p.slice(0, n + 1).join('/')}`));
   const expand = (id: string) => setExpanded((x) => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const toggle = (key: string) =>
-    setCollapsed((c) => {
+    setToggled((c) => {
       const n = new Set(c);
       if (n.has(key)) n.delete(key);
       else n.add(key);
@@ -137,8 +147,8 @@ export function Sidebar(props: Props) {
             )}
             <div className="sidebar-list">
               {visible.length === 0 && <p className="muted pad">{items.length ? 'No matches.' : emptyText ?? 'Nothing here yet.'}</p>}
-              <Tree node={buildTree(visible)} depth={0} selectedId={selectedId} collapsed={collapsed} expanded={expanded}
-                forceOpen={!!filter} onToggle={toggle} onExpand={expand} onSelect={onSelect} />
+              <Tree node={buildTree(visible)} depth={0} selectedId={selectedId} toggled={toggled} defaultCollapsed={defaultCollapsed}
+                selectedPath={selectedPath} expanded={expanded} forceOpen={!!filter} onToggle={toggle} onExpand={expand} onSelect={onSelect} />
             </div>
           </>
         );
