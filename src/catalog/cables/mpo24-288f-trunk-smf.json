@@ -1,0 +1,24 @@
+{
+  "schema": "dc-lab/cable@1",
+  "id": "mpo24-288f-trunk-smf",
+  "name": "12x MPO-24F to 12x MPO-24F SMF trunk (288F, Type B)",
+  "type": "fiber-sm",
+  "fiberCount": 288,
+  "mapping": "straight",
+  "polarity": "B",
+  "color": "#1e40af",
+  "ends": {
+    "a": {
+      "count": 12,
+      "connector": "MPO-24",
+      "fibers": 24,
+      "gender": "female"
+    },
+    "b": {
+      "count": 12,
+      "connector": "MPO-24",
+      "fibers": 24,
+      "gender": "female"
+    }
+  }
+}

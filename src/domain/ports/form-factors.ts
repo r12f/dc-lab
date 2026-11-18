@@ -34,6 +34,7 @@ export const FORM_FACTORS: FormFactorSpec[] = [
   spec('MPO-8', 'fiber'),
   spec('MPO-12', 'fiber'),
   spec('MPO-16', 'fiber'),
+  spec('MPO-24', 'fiber'),
   spec('MMC', 'fiber'),
   spec('MMC-16', 'fiber'),
   spec('RJ45', 'copper'),
