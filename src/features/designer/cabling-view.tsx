@@ -276,7 +276,7 @@ function LegBlock({ l, fill, ink, stroke, strokeWidth, cross }: { l: LegBox; fil
   const y0 = y + h / 2 - ((lines.length - 1) * 9) / 2 + 3;
   return (
     <>
-      <rect data-k={endpointKey(l.ep)} x={x} y={y} width={w} height={h} rx={2} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
+      <rect data-k={endpointKey(l.ep)} x={x} y={y} width={w} height={h} rx={2} fill={fill} stroke={stroke} strokeWidth={strokeWidth} pointerEvents="all" />
       {cross && <text x={x + w - 2} y={y + 8} fontSize={8} fontWeight={700} textAnchor="end" fill={ink} pointerEvents="none">⇄</text>}
       {lines.map((s, k) => (
         <text key={k} x={cx} y={y0 + k * 9} fontSize={Math.min(8, (w - 4) / Math.max(1, s.length * 0.58))} fontWeight={k === 0 ? 700 : 500}
