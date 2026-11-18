@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/cable@1",
   "id": "mmc16-mpo8-160f-trunk-smf",
-  "name": "10x MMC-16M to 20x MPO-8F SMF trunk (160F, Type B)",
+  "name": "10x MMC-16F to 20x MPO-8F SMF trunk (160F, Type B)",
   "type": "fiber-sm",
   "fiberCount": 160,
   "mapping": "straight",
@@ -12,7 +12,7 @@
       "count": 10,
       "connector": "MMC-16",
       "fibers": 16,
-      "gender": "male"
+      "gender": "female"
     },
     "b": {
       "count": 20,
