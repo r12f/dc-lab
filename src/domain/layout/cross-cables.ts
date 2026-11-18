@@ -185,7 +185,21 @@ function trayLines(layout: DcLayout, plan: FloorPlan): Seg[] {
     if (!r) continue;
     const floating = !!t.floating;
     if (r.widthMm >= r.depthMm) out.push({ a: { x: r.x, y: r.y + r.depthMm / 2 }, b: { x: r.x + r.widthMm, y: r.y + r.depthMm / 2 }, floating });
-    else out.push({ a: { x: r.x + r.widthMm / 2, y: r.y }, b: { x: r.x + r.widthMm / 2, y: r.y + r.depthMm }, floating });
+    else {
+      // An aisle tray ending at a cross aisle runs on into it, to the cross aisle's centre line, so it meets a tray
+      // laid along that cross aisle (the tray drawn in the aisle stops at the block edge).
+      let y0 = r.y;
+      let y1 = r.y + r.depthMm;
+      if (!floating) {
+        for (const c of plan.bands) {
+          if (!c.cross) continue;
+          const mid = c.rect.y + c.rect.depthMm / 2;
+          if (Math.abs(c.rect.y + c.rect.depthMm - y0) < 1) y0 = mid;
+          if (Math.abs(c.rect.y - y1) < 1) y1 = mid;
+        }
+      }
+      out.push({ a: { x: r.x + r.widthMm / 2, y: y0 }, b: { x: r.x + r.widthMm / 2, y: y1 }, floating });
+    }
   }
   return out;
 }

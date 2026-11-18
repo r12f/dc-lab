@@ -44,6 +44,26 @@ describe('cross-rack routing', () => {
     expect(pts[1]).toEqual({ x: 2800, y: 4150 });
     expect(pts.every((p) => p.y === 4150 || p.x === 2800 || p.y === 9700)).toBe(true);
   });
+  it('an aisle tray meets a tray along the cross aisle it ends at', () => {
+    // Cross aisle north of both rows with a tray along it; aisle trays over two aisles end at its south edge.
+    const l: DcLayout = {
+      ...layout,
+      rows: [...layout.rows, { id: 'r3', name: 'R3', tileCount: 10, tileWidthMm: 600, tileDepthMm: 1200, powerBudgetKw: 0, frontFacing: 'west' }],
+      aisles: [{ id: 'h', kind: 'hot', widthMm: 1200 }, { id: 'c', kind: 'cold', widthMm: 1200 }, { id: 'x', kind: 'cold', widthMm: 1800, cross: true }],
+      sequence: ['x', 'r1', 'h', 'r2', 'c', 'r3'],
+      trays: [
+        { id: 't1', kind: 'data', widthMm: 300, overId: 'h' },
+        { id: 't3', kind: 'data', widthMm: 300, overId: 'c' },
+        { id: 'tx', kind: 'data', widthMm: 300, overId: 'x' },
+      ],
+    };
+    const p = computeFloorPlan(l);
+    const xMid = 1000 + 1800 / 2;
+    const pts = crossRoute(l, p, { x: 1600, y: 5000 }, { x: 6400, y: 5000 });
+    // up aisle tray h, across along the cross aisle centre, down aisle tray c
+    expect(pts.some((q) => q.y === xMid && q.x === 2800)).toBe(true);
+    expect(pts.some((q) => q.y === xMid && q.x === 5200)).toBe(true);
+  });
   it('switches trays at their crossing', () => {
     // Only the floating tray at one end: floating tray -> crossing -> aisle tray.
     const only = { ...layout, trays: layout.trays.filter((t) => t.id !== 't1') };
