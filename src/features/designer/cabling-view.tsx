@@ -6,7 +6,7 @@ import type { DeviceDefinition, PortFace, PortGroup } from '../../domain/device/
 import { applicableCables, deviceFaceSeenFrom, endpointKey, planCable, splitSelection, usedConnectors } from '../../domain/design/cable-assign';
 import { endpointLabel } from '../../domain/design/connectors';
 import { resolvePlacedPort } from '../../domain/design/optics';
-import { cableGroupsOnFace, drawOrder, formatPortRef, groupCols, portCell, portName } from '../../domain/device/ports';
+import { cableGroupsOnFace, drawOrder, faceRows, formatPortRef, groupCols, portCell, portName } from '../../domain/device/ports';
 import { portLegs, type PortLeg } from '../../domain/ports/legs';
 import { groupTitle } from '../devices/drawing/group-title';
 import { unitsIn } from '../../domain/units';
@@ -111,13 +111,20 @@ function layoutDevice(lib: Library, design: RackDesign, p: Placement, face: Port
   const legs: LegBox[] = [];
   const titles: DeviceLayout['titles'] = [];
   const groups = face === 'all'
-    ? [...drawOrder(cableGroupsOnFace(device, 'front')), ...drawOrder(cableGroupsOnFace(device, 'rear'))]
-    : drawOrder(cableGroupsOnFace(device, deviceFaceSeenFrom(p, face)));
+    ? [...faceRows(drawOrder(cableGroupsOnFace(device, 'front'))).flat(), ...faceRows(drawOrder(cableGroupsOnFace(device, 'rear'))).flat()]
+    : faceRows(drawOrder(cableGroupsOnFace(device, deviceFaceSeenFrom(p, face)))).flat();
   let x = x0 + (vertical ? PAD : LABEL_W);
   let gy = y0 + (vertical ? 34 : 0);
   let bottom = y0 + 34;
   let right = x0 + LABEL_W;
+  // Face rows (`faceRow`): a group starting a new row goes back to the left edge, under everything drawn so far.
+  let row0 = groups[0]?.faceRow ?? 0;
   for (const g of groups) {
+    if (!vertical && (g.faceRow ?? 0) !== row0) {
+      row0 = g.faceRow ?? 0;
+      x = x0 + LABEL_W;
+      gy = bottom - PAD + GAP;
+    }
     const resolved = Array.from({ length: g.count }, (_, i) => resolvePlacedPort(lib, device, p, formatPortRef({ groupId: g.id, index: i + 1 })));
     const legList = resolved.map((r) => portLegs(g, r));
     const maxLegs = Math.max(1, ...legList.map((l) => l.length));

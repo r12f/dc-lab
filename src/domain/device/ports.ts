@@ -69,11 +69,22 @@ export function drawOrder(groups: PortGroup[]): PortGroup[] {
   return groups.length && groups.every((g) => g.rightToLeft) ? [...groups].reverse() : groups;
 }
 
+/** Groups (in drawing order) split into face rows, top row first (`faceRow`, default 0); empty rows dropped. */
+export function faceRows(groups: PortGroup[]): PortGroup[][] {
+  const rows = new Map<number, PortGroup[]>();
+  for (const g of groups) {
+    const r = g.faceRow ?? 0;
+    rows.set(r, [...(rows.get(r) ?? []), g]);
+  }
+  return [...rows.entries()].sort((a, b) => a[0] - b[0]).map(([, gs]) => gs);
+}
+
 /** Number of grid columns a group spans (holes included). */
 export function groupCols(g: PortGroup, rows = Math.max(1, g.rows)): number {
   if (!g.count) return 0;
   if (g.fill === 'row-major') return Math.max(1, Math.ceil((g.count + (g.holes?.length ?? 0)) / rows));
-  return portCell(g, g.count - 1, rows).col + 1;
+  // Mirroring moves the last port to column 0, so measure the unmirrored grid.
+  return portCell({ ...g, rightToLeft: undefined }, g.count - 1, rows).col + 1;
 }
 
 export function findGroup(device: DeviceDefinition, groupId: string): PortGroup | undefined {

@@ -61,6 +61,11 @@ export interface PortGroup {
    */
   rightToLeft?: boolean;
   /**
+   * Row of the face the group sits in (0 = top, default): groups of one row run left to right, rows stack top
+   * to bottom — e.g. a panel with a top and a bottom row of adapter blocks.
+   */
+  faceRow?: number;
+  /**
    * Two-level port names: every `subPorts` ports share a number and take letters — 4 gives 1A 1B 1C 1D 2A… (a
    * cassette of 4 connectors). Unset / 1 = plain numbers.
    */

@@ -96,6 +96,8 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
         <NumberField label="First number" value={group.firstNumber ?? 1} min={0}
           onChange={(n) => set({ firstNumber: n !== 1 ? n : undefined })} />
       </div>
+      <NumberField label="Face row (0 = top; groups of a row run left to right)" value={group.faceRow ?? 0} min={0}
+        onChange={(n) => set({ faceRow: n > 0 ? n : undefined })} />
       <label className="checkbox">
         <input type="checkbox" checked={!!group.rightToLeft} onChange={(e) => set({ rightToLeft: e.target.checked || undefined })} />
         Mirrored left to right (rear of a pass-through panel, seen from behind)

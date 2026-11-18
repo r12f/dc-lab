@@ -3,7 +3,7 @@ import type { Library } from '../../domain/library/library';
 import type { CrossRackCable, CrossRackEnd, DcLayout } from '../../domain/layout/types';
 import type { DesignLookup } from '../../domain/layout/tiles';
 import { applicableCrossCables, crossEndKey, crossRackLayout, planCrossCables, usedCrossEnds } from '../../domain/layout/cross-cables';
-import { groupCols, portCell, portName } from '../../domain/device/ports';
+import { faceRows, groupCols, portCell, portName } from '../../domain/device/ports';
 import { uniqueId } from '../../domain/ids';
 import { Button } from '../../ui/button';
 import { Section, SelectField } from '../../ui/fields';
@@ -148,8 +148,9 @@ function SideColumn({ lib, designs, layout, side, rackId, selected, used, peers,
           {d.faces.map(({ face, groups }) => (
           <div key={face} className="cross-face">
           {d.faces.length > 1 && <div className="muted cross-face-name">{face}</div>}
-          <div className="cross-face-groups">
-          {groups.map(({ group, ports }) => {
+          {faceRows(groups.map((x) => x.group)).map((line) => groups.filter((x) => line.includes(x.group))).map((line) => (
+          <div key={line[0].group.id} className="cross-face-groups">
+          {line.map(({ group, ports }) => {
             // Same grid as the faceplate / cabling view (portCell: fill order, holes, bottom-up, mirrored);
             // ports without a cross-rack connector are blank cells so positions stay recognisable.
             const rows = Math.max(1, group.rows);
@@ -195,6 +196,7 @@ function SideColumn({ lib, designs, layout, side, rackId, selected, used, peers,
             );
           })}
           </div>
+          ))}
           </div>
           ))}
         </div>

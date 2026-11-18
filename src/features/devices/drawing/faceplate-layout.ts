@@ -1,5 +1,5 @@
 import type { DeviceDefinition, PortFace, PortGroup } from '../../../domain/device/types';
-import { drawOrder, formatPortRef, groupCols, groupsOnFace, portCell } from '../../../domain/device/ports';
+import { drawOrder, faceRows, formatPortRef, groupCols, groupsOnFace, portCell } from '../../../domain/device/ports';
 import { groupTitle } from './group-title';
 
 export interface Box {
@@ -42,29 +42,38 @@ function portSize(g: PortGroup) {
   return g.role === 'data' || g.role === 'service' ? { w: PORT.w, h: PORT.h } : SMALL_PORT;
 }
 
-/** Lays out port groups left to right; each group fills column-major over `rows` rows. */
+/**
+ * Lays out port groups left to right; each group fills column-major over `rows` rows. Groups with a higher
+ * `faceRow` start a new line under the previous one.
+ */
 function layoutPorts(device: DeviceDefinition, face: PortFace, x0: number) {
   const ports: PortBox[] = [];
   const labels: GroupLabel[] = [];
-  let x = x0;
+  let right = x0;
   let bottom = 0;
+  let lineTop = PORT.pad;
   // A mirrored face (rear of a pass-through panel, seen from behind) also runs its groups right to left.
-  for (const g of drawOrder(groupsOnFace(device, face))) {
-    const rows = Math.max(1, g.rows);
-    const cols = groupCols(g, rows);
-    const { w, h } = portSize(g);
-    const y0 = PORT.pad + PORT.label;
-    labels.push({ group: g, x, y: y0 - 6 });
-    for (let i = 0; i < g.count; i++) {
-      const { col, row } = portCell(g, i, rows);
-      const box = { x: x + col * (w + PORT.gap), y: y0 + row * (h + PORT.gap), w, h };
-      ports.push({ ...box, ref: formatPortRef({ groupId: g.id, index: i + 1 }), group: g, index: i + 1 });
-      bottom = Math.max(bottom, box.y + h);
+  for (const line of faceRows(drawOrder(groupsOnFace(device, face)))) {
+    let x = x0;
+    const y0 = lineTop + PORT.label;
+    for (const g of line) {
+      const rows = Math.max(1, g.rows);
+      const cols = groupCols(g, rows);
+      const { w, h } = portSize(g);
+      labels.push({ group: g, x, y: y0 - 6 });
+      for (let i = 0; i < g.count; i++) {
+        const { col, row } = portCell(g, i, rows);
+        const box = { x: x + col * (w + PORT.gap), y: y0 + row * (h + PORT.gap), w, h };
+        ports.push({ ...box, ref: formatPortRef({ groupId: g.id, index: i + 1 }), group: g, index: i + 1 });
+        bottom = Math.max(bottom, box.y + h);
+      }
+      const labelW = groupTitle(g).length * LABEL_CHAR_W;
+      x += Math.max(cols * (w + PORT.gap) - PORT.gap, labelW) + PORT.groupGap;
     }
-    const labelW = groupTitle(g).length * LABEL_CHAR_W;
-    x += Math.max(cols * (w + PORT.gap) - PORT.gap, labelW) + PORT.groupGap;
+    right = Math.max(right, x);
+    lineTop = bottom + PORT.gap;
   }
-  return { ports, labels, right: x - PORT.groupGap, bottom };
+  return { ports, labels, right: right - PORT.groupGap, bottom };
 }
 
 /** PSUs split evenly between left and right edges of the rear face. */
