@@ -12,6 +12,8 @@ import { groupTitle } from '../devices/drawing/group-title';
 import { unitsIn } from '../../domain/units';
 import { placedDevice } from '../../domain/design/sizing';
 import { categoryStyle, paint } from '../../theme/paint';
+import { modeColor, ROLE_COLORS } from '../devices/drawing/port-style';
+import { ROLE_TRAITS } from '../../domain/device/roles';
 import { Button } from '../../ui/button';
 import { SelectField } from '../../ui/fields';
 import type { DesignEditor } from './use-design-editor';
@@ -288,10 +290,11 @@ function LegBlock({ l, fill, ink, stroke, strokeWidth, cross }: { l: LegBox; fil
 const CROSS_FILL = '#0e7490';
 const legFill = (L: CablingLayout, k: string) => {
   const runId = L.used.get(k);
-  return runId ? L.runColor.get(runId)! : L.cross.has(k) ? CROSS_FILL : paint.slot;
+  // Empty connector cells as in the rack elevation's port glyph.
+  return runId ? L.runColor.get(runId)! : L.cross.has(k) ? CROSS_FILL : '#1e293b';
 };
-/** Text on a connector: dark on a cable color, white on cross-rack teal, the device's text color on an empty slot. */
-const legInk = (L: CablingLayout, k: string, text: string) => (L.used.has(k) ? '#0f172a' : L.cross.has(k) ? '#ffffff' : text);
+/** Text on a connector: dark on a cable color, light on cross-rack teal and on an empty cell. */
+const legInk = (L: CablingLayout, k: string) => (L.used.has(k) ? '#0f172a' : '#e2e8f0');
 
 /**
  * The selection-independent drawing: device boxes, ports, connectors and cable lines. Memoized on the layout, so
@@ -315,13 +318,15 @@ const CablingBase = memo(function CablingBase({ L }: { L: CablingLayout }) {
             {d.titles.map((t) => <text key={`${t.x}`} x={t.x} y={t.y} fontSize={9} fontWeight={600} fill={cs.text}>{t.text}</text>)}
             {d.ports.map((pt) => (
               <g key={`${pt.group.id}/${pt.index}`}>
-                <rect x={pt.x} y={pt.y} width={pt.w} height={pt.h} rx={2} fill={paint.paper} stroke={cs.stroke} />
-                <text x={pt.x + pt.w / 2} y={pt.y + 9} fontSize={9} fontWeight={700} textAnchor="middle" fill={cs.text}>{portName(pt.group, pt.index)}</text>
+                {/* Port colors as in the rack elevation: tinted by breakout fan-out (pluggable) or role, dark text. */}
+                <rect x={pt.x} y={pt.y} width={pt.w} height={pt.h} rx={2}
+                  fill={ROLE_TRAITS[pt.group.role].pluggable ? modeColor(pt.mode) : ROLE_COLORS[pt.group.role]} stroke="#0f172a" />
+                <text x={pt.x + pt.w / 2} y={pt.y + 9} fontSize={9} fontWeight={700} textAnchor="middle" fill="#0f172a">{portName(pt.group, pt.index)}</text>
               </g>
             ))}
             {d.legs.map((l) => {
               const k = endpointKey(l.ep);
-              return <LegBlock key={k} l={l} fill={legFill(L, k)} ink={legInk(L, k, cs.text)} stroke={cs.stroke} strokeWidth={1} cross={L.cross.has(k)} />;
+              return <LegBlock key={k} l={l} fill={legFill(L, k)} ink={legInk(L, k)} stroke="#334155" strokeWidth={1} cross={L.cross.has(k)} />;
             })}
           </g>
         );
