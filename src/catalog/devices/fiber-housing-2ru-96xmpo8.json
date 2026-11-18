@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/device@1",
   "id": "fiber-housing-2ru-96xmpo8",
-  "name": "2RU Fiber Housing 96x MPO-8 (4-port cassettes)",
+  "name": "2RU 96x MPO-8 Fiber Housing (24x 4P)",
   "category": "patch-panel",
   "height": {
     "units": 2,

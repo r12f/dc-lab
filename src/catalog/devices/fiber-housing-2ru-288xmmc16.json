@@ -1,7 +1,7 @@
 {
   "schema": "dc-lab/device@1",
   "id": "fiber-housing-2ru-288xmmc16",
-  "name": "2RU Fiber Housing 288x MMC-16 (48x 6-port adapters)",
+  "name": "2RU 288x MMC-16 Fiber Housing (48x 6P)",
   "category": "patch-panel",
   "height": {
     "units": 2,
