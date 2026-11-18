@@ -10,6 +10,9 @@ describe('device catalog', () => {
     expect(psus).toHaveLength(6);
     expect(new Set(psus.map((b) => b.y)).size).toBe(1);
   });
+  it('1RU fiber housing support: no ports', () => {
+    expect(dev('fiber-housing-support-1ru')).toMatchObject({ height: { units: 1 }, ports: [] });
+  });
   it('110kW power shelf is 3RU', () => {
     expect(dev('power-shelf-mgx-110kw')?.height.units).toBe(3);
   });
