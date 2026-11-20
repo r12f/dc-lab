@@ -115,8 +115,8 @@ function SideColumn({ lib, designs, layout, name, side, onChange }: {
             <button type="button" className="link" style={{ visibility: picked.length ? 'visible' : 'hidden' }}
               disabled={!picked.length} onClick={() => side && onChange({ assignmentId: side.assignmentId })}>{`clear ${picked.length}`}</button>
             {' '}
-            <button type="button" className="link" style={{ visibility: side ? 'visible' : 'hidden' }} disabled={!side}
-              title={`Unset the ${name} side`} aria-label={`Unset ${name} side`} onClick={() => onChange(undefined)}>✕</button>
+            <Button className="btn-icon" variant="danger" style={{ visibility: side ? 'visible' : 'hidden' }} disabled={!side}
+              title={`Unset the ${name} side`} aria-label={`Unset ${name} side`} onClick={() => onChange(undefined)}>✕</Button>
           </span>
         </div>
         <span className="muted">{rack ? `${rack.label} · ${design?.name ?? '?'} · ${picked.length ? `${total} picked` : `whole rack (${total})`}` : 'not set'}</span>
