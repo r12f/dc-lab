@@ -7,7 +7,7 @@ import { newDesign } from '../design/factory';
 import { newPlacement } from '../design/placement';
 import type { RackDesign } from '../design/types';
 import type { DcLayout } from '../layout/types';
-import { cablePairs, defaultCollapsed, rackPortLayout, traceDrawing, traceTopology, tracePortKey } from '../layout/topo-trace';
+import { cablePairs, defaultCollapsed, moveBlocks, rackPortLayout, topBlockOf, traceDrawing, traceTopology, tracePortKey } from '../layout/topo-trace';
 import { TraceView } from '../../features/layout/trace-view';
 import { TracePanel } from '../../features/layout/trace-panel';
 
@@ -113,6 +113,19 @@ describe('topo tracing', () => {
     const inner = open.racks.filter((x) => x.level === 1 && x.key.endsWith('@1'));
     expect(inner.map((x) => x.label).sort()).toEqual(['R3', 'R3B']);
     for (const r of inner) expect(r.x > g.x && r.y > g.y && r.x + r.w < g.x + g.w && r.y + r.h < g.y + g.h).toBe(true);
+  });
+  it('dragging a top-level block moves it with its racks and device boxes; the drawing grows to fit', () => {
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1' });
+    const t = { id: 't', name: 'x', layoutId: 'l', a: { assignmentId: 'r1' }, ...r };
+    const d = traceDrawing(lib, designs, layout, t, new Set());
+    const node = d.nodes.find((n) => n.assignmentId === 'r3')!;
+    const blk = topBlockOf(d, node)!;
+    expect(blk.assignmentId).toBe('r3');
+    const m = moveBlocks(d, { [blk.key]: { dx: 50, dy: 400 } });
+    expect(m.racks.find((x) => x.key === blk.key)).toMatchObject({ x: blk.x + 50, y: blk.y + 400 });
+    expect(m.nodes.find((n) => n.key === node.key)).toMatchObject({ x: node.x + 50, y: node.y + 400 });
+    expect(m.nodes.filter((n) => n.assignmentId === 'r1')).toEqual(d.nodes.filter((n) => n.assignmentId === 'r1'));
+    expect(m.height).toBeGreaterThan(blk.y + 400 + blk.h);
   });
   it('side picker layout lists every cable port of every device (not only cross-rack ones)', () => {
     const l = rackPortLayout(lib, d1);

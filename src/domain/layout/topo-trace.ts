@@ -456,3 +456,30 @@ export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayo
   }
   return { nodes, edges, racks, width: x + G.margin, height: height + G.margin };
 }
+
+/**
+ * A drawing with top-level blocks moved by their offsets (members — inner racks and device boxes — move with their
+ * block), and the bounds grown to cover every block. Members are found by geometry in the unmoved drawing.
+ */
+export function moveBlocks(d: TraceDrawing, offsets: Readonly<Record<string, { dx: number; dy: number }>>): TraceDrawing {
+  const tops = d.racks.filter((r) => r.level === 0);
+  const inside = (b: { x: number; y: number; w: number; h: number }, t: TraceRackBox) =>
+    b.x >= t.x - 0.5 && b.y >= t.y - 0.5 && b.x + b.w <= t.x + t.w + 0.5 && b.y + b.h <= t.y + t.h + 0.5;
+  const shift = <T extends { x: number; y: number; w: number; h: number }>(b: T): T => {
+    const t = tops.find((x) => inside(b, x));
+    const o = t && offsets[t.key];
+    return o ? { ...b, x: b.x + o.dx, y: b.y + o.dy } : b;
+  };
+  const racks = d.racks.map(shift);
+  const nodes = d.nodes.map(shift);
+  const G = TRACE_GEOM;
+  const right = Math.max(d.width, ...racks.map((r) => r.x + r.w + G.margin));
+  const bottom = Math.max(d.height, ...racks.map((r) => r.y + r.h + G.margin));
+  return { ...d, racks, nodes, width: right, height: bottom };
+}
+
+/** Top-level block holding a box (a rack block, a group, or a device / summary node), for dragging. */
+export function topBlockOf(d: TraceDrawing, b: { x: number; y: number; w: number; h: number }): TraceRackBox | undefined {
+  return d.racks.filter((r) => r.level === 0)
+    .find((t) => b.x >= t.x - 0.5 && b.y >= t.y - 0.5 && b.x + b.w <= t.x + t.w + 0.5 && b.y + b.h <= t.y + t.h + 0.5);
+}
