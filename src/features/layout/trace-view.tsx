@@ -1,8 +1,8 @@
-import type { Ref } from 'react';
+import { useEffect, useState, type Ref } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { DcLayout } from '../../domain/layout/types';
 import type { DesignLookup } from '../../domain/layout/tiles';
-import { TRACE_GEOM, traceDrawing, type TopoTrace } from '../../domain/layout/topo-trace';
+import { defaultCollapsed, TRACE_GEOM, traceDrawing, type TopoTrace } from '../../domain/layout/topo-trace';
 import { categoryStyle, paint, RACK_FRAME } from '../../theme/paint';
 
 /** Drawing scale: 1 unit = 1 px at 100 %. */
@@ -10,10 +10,18 @@ const FONT = 12;
 
 /**
  * A traced topology: devices in columns by hops from side A (A devices left, outlined in the accent), devices of
- * one rack grouped in a rack box, one line per connected device pair labelled with its link count.
+ * one rack grouped in a rack block, one line per connected pair labelled with its port count. Click a block's
+ * header (▾ / ▸) to collapse it into a device summary; big blocks start collapsed.
  */
-export function TraceView({ ref, lib, designs, layout, trace }: { ref?: Ref<SVGSVGElement>; lib: Library; designs: DesignLookup; layout: DcLayout; trace: TopoTrace }) {
-  const d = traceDrawing(lib, designs, layout, trace);
+export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }: {
+  ref?: Ref<SVGSVGElement>; lib: Library; designs: DesignLookup; layout: DcLayout; trace: TopoTrace;
+  /** Blocks collapsed at first (default: the big ones). */
+  initialCollapsed?: Set<string>;
+}) {
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => initialCollapsed ?? defaultCollapsed(lib, designs, layout, trace));
+  useEffect(() => setCollapsed(defaultCollapsed(lib, designs, layout, trace)), [trace.id]);
+  const toggle = (k: string) => setCollapsed((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
+  const d = traceDrawing(lib, designs, layout, trace, collapsed);
   const byKey = new Map(d.nodes.map((n) => [n.key, n]));
   const G = TRACE_GEOM;
   const title = 28;
@@ -22,9 +30,8 @@ export function TraceView({ ref, lib, designs, layout, trace }: { ref?: Ref<SVGS
     let pts: { x: number; y: number }[];
     let badge: { x: number; y: number };
     if (p.x === q.x) {
-      // Same column: a bracket out to the LEFT (the right side carries the links to the next column); one lane per
-      // pair, farther out for longer brackets. Badge beside the far box.
-      const x = p.x - G.rackPad - 8 - (Math.abs(q.y - p.y) / (G.nodeH + G.rowGap)) * 12;
+      // Same column: a bracket out to the left on its own lane (lanes never overlap). Badge on the bracket.
+      const x = p.x - G.rackPad - 12 - (e.lane ?? 0) * G.lane;
       pts = [{ x: p.x, y: p.y + p.h / 2 }, { x, y: p.y + p.h / 2 }, { x, y: q.y + q.h / 2 }, { x: q.x, y: q.y + q.h / 2 }];
       badge = { x, y: (p.y + p.h / 2 + q.y + q.h / 2) / 2 };
     } else {
@@ -40,12 +47,18 @@ export function TraceView({ ref, lib, designs, layout, trace }: { ref?: Ref<SVGS
     <svg ref={ref} width={d.width} viewBox={`0 ${-title} ${d.width} ${height}`} fontSize={FONT} style={{ display: 'block' }}>
       <rect x={0} y={-title} width={d.width} height={height} fill={paint.paper} />
       <text x={G.margin} y={-8} fontSize={14} fontWeight={700} fill={paint.ink}>
-        {`${trace.name} · ${d.nodes.length} devices · ${d.edges.reduce((n, e) => n + e.count, 0)} ports linked`}
+        {`${trace.name} · ${d.racks.reduce((n, r) => n + r.devices, 0)} devices · ${d.edges.reduce((n, e) => n + e.count, 0)} ports linked`}
       </text>
       {d.racks.map((r) => (
-        <g key={`${r.assignmentId}@${r.x}`}>
+        <g key={r.key}>
           <rect x={r.x} y={r.y} width={r.w} height={r.h} rx={6} fill={RACK_FRAME.side} stroke={RACK_FRAME.sideLine} />
-          <text x={r.x + 8} y={r.y + 15} fontWeight={700} fill={RACK_FRAME.sideText}>{r.label}</text>
+          <g style={{ cursor: 'pointer' }} onClick={() => toggle(r.key)}>
+            <title>{r.collapsed ? 'Expand: show every device' : 'Collapse into a device summary'}</title>
+            <rect x={r.x} y={r.y} width={r.w} height={G.rackHead} fill="transparent" />
+            <text x={r.x + 8} y={r.y + 15} fontWeight={700} fill={RACK_FRAME.sideText}>
+              <tspan data-export="skip">{r.collapsed ? '▸ ' : '▾ '}</tspan>{`${r.label}${r.collapsed ? '' : ` · ${r.devices}`}`}
+            </text>
+          </g>
         </g>
       ))}
       {/* Casings first, then lines, then labels: later lines never cut earlier ones. */}
@@ -59,12 +72,14 @@ export function TraceView({ ref, lib, designs, layout, trace }: { ref?: Ref<SVGS
         </polyline>
       ))}
       {d.nodes.map((n) => {
-        const s = n.device ? categoryStyle(n.device.category) : categoryStyle('other');
+        const s = categoryStyle(n.device?.category ?? 'other');
+        const sub = n.sub.length > 32 ? `${n.sub.slice(0, 31)}…` : n.sub;
         return (
           <g key={n.key}>
-            <rect x={n.x} y={n.y} width={n.w} height={n.h} rx={4} fill={s.fill} stroke={n.side ? paint.accent : s.stroke} strokeWidth={n.side ? 2.5 : 1} />
+            <rect x={n.x} y={n.y} width={n.w} height={n.h} rx={4} fill={s.fill} stroke={n.side ? paint.accent : s.stroke} strokeWidth={n.side ? 2.5 : 1}
+              strokeDasharray={n.devices ? '4 2' : undefined} />
             <text x={n.x + 8} y={n.y + 17} fontWeight={700} fill={s.text}>{n.side ? `${n.side.toUpperCase()} · ${n.label}` : n.label}</text>
-            <text x={n.x + 8} y={n.y + 33} fill={s.text} opacity={0.8}>{`${n.device?.name ?? ''}`.slice(0, 30)}</text>
+            <text x={n.x + 8} y={n.y + 33} fill={s.text} opacity={0.8}>{sub}<title>{n.sub}</title></text>
           </g>
         );
       })}

@@ -215,4 +215,7 @@ for problems.
 - Trace drawing: one box per device with a traced port, in columns by hops from A (A and B devices outlined in the
   accent, labelled `A ·` / `B ·`), devices of one rack inside a rack box; one line per device pair with a badge of
   the ports it joins (on the branch into the right box). Cross-rack links are solid, in-rack dashed; links within one
-  column bracket out to the left. **Export SVG** exports the shown trace.
+  column bracket out to the left, each on its own lane (shortest innermost; the column
+  widens to fit them, so no line leaves the drawing). Rack blocks collapse: click the block header (▾ / ▸) to fold it
+  into one summary box (`N devices`, `7x Console Server, 5x Switch…`); its links attach to the box (summed), links
+  inside it are dropped. Blocks with more than 8 devices start collapsed. **Export SVG** exports the shown trace.

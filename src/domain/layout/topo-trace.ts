@@ -7,6 +7,7 @@ import type { DesignLookup } from './tiles';
 import type { Placement } from '../design/types';
 import { placedDevice } from '../design/sizing';
 import { unitsIn } from '../units';
+import { CATEGORY_TRAITS } from '../device/categories';
 
 /** A port of a device in a rack of the layout. */
 export interface TracePort { assignmentId: string; placementId: string; portRef: string }
@@ -212,13 +213,17 @@ export function traceTopology(lib: Library, designs: DesignLookup, layout: DcLay
 // ------------------------------------------------------------------------------------------------ drawing layout
 
 export interface TraceNode {
-  /** `assignmentId#placementId`. */
+  /** `assignmentId#placementId`, or `rack:assignmentId@column` for a collapsed rack. */
   key: string;
   assignmentId: string;
   placementId: string;
   rack: string;
   label: string;
+  /** Second line: the device type, or a collapsed rack's device summary. */
+  sub: string;
   device?: DeviceDefinition;
+  /** Collapsed rack block: the devices it stands for. */
+  devices?: number;
   /** Hops (device to device) from side A. */
   column: number;
   side?: 'a' | 'b';
@@ -226,22 +231,51 @@ export interface TraceNode {
   x: number; y: number; w: number; h: number;
 }
 
-/** `count` = ports joined: the larger of the two ends' distinct port counts (a shuffle's all-to-all pairs count once). */
-export interface TraceEdge { a: string; b: string; count: number; media: string[]; kinds: TraceLinkKind[] }
+/**
+ * `count` = ports joined: the larger of the two ends' distinct port counts (a shuffle's all-to-all pairs count once).
+ * `lane` (same-column edges only): bracket lane left of the column, 0 = innermost; lanes never overlap.
+ */
+export interface TraceEdge { a: string; b: string; count: number; media: string[]; kinds: TraceLinkKind[]; lane?: number }
 
-export interface TraceRackBox { assignmentId: string; label: string; x: number; y: number; w: number; h: number }
+export interface TraceRackBox {
+  /** Collapse key of the block: `assignmentId@column`. */
+  key: string;
+  assignmentId: string;
+  label: string;
+  collapsed: boolean;
+  devices: number;
+  x: number; y: number; w: number; h: number;
+}
 
 export interface TraceDrawing { nodes: TraceNode[]; edges: TraceEdge[]; racks: TraceRackBox[]; width: number; height: number }
 
-export const TRACE_GEOM = { nodeW: 200, nodeH: 44, colGap: 140, rowGap: 14, rackPad: 10, rackHead: 22, margin: 24, bracket: 90 } as const;
+export const TRACE_GEOM = { nodeW: 200, nodeH: 44, colGap: 140, rowGap: 14, rackPad: 10, rackHead: 22, margin: 24, lane: 10 } as const;
+
+/** Rack blocks with more devices than this start collapsed. */
+export const TRACE_COLLAPSE_OVER = 8;
 
 const deviceKey = (portKey: string) => { const p = parseTracePortKey(portKey); return `${p.assignmentId}#${p.placementId}`; };
 
+/** Collapse keys (`assignmentId@column`) of the blocks that start collapsed: those with many devices. */
+export function defaultCollapsed(lib: Library, designs: DesignLookup, layout: DcLayout, trace: TopoTrace): Set<string> {
+  const d = traceDrawing(lib, designs, layout, trace, new Set());
+  return new Set(d.racks.filter((r) => r.devices > TRACE_COLLAPSE_OVER).map((r) => r.key));
+}
+
+/** "7x Console Server, 5x Switch": device count per category, largest first. */
+function summary(nodes: TraceNode[]): string {
+  const n = new Map<string, number>();
+  for (const x of nodes) { const c = x.device?.category ?? 'other'; n.set(c, (n.get(c) ?? 0) + 1); }
+  return [...n].sort((a, b) => b[1] - a[1]).map(([c, k]) => `${k}x ${CATEGORY_TRAITS[c as keyof typeof CATEGORY_TRAITS]?.label ?? c}`).join(', ');
+}
+
 /**
  * Device-level picture of a trace: one box per device that has a traced port, in columns by hops from side A,
- * devices of one rack stacked in a rack box; one edge per device pair with its link count and cable types.
+ * devices of one rack stacked in a rack block; one edge per device pair with its port count and cable types. A
+ * collapsed block shows one summary box; its devices' edges attach to it (summed), edges inside it are dropped.
+ * Same-column edges bracket out to the left on lanes that never overlap; columns widen to fit the lanes.
  */
-export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayout, trace: TopoTrace): TraceDrawing {
+export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayout, trace: TopoTrace, collapsed: ReadonlySet<string> = new Set()): TraceDrawing {
   const G = TRACE_GEOM;
   const ports = new Map<string, Set<string>>();
   const touch = (k: string) => { const d = deviceKey(k); const s = ports.get(d) ?? new Set(); s.add(k); ports.set(d, s); };
@@ -249,47 +283,72 @@ export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayo
   const startDevs = new Set(trace.start.map(deviceKey).filter((d) => ports.has(d)));
   if (!ports.size) for (const k of trace.start) { touch(k); startDevs.add(deviceKey(k)); }
   const bSide = trace.b ? new Set(sidePorts(lib, designs, layout, trace.b).map(deviceKey)) : new Set<string>();
-  // Edges between devices (links inside one device, e.g. pass-through, are not drawn).
-  const edges = new Map<string, TraceEdge>();
-  const endPorts = new Map<string, [Set<string>, Set<string>]>();
+  // Device-level edges (links inside one device, e.g. pass-through, are not drawn).
+  const devEdges = new Map<string, { a: string; b: string; ends: [Set<string>, Set<string>]; media: string[]; kinds: TraceLinkKind[] }>();
   for (const l of trace.links) {
     const [x, y] = [deviceKey(l.a), deviceKey(l.b)];
     if (x === y) continue;
     const [a, b] = [x, y].sort();
-    const e = edges.get(`${a}|${b}`) ?? { a, b, count: 0, media: [], kinds: [] };
-    const ends = endPorts.get(`${a}|${b}`) ?? [new Set<string>(), new Set<string>()];
+    const e = devEdges.get(`${a}|${b}`) ?? { a, b, ends: [new Set<string>(), new Set<string>()], media: [], kinds: [] };
     const [pa, pb] = x === a ? [l.a, l.b] : [l.b, l.a];
-    ends[0].add(pa); ends[1].add(pb);
-    endPorts.set(`${a}|${b}`, ends);
-    e.count = Math.max(ends[0].size, ends[1].size);
+    e.ends[0].add(pa); e.ends[1].add(pb);
     const name = l.mediaId ? lib.cableMedia.get(l.mediaId)?.name ?? l.mediaId : '';
     if (name && !e.media.includes(name)) e.media.push(name);
     if (!e.kinds.includes(l.kind)) e.kinds.push(l.kind);
-    edges.set(`${a}|${b}`, e);
+    devEdges.set(`${a}|${b}`, e);
   }
   // Columns: hops from the A devices.
   const col = new Map<string, number>([...startDevs].map((d) => [d, 0]));
   const queue = [...startDevs];
+  const nbr = new Map<string, string[]>();
+  for (const e of devEdges.values()) { nbr.set(e.a, [...(nbr.get(e.a) ?? []), e.b]); nbr.set(e.b, [...(nbr.get(e.b) ?? []), e.a]); }
   while (queue.length) {
     const u = queue.shift()!;
-    for (const e of edges.values()) {
-      const v = e.a === u ? e.b : e.b === u ? e.a : undefined;
-      if (v && !col.has(v)) { col.set(v, col.get(u)! + 1); queue.push(v); }
-    }
+    for (const v of nbr.get(u) ?? []) if (!col.has(v)) { col.set(v, col.get(u)! + 1); queue.push(v); }
   }
-  const nodes: TraceNode[] = [];
+  const devNodes: TraceNode[] = [];
   for (const [key, set] of ports) {
     const [assignmentId, placementId] = key.split('#');
     const a = layout.assignments.find((x) => x.id === assignmentId);
     const design = a && designs(a.designId);
     const p = design?.placements.find((x) => x.id === placementId);
-    nodes.push({
-      key, assignmentId, placementId, rack: a?.label ?? assignmentId, label: p?.label ?? placementId,
-      device: p ? lib.devices.get(p.deviceId) : undefined, column: col.get(key) ?? 0,
+    const device = p ? lib.devices.get(p.deviceId) : undefined;
+    devNodes.push({
+      key, assignmentId, placementId, rack: a?.label ?? assignmentId, label: p?.label ?? placementId, sub: device?.name ?? '',
+      device, column: col.get(key) ?? 0,
       side: startDevs.has(key) ? 'a' : bSide.has(key) ? 'b' : undefined, ports: set.size, x: 0, y: 0, w: G.nodeW, h: G.nodeH,
     });
   }
-  // Place: per column, racks in label order, devices in rack order; each rack in a column gets a box.
+  // Blocks (rack per column), collapsed ones replaced by a summary node.
+  const blockKey = (n: TraceNode) => `${n.assignmentId}@${n.column}`;
+  const nodeOf = new Map<string, TraceNode>();
+  const nodes: TraceNode[] = [];
+  const blocks = new Map<string, TraceNode[]>();
+  for (const n of devNodes) blocks.set(blockKey(n), [...(blocks.get(blockKey(n)) ?? []), n]);
+  for (const [bk, devs] of blocks) {
+    if (!collapsed.has(bk)) { for (const n of devs) { nodes.push(n); nodeOf.set(n.key, n); } continue; }
+    const f = devs[0];
+    const sides = new Set(devs.map((n) => n.side).filter(Boolean));
+    const node: TraceNode = {
+      ...f, key: `rack:${bk}`, placementId: '', label: `${devs.length} devices`, sub: summary(devs), device: undefined, devices: devs.length,
+      side: sides.has('a') ? 'a' : sides.has('b') ? 'b' : undefined, ports: devs.reduce((n, x) => n + x.ports, 0),
+    };
+    nodes.push(node);
+    for (const n of devs) nodeOf.set(n.key, node);
+  }
+  const edgeMap = new Map<string, TraceEdge>();
+  for (const e of devEdges.values()) {
+    const [x, y] = [nodeOf.get(e.a)!.key, nodeOf.get(e.b)!.key];
+    if (x === y) continue;
+    const [a, b] = [x, y].sort();
+    const t = edgeMap.get(`${a}|${b}`) ?? { a, b, count: 0, media: [], kinds: [] };
+    t.count += Math.max(e.ends[0].size, e.ends[1].size);
+    for (const m of e.media) if (!t.media.includes(m)) t.media.push(m);
+    for (const k of e.kinds) if (!t.kinds.includes(k)) t.kinds.push(k);
+    edgeMap.set(`${a}|${b}`, t);
+  }
+  const edges = [...edgeMap.values()];
+  // Rows: per column, racks in label order, devices in label order.
   const racks: TraceRackBox[] = [];
   const maxCol = Math.max(0, ...nodes.map((n) => n.column));
   let height = 0;
@@ -297,19 +356,40 @@ export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayo
     const inCol = nodes.filter((n) => n.column === c);
     const rackIds = [...new Set(inCol.map((n) => n.assignmentId))]
       .sort((x, y) => (inCol.find((n) => n.assignmentId === x)!.rack).localeCompare(inCol.find((n) => n.assignmentId === y)!.rack, undefined, { numeric: true }));
-    const x = G.margin + G.bracket + c * (G.nodeW + 2 * G.rackPad + G.colGap);
     let y = G.margin;
     for (const rid of rackIds) {
       const devs = inCol.filter((n) => n.assignmentId === rid).sort((p, q) => p.label.localeCompare(q.label, undefined, { numeric: true }));
       const top = y;
       y += G.rackHead;
-      for (const n of devs) { n.x = x + G.rackPad; n.y = y; y += G.nodeH + G.rowGap; }
+      for (const n of devs) { n.y = y; y += G.nodeH + G.rowGap; }
       y += G.rackPad - G.rowGap;
-      racks.push({ assignmentId: rid, label: devs[0].rack, x, y: top, w: G.nodeW + 2 * G.rackPad, h: y - top });
+      const bk = `${rid}@${c}`;
+      racks.push({ key: bk, assignmentId: rid, label: devs[0].rack, collapsed: collapsed.has(bk), devices: blocks.get(bk)?.length ?? devs.length, x: 0, y: top, w: G.nodeW + 2 * G.rackPad, h: y - top });
       y += G.rowGap * 2;
     }
     height = Math.max(height, y);
   }
-  const width = G.margin * 2 + G.bracket + (maxCol + 1) * (G.nodeW + 2 * G.rackPad) + maxCol * G.colGap;
-  return { nodes, edges: [...edges.values()], racks, width, height: height + G.margin };
+  // Lanes for same-column edges: shortest first, each on the innermost lane free over its span.
+  const byKey = new Map(nodes.map((n) => [n.key, n]));
+  const lanesOf = new Map<number, [number, number][][]>();
+  const same = edges.filter((e) => byKey.get(e.a)!.column === byKey.get(e.b)!.column)
+    .map((e) => { const [p, q] = [byKey.get(e.a)!, byKey.get(e.b)!]; return { e, c: p.column, lo: Math.min(p.y, q.y), hi: Math.max(p.y, q.y) }; })
+    .sort((u, v) => (u.hi - u.lo) - (v.hi - v.lo));
+  for (const s of same) {
+    const lanes = lanesOf.get(s.c) ?? [];
+    let k = lanes.findIndex((l) => l.every(([lo, hi]) => s.hi < lo || s.lo > hi));
+    if (k < 0) { k = lanes.length; lanes.push([]); }
+    lanes[k].push([s.lo, s.hi]);
+    lanesOf.set(s.c, lanes);
+    s.e.lane = k;
+  }
+  // Columns: left bracket room (lanes) + rack block, then the gap to the next column.
+  let x = G.margin;
+  for (let c = 0; c <= maxCol; c++) {
+    x += G.rackPad + 12 + (lanesOf.get(c)?.length ?? 0) * G.lane;
+    for (const r of racks) if (r.key.endsWith(`@${c}`)) r.x = x;
+    for (const n of nodes) if (n.column === c) n.x = x + G.rackPad;
+    x += G.nodeW + 2 * G.rackPad + (c < maxCol ? G.colGap : 0);
+  }
+  return { nodes, edges, racks, width: x + G.margin, height: height + G.margin };
 }

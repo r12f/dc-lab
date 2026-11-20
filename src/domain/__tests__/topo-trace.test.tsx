@@ -72,6 +72,20 @@ describe('topo tracing', () => {
     const svg = renderToStaticMarkup(<TraceView lib={lib} designs={designs} layout={layout} trace={t} />);
     expect(svg.match(/<polyline/g)!.length).toBe(d.edges.length * 2);
   });
+  it('collapsed rack block: one summary node, its edges summed onto it, inner edges dropped; lanes never share', () => {
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1' });
+    const t = { id: 't', name: 'x', layoutId: 'l', a: { assignmentId: 'r1' }, ...r };
+    const open = traceDrawing(lib, designs, layout, t);
+    const same = open.edges.filter((e) => e.lane !== undefined);
+    expect(same.length).toBeGreaterThan(0);
+    const shut = traceDrawing(lib, designs, layout, t, new Set(['r1@0']));
+    const n = shut.nodes.filter((x) => x.assignmentId === 'r1' && x.column === 0);
+    expect(n).toHaveLength(1);
+    expect(n[0].devices).toBe(3);
+    expect(n[0].sub).toMatch(/2x .*1x /);
+    expect(shut.edges.some((e) => e.lane !== undefined)).toBe(false);
+    expect(shut.racks.find((x) => x.key === 'r1@0')).toMatchObject({ collapsed: true, devices: 3 });
+  });
   it('side picker layout lists every cable port of every device (not only cross-rack ones)', () => {
     const l = rackPortLayout(lib, d1);
     expect(l.map((x) => x.placement.label)).toEqual(['FH1', 'SW2', 'SW1']);
