@@ -18,7 +18,8 @@ export interface TraceSide { assignmentId: string; ports?: { placementId: string
 /** `cable` = in-rack cable, `cross` = cross-rack cable, `pass` = a pass-through panel's front port to its rear twin. */
 export type TraceLinkKind = 'cable' | 'cross' | 'pass';
 
-export interface TraceLink { a: string; b: string; kind: TraceLinkKind; mediaId?: string }
+/** `cable` = the physical cable it rides on (`<rack>/<run id>`, `x/<cross cable id>`), so links count as cables. */
+export interface TraceLink { a: string; b: string; kind: TraceLinkKind; mediaId?: string; cable?: string }
 
 /** A traced topology, kept for the session (not saved in the project). */
 export interface TopoTrace {
@@ -133,20 +134,20 @@ export function traceGraph(lib: Library, designs: DesignLookup, layout: DcLayout
       adj.set(u, l);
     }
   };
-  const cable = (aid: string, from: CableEndpoint[], to: CableEndpoint[], mediaId: string, kind: TraceLinkKind, bid = aid) => {
+  const cable = (aid: string, from: CableEndpoint[], to: CableEndpoint[], mediaId: string, kind: TraceLinkKind, bid: string, cableId: string) => {
     const m = lib.cableMedia.get(mediaId);
     for (const [i, j] of cablePairs(from.length, to.length, m?.mapping === 'shuffle')) {
       const x = from[i];
       const y = to[j];
       if (!x?.portRef || !y?.portRef) continue;
-      add({ kind, mediaId, a: tracePortKey({ assignmentId: aid, placementId: x.placementId, portRef: x.portRef }),
+      add({ kind, mediaId, cable: cableId, a: tracePortKey({ assignmentId: aid, placementId: x.placementId, portRef: x.portRef }),
         b: tracePortKey({ assignmentId: bid, placementId: y.placementId, portRef: y.portRef }) });
     }
   };
   for (const a of layout.assignments) {
     const design: RackDesign | undefined = designs(a.designId);
     if (!design) continue;
-    for (const run of design.cables) cable(a.id, run.from, run.to, run.mediaId, 'cable');
+    for (const run of design.cables) cable(a.id, run.from, run.to, run.mediaId, 'cable', a.id, `${a.id}/${run.id}`);
     for (const p of design.placements) {
       const d = lib.devices.get(p.deviceId);
       if (!isPassThrough(d)) continue;
@@ -163,7 +164,7 @@ export function traceGraph(lib: Library, designs: DesignLookup, layout: DcLayout
   for (const c of layout.crossCables ?? []) {
     const ia = c.from[0]?.assignmentId;
     const ib = c.to[0]?.assignmentId;
-    if (ia && ib) cable(ia, c.from, c.to, c.mediaId, 'cross', ib);
+    if (ia && ib) cable(ia, c.from, c.to, c.mediaId, 'cross', ib, `x/${c.id}`);
   }
   return adj;
 }
@@ -232,10 +233,15 @@ export interface TraceNode {
 }
 
 /**
- * `count` = ports joined: the larger of the two ends' distinct port counts (a shuffle's all-to-all pairs count once).
+ * One line of the drawing: the cables of ONE cable type between two boxes. `count` = ports joined (the larger of the
+ * two ends' distinct port counts; a shuffle's all-to-all pairs count once), `cables` = physical cables.
+ * `index` / `of`: this line among the lines of the same box pair (parallel lines are offset).
  * `lane` (same-column edges only): bracket lane left of the column, 0 = innermost; lanes never overlap.
  */
-export interface TraceEdge { a: string; b: string; count: number; media: string[]; kinds: TraceLinkKind[]; lane?: number }
+export interface TraceEdge {
+  a: string; b: string; mediaId: string; media: string; color: string; count: number; cables: number; kinds: TraceLinkKind[];
+  index: number; of: number; lane?: number;
+}
 
 export interface TraceRackBox {
   /** Collapse key of the block: `assignmentId@column`, or `design:designId@column` for merged racks of one design. */
@@ -289,18 +295,19 @@ export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayo
   if (!ports.size) for (const k of trace.start) { touch(k); startDevs.add(deviceKey(k)); }
   const bSide = trace.b ? new Set(sidePorts(lib, designs, layout, trace.b).map(deviceKey)) : new Set<string>();
   // Device-level edges (links inside one device, e.g. pass-through, are not drawn).
-  const devEdges = new Map<string, { a: string; b: string; ends: [Set<string>, Set<string>]; media: string[]; kinds: TraceLinkKind[] }>();
+  const devEdges = new Map<string, { a: string; b: string; mediaId: string; ends: [Set<string>, Set<string>]; cables: Set<string>; kinds: TraceLinkKind[] }>();
   for (const l of trace.links) {
     const [x, y] = [deviceKey(l.a), deviceKey(l.b)];
     if (x === y) continue;
     const [a, b] = [x, y].sort();
-    const e = devEdges.get(`${a}|${b}`) ?? { a, b, ends: [new Set<string>(), new Set<string>()], media: [], kinds: [] };
+    const mediaId = l.mediaId ?? '';
+    const ek = `${a}|${b}|${mediaId}`;
+    const e = devEdges.get(ek) ?? { a, b, mediaId, ends: [new Set<string>(), new Set<string>()], cables: new Set<string>(), kinds: [] };
     const [pa, pb] = x === a ? [l.a, l.b] : [l.b, l.a];
     e.ends[0].add(pa); e.ends[1].add(pb);
-    const name = l.mediaId ? lib.cableMedia.get(l.mediaId)?.name ?? l.mediaId : '';
-    if (name && !e.media.includes(name)) e.media.push(name);
+    if (l.cable) e.cables.add(l.cable);
     if (!e.kinds.includes(l.kind)) e.kinds.push(l.kind);
-    devEdges.set(`${a}|${b}`, e);
+    devEdges.set(ek, e);
   }
   // Columns: hops from the A devices.
   const col = new Map<string, number>([...startDevs].map((d) => [d, 0]));
@@ -359,17 +366,27 @@ export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayo
     for (const n of devs) nodeOf.set(n.key, node);
   }
   const edgeMap = new Map<string, TraceEdge>();
+  const cablesOf = new Map<string, Set<string>>();
   for (const e of devEdges.values()) {
     const [x, y] = [nodeOf.get(e.a)!.key, nodeOf.get(e.b)!.key];
     if (x === y) continue;
     const [a, b] = [x, y].sort();
-    const t = edgeMap.get(`${a}|${b}`) ?? { a, b, count: 0, media: [], kinds: [] };
+    const ek = `${a}|${b}|${e.mediaId}`;
+    const m = lib.cableMedia.get(e.mediaId);
+    const t = edgeMap.get(ek) ?? { a, b, mediaId: e.mediaId, media: m?.name ?? e.mediaId, color: m?.color ?? '#64748b', count: 0, cables: 0, kinds: [], index: 0, of: 1 };
     t.count += Math.max(e.ends[0].size, e.ends[1].size);
-    for (const m of e.media) if (!t.media.includes(m)) t.media.push(m);
+    const seenCables = cablesOf.get(ek) ?? new Set<string>();
+    for (const c of e.cables) seenCables.add(c);
+    cablesOf.set(ek, seenCables);
+    t.cables = seenCables.size;
     for (const k of e.kinds) if (!t.kinds.includes(k)) t.kinds.push(k);
-    edgeMap.set(`${a}|${b}`, t);
+    edgeMap.set(ek, t);
   }
-  const edges = [...edgeMap.values()];
+  const edges = [...edgeMap.values()].sort((x, y) => x.a.localeCompare(y.a) || x.b.localeCompare(y.b) || x.media.localeCompare(y.media));
+  // Parallel lines of one box pair: numbered for the offset.
+  const perPair = new Map<string, TraceEdge[]>();
+  for (const e of edges) perPair.set(`${e.a}|${e.b}`, [...(perPair.get(`${e.a}|${e.b}`) ?? []), e]);
+  for (const list of perPair.values()) list.forEach((e, i) => { e.index = i; e.of = list.length; });
   // Rows: per column, top-level blocks (design groups / lone racks) by their first rack label; inside a group, racks by
   // label; devices by label.
   const racks: TraceRackBox[] = [];

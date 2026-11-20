@@ -70,7 +70,12 @@ describe('topo tracing', () => {
     expect(d.nodes.filter((n) => n.side === 'a').map((n) => n.label).sort()).toEqual(['FH1', 'SW1', 'SW2']);
     expect(d.nodes.find((n) => n.label === 'SW1' && n.assignmentId === 'r3')?.column).toBe(2);
     const svg = renderToStaticMarkup(<TraceView lib={lib} designs={designs} layout={layout} trace={t} />);
-    expect(svg.match(/<polyline/g)!.length).toBe(d.edges.length * 2);
+    expect(svg.match(/<polyline/g)!.length).toBe(d.edges.length * 3);
+    // One line per cable type between two boxes, with its cable count; hover tells count and type.
+    const sw = d.edges.find((e) => e.mediaId === 'dac-400g-qsfpdd')!;
+    expect(sw).toMatchObject({ cables: 1, count: 1, media: lib.cableMedia.get('dac-400g-qsfpdd')!.name });
+    expect(svg).toContain(`1 × ${sw.media}`);
+    expect(new Set(d.edges.map((e) => `${e.a}|${e.b}|${e.mediaId}`)).size).toBe(d.edges.length);
   });
   it('collapsed rack block: one summary node, its edges summed onto it, inner edges dropped; lanes never share', () => {
     const r = traceTopology(lib, designs, layout, { assignmentId: 'r1' });
