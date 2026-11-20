@@ -182,6 +182,18 @@ describe('topo tracing', () => {
     expect(d.edges).toHaveLength(1);
     expect(d.nodes.map((n) => n.column).sort()).toEqual([0, 1]);
   });
+  it('hiding pass-through: two servers on the legs of one Y cable are not linked to each other', () => {
+    // Y cable: housing fm1/1 -> S1 and S2; housing rm1/1 trunked to a switch port.
+    const k = (pl: string, pr: string) => tracePortKey({ assignmentId: 'r', placementId: pl, portRef: pr });
+    const links = [
+      { a: k('fh', 'fm1/1'), b: k('s1', 'p/1'), kind: 'cable' as const, mediaId: 'mmc16-2xmpo8-y-smf', cable: 'y' },
+      { a: k('fh', 'fm1/1'), b: k('s2', 'p/1'), kind: 'cable' as const, mediaId: 'mmc16-2xmpo8-y-smf', cable: 'y' },
+      { a: k('fh', 'fm1/1'), b: k('fh', 'rm1/1'), kind: 'pass' as const },
+      { a: k('fh', 'rm1/1'), b: k('sw', 'osfp/1'), kind: 'cable' as const, mediaId: 'mmc-smf', cable: 't' },
+    ];
+    const by = bypassPassThrough(lib, links).map((l) => [l.a, l.b].map((x) => x.split('#')[1]).sort().join('-')).sort();
+    expect(by).toEqual(['s1-sw', 's2-sw']);
+  });
   it('side picker layout lists every cable port of every device (not only cross-rack ones)', () => {
     const l = rackPortLayout(lib, d1);
     expect(l.map((x) => x.placement.label)).toEqual(['FH1', 'SW2', 'SW1']);

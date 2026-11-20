@@ -235,4 +235,5 @@ for problems.
   for the session; **↺ Reset layout** (canvas toolbar, view controls; enabled once a block was moved) puts every block back. **Hide pass-through** (latch in the canvas toolbar while a trace is shown, kept for the session) leaves
   out devices with pass-through groups (fiber housings, patch panels): each chain through them becomes ONE direct link
   between the ports at its ends (e.g. switch ↔ switch), typed `via <cables of the chain>`, solid when any part is
-  cross-rack. **Export SVG** exports the shown trace.
+  cross-rack. Only ends on opposite sides of a panel are linked: the two servers on the legs of one Y cable into the
+  same housing port are not linked to each other. **Export SVG** exports the shown trace.

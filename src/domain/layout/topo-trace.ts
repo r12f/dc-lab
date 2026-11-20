@@ -389,23 +389,36 @@ export function bypassPassThrough(lib: Library, links: TraceLink[]): TraceLink[]
   const parent = new Map<string, string>();
   const find = (x: string): string => { const p = parent.get(x) ?? x; if (p === x) return x; const r = find(p); parent.set(x, r); return r; };
   for (const l of links) if (pass.has(l.a) && pass.has(l.b)) parent.set(find(l.a), find(l.b));
-  // Per chain: the outside ports touching it, the cable types and whether any part is cross-rack.
-  const chains = new Map<string, { ends: Set<string>; media: Set<string>; cross: boolean }>();
-  const chain = (k: string) => { const r = find(k); let c = chains.get(r); if (!c) { c = { ends: new Set(), media: new Set(), cross: false }; chains.set(r, c); } return c; };
+  // Sides of a chain: pass-through ports joined WITHOUT crossing a panel (a cable between two housings, not the
+  // front ↔ rear step). Two ends meet only through a panel — ends on the same side (S1 and S2 on the two legs of one Y
+  // cable into the same housing port) are not linked to each other.
+  const sideParent = new Map<string, string>();
+  const sideOf = (x: string): string => { const p = sideParent.get(x) ?? x; if (p === x) return x; const r = sideOf(p); sideParent.set(x, r); return r; };
+  for (const l of links) if (l.kind !== 'pass' && pass.has(l.a) && pass.has(l.b)) sideParent.set(sideOf(l.a), sideOf(l.b));
+  // Per chain: the outside ports touching it (with the side they touch), the cable types, whether any part is cross-rack.
+  const chains = new Map<string, { ends: Map<string, Set<string>>; media: Set<string>; cross: boolean }>();
+  const chain = (k: string) => { const r = find(k); let c = chains.get(r); if (!c) { c = { ends: new Map(), media: new Set(), cross: false }; chains.set(r, c); } return c; };
   const out: TraceLink[] = [];
   for (const l of links) {
     const [pa, pb] = [pass.has(l.a), pass.has(l.b)];
     if (!pa && !pb) { out.push(l); continue; }
     const c = chain(pa ? l.a : l.b);
-    if (pa !== pb) c.ends.add(pa ? l.b : l.a);
+    if (pa !== pb) {
+      const end = pa ? l.b : l.a;
+      c.ends.set(end, (c.ends.get(end) ?? new Set()).add(sideOf(pa ? l.a : l.b)));
+    }
     if (l.mediaId) c.media.add(lib.cableMedia.get(l.mediaId)?.name ?? l.mediaId);
     if (l.kind === 'cross') c.cross = true;
   }
   for (const [r, c] of chains) {
-    const ends = [...c.ends].sort();
+    const ends = [...c.ends.keys()].sort();
     const via = [...c.media].sort().join(' + ') || 'pass-through';
     for (let i = 0; i < ends.length; i++) {
       for (let j = i + 1; j < ends.length; j++) {
+        // Same side only (no panel between them): not connected through the chain.
+        const si = c.ends.get(ends[i])!;
+        const sj = c.ends.get(ends[j])!;
+        if ([...si].every((s) => sj.has(s)) && [...sj].every((s) => si.has(s))) continue;
         out.push({ a: ends[i], b: ends[j], kind: c.cross ? 'cross' : 'cable', mediaId: `via:${via}`, cable: `chain/${r}/${ends[i]}/${ends[j]}` });
       }
     }
