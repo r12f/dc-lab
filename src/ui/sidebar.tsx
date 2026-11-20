@@ -118,6 +118,16 @@ export function Sidebar(props: Props) {
       return n;
     });
 
+  const tree = buildTree(visible);
+  const folderKeys: string[] = [];
+  const walk = (n: TreeNode) => n.folders.forEach((f) => { folderKeys.push(f.key); walk(f); });
+  walk(tree);
+  /** Opens (or closes) every folder: toggled holds the keys whose state differs from their default. */
+  const setAll = (open: boolean) => {
+    setToggled(new Set(folderKeys.filter((k) => (defaultCollapsed ? selectedPath.has(k) : true) !== open)));
+    if (!open) setExpanded(new Set());
+  };
+
   return (
     <div className="sidebar-inner">
       <div className="sidebar-head">
@@ -143,11 +153,13 @@ export function Sidebar(props: Props) {
             {filterable && (
               <div className="sidebar-filter">
                 <input placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+                <Button className="btn-icon" title="Expand all" aria-label="Expand all" onClick={() => setAll(true)}>⊞</Button>
+                <Button className="btn-icon" title="Collapse all" aria-label="Collapse all" onClick={() => setAll(false)}>⊟</Button>
               </div>
             )}
             <div className="sidebar-list">
               {visible.length === 0 && <p className="muted pad">{items.length ? 'No matches.' : emptyText ?? 'Nothing here yet.'}</p>}
-              <Tree node={buildTree(visible)} depth={0} selectedId={selectedId} toggled={toggled} defaultCollapsed={defaultCollapsed}
+              <Tree node={tree} depth={0} selectedId={selectedId} toggled={toggled} defaultCollapsed={defaultCollapsed}
                 selectedPath={selectedPath} expanded={expanded} forceOpen={!!filter} onToggle={toggle} onExpand={expand} onSelect={onSelect} />
             </div>
           </>
