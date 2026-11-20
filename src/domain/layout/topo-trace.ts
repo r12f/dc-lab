@@ -252,11 +252,16 @@ export function traceTopology(lib: Library, designs: DesignLookup, layout: DcLay
   const dB = hops(adj, end, nodeOf);
   const goal = Math.min(...[...new Set(end.map(nodeOf))].map((n) => dA.get(n) ?? Infinity));
   if (!Number.isFinite(goal)) return { start, links: [] };
+  // Inside each side, everything cabled within it is shown too (a rack side's servers behind its fiber housing):
+  // the path reaches the side's nearest port, the side's own links show how it fans out to the rest.
+  const sideA = new Set(start);
+  const sideB = new Set(end);
   const seen = new Set<TraceLink>();
   for (const l of [...adj.values()].flat().map((x) => x.link)) {
     const [u, v] = [nodeOf(l.a), nodeOf(l.b)];
     const on = (x: string, y: string) => (dA.get(x) ?? Infinity) + 1 + (dB.get(y) ?? Infinity) === goal;
-    if (on(u, v) || on(v, u)) seen.add(l);
+    const within = (s: Set<string>) => s.has(l.a) && s.has(l.b);
+    if (on(u, v) || on(v, u) || within(sideA) || within(sideB)) seen.add(l);
   }
   return { start, links: [...seen] };
 }

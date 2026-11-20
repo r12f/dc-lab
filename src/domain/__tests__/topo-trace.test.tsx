@@ -156,6 +156,13 @@ describe('topo tracing', () => {
     const d = traceDrawing(lib, designs, layout, t, new Set());
     expect(d.racks.find((x) => x.key === 'r1@0')?.label).toBe('d1 · R1');
   });
+  it('with B: a rack side shows its devices behind its fiber housing, not just the housing the path reaches', () => {
+    // A = rack 1 (SW1, SW2, FH1), B = rack 3: the shortest path ends on the housings; SW1 -> FH1 and the SW1-SW2 DAC
+    // inside the A rack are shown too.
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1' }, { assignmentId: 'r3' });
+    const devs = new Set(r.links.flatMap((l) => [l.a, l.b]).filter((k) => k.startsWith('r1#')).map((k) => k.split('#')[1]));
+    expect([...devs].sort()).toEqual(['fh', 'sw', 'sw2']);
+  });
   it('side picker layout lists every cable port of every device (not only cross-rack ones)', () => {
     const l = rackPortLayout(lib, d1);
     expect(l.map((x) => x.placement.label)).toEqual(['FH1', 'SW2', 'SW1']);

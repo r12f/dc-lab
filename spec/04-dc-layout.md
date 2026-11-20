@@ -209,7 +209,9 @@ for problems.
 - **⌖ Trace** (primary button in the Topo tracing section header) walks breadth first from the A ports: a port
   already reached is not walked again, a new one joins the set; every link walked is kept. Without B: everything
   connected to A. With B: the shortest paths from A to B only — hop distances from both sides, a link is kept when
-  hops(A → one end) + 1 + hops(other end → B) equals the A-to-B distance; longer detours are not drawn. Cable
+  hops(A → one end) + 1 + hops(other end → B) equals the A-to-B distance; longer detours are not drawn. Links inside a side (both ends
+  among its ports) are kept as well, so a rack side shows its servers behind its fiber housing, not just the housing
+  the path reaches. Cable
   connectors pair 1:1, fan out evenly when one end's count divides the other (10x MMC-16 to 20x MPO-8), and
   all-to-all on shuffles.
 - Left sidebar in tracing mode: a **Traces** pane (instead of the rack palette) lists the session's traces of the
