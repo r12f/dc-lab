@@ -97,6 +97,17 @@ function Tree(props: TreeProps) {
   );
 }
 
+/** Two stacked chevrons: pointing apart = expand all, pointing together = collapse all. */
+function ChevronsIcon({ out = false }: { out?: boolean }) {
+  const d = out ? 'M4 6l4-3 4 3M4 10l4 3 4-3' : 'M4 3l4 3 4-3M4 13l4-3 4 3';
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: 'block' }}>
+      <path d={d} />
+    </svg>
+  );
+}
+
 /** Filterable, collapsible tree of items with New / Duplicate / Delete actions. */
 export function Sidebar(props: Props) {
   const { title, items, selectedId, onSelect, onNew, onDuplicate, onDelete, canDelete, header, footer, emptyText, filterable, lower, defaultCollapsed = false } = props;
@@ -153,8 +164,8 @@ export function Sidebar(props: Props) {
             {filterable && (
               <div className="sidebar-filter">
                 <input placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
-                <Button className="btn-icon" title="Expand all" aria-label="Expand all" onClick={() => setAll(true)}>⊞</Button>
-                <Button className="btn-icon" title="Collapse all" aria-label="Collapse all" onClick={() => setAll(false)}>⊟</Button>
+                <Button className="btn-icon" title="Expand all" aria-label="Expand all" onClick={() => setAll(true)}><ChevronsIcon out /></Button>
+                <Button className="btn-icon" title="Collapse all" aria-label="Collapse all" onClick={() => setAll(false)}><ChevronsIcon /></Button>
               </div>
             )}
             <div className="sidebar-list">

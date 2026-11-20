@@ -10,6 +10,6 @@ describe('sidebar expand / collapse all', () => {
     const filter = /<div class="sidebar-filter">(.*?)<\/div>/.exec(html)![1];
     expect(filter).toContain('aria-label="Expand all"');
     expect(filter).toContain('aria-label="Collapse all"');
-    expect(filter).toMatch(/>⊞<\/button>.*>⊟<\/button>/);
+    expect(filter.match(/<svg/g)).toHaveLength(2);
   });
 });
