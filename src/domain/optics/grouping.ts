@@ -1,6 +1,7 @@
 import { formatGbps } from '../units';
 import type { CableMedia, CableType, OpticDefinition } from './types';
 import { CABLE_TYPES, isDirectAttach } from './cable-types';
+import { genderedConnector } from './connectors';
 
 /**
  * Module families shown as one folder. QSFP-DD (double density, 8 lanes) is its own family; the 4-lane
@@ -39,17 +40,31 @@ export function reachOrder(reach: string): number {
 /** Top-level sidebar folders: optic modules first, then cable types in this order. */
 const CABLE_TYPE_ORDER: CableType[] = ['copper-dac', 'aec', 'aoc', 'power', 'fiber-sm', 'fiber-mm', 'other'];
 
+/** Interface folder of a cable: its end connectors (gendered), `A<->B` when the ends differ. */
+export function cableInterface(c: CableMedia): string {
+  const [a, b] = [c.ends.a, c.ends.b].map((e) => genderedConnector(e.connector, e.gender));
+  return a === b ? a : `${a}<->${b}`;
+}
+
 /**
  * Sidebar folder + order for a cable: one top-level folder per cable type (DAC, AEC, AOC, Power, SMF, MMF,
- * Other); direct-attach cables sort by speed (low to high), others by name.
+ * Other), then the interface (`OSFP`, `MMC-16F<->MPO-8F`, `C13<->C14`); direct-attach cables then split by
+ * speed (low to high), fiber cables by connector counts (`10x to 20x`, fewest first).
  */
 export function cableTreePlacement(c: CableMedia) {
   const i = CABLE_TYPE_ORDER.indexOf(c.type);
-  return {
-    path: [CABLE_TYPES[c.type] ?? c.type],
-    pathOrder: [1 + (i < 0 ? CABLE_TYPE_ORDER.length : i)],
-    order: isDirectAttach(c.type) ? `${String(c.speedGbps ?? 0).padStart(6, '0')} ${c.ends.a.connector} ${c.name}` : c.name,
-  };
+  const iface = cableInterface(c);
+  const path = [CABLE_TYPES[c.type] ?? c.type, iface];
+  const pathOrder: (number | string)[] = [1 + (i < 0 ? CABLE_TYPE_ORDER.length : i), iface];
+  if (isDirectAttach(c.type)) {
+    pathOrder[1] = `${String(familyOrder(opticFamily(c.ends.a.connector))).padStart(3, '0')} ${iface}`;
+    path.push(c.speedGbps ? formatGbps(c.speedGbps) : 'Other');
+    pathOrder.push(c.speedGbps ?? 0);
+  } else if (c.type === 'fiber-sm' || c.type === 'fiber-mm') {
+    path.push(`${c.ends.a.count}x to ${c.ends.b.count}x`);
+    pathOrder.push(c.ends.a.count * 1000 + c.ends.b.count);
+  }
+  return { path, pathOrder, order: c.name };
 }
 
 /** Sidebar folder + order for an optic: family, then speed (high to low), items by reach (short to long). */

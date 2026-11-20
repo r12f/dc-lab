@@ -39,8 +39,16 @@ export function CableTypeMenu({ lib, design, filter, onChange }: FilterProps) {
   const items = [...count.keys()].map((id) => {
     const m = lib.cableMedia.get(id);
     return { id, m, place: m ? cableTreePlacement(m) : undefined };
-  }).sort((a, b) => (a.place?.pathOrder[0] ?? 99) - (b.place?.pathOrder[0] ?? 99)
-    || String(a.place?.order ?? a.id).localeCompare(String(b.place?.order ?? b.id)));
+  }).sort((a, b) => {
+    const ka = [...(a.place?.pathOrder ?? [99]), a.place?.order ?? a.id];
+    const kb = [...(b.place?.pathOrder ?? [99]), b.place?.order ?? b.id];
+    for (let i = 0; i < Math.max(ka.length, kb.length); i++) {
+      const [x, y] = [ka[i] ?? '', kb[i] ?? ''];
+      const d = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y));
+      if (d) return d;
+    }
+    return 0;
+  });
   return (
     <CheckMenu label="Cables" title="Choose the cables drawn"
       items={items.map(({ id, m }) => ({

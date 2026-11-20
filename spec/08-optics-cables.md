@@ -8,8 +8,10 @@ per item (`src/catalog/optics/`, `src/catalog/cables/`); project items are store
 ## Layout
 
 - **Sidebar**: one tree, filterable. Top level: `Optic Module / <family> / <speed>`, then one folder per cable
-  type — `DAC`, `AEC`, `AOC`, `Power`, `Single-mode fiber (SMF)`, `Multimode fiber (MMF)`, `Other`. DAC / AEC / AOC
-  are sorted by speed (low to high), other cables by name. Cable rows show no ends badge (the name carries it);
+  type — `DAC`, `AEC`, `AOC`, `Power`, `Single-mode fiber (SMF)`, `Multimode fiber (MMF)`, `Other`. The second
+  level is the interface: the end connectors with gender, `A<->B` when they differ (`OSFP`, `QSFP-DD<->QSFP56`,
+  `MMC-16F<->MPO-8F`, `C13<->C14`). DAC / AEC / AOC then split by speed (`800G`, `1.6T`, low to high); SMF / MMF by
+  connector counts (`10x to 20x`, fewest first); items inside sort by name. Cable rows show no ends badge (the name carries it);
   folders keep their item count. Folders start **collapsed**; the folders holding the selected item open, a click
   toggles any folder, and typing a filter opens every folder.
 - **Fiber cable names** spell out both ends with counts and gender, the fiber type and the cable kind, then
