@@ -127,6 +127,15 @@ describe('topo tracing', () => {
     expect(m.nodes.filter((n) => n.assignmentId === 'r1')).toEqual(d.nodes.filter((n) => n.assignmentId === 'r1'));
     expect(m.height).toBeGreaterThan(blk.y + 400 + blk.h);
   });
+  it('every drawn line has cables on it; links without a cable id count by port, never 0', () => {
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1' });
+    const old = { id: 't', name: 'x', layoutId: 'l', a: { assignmentId: 'r1' }, start: r.start, links: r.links.map(({ cable: _c, ...l }) => l) };
+    for (const t of [{ ...old, links: r.links }, old]) {
+      const d = traceDrawing(lib, designs, layout, t, new Set());
+      expect(d.edges.length).toBeGreaterThan(0);
+      for (const e of d.edges) expect(e.cables).toBeGreaterThan(0);
+    }
+  });
   it('side picker layout lists every cable port of every device (not only cross-rack ones)', () => {
     const l = rackPortLayout(lib, d1);
     expect(l.map((x) => x.placement.label)).toEqual(['FH1', 'SW2', 'SW1']);

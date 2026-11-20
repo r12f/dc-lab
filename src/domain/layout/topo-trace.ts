@@ -378,11 +378,13 @@ export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayo
     const seenCables = cablesOf.get(ek) ?? new Set<string>();
     for (const c of e.cables) seenCables.add(c);
     cablesOf.set(ek, seenCables);
-    t.cables = seenCables.size;
+    // Links traced before cables were tracked carry no cable id: count their ports instead, never 0.
+    t.cables = seenCables.size || t.count;
     for (const k of e.kinds) if (!t.kinds.includes(k)) t.kinds.push(k);
     edgeMap.set(ek, t);
   }
-  const edges = [...edgeMap.values()].sort((x, y) => x.a.localeCompare(y.a) || x.b.localeCompare(y.b) || x.media.localeCompare(y.media));
+  // A line with nothing on it is not drawn.
+  const edges = [...edgeMap.values()].filter((e) => e.count > 0 && e.cables > 0).sort((x, y) => x.a.localeCompare(y.a) || x.b.localeCompare(y.b) || x.media.localeCompare(y.media));
   // Parallel lines of one box pair: numbered for the offset.
   const perPair = new Map<string, TraceEdge[]>();
   for (const e of edges) perPair.set(`${e.a}|${e.b}`, [...(perPair.get(`${e.a}|${e.b}`) ?? []), e]);
