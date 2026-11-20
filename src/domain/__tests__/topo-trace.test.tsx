@@ -1,0 +1,73 @@
+import { describe, expect, it } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { Library } from '../library/library';
+import { emptyProject } from '../project/types';
+import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
+import { newDesign } from '../design/factory';
+import { newPlacement } from '../design/placement';
+import type { RackDesign } from '../design/types';
+import type { DcLayout } from '../layout/types';
+import { cablePairs, traceDrawing, traceTopology, tracePortKey } from '../layout/topo-trace';
+import { TraceView } from '../../features/layout/trace-view';
+
+const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
+const SW = 'switch-32x400g-qsfpdd';
+const FH = 'fiber-housing-80xmmc16';
+
+// Rack 1: SW1 + SW2 joined by a DAC, SW1 port 1 -> housing front fm1/1. Rack 2: housing rear rm1/1 is trunked to
+// rack 3's housing rear; rack 3's housing front fm1/1 -> SW3 port 1. SW4 (rack 3) is cabled to nothing.
+function rack(id: string, withPeer: boolean): RackDesign {
+  const d = newDesign(id, id, 'network-42ru-600');
+  d.placements.push(newPlacement('sw', SW, 'SW1', { kind: 'rack', position: 1, face: 'front' }));
+  d.placements.push(newPlacement('fh', FH, 'FH1', { kind: 'rack', position: 40, face: 'front' }));
+  d.cables.push({ id: 'c1', from: [{ placementId: 'sw', portRef: 'qsfpdd/1' }], to: [{ placementId: 'fh', portRef: 'fm1/1', connector: 1 }], route: 'left', mediaId: 'mpo12-smf', quantity: 1 });
+  if (withPeer) {
+    d.placements.push(newPlacement('sw2', SW, 'SW2', { kind: 'rack', position: 3, face: 'front' }));
+    d.cables.push({ id: 'c2', from: [{ placementId: 'sw', portRef: 'qsfpdd/2' }], to: [{ placementId: 'sw2', portRef: 'qsfpdd/2' }], route: 'left', mediaId: 'dac-400g-qsfpdd', quantity: 1 });
+  } else {
+    d.placements.push(newPlacement('sw4', SW, 'SW4', { kind: 'rack', position: 5, face: 'front' }));
+  }
+  return d;
+}
+const d1 = rack('d1', true);
+const d3 = rack('d3', false);
+const designs = (id: string) => ({ d1, d3 } as Record<string, RackDesign>)[id];
+const layout = {
+  id: 'l', assignments: [
+    { id: 'r1', rowId: 'x', startTile: 0, designId: 'd1', label: 'R1' },
+    { id: 'r3', rowId: 'x', startTile: 2, designId: 'd3', label: 'R3' },
+  ],
+  crossCables: [{ id: 'xc', mediaId: 'mmc-smf', from: [{ assignmentId: 'r1', placementId: 'fh', portRef: 'rm1/1', connector: 1 }], to: [{ assignmentId: 'r3', placementId: 'fh', portRef: 'rm1/1', connector: 1 }] }],
+} as unknown as DcLayout;
+const key = (a: string, p: string, r: string) => tracePortKey({ assignmentId: a, placementId: p, portRef: r });
+
+describe('topo tracing', () => {
+  it('cable connector pairing: 1:1, 1:n fan-out, shuffle = all to all', () => {
+    expect(cablePairs(2, 2)).toEqual([[0, 0], [1, 1]]);
+    expect(cablePairs(2, 4)).toEqual([[0, 0], [0, 1], [1, 2], [1, 3]]);
+    expect(cablePairs(2, 2, true)).toHaveLength(4);
+  });
+  it('without B: everything connected to A, through housings (front to rear) and cross-rack trunks', () => {
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1', placementId: 'sw' });
+    const ends = new Set(r.links.flatMap((l) => [l.a, l.b]));
+    expect(ends.has(key('r3', 'sw', 'qsfpdd/1'))).toBe(true);
+    expect(ends.has(key('r1', 'sw2', 'qsfpdd/2'))).toBe(true);
+    expect(r.links.map((l) => l.kind).sort()).toEqual(['cable', 'cable', 'cable', 'cross', 'pass', 'pass']);
+  });
+  it('with B: only links on paths to B (the DAC branch to SW2 is dropped)', () => {
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1', placementId: 'sw' }, { assignmentId: 'r3', placementId: 'sw' });
+    expect(r.links).toHaveLength(5);
+    expect(r.links.some((l) => l.mediaId === 'dac-400g-qsfpdd')).toBe(false);
+    // Unconnected B: no path.
+    expect(traceTopology(lib, designs, layout, { assignmentId: 'r1', placementId: 'sw' }, { assignmentId: 'r3', placementId: 'sw4' }).links).toEqual([]);
+  });
+  it('a rack side = all its devices; the drawing puts A devices in column 0 and renders to SVG', () => {
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1' });
+    const t = { id: 't', name: 'R1 → all', layoutId: 'l', a: { assignmentId: 'r1' }, ...r };
+    const d = traceDrawing(lib, designs, layout, t);
+    expect(d.nodes.filter((n) => n.side === 'a').map((n) => n.label).sort()).toEqual(['FH1', 'SW1', 'SW2']);
+    expect(d.nodes.find((n) => n.label === 'SW1' && n.assignmentId === 'r3')?.column).toBe(2);
+    const svg = renderToStaticMarkup(<TraceView lib={lib} designs={designs} layout={layout} trace={t} />);
+    expect(svg.match(/<polyline/g)!.length).toBe(d.edges.length * 2);
+  });
+});

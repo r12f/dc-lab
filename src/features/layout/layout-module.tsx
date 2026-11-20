@@ -20,6 +20,9 @@ import { LAYOUT_VIEW_ITEMS, type LayoutViewItem } from './layout-view';
 import { RackPalette } from './rack-palette';
 import { assignmentAt } from '../../domain/layout/tiles';
 import type { TileRef } from '../../domain/layout/assign';
+import { TraceList, TracePanel, type TraceSides } from './trace-panel';
+import { TraceView } from './trace-view';
+import { useTraces } from '../../state/traces';
 
 export function LayoutModule() {
   const lib = useLibrary();
@@ -30,13 +33,22 @@ export function LayoutModule() {
   const upsert = useAppStore((s) => s.upsert);
   const remove = useAppStore((s) => s.remove);
   const [sel, setSel] = useState<LayoutSelection>();
-  const [cabling, setCabling] = useState(false);
+  /** Canvas mode: the plan, cross-rack cabling, or topo tracing. */
+  const [mode, setMode] = useState<'plan' | 'cabling' | 'tracing'>('plan');
+  const cabling = mode === 'cabling';
+  const tracing = mode === 'tracing';
+  const [traceSides, setTraceSides] = useState<TraceSides>({});
+  const traceId = useTraces((s) => s.openId);
+  const openTrace = useTraces((s) => s.open);
+  const allTraces = useTraces((s) => s.traces);
   const [sides, setSides] = useState<CrossSides>({});
   const [hiddenView, setHiddenView] = useState<Set<string>>(new Set());
   const [picked, setPicked] = useState<string>();
   const rackDesigns = useAppStore((s) => s.project.rackDesigns);
 
   const layout = layouts.find((l) => l.id === selectedId);
+  const shownTrace = tracing ? allTraces.find((t) => t.id === traceId && t.layoutId === layout?.id) : undefined;
+  const toggleMode = (m: 'cabling' | 'tracing') => { setMode(mode === m ? 'plan' : m); openTrace(undefined); };
   const editor = useLayoutEditor(lib, designs, layout);
   useLayoutShortcuts(editor, sel, setSel, !!layout);
 
@@ -78,33 +90,42 @@ export function LayoutModule() {
           onDuplicate={duplicate}
           onDelete={(id) => { remove('layouts', id); select('layout', undefined); }}
           emptyText="Create a DC layout."
-          lower={layout && <RackPalette lib={lib} designs={rackDesigns} picked={picked} onPick={setPicked}
+          lower={layout && tracing ? <TraceList layoutId={layout.id} /> : layout && <RackPalette lib={lib} designs={rackDesigns} picked={picked} onPick={setPicked}
             freeTiles={freeTiles} onAssign={(id) => assignTo(selTiles, id)} />}
         />
       }
       canvas={
         layout ? (
-          <CanvasFrame title={layout.name} exportName={layout.id}
-            fitKey={`${layout.id}:${layout.room.widthMm}x${layout.room.depthMm}:${layout.viewRotation ?? 0}`}
+          <CanvasFrame title={shownTrace ? `${layout.name} — ${shownTrace.name}` : layout.name}
+            exportName={shownTrace ? `${layout.id}-${shownTrace.id}` : layout.id}
+            fitKey={`${layout.id}:${layout.room.widthMm}x${layout.room.depthMm}:${layout.viewRotation ?? 0}:${shownTrace?.id ?? ''}`}
             toolbar={<LayoutToolbar layout={layout} editor={editor} selection={sel} onSelect={setSel} />}
             viewControls={<>
               <Button variant={cabling ? 'primary' : 'default'} aria-pressed={cabling}
                 title="Cabling view: cross-rack cables between racks (A / B sides in the right panel)"
-                onClick={() => setCabling(!cabling)}>⇄ Cabling</Button>
+                onClick={() => toggleMode('cabling')}>⇄ Cabling</Button>
+              <Button variant={tracing ? 'primary' : 'default'} aria-pressed={tracing}
+                title="Topo tracing: trace everything connected from an A side (rack, device or port), optionally to a B side"
+                onClick={() => toggleMode('tracing')}>⌖ Tracing</Button>
               <CheckMenu label="View" items={LAYOUT_VIEW_ITEMS} hidden={hiddenView} onChange={setHiddenView} noBulk compact
                 title="Show or hide trays, floating trays, row labels and cable traces (drawing only; cables keep following hidden trays)" />
               <LayoutViewControls editor={editor} />
             </>}>
-            {(ref) => <LayoutCanvas ref={ref} lib={lib} designs={designs} layout={layout} editor={editor} selection={sel} onSelect={setSel}
+            {(ref) => shownTrace ? <TraceView ref={ref} lib={lib} designs={designs} layout={layout} trace={shownTrace} /> : <LayoutCanvas ref={ref} lib={lib} designs={designs} layout={layout} editor={editor} selection={sel} onSelect={setSel}
               onDropRack={(designId, tile) => { const r = assignTo([tile], designId); if (r.error) alert(r.lines.join('\n')); }}
-              crossSides={cabling ? [sides.a, sides.b].filter((x): x is string => !!x) : undefined}
+              crossSides={cabling ? [sides.a, sides.b].filter((x): x is string => !!x)
+                : tracing ? [traceSides.a?.assignmentId, traceSides.b?.assignmentId].filter((x): x is string => !!x) : undefined}
               hidden={hiddenView as ReadonlySet<LayoutViewItem>} />}
           </CanvasFrame>
         ) : (
           <EmptyCanvas text="Select or create a DC layout." />
         )
       }
-      inspector={layout && (cabling
+      inspector={layout && (tracing
+        ? <TracePanel lib={lib} designs={designs} layout={layout}
+            selectedRackId={sel?.kind === 'assignment' && sel.ids.length === 1 ? sel.ids[0] : undefined}
+            sides={traceSides} onSides={setTraceSides} />
+        : cabling
         ? <CrossCablingPanel lib={lib} designs={designs} layout={layout}
             selectedRackId={sel?.kind === 'assignment' && sel.ids.length === 1 ? sel.ids[0] : undefined}
             sides={sides} onSides={setSides} onChange={editor.setCrossCables} />

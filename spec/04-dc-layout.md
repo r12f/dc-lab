@@ -194,3 +194,22 @@ takes the set of its scheme. IT racks get one candy colour per rack design (blue
 design id order; light = pastel fill, deeper outline, dark text; dark = deep fill, bright outline, light text); infra
 racks power lavender, CDU mint, chiller sky; traces a candy colour per rack pair. Red / orange / yellow stay reserved
 for problems.
+
+## Topo tracing
+
+- **⌖ Tracing** (canvas view controls, next to ⇄ Cabling; the two modes are exclusive) traces what is connected,
+  port to port, over in-rack cables, cross-rack cables and pass-through panels (a fiber housing's front port i
+  continues as rear port i). Traffic does not cross a device: a switch's other ports are not walked.
+- Right panel: select a rack on the plan, **Set A** / **Set B** (⇄ swaps), then narrow each side to a **device** or
+  one **port**. A rack = every data / mgmt / console port of every device in it; a device = all of its ports (power
+  inlets / outlets only when picked as the port). The port count of each side is shown.
+- **Trace** expands from the A ports breadth first: a port already in the set is not walked again, a new one joins
+  the set; every link walked is kept. Without B: everything connected to A. With B: only links reached from both
+  sides, with dead-end branches pruned — the paths from A to B. Cable connectors pair 1:1, fan out evenly when one
+  end's count divides the other (10x MMC-16 to 20x MPO-8), and all-to-all on shuffles.
+- Left sidebar in tracing mode: a **Traces** pane (instead of the rack palette) lists the session's traces of the
+  layout (not saved in the project); click one to show it on the canvas, again to go back to the plan, ✕ deletes.
+- Trace drawing: one box per device with a traced port, in columns by hops from A (A and B devices outlined in the
+  accent, labelled `A ·` / `B ·`), devices of one rack inside a rack box; one line per device pair with a badge of
+  the ports it joins (on the branch into the right box). Cross-rack links are solid, in-rack dashed; links within one
+  column bracket out to the left. **Export SVG** exports the shown trace.
