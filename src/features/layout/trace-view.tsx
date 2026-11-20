@@ -135,7 +135,7 @@ export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }
             <title>{r.racks > 1 ? (r.collapsed ? 'Expand: show each rack' : 'Collapse the racks into one summary') : r.collapsed ? 'Expand: show every device' : 'Collapse into a device summary'}</title>
             <rect x={r.x} y={r.y} width={r.w} height={G.rackHead} fill="none" pointerEvents="all" />
             <text x={r.x + 8} y={r.y + 15} fontWeight={700} fill={RACK_FRAME.sideText}>
-              <tspan data-export="skip">{r.collapsed ? '▸ ' : '▾ '}</tspan>{fit(r.label, 31)}
+              <tspan data-export="skip">{r.collapsed ? '▸ ' : '▾ '}</tspan>{fit(r.label, 34)}
               <title>{r.label}</title>
             </text>
           </g>

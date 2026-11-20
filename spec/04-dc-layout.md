@@ -215,7 +215,8 @@ for problems.
 - Left sidebar in tracing mode: a **Traces** pane (instead of the rack palette) lists the session's traces of the
   layout (not saved in the project); click one to show it on the canvas, again to go back to the plan, ✕ deletes.
 - Trace drawing: one box per device with a traced port, in columns by hops from A (A and B devices outlined in the
-  accent, labelled `A ·` / `B ·`), devices of one rack inside a rack box; one line per cable TYPE per box pair, each
+  accent, labelled `A ·` / `B ·`), devices of one rack inside a rack box
+  (titled `<design name> · <rack label>`, e.g. `OVL3 Compute Rack · Row1-09`; inside a design group just the rack label); one line per cable TYPE per box pair, each
   type in its own colour (legend under the title) and on its own offset so types never share a line; the badge is
   the number of cables, hover shows `N × <cable type> · M ports`. Cross-rack links are solid, in-rack dashed; links within one
   column bracket out to the left, each on its own lane (shortest innermost; the column

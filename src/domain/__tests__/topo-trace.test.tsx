@@ -150,6 +150,12 @@ describe('topo tracing', () => {
     const r = traceTopology(lib, designs, layout, { assignmentId: 'r1', ports: SW1 }, { assignmentId: 'r3', ports: [{ placementId: 'sw', portRef: 'qsfpdd/1' }] });
     expect(r.links.some((l) => l.mediaId === 'dac-400g-qsfpdd')).toBe(false);
   });
+  it('a rack block alone is named by design and rack label; inside a design group by rack label only', () => {
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1' });
+    const t = { id: 't', name: 'x', layoutId: 'l', a: { assignmentId: 'r1' }, ...r };
+    const d = traceDrawing(lib, designs, layout, t, new Set());
+    expect(d.racks.find((x) => x.key === 'r1@0')?.label).toBe('d1 · R1');
+  });
   it('side picker layout lists every cable port of every device (not only cross-rack ones)', () => {
     const l = rackPortLayout(lib, d1);
     expect(l.map((x) => x.placement.label)).toEqual(['FH1', 'SW2', 'SW1']);

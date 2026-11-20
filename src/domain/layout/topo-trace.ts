@@ -458,7 +458,9 @@ export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayo
       const shown = collapsed.has(rk) ? [nodeOf.get(devs[0].key)!] : devs.sort((p, q) => byLabel(p.label, q.label));
       for (const n of shown) { n.y = y; y += G.nodeH + G.rowGap; }
       y += G.rackPad - G.rowGap;
-      racks.push({ key: rk, assignmentId: devs[0].assignmentId, label: devs[0].rack, collapsed: collapsed.has(rk), racks: 1, level,
+      // A rack alone names its design ("OVL3 Compute Rack · Row1-09"); inside a design group the group already does.
+      const dn = designs(designOf(devs[0].assignmentId))?.name;
+      racks.push({ key: rk, assignmentId: devs[0].assignmentId, label: level === 0 && dn ? `${dn} · ${devs[0].rack}` : devs[0].rack, collapsed: collapsed.has(rk), racks: 1, level,
         devices: devs.length, x: 0, y: top, w: W, h: y - top });
     };
     for (const [tk, devs] of [...tops].sort((a, b) => byLabel(a[1][0].rack, b[1][0].rack))) {
