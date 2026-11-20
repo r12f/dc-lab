@@ -200,9 +200,11 @@ for problems.
 - **⌖ Tracing** (canvas view controls, next to ⇄ Cabling; the two modes are exclusive) traces what is connected,
   port to port, over in-rack cables, cross-rack cables and pass-through panels (a fiber housing's front port i
   continues as rear port i). Traffic does not cross a device: a switch's other ports are not walked.
-- Right panel: select a rack on the plan, **Set A** / **Set B** (⇄ swaps), then narrow each side to a **device** or
-  one **port**. A rack = every data / mgmt / console port of every device in it; a device = all of its ports (power
-  inlets / outlets only when picked as the port). The port count of each side is shown.
+- Right panel, shaped like the cross-rack cabling one: select a rack on the plan, **Set A** / **Set B** (⇄ swaps
+  with the picks). Each side column lists EVERY cable port of every device of its rack (not only cross-rack ones),
+  laid out like the cabling view (devices top to bottom, faces, groups on the faceplate grid). Pick ports by press and
+  sweep, or click a device name (☐ / ☑) for all its ports; any mix of devices and ports. Nothing picked = the whole
+  rack: every data / mgmt / console port of every device (power inlets / outlets only when picked).
 - **Trace** expands from the A ports breadth first: a port already in the set is not walked again, a new one joins
   the set; every link walked is kept. Without B: everything connected to A. With B: only links reached from both
   sides, with dead-end branches pruned — the paths from A to B. Cable connectors pair 1:1, fan out evenly when one

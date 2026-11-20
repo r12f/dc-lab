@@ -1,15 +1,18 @@
 import type { Library } from '../library/library';
 import type { CableEndpoint, RackDesign } from '../design/types';
-import { cableGroupsOnFace, formatPortRef, groupsOnFace } from '../device/ports';
+import { cableGroupsOnFace, drawOrder, formatPortRef, groupsOnFace } from '../device/ports';
 import type { DeviceDefinition, PortGroup } from '../device/types';
 import type { DcLayout } from './types';
 import type { DesignLookup } from './tiles';
+import type { Placement } from '../design/types';
+import { placedDevice } from '../design/sizing';
+import { unitsIn } from '../units';
 
 /** A port of a device in a rack of the layout. */
 export interface TracePort { assignmentId: string; placementId: string; portRef: string }
 
-/** One end of a trace: a rack (all its devices' ports), a device in it (all its ports) or one port. */
-export interface TraceSide { assignmentId: string; placementId?: string; portRef?: string }
+/** One end of a trace: a rack and the ports picked in it (any devices, any ports); none picked = the whole rack. */
+export interface TraceSide { assignmentId: string; ports?: { placementId: string; portRef: string }[] }
 
 /** `cable` = in-rack cable, `cross` = cross-rack cable, `pass` = a pass-through panel's front port to its rear twin. */
 export type TraceLinkKind = 'cable' | 'cross' | 'pass';
@@ -53,17 +56,16 @@ function devicePorts(device: DeviceDefinition, power: boolean): string[] {
 }
 
 /**
- * Ports of a trace side: a port itself; a device = every data / mgmt / console port of it; a rack = those of every
- * device in it. Power inlets and outlets count only when picked as the port.
+ * Ports of a trace side: the picked ports; none picked = every data / mgmt / console port of every device in the
+ * rack (power inlets and outlets count only when picked).
  */
 export function sidePorts(lib: Library, designs: DesignLookup, layout: DcLayout, side: TraceSide): string[] {
   const a = layout.assignments.find((x) => x.id === side.assignmentId);
   const design = a && designs(a.designId);
   if (!a || !design) return [];
-  if (side.placementId && side.portRef) return [tracePortKey({ assignmentId: a.id, placementId: side.placementId, portRef: side.portRef })];
+  if (side.ports?.length) return side.ports.map((x) => tracePortKey({ assignmentId: a.id, ...x }));
   const out: string[] = [];
   for (const p of design.placements) {
-    if (side.placementId && p.id !== side.placementId) continue;
     const d = lib.devices.get(p.deviceId);
     if (d) for (const portRef of devicePorts(d, false)) out.push(tracePortKey({ assignmentId: a.id, placementId: p.id, portRef }));
   }
@@ -87,6 +89,33 @@ export function cablePairs(n: number, m: number, shuffle = false): [number, numb
 }
 
 type Adj = Map<string, { to: string; link: TraceLink }[]>;
+
+export interface RackPortDevice {
+  placement: Placement;
+  faces: { face: 'front' | 'rear'; groups: PortGroup[] }[];
+}
+
+/**
+ * Every cable port of a rack's devices, laid out like its cabling view: rack devices top to bottom, then side
+ * devices; each face's groups in drawing order. Devices without cable ports (fillers) are left out.
+ */
+export function rackPortLayout(lib: Library, design: RackDesign): RackPortDevice[] {
+  const rack = lib.racks.get(design.templateId);
+  const top = (p: Placement) => {
+    if (p.mount.kind !== 'rack') return -Infinity;
+    const d = placedDevice(lib, design, p);
+    return p.mount.position + (d && rack ? Math.max(1, unitsIn(d.height, rack.unitSystem)) : 1) - 1;
+  };
+  const out: RackPortDevice[] = [];
+  for (const p of [...design.placements].sort((a, b) => top(b) - top(a))) {
+    const device = placedDevice(lib, design, p);
+    if (!device) continue;
+    const faces = (['front', 'rear'] as const).map((face) => ({ face, groups: drawOrder(cableGroupsOnFace(device, face)) }))
+      .filter((f) => f.groups.length);
+    if (faces.length) out.push({ placement: p, faces });
+  }
+  return out;
+}
 
 /** Port graph of the whole layout: in-rack cables, cross-rack cables and pass-through panels. */
 export function traceGraph(lib: Library, designs: DesignLookup, layout: DcLayout): Adj {

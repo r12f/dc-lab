@@ -7,8 +7,9 @@ import { newDesign } from '../design/factory';
 import { newPlacement } from '../design/placement';
 import type { RackDesign } from '../design/types';
 import type { DcLayout } from '../layout/types';
-import { cablePairs, traceDrawing, traceTopology, tracePortKey } from '../layout/topo-trace';
+import { cablePairs, rackPortLayout, traceDrawing, traceTopology, tracePortKey } from '../layout/topo-trace';
 import { TraceView } from '../../features/layout/trace-view';
+import { TracePanel } from '../../features/layout/trace-panel';
 
 const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
 const SW = 'switch-32x400g-qsfpdd';
@@ -39,6 +40,7 @@ const layout = {
   ],
   crossCables: [{ id: 'xc', mediaId: 'mmc-smf', from: [{ assignmentId: 'r1', placementId: 'fh', portRef: 'rm1/1', connector: 1 }], to: [{ assignmentId: 'r3', placementId: 'fh', portRef: 'rm1/1', connector: 1 }] }],
 } as unknown as DcLayout;
+const SW1 = Array.from({ length: 32 }, (_, i) => ({ placementId: 'sw', portRef: `qsfpdd/${i + 1}` }));
 const key = (a: string, p: string, r: string) => tracePortKey({ assignmentId: a, placementId: p, portRef: r });
 
 describe('topo tracing', () => {
@@ -48,18 +50,18 @@ describe('topo tracing', () => {
     expect(cablePairs(2, 2, true)).toHaveLength(4);
   });
   it('without B: everything connected to A, through housings (front to rear) and cross-rack trunks', () => {
-    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1', placementId: 'sw' });
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1', ports: SW1 });
     const ends = new Set(r.links.flatMap((l) => [l.a, l.b]));
     expect(ends.has(key('r3', 'sw', 'qsfpdd/1'))).toBe(true);
     expect(ends.has(key('r1', 'sw2', 'qsfpdd/2'))).toBe(true);
     expect(r.links.map((l) => l.kind).sort()).toEqual(['cable', 'cable', 'cable', 'cross', 'pass', 'pass']);
   });
   it('with B: only links on paths to B (the DAC branch to SW2 is dropped)', () => {
-    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1', placementId: 'sw' }, { assignmentId: 'r3', placementId: 'sw' });
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1', ports: SW1 }, { assignmentId: 'r3', ports: [{ placementId: 'sw', portRef: 'qsfpdd/1' }] });
     expect(r.links).toHaveLength(5);
     expect(r.links.some((l) => l.mediaId === 'dac-400g-qsfpdd')).toBe(false);
     // Unconnected B: no path.
-    expect(traceTopology(lib, designs, layout, { assignmentId: 'r1', placementId: 'sw' }, { assignmentId: 'r3', placementId: 'sw4' }).links).toEqual([]);
+    expect(traceTopology(lib, designs, layout, { assignmentId: 'r1', ports: SW1 }, { assignmentId: 'r3', ports: [{ placementId: 'sw4', portRef: 'qsfpdd/1' }] }).links).toEqual([]);
   });
   it('a rack side = all its devices; the drawing puts A devices in column 0 and renders to SVG', () => {
     const r = traceTopology(lib, designs, layout, { assignmentId: 'r1' });
@@ -69,5 +71,15 @@ describe('topo tracing', () => {
     expect(d.nodes.find((n) => n.label === 'SW1' && n.assignmentId === 'r3')?.column).toBe(2);
     const svg = renderToStaticMarkup(<TraceView lib={lib} designs={designs} layout={layout} trace={t} />);
     expect(svg.match(/<polyline/g)!.length).toBe(d.edges.length * 2);
+  });
+  it('side picker layout lists every cable port of every device (not only cross-rack ones)', () => {
+    const l = rackPortLayout(lib, d1);
+    expect(l.map((x) => x.placement.label)).toEqual(['FH1', 'SW2', 'SW1']);
+    const sw = l.find((x) => x.placement.id === 'sw')!;
+    expect(sw.faces.flatMap((f) => f.groups).reduce((n, g) => n + g.count, 0)).toBeGreaterThanOrEqual(34);
+    const html = renderToStaticMarkup(<TracePanel lib={lib} designs={designs} layout={layout}
+      sides={{ a: { assignmentId: 'r1', ports: [{ placementId: 'sw', portRef: 'qsfpdd/1' }] } }} onSides={() => {}} />);
+    expect(html.match(/class="cross-port selected"/g)).toHaveLength(1);
+    expect(html.match(/class="cross-port/g)!.length).toBeGreaterThan(80 + 64);
   });
 });
