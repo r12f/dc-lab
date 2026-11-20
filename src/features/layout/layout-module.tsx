@@ -23,6 +23,7 @@ import { TraceList, TracePanel, type TraceSides } from './trace-panel';
 import { TraceView } from './trace-view';
 import { useTraces } from '../../state/traces';
 import { Segmented } from '../../ui/segmented';
+import { Button } from '../../ui/button';
 
 export function LayoutModule() {
   const lib = useLibrary();
@@ -41,6 +42,8 @@ export function LayoutModule() {
   const traceId = useTraces((s) => s.openId);
   const openTrace = useTraces((s) => s.open);
   const allTraces = useTraces((s) => s.traces);
+  const traceOffsets = useTraces((s) => s.offsets);
+  const resetOffsets = useTraces((s) => s.resetOffsets);
   const [sides, setSides] = useState<CrossSides>({});
   const [hiddenView, setHiddenView] = useState<Set<string>>(new Set());
   const [picked, setPicked] = useState<string>();
@@ -100,6 +103,10 @@ export function LayoutModule() {
             fitKey={`${layout.id}:${layout.room.widthMm}x${layout.room.depthMm}:${layout.viewRotation ?? 0}:${shownTrace?.id ?? ''}`}
             toolbar={<LayoutToolbar layout={layout} editor={editor} selection={sel} onSelect={setSel} />}
             viewControls={<>
+              {shownTrace && (
+                <Button disabled={!Object.keys(traceOffsets[shownTrace.id] ?? {}).length}
+                  title="Put every dragged block back in its automatic place" onClick={() => resetOffsets(shownTrace.id)}>↺ Reset layout</Button>
+              )}
               <Segmented label="View mode" value={mode} onChange={(m) => { setMode(m); openTrace(undefined); }} options={[
                 { value: 'plan', label: 'Layout', title: 'Layout: edit rows, aisles, trays and racks' },
                 { value: 'cabling', label: 'Cabling', title: 'Cabling: cross-rack cables between racks (A / B sides in the right panel)' },

@@ -223,4 +223,4 @@ for problems.
   group block one level up (`16x GPU Rack`); folded it shows one summary (`16 racks · 192 devices`), unfolded the
   rack blocks inside it. Groups start folded. **Drag** a top-level block (anywhere on it) to
   move it with everything inside; lines re-route to follow and the drawing grows to fit. Moves are kept per trace
-  for the session; **↺ Reset layout** (top right, shown once a block was moved) puts every block back. **Export SVG** exports the shown trace.
+  for the session; **↺ Reset layout** (canvas toolbar, view controls; enabled once a block was moved) puts every block back. **Export SVG** exports the shown trace.

@@ -22,7 +22,7 @@ const fit = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` 
  * A traced topology: devices in columns by hops from side A (A devices left, outlined in the accent), devices of
  * one rack grouped in a rack block, racks of one design inside a design group block; one line per connected pair
  * labelled with its cable count. Click a block's header (▾ / ▸) to fold / unfold it; groups and big racks start folded.
- * Drag a block (anywhere on it) to move it; lines follow, ↺ Reset layout puts blocks back.
+ * Drag a block (anywhere on it) to move it; lines follow (the canvas toolbar's ↺ Reset layout puts blocks back).
  */
 export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }: {
   ref?: Ref<SVGSVGElement>; lib: Library; designs: DesignLookup; layout: DcLayout; trace: TopoTrace;
@@ -34,7 +34,6 @@ export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }
   const toggle = (k: string) => setCollapsed((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
   const saved = useTraces((s) => s.offsets[trace.id]);
   const setOffset = useTraces((s) => s.setOffset);
-  const resetOffsets = useTraces((s) => s.resetOffsets);
   // Live drag: the block being dragged and its offset so far (committed to the store on release).
   const [drag, setDrag] = useState<{ key: string; o: BlockOffset }>();
   const moved = useRef(false);
@@ -117,13 +116,6 @@ export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }
       <text x={G.margin} y={-title + 18} fontSize={14} fontWeight={700} fill={paint.ink}>
         {`${trace.name} · ${d.racks.filter((r) => r.level === 0).reduce((n, r) => n + r.devices, 0)} devices · ${d.edges.reduce((n, e) => n + e.cables, 0)} cables · ${d.edges.reduce((n, e) => n + e.count, 0)} ports`}
       </text>
-      {saved && Object.keys(saved).length > 0 && (
-        <g data-export="skip" style={{ cursor: 'pointer' }} onClick={() => resetOffsets(trace.id)}>
-          <title>Put every block back in its automatic place</title>
-          <rect x={d.width - 132} y={-title + 5} width={110} height={20} rx={10} fill={paint.paper} stroke={paint.accent} />
-          <text x={d.width - 77} y={-title + 19} textAnchor="middle" fontSize={11} fill={paint.ink}>↺ Reset layout</text>
-        </g>
-      )}
       {/* Legend: one swatch per cable type, after the title. */}
       {types.map((m, i) => (
         <g key={`lg${m}`} transform={`translate(${G.margin + i * 240}, ${-title + 38})`}>
