@@ -120,6 +120,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .caret { width: 10px; color: var(--muted); font-size: 10px; }
 .sidebar-filter { display: flex; gap: 4px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--border); }
 .sidebar-filter input { flex: 1; min-width: 0; }
+.sidebar-filter .btn-icon { min-width: 0; padding-left: 3px; padding-right: 3px; }
 .pad { padding: 0 12px; }
 /* Floats over the list (anchored under the sidebar header) instead of pushing it down. */
 .menu { position: absolute; top: 44px; left: 8px; right: 8px; z-index: 20; max-height: calc(100% - 52px); overflow: auto;
