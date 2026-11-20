@@ -204,8 +204,9 @@ for problems.
   with the picks). Each side column lists EVERY cable port of every device of its rack (not only cross-rack ones),
   laid out like the cabling view (devices top to bottom, faces, groups on the faceplate grid). Pick ports by press and
   sweep, or click a device name (☐ / ☑) for all its ports; any mix of devices and ports. Nothing picked = the whole
-  rack: every data / mgmt / console port of every device (power inlets / outlets only when picked).
-- **Trace** expands from the A ports breadth first: a port already in the set is not walked again, a new one joins
+  rack: every data / mgmt / console port of every device (power inlets / outlets only when picked). Each column head has
+  `clear N` (drop the picks, keep the rack) and ✕ (unset the side).
+- **⌖ Trace** (primary button in the Topo tracing section header, top right of the panel) expands from the A ports breadth first: a port already in the set is not walked again, a new one joins
   the set; every link walked is kept. Without B: everything connected to A. With B: only links reached from both
   sides, with dead-end branches pruned — the paths from A to B. Cable connectors pair 1:1, fan out evenly when one
   end's count divides the other (10x MMC-16 to 20x MPO-8), and all-to-all on shuffles.

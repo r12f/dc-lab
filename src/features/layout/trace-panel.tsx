@@ -52,7 +52,9 @@ export function TracePanel({ lib, designs, layout, selectedRackId, sides, onSide
   };
   return (
     <div className="inspector-inner">
-      <Section title="Topo tracing">
+      <Section title="Topo tracing" actions={
+        <Button variant="primary" disabled={!sides.a} title={sides.a ? 'Trace from A (to B if set)' : 'Set an A side first'} onClick={run}>⌖ Trace</Button>
+      }>
         <p className="muted">Select a rack on the plan and set it as A or B side. Pick ports below (press and sweep, or click a device name for all its ports); nothing picked = the whole rack. Without B, everything connected to A is traced.</p>
         <div className="row3 cross-set">
           <Button disabled={!selected} title={selected ? `Set ${selected.label} as A side` : 'Select a rack on the plan'}
@@ -61,10 +63,8 @@ export function TracePanel({ lib, designs, layout, selectedRackId, sides, onSide
           <Button disabled={!selected} title={selected ? `Set ${selected.label} as B side` : 'Select a rack on the plan'}
             onClick={() => selected && set('b', { assignmentId: selected.id })}>{`Set B${selected ? ` = ${selected.label}` : ''}`}</Button>
         </div>
-        <div className="row2">
-          <Button variant="primary" disabled={!sides.a} onClick={run}>Trace</Button>
-          <span className="muted">{msg ?? ''}</span>
-        </div>
+        {/* Result line always laid out, so the side columns below never move. */}
+        <p className="muted" style={{ visibility: msg ? 'visible' : 'hidden', margin: 0 }}>{msg ?? '-'}</p>
       </Section>
       <div className="cross-sides">
         {(['a', 'b'] as const).map((k) => (
@@ -111,8 +111,13 @@ function SideColumn({ lib, designs, layout, name, side, onChange }: {
       <div className="cross-side-head">
         <div className="cross-side-title">
           <strong>{`${name} side`}</strong>
-          <button type="button" className="link" style={{ visibility: picked.length ? 'visible' : 'hidden' }}
-            disabled={!picked.length} onClick={() => side && onChange({ assignmentId: side.assignmentId })}>{`clear ${picked.length}`}</button>
+          <span>
+            <button type="button" className="link" style={{ visibility: picked.length ? 'visible' : 'hidden' }}
+              disabled={!picked.length} onClick={() => side && onChange({ assignmentId: side.assignmentId })}>{`clear ${picked.length}`}</button>
+            {' '}
+            <button type="button" className="link" style={{ visibility: side ? 'visible' : 'hidden' }} disabled={!side}
+              title={`Unset the ${name} side`} aria-label={`Unset ${name} side`} onClick={() => onChange(undefined)}>✕</button>
+          </span>
         </div>
         <span className="muted">{rack ? `${rack.label} · ${design?.name ?? '?'} · ${picked.length ? `${total} picked` : `whole rack (${total})`}` : 'not set'}</span>
       </div>
