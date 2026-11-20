@@ -98,7 +98,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     id: 'patch-panel', label: 'Patch / Fiber Housing', description: '12 MPO adapters',
     build: (id) => base(id, {
       name: 'New patch panel', category: 'patch-panel', depthMm: 300, weightKg: 3, power: { typicalW: 0, maxW: 0 },
-      ports: [group('mpo', 'MPO', 'data', 'MPO-12', 12, 0, { lanes: 12 })],
+      // Pass-through adapters: the rear face is derived (mirrored), cables on both faces are traced through.
+      ports: [group('mpo', 'MPO', 'data', 'MPO-12', 12, 0, { lanes: 12, cableGender: 'male', passThrough: { rearId: 'mpo-r', rearLabel: 'MPO (rear)' } })],
     }),
   },
   {

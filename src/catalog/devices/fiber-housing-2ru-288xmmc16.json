@@ -26,7 +26,11 @@
       "rows": 6,
       "breakoutModes": [],
       "firstNumber": 1,
-      "cableGender": "male"
+      "cableGender": "male",
+      "passThrough": {
+        "rearId": "rt1",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "ft2",
@@ -40,7 +44,11 @@
       "rows": 6,
       "breakoutModes": [],
       "firstNumber": 19,
-      "cableGender": "male"
+      "cableGender": "male",
+      "passThrough": {
+        "rearId": "rt2",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "ft3",
@@ -54,7 +62,11 @@
       "rows": 6,
       "breakoutModes": [],
       "firstNumber": 37,
-      "cableGender": "male"
+      "cableGender": "male",
+      "passThrough": {
+        "rearId": "rt3",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "ft4",
@@ -68,7 +80,11 @@
       "rows": 6,
       "breakoutModes": [],
       "firstNumber": 55,
-      "cableGender": "male"
+      "cableGender": "male",
+      "passThrough": {
+        "rearId": "rt4",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "ft5",
@@ -82,7 +98,11 @@
       "rows": 6,
       "breakoutModes": [],
       "firstNumber": 73,
-      "cableGender": "male"
+      "cableGender": "male",
+      "passThrough": {
+        "rearId": "rt5",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "ft6",
@@ -96,7 +116,11 @@
       "rows": 6,
       "breakoutModes": [],
       "firstNumber": 91,
-      "cableGender": "male"
+      "cableGender": "male",
+      "passThrough": {
+        "rearId": "rt6",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "ft7",
@@ -110,7 +134,11 @@
       "rows": 6,
       "breakoutModes": [],
       "firstNumber": 109,
-      "cableGender": "male"
+      "cableGender": "male",
+      "passThrough": {
+        "rearId": "rt7",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "ft8",
@@ -124,7 +152,11 @@
       "rows": 6,
       "breakoutModes": [],
       "firstNumber": 127,
-      "cableGender": "male"
+      "cableGender": "male",
+      "passThrough": {
+        "rearId": "rt8",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "fb1",
@@ -139,7 +171,11 @@
       "breakoutModes": [],
       "firstNumber": 145,
       "cableGender": "male",
-      "faceRow": 1
+      "faceRow": 1,
+      "passThrough": {
+        "rearId": "rb1",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "fb2",
@@ -154,7 +190,11 @@
       "breakoutModes": [],
       "firstNumber": 163,
       "cableGender": "male",
-      "faceRow": 1
+      "faceRow": 1,
+      "passThrough": {
+        "rearId": "rb2",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "fb3",
@@ -169,7 +209,11 @@
       "breakoutModes": [],
       "firstNumber": 181,
       "cableGender": "male",
-      "faceRow": 1
+      "faceRow": 1,
+      "passThrough": {
+        "rearId": "rb3",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "fb4",
@@ -184,7 +228,11 @@
       "breakoutModes": [],
       "firstNumber": 199,
       "cableGender": "male",
-      "faceRow": 1
+      "faceRow": 1,
+      "passThrough": {
+        "rearId": "rb4",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "fb5",
@@ -199,7 +247,11 @@
       "breakoutModes": [],
       "firstNumber": 217,
       "cableGender": "male",
-      "faceRow": 1
+      "faceRow": 1,
+      "passThrough": {
+        "rearId": "rb5",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "fb6",
@@ -214,7 +266,11 @@
       "breakoutModes": [],
       "firstNumber": 235,
       "cableGender": "male",
-      "faceRow": 1
+      "faceRow": 1,
+      "passThrough": {
+        "rearId": "rb6",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "fb7",
@@ -229,7 +285,11 @@
       "breakoutModes": [],
       "firstNumber": 253,
       "cableGender": "male",
-      "faceRow": 1
+      "faceRow": 1,
+      "passThrough": {
+        "rearId": "rb7",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "fb8",
@@ -244,255 +304,11 @@
       "breakoutModes": [],
       "firstNumber": 271,
       "cableGender": "male",
-      "faceRow": 1
-    },
-    {
-      "id": "rt1",
-      "label": "A-C 1-18",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 1,
-      "cableGender": "female",
-      "rightToLeft": true
-    },
-    {
-      "id": "rt2",
-      "label": "D-F 19-36",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 19,
-      "cableGender": "female",
-      "rightToLeft": true
-    },
-    {
-      "id": "rt3",
-      "label": "G-I 37-54",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 37,
-      "cableGender": "female",
-      "rightToLeft": true
-    },
-    {
-      "id": "rt4",
-      "label": "J-L 55-72",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 55,
-      "cableGender": "female",
-      "rightToLeft": true
-    },
-    {
-      "id": "rt5",
-      "label": "M-O 73-90",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 73,
-      "cableGender": "female",
-      "rightToLeft": true
-    },
-    {
-      "id": "rt6",
-      "label": "P-R 91-108",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 91,
-      "cableGender": "female",
-      "rightToLeft": true
-    },
-    {
-      "id": "rt7",
-      "label": "S-U 109-126",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 109,
-      "cableGender": "female",
-      "rightToLeft": true
-    },
-    {
-      "id": "rt8",
-      "label": "V-X 127-144",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 127,
-      "cableGender": "female",
-      "rightToLeft": true
-    },
-    {
-      "id": "rb1",
-      "label": "A-C 145-162",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 145,
-      "cableGender": "female",
       "faceRow": 1,
-      "rightToLeft": true
-    },
-    {
-      "id": "rb2",
-      "label": "D-F 163-180",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 163,
-      "cableGender": "female",
-      "faceRow": 1,
-      "rightToLeft": true
-    },
-    {
-      "id": "rb3",
-      "label": "G-I 181-198",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 181,
-      "cableGender": "female",
-      "faceRow": 1,
-      "rightToLeft": true
-    },
-    {
-      "id": "rb4",
-      "label": "J-L 199-216",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 199,
-      "cableGender": "female",
-      "faceRow": 1,
-      "rightToLeft": true
-    },
-    {
-      "id": "rb5",
-      "label": "M-O 217-234",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 217,
-      "cableGender": "female",
-      "faceRow": 1,
-      "rightToLeft": true
-    },
-    {
-      "id": "rb6",
-      "label": "P-R 235-252",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 235,
-      "cableGender": "female",
-      "faceRow": 1,
-      "rightToLeft": true
-    },
-    {
-      "id": "rb7",
-      "label": "S-U 253-270",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 253,
-      "cableGender": "female",
-      "faceRow": 1,
-      "rightToLeft": true
-    },
-    {
-      "id": "rb8",
-      "label": "V-X 271-288",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 18,
-      "speedGbps": 0,
-      "lanes": 16,
-      "face": "rear",
-      "rows": 6,
-      "breakoutModes": [],
-      "firstNumber": 271,
-      "cableGender": "female",
-      "faceRow": 1,
-      "rightToLeft": true
+      "passThrough": {
+        "rearId": "rb8",
+        "rearCableGender": "female"
+      }
     }
   ],
   "breakoutProfiles": [

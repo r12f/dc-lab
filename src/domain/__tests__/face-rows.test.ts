@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
-import { faceRows, groupCols, groupsOnFace, portCell, portName } from '../device/ports';
+import { faceRows, groupCols, groupsOnFace, portCell, portName, withPassThrough } from '../device/ports';
 
-const d = BUILTIN_CATALOG_FOR_TESTS.devices.find((x) => x.id === 'fiber-housing-2ru-288xmmc16')!;
+const d = withPassThrough(BUILTIN_CATALOG_FOR_TESTS.devices.find((x) => x.id === 'fiber-housing-2ru-288xmmc16')!);
 
 describe('face rows (2RU 288x MMC-16 housing)', () => {
   it('splits each face into a top and a bottom row of 8 blocks', () => {

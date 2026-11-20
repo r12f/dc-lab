@@ -46,7 +46,12 @@
         9
       ],
       "connectorsPerPort": 2,
-      "connectorLayout": "stacked"
+      "connectorLayout": "stacked",
+      "passThrough": {
+        "rearId": "rm1",
+        "rearLabel": "Rear M1 1-10",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "fm2",
@@ -80,7 +85,12 @@
         9
       ],
       "connectorsPerPort": 2,
-      "connectorLayout": "stacked"
+      "connectorLayout": "stacked",
+      "passThrough": {
+        "rearId": "rm2",
+        "rearLabel": "Rear M2 11-20",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "fm3",
@@ -114,7 +124,12 @@
         9
       ],
       "connectorsPerPort": 2,
-      "connectorLayout": "stacked"
+      "connectorLayout": "stacked",
+      "passThrough": {
+        "rearId": "rm3",
+        "rearLabel": "Rear M3 21-30",
+        "rearCableGender": "female"
+      }
     },
     {
       "id": "fm4",
@@ -148,147 +163,12 @@
         9
       ],
       "connectorsPerPort": 2,
-      "connectorLayout": "stacked"
-    },
-    {
-      "id": "rm1",
-      "label": "Rear M1 1-10",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 10,
-      "speedGbps": 0,
-      "lanes": 32,
-      "face": "rear",
-      "rows": 3,
-      "breakoutModes": [],
-      "holes": [
-        0,
-        4
-      ],
-      "cableGender": "female",
-      "fill": "row-major",
-      "bottomUp": true,
-      "firstNumber": 1,
-      "portNumbers": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        10,
-        7,
-        8,
-        9
-      ],
-      "connectorsPerPort": 2,
       "connectorLayout": "stacked",
-      "rightToLeft": true
-    },
-    {
-      "id": "rm2",
-      "label": "Rear M2 11-20",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 10,
-      "speedGbps": 0,
-      "lanes": 32,
-      "face": "rear",
-      "rows": 3,
-      "breakoutModes": [],
-      "holes": [
-        0,
-        4
-      ],
-      "cableGender": "female",
-      "fill": "row-major",
-      "bottomUp": true,
-      "firstNumber": 11,
-      "portNumbers": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        10,
-        7,
-        8,
-        9
-      ],
-      "connectorsPerPort": 2,
-      "connectorLayout": "stacked",
-      "rightToLeft": true
-    },
-    {
-      "id": "rm3",
-      "label": "Rear M3 21-30",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 10,
-      "speedGbps": 0,
-      "lanes": 32,
-      "face": "rear",
-      "rows": 3,
-      "breakoutModes": [],
-      "holes": [
-        0,
-        4
-      ],
-      "cableGender": "female",
-      "fill": "row-major",
-      "bottomUp": true,
-      "firstNumber": 21,
-      "portNumbers": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        10,
-        7,
-        8,
-        9
-      ],
-      "connectorsPerPort": 2,
-      "connectorLayout": "stacked",
-      "rightToLeft": true
-    },
-    {
-      "id": "rm4",
-      "label": "Rear M4 31-40",
-      "role": "data",
-      "formFactor": "MMC-16",
-      "count": 10,
-      "speedGbps": 0,
-      "lanes": 32,
-      "face": "rear",
-      "rows": 3,
-      "breakoutModes": [],
-      "holes": [
-        0,
-        4
-      ],
-      "cableGender": "female",
-      "fill": "row-major",
-      "bottomUp": true,
-      "firstNumber": 31,
-      "portNumbers": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        10,
-        7,
-        8,
-        9
-      ],
-      "connectorsPerPort": 2,
-      "connectorLayout": "stacked",
-      "rightToLeft": true
+      "passThrough": {
+        "rearId": "rm4",
+        "rearLabel": "Rear M4 31-40",
+        "rearCableGender": "female"
+      }
     }
   ],
   "breakoutProfiles": [

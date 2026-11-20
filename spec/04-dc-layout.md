@@ -198,7 +198,7 @@ for problems.
 ## Topo tracing
 
 - **Tracing** (third segment of the `Layout | Cabling | Tracing` view switch) traces what is connected over in-rack
-  cables, cross-rack cables, pass-through panels (a fiber housing's front port i continues as rear port i only) and
+  cables, cross-rack cables, pass-through port groups (from the device model: port i continues as port i on the other face only) and
   THROUGH devices: a switch or server reached on one port continues on all its other cabled ports.
 - Right panel, shaped like the cross-rack cabling one: select a rack on the plan, **Set A** / **Set B** (⇄ swaps
   with the picks). Each side column lists EVERY cable port of every device of its rack (not only cross-rack ones),

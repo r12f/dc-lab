@@ -96,6 +96,16 @@ export interface PortGroup {
   opticalEngine?: OpticalEngine;
   /** Reach classes a CPO/NPO engine supports, e.g. ["DR4", "2xDR4"]. */
   reaches?: string[];
+  /**
+   * Pass-through group (patch panel / fiber housing adapters, RJ45 couplers): every port continues straight through
+   * to the same port on the other face. The other face's group is derived — not stored — with `rearId` as its id
+   * (so cable refs like `rm1/3` stay stable), drawn left-right mirrored (seen from behind, port i sits behind port i);
+   * `rearLabel` defaults to this group's label.
+   * `rearCableGender` = the cable gender the other face takes (default: the same as this face).
+   */
+  passThrough?: { rearId: string; rearLabel?: string; rearCableGender?: ConnectorGender };
+  /** Derived twin of a pass-through group (set by `withPassThrough`, never stored): id of the group it mirrors. */
+  passThroughOf?: string;
   /** PDU outlet groups: breaker bank and phase. */
   bank?: string;
   phase?: Phase;

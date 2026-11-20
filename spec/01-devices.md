@@ -247,6 +247,15 @@ Designer cabling view both honour it.
 **C13/C19 combination outlet**: form factor `C13/C19` (power) takes either a C14 or a C20 plug. PDU outlets are drawn
 as one vertical column per group (`rows` > 1 puts that many outlets side by side).
 
+**Pass-through groups** (`passThrough: { rearId, rearLabel?, rearCableGender? }`): a group whose ports continue
+straight through to the same port on the other face — patch panel / fiber housing adapters, RJ45 coupler panels, any
+panel. Only the front group is stored; the other face's group is DERIVED when the library loads the device (id
+`rearId`, same grid / numbering / connectors, opposite face, mirrored left to right, cable gender `rearCableGender`
+or the same). Cables attach to either face as before (`rm1/3`), and topo tracing links port i of both faces from the
+model — no device-type rule. Editing: tick **Pass-through** in the port group editor; the derived group is not
+listed (it follows its group) and is never saved. Older patch panels that stored identical front and rear copies
+migrate to front pass-through groups, keeping the rear ids, labels and genders.
+
 **Mirrored groups** (`rightToLeft`): the group's columns count from the right, so it is drawn left-right mirrored.
 Used on the rear of a pass-through panel (a fiber housing): seen from behind, rear port 1 sits behind front port 1,
 i.e. on the opposite side. When every group on a face is mirrored, the groups also run right to left (M1 rightmost).

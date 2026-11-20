@@ -104,11 +104,36 @@ function migrateGroup(g: Json): Json {
   return { ...rest, formFactor: g.formFactor ?? connector, role: g.role ?? inferRole(g), ...(cableGender ? { cableGender } : {}) };
 }
 
+/** Group fields a pass-through panel's front and rear groups share (anything else may differ). */
+const SAME_ON_BOTH_FACES = ['count', 'rows', 'formFactor', 'role', 'lanes', 'speedGbps', 'holes', 'fill', 'bottomUp', 'subPorts', 'firstNumber', 'portNumbers', 'connectorsPerPort', 'connectorLayout', 'faceRow'];
+
+/**
+ * Patch panels used to store their rear groups as copies of the front ones (`fm1` / `rm1`). Each front group with a
+ * matching rear group (same grid and numbering, in order) becomes ONE pass-through group: the rear is derived from
+ * it, keeping the rear group's id, label and cable gender, so cable refs (`rm1/3`) stay valid.
+ */
+export function mergePassThroughGroups(d: Json): Json {
+  if (d.category !== 'patch-panel') return d;
+  const ports = (d.ports as Json[]) ?? [];
+  if (ports.some((g) => g.passThrough)) return d;
+  const front = ports.filter((g) => g.face !== 'rear');
+  const rear = ports.filter((g) => g.face === 'rear');
+  if (!front.length || front.length !== rear.length) return d;
+  const same = (a: Json, b: Json) => SAME_ON_BOTH_FACES.every((k) => JSON.stringify(a[k]) === JSON.stringify(b[k]));
+  if (!front.every((f, i) => same(f, rear[i]))) return d;
+  const merged = front.map((f, i) => {
+    const r = rear[i];
+    return { ...f, passThrough: { rearId: String(r.id), ...(r.label !== f.label ? { rearLabel: r.label } : {}), ...(r.cableGender !== f.cableGender ? { rearCableGender: r.cableGender } : {}) } };
+  });
+  return { ...d, ports: merged };
+}
+
 export function migrateDevice(d0: Json): Json {
   // Variable height (`resizable`) became Repeatable.
   const { resizable, ...d } = d0;
   if (resizable !== undefined && d.repeatable === undefined) d.repeatable = resizable;
-  const ports = ((d.ports as Json[]) ?? []).map(migrateGroup);
+  // Derived pass-through twins are never stored (an older save may have written them).
+  const ports = ((mergePassThroughGroups({ ...d, ports: ((d.ports as Json[]) ?? []).filter((g) => !g.passThroughOf) }).ports as Json[]) ?? []).map(migrateGroup);
   const breakoutProfiles = ((d.breakoutProfiles as Json[]) ?? []).map((p) => ({
     ...p,
     groupDefaults: mapValues(p.groupDefaults, toProfileSetting),

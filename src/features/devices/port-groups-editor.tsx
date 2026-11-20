@@ -64,7 +64,7 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
   const pluggable = ROLE_TRAITS[group.role].pluggable;
   return (
     <details className="card" open={false}>
-      <summary>{`${group.label} · ${group.count}x ${groupConnector(group)}${group.heatSink ? ` ${group.heatSink}` : ''}${group.opticalEngine ? ` ${group.opticalEngine.toUpperCase()}` : ''}${group.speedGbps ? ` ${formatGbps(group.speedGbps)}` : ''} · ${group.face}`}</summary>
+      <summary>{`${group.label}${group.passThrough ? ' ⇄' : ''} · ${group.count}x ${groupConnector(group)}${group.heatSink ? ` ${group.heatSink}` : ''}${group.opticalEngine ? ` ${group.opticalEngine.toUpperCase()}` : ''}${group.speedGbps ? ` ${formatGbps(group.speedGbps)}` : ''} · ${group.face}`}</summary>
       <div className="row2">
         <TextField label="Label" value={group.label} onChange={(label) => set({ label })} />
         <SelectField<PortRole> label="Role" value={group.role} options={roleOptions} onChange={(role) => set({ role })} />
@@ -99,8 +99,26 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
       <NumberField label="Face row (0 = top; groups of a row run left to right)" value={group.faceRow ?? 0} min={0}
         onChange={(n) => set({ faceRow: n > 0 ? n : undefined })} />
       <label className="checkbox">
+        <input type="checkbox" checked={!!group.passThrough}
+          onChange={(e) => set({ passThrough: e.target.checked ? { rearId: `${group.id}-r` } : undefined })} />
+        Pass-through (each port continues to the same port on the other face — patch panel / fiber housing adapters, RJ45 couplers)
+      </label>
+      {group.passThrough && (
+        <div className="row3">
+          <TextField label="Other face group id" value={group.passThrough.rearId}
+            onChange={(rearId) => rearId && set({ passThrough: { ...group.passThrough!, rearId } })} />
+          <TextField label="Other face label" value={group.passThrough.rearLabel ?? ''}
+            onChange={(v) => set({ passThrough: { ...group.passThrough!, rearLabel: v || undefined } })} />
+          {formFactorSpec(group.formFactor).kind === 'fiber' && (
+            <SelectField<'' | ConnectorGender> label="Other face takes" value={group.passThrough.rearCableGender ?? ''}
+              options={[{ value: '', label: '— same as this face —' }, ...genderOptions.slice(1)]}
+              onChange={(g) => set({ passThrough: { ...group.passThrough!, rearCableGender: g || undefined } })} />
+          )}
+        </div>
+      )}
+      <label className="checkbox">
         <input type="checkbox" checked={!!group.rightToLeft} onChange={(e) => set({ rightToLeft: e.target.checked || undefined })} />
-        Mirrored left to right (rear of a pass-through panel, seen from behind)
+        Mirrored left to right (a pass-through group's other face is mirrored automatically)
       </label>
       <TextField label="Port numbers in fill order (blank = 1, 2, 3…; e.g. 1, 2, 3, 4, 5, 6, 10, 7, 8, 9)"
         value={(group.portNumbers ?? []).join(', ')} onChange={(v) => {
@@ -137,14 +155,16 @@ function PortGroupForm({ group, onChange, onRemove }: { group: PortGroup; onChan
 }
 
 export function PortGroupsEditor({ device, onChange }: Props) {
+  // Derived other-face groups of pass-through groups are not edited (they follow their group); ids of both taken.
+  const own = device.ports.filter((g) => !g.passThroughOf);
   const setPorts = (ports: PortGroup[]) => onChange({ ...device, ports });
-  const add = () => setPorts([...device.ports, newPortGroup(uniqueId('ports', device.ports.map((p) => p.id)))]);
+  const add = () => setPorts([...own, newPortGroup(uniqueId('ports', device.ports.map((p) => p.id)))]);
   return (
     <Section title="Port groups" actions={<Button onClick={add}>+ Group</Button>}>
-      {device.ports.map((g) => (
+      {own.map((g) => (
         <PortGroupForm key={g.id} group={g}
-          onChange={(ng) => setPorts(device.ports.map((x) => (x.id === g.id ? ng : x)))}
-          onRemove={() => setPorts(device.ports.filter((x) => x.id !== g.id))} />
+          onChange={(ng) => setPorts(own.map((x) => (x.id === g.id ? ng : x)))}
+          onRemove={() => setPorts(own.filter((x) => x.id !== g.id))} />
       ))}
     </Section>
   );

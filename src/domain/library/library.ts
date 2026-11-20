@@ -5,6 +5,7 @@ import type { CableMedia, OpticDefinition } from '../optics/types';
 import type { HasProperties, PropertyValue } from '../properties/types';
 import type { ItemVariant } from '../items/types';
 import { VariantIndex } from '../items/variants';
+import { withPassThrough } from '../device/ports';
 import type { BuiltinProfiles } from '../project/types';
 
 /** One collection of a kind: built-in items shadowed by project items with the same id. */
@@ -67,7 +68,8 @@ export class Library {
       items.map((i) => (builtinProperties[i.id] ? { ...i, properties: { ...i.properties, ...builtinProperties[i.id] } } : i));
     // Built-in devices keep their definition; their breakout profiles may be edited in the project.
     const withProfiles = builtin.devices.map((d) => (builtinProfiles[d.id] ? { ...d, ...builtinProfiles[d.id] } : d));
-    this.devices = new ItemCollection(withProfiles, project.devices, hidden);
+    // Pass-through groups get their derived other-face twin, so every view and cable check sees both faces.
+    this.devices = new ItemCollection(withProfiles.map(withPassThrough), project.devices.map(withPassThrough), hidden);
     this.racks = new ItemCollection(withProps(builtin.racks), project.racks, hidden);
     this.optics = new ItemCollection(builtin.optics, project.optics, hidden);
     this.cableMedia = new ItemCollection(builtin.cableMedia, project.cableMedia, hidden);

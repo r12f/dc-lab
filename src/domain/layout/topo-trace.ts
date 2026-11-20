@@ -1,6 +1,6 @@
 import type { Library } from '../library/library';
 import type { CableEndpoint, RackDesign } from '../design/types';
-import { cableGroupsOnFace, drawOrder, formatPortRef, groupsOnFace } from '../device/ports';
+import { cableGroupsOnFace, drawOrder, formatPortRef } from '../device/ports';
 import type { DeviceDefinition, PortGroup } from '../device/types';
 import type { DcLayout } from './types';
 import type { DesignLookup } from './tiles';
@@ -40,8 +40,8 @@ export function parseTracePortKey(key: string): TracePort {
   return { assignmentId, placementId, portRef: rest.join('#') };
 }
 
-/** Pass-through panels (fiber housings): front port i continues as rear port i. */
-export const isPassThrough = (d: DeviceDefinition | undefined) => d?.category === 'patch-panel';
+/** Devices with pass-through port groups (fiber housings, RJ45 coupler panels…): port i continues on the other face. */
+export const hasPassThrough = (d: DeviceDefinition | undefined) => !!d?.ports.some((g) => g.passThrough);
 
 const POWER_ROLES = new Set<PortGroup['role']>(['inlet', 'outlet']);
 
@@ -148,16 +148,15 @@ export function traceGraph(lib: Library, designs: DesignLookup, layout: DcLayout
     const design: RackDesign | undefined = designs(a.designId);
     if (!design) continue;
     for (const run of design.cables) cable(a.id, run.from, run.to, run.mediaId, 'cable', a.id, `${a.id}/${run.id}`);
+    // Pass-through groups (from the device model): port i of the group continues as port i of its other face.
     for (const p of design.placements) {
       const d = lib.devices.get(p.deviceId);
-      if (!isPassThrough(d)) continue;
-      const refs = (face: 'front' | 'rear') => groupsOnFace(d!, face)
-        .flatMap((g) => Array.from({ length: g.count }, (_, i) => formatPortRef({ groupId: g.id, index: i + 1 })));
-      const front = refs('front');
-      const rear = refs('rear');
-      for (let i = 0; i < Math.min(front.length, rear.length); i++) {
-        add({ kind: 'pass', a: tracePortKey({ assignmentId: a.id, placementId: p.id, portRef: front[i] }),
-          b: tracePortKey({ assignmentId: a.id, placementId: p.id, portRef: rear[i] }) });
+      for (const g of d?.ports ?? []) {
+        if (!g.passThrough) continue;
+        for (let i = 1; i <= g.count; i++) {
+          add({ kind: 'pass', a: tracePortKey({ assignmentId: a.id, placementId: p.id, portRef: formatPortRef({ groupId: g.id, index: i }) }),
+            b: tracePortKey({ assignmentId: a.id, placementId: p.id, portRef: formatPortRef({ groupId: g.passThrough.rearId, index: i }) }) });
+        }
       }
     }
   }
@@ -171,16 +170,25 @@ export function traceGraph(lib: Library, designs: DesignLookup, layout: DcLayout
 
 /**
  * Node of the walk a port belongs to: its device (traffic crosses a switch / server from any port to any other), or
- * the port itself on a pass-through panel (a housing's front port i only continues as rear port i).
+ * the port itself when it is on a pass-through group (it only continues as the same port on the other face).
  */
 type NodeOf = (portKey: string) => string;
 
 function nodeFn(lib: Library, designs: DesignLookup, layout: DcLayout): NodeOf {
-  const pass = new Set<string>();
+  // assignment#placement -> ids of its pass-through groups (both faces).
+  const pass = new Map<string, Set<string>>();
   for (const a of layout.assignments) {
-    for (const p of designs(a.designId)?.placements ?? []) if (isPassThrough(lib.devices.get(p.deviceId))) pass.add(`${a.id}#${p.id}`);
+    for (const p of designs(a.designId)?.placements ?? []) {
+      const d = lib.devices.get(p.deviceId);
+      if (!hasPassThrough(d)) continue;
+      pass.set(`${a.id}#${p.id}`, new Set(d!.ports.flatMap((g) => (g.passThrough ? [g.id, g.passThrough.rearId] : []))));
+    }
   }
-  return (k) => { const p = parseTracePortKey(k); const d = `${p.assignmentId}#${p.placementId}`; return pass.has(d) ? k : d; };
+  return (k) => {
+    const p = parseTracePortKey(k);
+    const d = `${p.assignmentId}#${p.placementId}`;
+    return pass.get(d)?.has(p.portRef.split('/')[0]) ? k : d;
+  };
 }
 
 /**

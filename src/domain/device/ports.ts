@@ -128,3 +128,37 @@ export function dataBandwidthGbps(device: DeviceDefinition): number {
 export function deviceSortKey(device: DeviceDefinition): number | undefined {
   return device.category === 'switch' ? -dataBandwidthGbps(device) : undefined;
 }
+
+/** The other face of a pass-through group: same grid and numbering, opposite face, mirrored left to right. */
+export function passThroughTwin(g: PortGroup): PortGroup | undefined {
+  const pt = g.passThrough;
+  if (!pt) return undefined;
+  const { passThrough: _p, ...rest } = g;
+  void _p;
+  return {
+    ...rest, id: pt.rearId, label: pt.rearLabel ?? g.label,
+    face: g.face === 'front' ? 'rear' : 'front', rightToLeft: g.rightToLeft ? undefined : true,
+    cableGender: pt.rearCableGender ?? g.cableGender, passThroughOf: g.id,
+  };
+}
+
+/** A device with the derived twin groups of its pass-through groups added (idempotent). */
+export function withPassThrough<T extends { ports: PortGroup[] }>(device: T): T {
+  if (!device.ports.some((g) => g.passThrough) || device.ports.some((g) => g.passThroughOf)) return device;
+  return { ...device, ports: [...device.ports, ...device.ports.flatMap((g) => passThroughTwin(g) ?? [])] };
+}
+
+/** A device as stored: derived pass-through twins removed. */
+export function withoutPassThroughTwins<T extends { ports: PortGroup[] }>(device: T): T {
+  return device.ports.some((g) => g.passThroughOf) ? { ...device, ports: device.ports.filter((g) => !g.passThroughOf) } : device;
+}
+
+/** Port on the other face of a pass-through port (`fm1/3` <-> `rm1/3`), or undefined for a normal port. */
+export function passThroughPeer(device: DeviceDefinition, portRef: string): string | undefined {
+  const r = parsePortRef(portRef);
+  const g = r && device.ports.find((x) => x.id === r.groupId);
+  if (!r || !g) return undefined;
+  if (g.passThrough) return formatPortRef({ groupId: g.passThrough.rearId, index: r.index });
+  if (g.passThroughOf) return formatPortRef({ groupId: g.passThroughOf, index: r.index });
+  return undefined;
+}

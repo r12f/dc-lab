@@ -3,6 +3,7 @@ import type { ItemCollection } from '../domain/library/library';
 import { slugify, uniqueId } from '../domain/ids';
 import { useAppStore } from './store';
 import type { ModuleTab } from './ui-slice';
+import { withoutPassThroughTwins } from '../domain/device/ports';
 
 type CatalogKey = 'devices' | 'racks' | 'optics' | 'cableMedia';
 
@@ -20,7 +21,8 @@ export function useCatalogEditor<T extends CatalogItem>(key: CatalogKey, tab: Mo
   const selected = collection.get(selectedId);
   const readOnly = !!selectedId && collection.sourceOf(selectedId) === 'builtin';
 
-  const save = (item: T) => upsert(key, item as never);
+  // Derived pass-through twins (device port groups) are never stored.
+  const save = (item: T) => upsert(key, (key === 'devices' ? withoutPassThroughTwins(item as never) : item) as never);
   /** Creates an item from `build(id)` with a unique id derived from `baseId`. */
   const create = (baseId: string, build: (id: string) => T) => {
     const item = build(uniqueId(slugify(baseId), collection.ids()));
@@ -30,7 +32,7 @@ export function useCatalogEditor<T extends CatalogItem>(key: CatalogKey, tab: Mo
   const duplicate = (id: string) => {
     const src = collection.get(id);
     if (!src) return;
-    const copy = { ...structuredClone(src), id: uniqueId(slugify(`${src.id}-copy`), collection.ids()), name: `${src.name} (copy)` };
+    const copy = { ...structuredClone(key === 'devices' ? withoutPassThroughTwins(src as never) as T : src), id: uniqueId(slugify(`${src.id}-copy`), collection.ids()), name: `${src.name} (copy)` };
     save(copy);
     select(tab, copy.id);
   };
