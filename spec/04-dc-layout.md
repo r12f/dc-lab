@@ -80,7 +80,7 @@ south (down), units are millimetres.
     cold / red hot), vertical rows of tiles with a front-side marker, assigned racks, trays on top
     (semi-transparent, so the aisle stays visible under them).
   - Title bar: edit actions — **+ Add ▾** (one menu: Row, Aisle, Cross aisle, Tray, Floating tray, PDU, Cooling,
-    Door), **Duplicate** (Ctrl+D), **Delete** (Del), then **Export SVG** — a separator — view controls: **⟲ / ⟳ 90°**
+    Door), **Duplicate** (Ctrl+D), **Delete** (Del) — for selected elements and racks, then **Export SVG** — a separator — view controls: **⟲ / ⟳ 90°**
     rotation, zoom, maximize.
   - **Add after the selection**: + Row / + Aisle insert right after the selected row or aisle (the
     easternmost when several; a selected tile/rack counts as its row, a tray as its aisle), else at the
@@ -96,6 +96,9 @@ south (down), units are millimetres.
     applied to all; fields that differ show "mixed".
   - **Hit testing**: trays are overhead, drawn over their aisle; only a tray's outline and label take clicks,
     so clicking inside an aisle selects the aisle even where a tray runs over it.
+  - **Duplicate racks**: each copy goes to the first free tile after its original in the same row (racks
+    with no room are listed and skipped); copies become the selection. The Selection panel has no move /
+    design-swap / remove controls for racks — drag racks to move them, use the title bar to copy or delete.
   - **Duplicate**: row copies (with their racks, relabelled) and aisle copies are appended at the **east end**
     of the sequence, in the originals' west-to-east order, so duplicating a row + aisle pattern repeats it;
     a tray copy goes over the next aisle east that has no tray of that kind; a facility copy is
@@ -145,12 +148,10 @@ south (down), units are millimetres.
     tiles already taken (including by a wide rack just placed) or too short are skipped and listed. **Drag** a rack
     from the palette onto a row tile to assign it there. The new racks become the selection.
   - **Several racks**: Ctrl- or Shift-click racks to add / remove them (any rows). **Drag** a selected rack and
-    the whole selection moves with it by whole rows (in row order, across row blocks) and tiles; the inspector
-    also has ↑ / ↓ tile, ← / → row and a rows / tiles move. A move is **all or none**: when any rack would leave its
+    the whole selection moves with it by whole rows (in row order, across row blocks) and tiles. A move is **all or none**: when any rack would leave its
     row or overlap a rack that stays, nothing moves and the reason is shown (red on the canvas while dragging).
-    Labels still in the automatic form (`Row1-03`) follow the new row / tile; hand-set labels stay. The inspector
-    can also **change the design** of the selected racks in place (racks it does not fit are skipped and listed)
-    and **remove** them (also Delete).
+    Labels still in the automatic form (`Row1-03`) follow the new row / tile; hand-set labels stay. **Duplicate** /
+    **Delete** in the title bar (Ctrl+D / Del) copy or remove the selected racks.
   - Drawing scale is fixed (100 % = 0.1 px/mm); when the layout is opened, rotated or the room size changes,
     the canvas zoom fits the room width to the pane (≤ 100 %), so the zoom level always matches the drawing.
 - Inspector: room and rack-area fields, layout warnings, group selections, selected element(s) editor,

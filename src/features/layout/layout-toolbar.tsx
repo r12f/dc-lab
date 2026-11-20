@@ -15,6 +15,8 @@ interface Props {
 /** Canvas title-bar edit actions: "+ Add ▾" (rows, aisles, trays, facilities, doors), duplicate, delete. */
 export function LayoutToolbar({ layout, editor, selection, onSelect }: Props) {
   const elements = isElementSelection(selection) ? selection : undefined;
+  const racks = selection?.kind === 'assignment' ? selection.ids : undefined;
+  const n = elements?.ids.length ?? racks?.length ?? 0;
   // New elements go after the selection; the new element becomes the selection, so repeated adds chain.
   const anchor = insertAnchor(layout, selection);
   const added = (kind: ElementKind, id: string | undefined) => { if (id) onSelect({ kind, ids: [id] }); };
@@ -32,14 +34,28 @@ export function LayoutToolbar({ layout, editor, selection, onSelect }: Props) {
   return (
     <div className="toolbar-group">
       <AddMenu items={items} />
-      <Button disabled={!elements} title="Ctrl+D"
-        onClick={() => elements && onSelect({ kind: elements.kind, ids: editor.duplicate(elements.kind, elements.ids) })}>
-        {`Duplicate${elements && elements.ids.length > 1 ? ` (${elements.ids.length})` : ''}`}
+      <Button disabled={!n} title="Ctrl+D"
+        onClick={() => {
+          if (elements) onSelect({ kind: elements.kind, ids: editor.duplicate(elements.kind, elements.ids) });
+          else if (racks) duplicateRacks(editor, racks, onSelect);
+        }}>
+        {`Duplicate${n > 1 ? ` (${n})` : ''}`}
       </Button>
-      <Button variant="danger" disabled={!elements} title="Delete"
-        onClick={() => { if (elements && list) { editor.removeElements(list, elements.ids); onSelect(undefined); } }}>Delete</Button>
+      <Button variant="danger" disabled={!n} title="Delete"
+        onClick={() => {
+          if (elements && list) editor.removeElements(list, elements.ids);
+          else if (racks) editor.unassignAll(racks);
+          onSelect(undefined);
+        }}>Delete</Button>
     </div>
   );
+}
+
+/** Copies the racks next to themselves and selects the copies; racks with no room are reported. */
+export function duplicateRacks(editor: LayoutEditor, ids: string[], onSelect: (sel: LayoutSelection | undefined) => void) {
+  const r = editor.duplicateRacks(ids);
+  if (r.ids.length) onSelect({ kind: 'assignment', ids: r.ids });
+  if (r.skipped.length) alert(`Not duplicated:\n${r.skipped.join('\n')}`);
 }
 
 /** View controls (right before the zoom buttons): rotate the plan 90°. */

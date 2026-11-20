@@ -4,7 +4,7 @@ import { addDoor, clampDoor } from '../../domain/layout/doors';
 import { rotateBy } from '../../domain/layout/view-rotation';
 import { addAisleAfter, addFacilityNear, addFloatingTray, addRowAfter, addTrayOver, type InsertAnchor } from '../../domain/layout/insert';
 import { assignmentProblem, type DesignLookup } from '../../domain/layout/tiles';
-import { assignTiles as assignTilesTo, rackLabel, type AssignResult, type TileRef } from '../../domain/layout/assign';
+import { assignTiles as assignTilesTo, duplicateRacks as duplicateRacksIn, rackLabel, type AssignResult, type TileRef } from '../../domain/layout/assign';
 import { clampToRoom, snap } from '../../domain/layout/geometry';
 import { reorderTo } from '../../domain/layout/floor-plan';
 import { duplicateElements, type DuplicableKind } from '../../domain/layout/duplicate';
@@ -109,6 +109,13 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
     if (r.ids.length) mutate(() => r.layout);
     return r;
   };
+  /** Copies racks into the next free tiles of their rows; returns the copies' ids and the skipped racks. */
+  const duplicateRacks = (ids: string[]): AssignResult => {
+    if (!layout) return { layout: layout as never, ids: [], skipped: [] };
+    const r = duplicateRacksIn(lib, designs, layout, ids);
+    if (r.ids.length) mutate(() => r.layout);
+    return r;
+  };
   const unassign = (id: string) => unassignAll([id]);
   /** Removes racks (and drops them from power / CDU racks' serve lists). */
   const unassignAll = (ids: string[]) => mutate((l) => ({
@@ -153,7 +160,7 @@ export function useLayoutEditor(lib: Library, designs: DesignLookup, layout: DcL
 
   return {
     addRow, addAisle, addCrossAisle, addTray, addFloating, moveFloatingTray, addFacility, updateElement, updateElements, duplicate, removeElement, removeElements, reorder, setSequence, moveTray, moveFacility,
-    assign, assignTiles, unassign, unassignAll, moveRacks, changeDesign, relabel, setServes, setRoom, setWhitespace, rename, setFacilityLinks, rotateView, addDoor: addDoorTo, moveDoor, setCrossCables, pickBomItem,
+    assign, assignTiles, duplicateRacks, unassign, unassignAll, moveRacks, changeDesign, relabel, setServes, setRoom, setWhitespace, rename, setFacilityLinks, rotateView, addDoor: addDoorTo, moveDoor, setCrossCables, pickBomItem,
   };
 }
 

@@ -1,7 +1,7 @@
 import type { Library } from '../library/library';
 import { uniqueId } from '../ids';
 import type { DcLayout } from './types';
-import { assignmentAt, assignmentProblem, startInTile, type DesignLookup } from './tiles';
+import { assignmentAt, assignmentProblem, spanOf, startInTile, type DesignLookup } from './tiles';
 
 /** A tile on the floor: row and 0-based tile index. */
 export interface TileRef {
@@ -47,4 +47,31 @@ export function assignTiles(lib: Library, designs: DesignLookup, layout: DcLayou
     ids.push(id);
   }
   return { layout: l, ids, skipped };
+}
+
+/**
+ * Copies racks (design, serves list dropped): each copy goes to the first free start in its own row after the
+ * original — right after it, after a later rack's end, or on a later tile edge. Racks with no room are skipped.
+ */
+export function duplicateRacks(lib: Library, designs: DesignLookup, layout: DcLayout, ids: string[]): AssignResult {
+  const order = (r: string) => layout.rows.findIndex((x) => x.id === r);
+  const src = layout.assignments.filter((a) => ids.includes(a.id))
+    .sort((a, b) => order(a.rowId) - order(b.rowId) || a.startTile - b.startTile);
+  let l = layout;
+  const out: string[] = [];
+  const skipped: string[] = [];
+  for (const a of src) {
+    const row = l.rows.find((r) => r.id === a.rowId);
+    if (!row) continue;
+    const from = spanOf(lib, designs, a).end;
+    const starts = new Set<number>([from]);
+    for (const o of l.assignments) if (o.rowId === row.id) { const e = spanOf(lib, designs, o).end; if (e >= from) starts.add(e); }
+    for (let t = Math.ceil(from); t < row.tileCount; t++) starts.add(t);
+    const start = [...starts].sort((x, y) => x - y).find((s) => !assignmentProblem(lib, designs, l, row, s, a.designId));
+    if (start === undefined) { skipped.push(`${a.label}: no free tiles after it in ${row.name}`); continue; }
+    const id = uniqueId('r', l.assignments.map((x) => x.id));
+    l = { ...l, assignments: [...l.assignments, { id, rowId: row.id, startTile: start, designId: a.designId, label: rackLabel(row.name, start) }] };
+    out.push(id);
+  }
+  return { layout: l, ids: out, skipped };
 }
