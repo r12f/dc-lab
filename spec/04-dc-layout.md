@@ -197,19 +197,21 @@ for problems.
 
 ## Topo tracing
 
-- **Tracing** (third segment of the `Layout | Cabling | Tracing` view switch) traces what is connected,
-  port to port, over in-rack cables, cross-rack cables and pass-through panels (a fiber housing's front port i
-  continues as rear port i). Traffic does not cross a device: a switch's other ports are not walked.
+- **Tracing** (third segment of the `Layout | Cabling | Tracing` view switch) traces what is connected over in-rack
+  cables, cross-rack cables, pass-through panels (a fiber housing's front port i continues as rear port i only) and
+  THROUGH devices: a switch or server reached on one port continues on all its other cabled ports.
 - Right panel, shaped like the cross-rack cabling one: select a rack on the plan, **Set A** / **Set B** (⇄ swaps
   with the picks). Each side column lists EVERY cable port of every device of its rack (not only cross-rack ones),
   laid out like the cabling view (devices top to bottom, faces, groups on the faceplate grid). Pick ports by press and
   sweep, or click a device name (☐ / ☑) for all its ports; any mix of devices and ports. Nothing picked = the whole
   rack: every data / mgmt / console port of every device (power inlets / outlets only when picked). Each column head has
   `clear N` (drop the picks, keep the rack) and ✕ (unset the side).
-- **⌖ Trace** (primary button in the Topo tracing section header, top right of the panel) expands from the A ports breadth first: a port already in the set is not walked again, a new one joins
-  the set; every link walked is kept. Without B: everything connected to A. With B: only links reached from both
-  sides, with dead-end branches pruned — the paths from A to B. Cable connectors pair 1:1, fan out evenly when one
-  end's count divides the other (10x MMC-16 to 20x MPO-8), and all-to-all on shuffles.
+- **⌖ Trace** (primary button in the Topo tracing section header) walks breadth first from the A ports: a port
+  already reached is not walked again, a new one joins the set; every link walked is kept. Without B: everything
+  connected to A. With B: the shortest paths from A to B only — hop distances from both sides, a link is kept when
+  hops(A → one end) + 1 + hops(other end → B) equals the A-to-B distance; longer detours are not drawn. Cable
+  connectors pair 1:1, fan out evenly when one end's count divides the other (10x MMC-16 to 20x MPO-8), and
+  all-to-all on shuffles.
 - Left sidebar in tracing mode: a **Traces** pane (instead of the rack palette) lists the session's traces of the
   layout (not saved in the project); click one to show it on the canvas, again to go back to the plan, ✕ deletes.
 - Trace drawing: one box per device with a traced port, in columns by hops from A (A and B devices outlined in the

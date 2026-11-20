@@ -169,46 +169,96 @@ export function traceGraph(lib: Library, designs: DesignLookup, layout: DcLayout
   return adj;
 }
 
-/** Ports reached from `start` (breadth first) and the links walked on the way. */
-function expand(adj: Adj, start: string[]): { ports: Set<string>; links: TraceLink[] } {
-  const ports = new Set(start);
+/**
+ * Node of the walk a port belongs to: its device (traffic crosses a switch / server from any port to any other), or
+ * the port itself on a pass-through panel (a housing's front port i only continues as rear port i).
+ */
+type NodeOf = (portKey: string) => string;
+
+function nodeFn(lib: Library, designs: DesignLookup, layout: DcLayout): NodeOf {
+  const pass = new Set<string>();
+  for (const a of layout.assignments) {
+    for (const p of designs(a.designId)?.placements ?? []) if (isPassThrough(lib.devices.get(p.deviceId))) pass.add(`${a.id}#${p.id}`);
+  }
+  return (k) => { const p = parseTracePortKey(k); const d = `${p.assignmentId}#${p.placementId}`; return pass.has(d) ? k : d; };
+}
+
+/**
+ * Breadth-first walk from `start`: a port reached joins the set; reaching a device (any port of it) reaches all its
+ * cabled ports, so the walk goes through switches and servers. A port already in the set is not walked again. Returns
+ * the ports reached and every link walked.
+ */
+function expand(adj: Adj, start: string[], nodeOf: NodeOf): { ports: Set<string>; links: TraceLink[] } {
+  const members = new Map<string, string[]>();
+  for (const k of adj.keys()) { const n = nodeOf(k); members.set(n, [...(members.get(n) ?? []), k]); }
+  const ports = new Set<string>();
+  const nodes = new Set<string>();
   const links = new Set<TraceLink>();
-  const queue = [...start];
+  const queue: string[] = [];
+  const reach = (k: string) => {
+    if (ports.has(k)) return;
+    ports.add(k);
+    queue.push(k);
+    const n = nodeOf(k);
+    if (nodes.has(n)) return;
+    nodes.add(n);
+    for (const m of members.get(n) ?? []) reach(m);
+  };
+  for (const k of start) reach(k);
   while (queue.length) {
     const u = queue.shift()!;
-    for (const { to, link } of adj.get(u) ?? []) {
-      links.add(link);
-      // A port already in the set is not walked again; a new one joins the set and is expanded from.
-      if (ports.has(to)) continue;
-      ports.add(to);
-      queue.push(to);
-    }
+    for (const { to, link } of adj.get(u) ?? []) { links.add(link); reach(to); }
   }
   return { ports, links: [...links] };
 }
 
+/** Hop distance (breadth first, over nodes) from the nodes of `start` to every node reached. */
+function hops(adj: Adj, start: string[], nodeOf: NodeOf): Map<string, number> {
+  const members = new Map<string, string[]>();
+  for (const k of adj.keys()) { const n = nodeOf(k); members.set(n, [...(members.get(n) ?? []), k]); }
+  const dist = new Map<string, number>();
+  let layer = [...new Set(start.map(nodeOf))];
+  for (const n of layer) dist.set(n, 0);
+  for (let d = 1; layer.length; d++) {
+    const next: string[] = [];
+    for (const n of layer) {
+      for (const k of members.get(n) ?? []) {
+        for (const { to } of adj.get(k) ?? []) {
+          const m = nodeOf(to);
+          if (dist.has(m)) continue;
+          dist.set(m, d);
+          next.push(m);
+        }
+      }
+    }
+    layer = next;
+  }
+  return dist;
+}
+
 /**
- * Traces from side A outward over cables, cross-rack cables and pass-through panels (port to port; traffic does not
- * cross a switch). Without B: everything connected to A. With B: the links on paths from A to B — the part reached
- * from both sides, with dead-end branches (ports with one link that are on neither side) pruned away.
+ * Traces from side A outward, breadth first, over cables, cross-rack cables, pass-through panels and through devices
+ * (a switch reached on one port continues on all its others). Without B: everything connected to A. With B: the
+ * SHORTEST paths from A to B — the walk stops at the first layer that reaches B, and only links on a shortest path
+ * are kept (hops from A to one end + 1 + hops from the other end to B = the A-to-B distance).
  */
 export function traceTopology(lib: Library, designs: DesignLookup, layout: DcLayout, a: TraceSide, b?: TraceSide): { start: string[]; links: TraceLink[] } {
   const adj = traceGraph(lib, designs, layout);
+  const nodeOf = nodeFn(lib, designs, layout);
   const start = sidePorts(lib, designs, layout, a);
-  const fromA = expand(adj, start);
-  if (!b) return { start, links: fromA.links };
+  if (!b) return { start, links: expand(adj, start, nodeOf).links };
   const end = sidePorts(lib, designs, layout, b);
-  const fromB = expand(adj, end);
-  let links = fromA.links.filter((l) => fromB.ports.has(l.a) && fromB.ports.has(l.b));
-  const keep = new Set([...start, ...end]);
-  for (;;) {
-    const degree = new Map<string, number>();
-    for (const l of links) for (const k of [l.a, l.b]) degree.set(k, (degree.get(k) ?? 0) + 1);
-    const next = links.filter((l) => [l.a, l.b].every((k) => keep.has(k) || degree.get(k)! > 1));
-    if (next.length === links.length) break;
-    links = next;
+  const dA = hops(adj, start, nodeOf);
+  const dB = hops(adj, end, nodeOf);
+  const goal = Math.min(...[...new Set(end.map(nodeOf))].map((n) => dA.get(n) ?? Infinity));
+  if (!Number.isFinite(goal)) return { start, links: [] };
+  const seen = new Set<TraceLink>();
+  for (const l of [...adj.values()].flat().map((x) => x.link)) {
+    const [u, v] = [nodeOf(l.a), nodeOf(l.b)];
+    const on = (x: string, y: string) => (dA.get(x) ?? Infinity) + 1 + (dB.get(y) ?? Infinity) === goal;
+    if (on(u, v) || on(v, u)) seen.add(l);
   }
-  return { start, links };
+  return { start, links: [...seen] };
 }
 
 // ------------------------------------------------------------------------------------------------ drawing layout

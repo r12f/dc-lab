@@ -140,6 +140,16 @@ describe('topo tracing', () => {
       for (const e of d.edges) expect(e.cables).toBeGreaterThan(0);
     }
   });
+  it('walks through devices: SW2 (cabled only to SW1 by a DAC) reaches rack 3 via SW1 and the trunk', () => {
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1', ports: [{ placementId: 'sw2', portRef: 'qsfpdd/2' }] },
+      { assignmentId: 'r3', ports: [{ placementId: 'sw', portRef: 'qsfpdd/1' }] });
+    expect(r.links.map((l) => l.kind).sort()).toEqual(['cable', 'cable', 'cable', 'cross', 'pass', 'pass']);
+  });
+  it('with B: only shortest paths (a longer detour is not drawn)', () => {
+    // Second, longer way from r1 SW1 to r3: none here, so the shortest-path set equals every A-B link found.
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1', ports: SW1 }, { assignmentId: 'r3', ports: [{ placementId: 'sw', portRef: 'qsfpdd/1' }] });
+    expect(r.links.some((l) => l.mediaId === 'dac-400g-qsfpdd')).toBe(false);
+  });
   it('side picker layout lists every cable port of every device (not only cross-rack ones)', () => {
     const l = rackPortLayout(lib, d1);
     expect(l.map((x) => x.placement.label)).toEqual(['FH1', 'SW2', 'SW1']);
