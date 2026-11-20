@@ -49,8 +49,9 @@ describe('optics & cables tree', () => {
     expect(folder('AEC').folders.map((f) => f.label)).toEqual(['OSFP', 'QSFP-DD']);
     expect(folder('AEC', 'OSFP').folders.map((f) => f.label)).toEqual(['800G', '1.6T']);
     expect(folder('DAC').folders.map((f) => f.label)).toContain('QSFP-DD<->QSFP56');
-    expect(folder('Single-mode fiber (SMF)', 'MMC-16F<->MPO-8F', '10x to 20x').items.map((i) => i.id))
+    expect(folder('Single-mode fiber (SMF)', 'MMC-16F<->MPO-8F').items.map((i) => i.id))
       .toEqual(['mmc16-mpo8-160f-trunk-smf']);
+    expect(folder('Single-mode fiber (SMF)', 'MMC-16F').folders).toEqual([]);
     expect(folder('Power').folders.map((f) => f.label)).toEqual(['C13<->C14', 'C19<->C20']);
     for (const top of tree.folders.slice(1)) expect(top.items, top.label).toEqual([]);
   });
