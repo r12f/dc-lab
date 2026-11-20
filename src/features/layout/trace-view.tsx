@@ -2,7 +2,7 @@ import { useEffect, useState, type Ref } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { DcLayout } from '../../domain/layout/types';
 import type { DesignLookup } from '../../domain/layout/tiles';
-import { defaultCollapsed, TRACE_COLLAPSE_OVER, TRACE_GEOM, traceDrawing, type TopoTrace } from '../../domain/layout/topo-trace';
+import { defaultCollapsed, TRACE_GEOM, traceDrawing, type TopoTrace } from '../../domain/layout/topo-trace';
 import { categoryStyle, paint, RACK_FRAME } from '../../theme/paint';
 
 /** Drawing scale: 1 unit = 1 px at 100 %. */
@@ -13,8 +13,8 @@ const fit = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` 
 
 /**
  * A traced topology: devices in columns by hops from side A (A devices left, outlined in the accent), devices of
- * one rack grouped in a rack block, one line per connected pair labelled with its port count. Click a block's
- * header (▾ / ▸) to collapse it into a device summary; big blocks start collapsed.
+ * one rack grouped in a rack block, racks of one design inside a design group block; one line per connected pair
+ * labelled with its port count. Click a block's header (▾ / ▸) to fold / unfold it; groups and big racks start folded.
  */
 export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }: {
   ref?: Ref<SVGSVGElement>; lib: Library; designs: DesignLookup; layout: DcLayout; trace: TopoTrace;
@@ -23,16 +23,7 @@ export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }
 }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(() => initialCollapsed ?? defaultCollapsed(lib, designs, layout, trace));
   useEffect(() => setCollapsed(defaultCollapsed(lib, designs, layout, trace)), [trace.id]);
-  const toggle = (k: string) => setCollapsed((s) => {
-    const n = new Set(s);
-    if (!n.has(k)) { n.add(k); return n; }
-    n.delete(k);
-    // Splitting a merged group: its big racks stay collapsed one by one.
-    if (k.startsWith('design:')) {
-      for (const r of traceDrawing(lib, designs, layout, trace, n).racks) if (r.groupKey === k && r.devices > TRACE_COLLAPSE_OVER) n.add(r.key);
-    }
-    return n;
-  });
+  const toggle = (k: string) => setCollapsed((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
   const d = traceDrawing(lib, designs, layout, trace, collapsed);
   const byKey = new Map(d.nodes.map((n) => [n.key, n]));
   const G = TRACE_GEOM;
@@ -59,26 +50,21 @@ export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }
     <svg ref={ref} width={d.width} viewBox={`0 ${-title} ${d.width} ${height}`} fontSize={FONT} style={{ display: 'block' }}>
       <rect x={0} y={-title} width={d.width} height={height} fill={paint.paper} />
       <text x={G.margin} y={-8} fontSize={14} fontWeight={700} fill={paint.ink}>
-        {`${trace.name} · ${d.racks.reduce((n, r) => n + r.devices, 0)} devices · ${d.edges.reduce((n, e) => n + e.count, 0)} ports linked`}
+        {`${trace.name} · ${d.racks.filter((r) => r.level === 0).reduce((n, r) => n + r.devices, 0)} devices · ${d.edges.reduce((n, e) => n + e.count, 0)} ports linked`}
       </text>
-      {d.racks.map((r) => (
+      {/* Design groups first, the racks inside them on top (SVG has no z-index). */}
+      {[...d.racks].sort((a, b) => b.racks - a.racks).map((r) => (
         <g key={r.key}>
-          <rect x={r.x} y={r.y} width={r.w} height={r.h} rx={6} fill={RACK_FRAME.side} stroke={RACK_FRAME.sideLine} />
+          <rect x={r.x} y={r.y} width={r.w} height={r.h} rx={6} fill={RACK_FRAME.side} stroke={RACK_FRAME.sideLine}
+            strokeWidth={r.racks > 1 ? 1.5 : 1} />
           <g style={{ cursor: 'pointer' }} onClick={() => toggle(r.key)}>
-            <title>{r.racks > 1 ? 'Expand: show each rack' : r.collapsed ? 'Expand: show every device' : 'Collapse into a device summary'}</title>
-            <rect x={r.x} y={r.y} width={r.w - (r.groupKey ? 46 : 0)} height={G.rackHead} fill="none" pointerEvents="all" />
+            <title>{r.racks > 1 ? (r.collapsed ? 'Expand: show each rack' : 'Collapse the racks into one summary') : r.collapsed ? 'Expand: show every device' : 'Collapse into a device summary'}</title>
+            <rect x={r.x} y={r.y} width={r.w} height={G.rackHead} fill="none" pointerEvents="all" />
             <text x={r.x + 8} y={r.y + 15} fontWeight={700} fill={RACK_FRAME.sideText}>
-              <tspan data-export="skip">{r.collapsed ? '▸ ' : '▾ '}</tspan>{fit(`${r.label}${r.collapsed ? '' : ` · ${r.devices}`}`, r.groupKey ? 24 : 31)}
+              <tspan data-export="skip">{r.collapsed ? '▸ ' : '▾ '}</tspan>{fit(r.label, 31)}
               <title>{r.label}</title>
             </text>
           </g>
-          {r.groupKey && (
-            <g data-export="skip" style={{ cursor: 'pointer' }} onClick={() => toggle(r.groupKey!)}>
-              <title>Merge every rack of this design in the column into one block</title>
-              <rect x={r.x + r.w - 44} y={r.y + 3} width={38} height={16} rx={8} fill={paint.paper} stroke={paint.accent} />
-              <text x={r.x + r.w - 25} y={r.y + 15} textAnchor="middle" fontSize={10} fill={paint.ink}>merge</text>
-            </g>
-          )}
         </g>
       ))}
       {/* Casings first, then lines, then labels: later lines never cut earlier ones. */}

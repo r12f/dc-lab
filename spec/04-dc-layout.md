@@ -218,6 +218,6 @@ for problems.
   column bracket out to the left, each on its own lane (shortest innermost; the column
   widens to fit them, so no line leaves the drawing). Rack blocks collapse: click the block header (▾ / ▸) to fold it
   into one summary box (`N devices`, `7x Console Server, 5x Switch…`); its links attach to the box (summed), links
-  inside it are dropped. Blocks with more than 8 devices start collapsed. Racks of one design in a column merge into one
-  block (`16x GPU Rack`, summary `16 racks · 192 devices`) and start merged; expanding it shows each rack, whose
-  header has a **merge** chip to fold them back. **Export SVG** exports the shown trace.
+  inside it are dropped. Blocks with more than 8 devices start collapsed. Racks of one design in a column sit in a design
+  group block one level up (`16x GPU Rack`); folded it shows one summary (`16 racks · 192 devices`), unfolded the
+  rack blocks inside it. Groups start folded. **Export SVG** exports the shown trace.

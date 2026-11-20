@@ -240,10 +240,10 @@ export interface TraceEdge { a: string; b: string; count: number; media: string[
 export interface TraceRackBox {
   /** Collapse key of the block: `assignmentId@column`, or `design:designId@column` for merged racks of one design. */
   key: string;
-  /** Racks drawn in this block (more than 1 = merged racks of one design). */
+  /** Racks in this block (more than 1 = a design group holding every rack of one design in the column). */
   racks: number;
-  /** Expanded rack whose design has other racks in the column: the key that merges them back. */
-  groupKey?: string;
+  /** 0 = top level (a design group, or a rack alone in its design), 1 = a rack inside an open design group. */
+  level: 0 | 1;
   assignmentId: string;
   label: string;
   collapsed: boolean;
@@ -253,7 +253,7 @@ export interface TraceRackBox {
 
 export interface TraceDrawing { nodes: TraceNode[]; edges: TraceEdge[]; racks: TraceRackBox[]; width: number; height: number }
 
-export const TRACE_GEOM = { nodeW: 200, nodeH: 44, colGap: 140, rowGap: 14, rackPad: 10, rackHead: 22, margin: 24, lane: 10 } as const;
+export const TRACE_GEOM = { nodeW: 200, nodeH: 44, colGap: 140, rowGap: 14, rackPad: 10, rackHead: 22, margin: 24, lane: 10, groupPad: 8 } as const;
 
 /** Rack blocks with more devices than this start collapsed. */
 export const TRACE_COLLAPSE_OVER = 8;
@@ -263,8 +263,8 @@ const deviceKey = (portKey: string) => { const p = parseTracePortKey(portKey); r
 /** Collapse keys (`assignmentId@column`) of the blocks that start collapsed: those with many devices. */
 export function defaultCollapsed(lib: Library, designs: DesignLookup, layout: DcLayout, trace: TopoTrace): Set<string> {
   const d = traceDrawing(lib, designs, layout, trace, new Set());
-  // Racks of one design in a column merge into one block; a lone big rack collapses on its own.
-  return new Set(d.racks.flatMap((r) => (r.groupKey ? [r.groupKey] : r.devices > TRACE_COLLAPSE_OVER ? [r.key] : [])));
+  // Design groups start collapsed, and so do big racks (seen when a group is opened).
+  return new Set(d.racks.filter((r) => r.racks > 1 || r.devices > TRACE_COLLAPSE_OVER).map((r) => r.key));
 }
 
 /** "7x Console Server, 5x Switch": device count per category, largest first. */
@@ -335,18 +335,23 @@ export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayo
     const g = `design:${designOf(n.assignmentId)}@${n.column}`;
     return racksPerDesign.get(g)!.size > 1 ? g : undefined;
   };
-  const blockKey = (n: TraceNode) => { const g = groupOf(n); return g && collapsed.has(g) ? g : `${n.assignmentId}@${n.column}`; };
+  const rackKey = (n: TraceNode) => `${n.assignmentId}@${n.column}`;
+  // A node stands for: its collapsed design group, else its collapsed rack, else itself.
+  const blockKey = (n: TraceNode) => { const g = groupOf(n); return g && collapsed.has(g) ? g : collapsed.has(rackKey(n)) ? rackKey(n) : undefined; };
   const nodeOf = new Map<string, TraceNode>();
   const nodes: TraceNode[] = [];
   const blocks = new Map<string, TraceNode[]>();
-  for (const n of devNodes) blocks.set(blockKey(n), [...(blocks.get(blockKey(n)) ?? []), n]);
+  for (const n of devNodes) {
+    const bk = blockKey(n);
+    if (!bk) { nodes.push(n); nodeOf.set(n.key, n); continue; }
+    blocks.set(bk, [...(blocks.get(bk) ?? []), n]);
+  }
   for (const [bk, devs] of blocks) {
-    if (!collapsed.has(bk)) { for (const n of devs) { nodes.push(n); nodeOf.set(n.key, n); } continue; }
     const f = devs[0];
     const sides = new Set(devs.map((n) => n.side).filter(Boolean));
     const nRacks = new Set(devs.map((n) => n.assignmentId)).size;
     const node: TraceNode = {
-      ...f, key: `rack:${bk}`, placementId: '', label: nRacks > 1 ? `${nRacks} racks · ${devs.length} devices` : `${devs.length} devices`,
+      ...f, key: `sum:${bk}`, placementId: '', label: nRacks > 1 ? `${nRacks} racks · ${devs.length} devices` : `${devs.length} devices`,
       sub: summary(devs), device: undefined, devices: devs.length,
       side: sides.has('a') ? 'a' : sides.has('b') ? 'b' : undefined, ports: devs.reduce((n, x) => n + x.ports, 0),
     };
@@ -365,34 +370,46 @@ export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayo
     edgeMap.set(`${a}|${b}`, t);
   }
   const edges = [...edgeMap.values()];
-  // Rows: per column, racks in label order, devices in label order.
+  // Rows: per column, top-level blocks (design groups / lone racks) by their first rack label; inside a group, racks by
+  // label; devices by label.
   const racks: TraceRackBox[] = [];
-  const maxCol = Math.max(0, ...nodes.map((n) => n.column));
+  const maxCol = Math.max(0, ...devNodes.map((n) => n.column));
+  const byLabel = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true });
+  const W = G.nodeW + 2 * G.rackPad;
   let height = 0;
   for (let c = 0; c <= maxCol; c++) {
-    const inCol = nodes.filter((n) => n.column === c);
-    // Blocks in the column: a merged group sits where its first rack (by label) would.
-    const bOf = (n: TraceNode) => (n.key.startsWith('rack:design:') ? n.key.slice(5) : n.assignmentId);
-    const blockIds = [...new Set(inCol.map(bOf))]
-      .sort((x, y) => (inCol.find((n) => bOf(n) === x)!.rack).localeCompare(inCol.find((n) => bOf(n) === y)!.rack, undefined, { numeric: true }));
+    const inCol = devNodes.filter((n) => n.column === c);
+    const tops = new Map<string, TraceNode[]>();
+    for (const n of inCol) { const t = groupOf(n) ?? rackKey(n); tops.set(t, [...(tops.get(t) ?? []), n]); }
     let y = G.margin;
-    for (const rid of blockIds) {
-      const devs = inCol.filter((n) => bOf(n) === rid).sort((p, q) => p.label.localeCompare(q.label, undefined, { numeric: true }));
+    /** One rack block: header, then its devices or its summary node. */
+    const rackBlock = (rk: string, devs: TraceNode[], level: 0 | 1) => {
       const top = y;
       y += G.rackHead;
-      for (const n of devs) { n.y = y; y += G.nodeH + G.rowGap; }
+      const shown = collapsed.has(rk) ? [nodeOf.get(devs[0].key)!] : devs.sort((p, q) => byLabel(p.label, q.label));
+      for (const n of shown) { n.y = y; y += G.nodeH + G.rowGap; }
       y += G.rackPad - G.rowGap;
-      if (rid.startsWith('design:')) {
-        const members = blocks.get(rid) ?? [];
-        const design = designs(rid.slice(7, rid.lastIndexOf('@')));
-        const n = new Set(members.map((m) => m.assignmentId)).size;
-        racks.push({ key: rid, assignmentId: devs[0].assignmentId, label: `${n}x ${design?.name ?? 'rack'}`, collapsed: true, racks: n,
-          devices: members.length, x: 0, y: top, w: G.nodeW + 2 * G.rackPad, h: y - top });
+      racks.push({ key: rk, assignmentId: devs[0].assignmentId, label: devs[0].rack, collapsed: collapsed.has(rk), racks: 1, level,
+        devices: devs.length, x: 0, y: top, w: W, h: y - top });
+    };
+    for (const [tk, devs] of [...tops].sort((a, b) => byLabel(a[1][0].rack, b[1][0].rack))) {
+      if (!tk.startsWith('design:')) { rackBlock(tk, devs, 0); y += G.rowGap * 2; continue; }
+      const design = designs(tk.slice(7, tk.lastIndexOf('@')));
+      const nRacks = new Set(devs.map((n) => n.assignmentId)).size;
+      const top = y;
+      y += G.rackHead;
+      if (collapsed.has(tk)) {
+        const n = nodeOf.get(devs[0].key)!;
+        n.y = y;
+        y += G.nodeH + G.rackPad;
       } else {
-        const bk = `${rid}@${c}`;
-        racks.push({ key: bk, assignmentId: rid, label: devs[0].rack, collapsed: collapsed.has(bk), racks: 1, groupKey: groupOf(devs[0]),
-          devices: blocks.get(bk)?.length ?? devs.length, x: 0, y: top, w: G.nodeW + 2 * G.rackPad, h: y - top });
+        const perRack = new Map<string, TraceNode[]>();
+        for (const n of devs) perRack.set(n.assignmentId, [...(perRack.get(n.assignmentId) ?? []), n]);
+        for (const rd of [...perRack.values()].sort((a, b) => byLabel(a[0].rack, b[0].rack))) { rackBlock(rackKey(rd[0]), rd, 1); y += G.rowGap; }
+        y += G.groupPad - G.rowGap;
       }
+      racks.push({ key: tk, assignmentId: devs[0].assignmentId, label: `${nRacks}x ${design?.name ?? 'rack'}`, collapsed: collapsed.has(tk), racks: nRacks, level: 0,
+        devices: devs.length, x: 0, y: top, w: W + 2 * G.groupPad, h: y - top });
       y += G.rowGap * 2;
     }
     height = Math.max(height, y);
@@ -415,9 +432,10 @@ export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayo
   let x = G.margin;
   for (let c = 0; c <= maxCol; c++) {
     x += G.rackPad + 12 + (lanesOf.get(c)?.length ?? 0) * G.lane;
-    for (const r of racks) if (r.key.endsWith(`@${c}`)) r.x = x;
-    for (const n of nodes) if (n.column === c) n.x = x + G.rackPad;
-    x += G.nodeW + 2 * G.rackPad + (c < maxCol ? G.colGap : 0);
+    // Every column reserves the group padding, so devices line up whether or not they sit in a group.
+    for (const r of racks) if (r.key.endsWith(`@${c}`)) r.x = r.racks > 1 ? x : x + G.groupPad;
+    for (const n of nodes) if (n.column === c) n.x = x + G.groupPad + G.rackPad;
+    x += W + 2 * G.groupPad + (c < maxCol ? G.colGap : 0);
   }
   return { nodes, edges, racks, width: x + G.margin, height: height + G.margin };
 }

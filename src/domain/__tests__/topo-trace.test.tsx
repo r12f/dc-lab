@@ -101,8 +101,13 @@ describe('topo tracing', () => {
     const block = d.racks.find((x) => x.key === 'design:d3@1')!;
     expect(block).toMatchObject({ racks: 2, label: '2x d3' });
     expect(d.nodes.filter((n) => n.column === 1)).toHaveLength(1);
+    expect(d.racks.filter((x) => x.key.endsWith('@1')).map((x) => x.key)).toEqual(['design:d3@1']);
+    // Opening the group: a group block around the two rack blocks.
     const open = traceDrawing(lib, designs, l2, t, new Set());
-    expect(open.racks.filter((x) => x.groupKey === 'design:d3@1').map((x) => x.label).sort()).toEqual(['R3', 'R3B']);
+    const g = open.racks.find((x) => x.key === 'design:d3@1')!;
+    const inner = open.racks.filter((x) => x.level === 1 && x.key.endsWith('@1'));
+    expect(inner.map((x) => x.label).sort()).toEqual(['R3', 'R3B']);
+    for (const r of inner) expect(r.x > g.x && r.y > g.y && r.x + r.w < g.x + g.w && r.y + r.h < g.y + g.h).toBe(true);
   });
   it('side picker layout lists every cable port of every device (not only cross-rack ones)', () => {
     const l = rackPortLayout(lib, d1);
