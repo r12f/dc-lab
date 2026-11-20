@@ -236,3 +236,9 @@ button.link { width: auto; background: none; border: none; padding: 0; color: va
 .cross-face-groups { display: flex; flex-wrap: nowrap; gap: 10px; overflow-x: auto; align-items: flex-start; }
 .cross-face-groups .cross-group { flex: none; }
 .cross-side-title { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+
+/* Sliding segmented switch (ui/segmented.tsx) */
+.segmented { position: relative; display: inline-grid; padding: 2px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-panel-alt); }
+.segmented button { position: relative; z-index: 1; width: auto; background: none; border: 0; padding: 3px 12px; border-radius: 999px; cursor: pointer; color: var(--text); white-space: nowrap; }
+.segmented button.active { color: var(--general-on-accent); font-weight: 600; }
+.segmented-pill { position: absolute; top: 2px; bottom: 2px; left: 2px; border-radius: 999px; background: var(--accent); transition: transform 0.18s ease; }

@@ -13,7 +13,6 @@ import { LayoutToolbar, LayoutViewControls } from './layout-toolbar';
 import { useLayoutShortcuts } from './use-layout-shortcuts';
 import { useLayoutEditor } from './use-layout-editor';
 import type { LayoutSelection } from './selection';
-import { Button } from '../../ui/button';
 import { CrossCablingPanel, type CrossSides } from './cross-cabling-panel';
 import { CheckMenu } from '../../ui/check-menu';
 import { LAYOUT_VIEW_ITEMS, type LayoutViewItem } from './layout-view';
@@ -23,6 +22,7 @@ import type { TileRef } from '../../domain/layout/assign';
 import { TraceList, TracePanel, type TraceSides } from './trace-panel';
 import { TraceView } from './trace-view';
 import { useTraces } from '../../state/traces';
+import { Segmented } from '../../ui/segmented';
 
 export function LayoutModule() {
   const lib = useLibrary();
@@ -48,7 +48,6 @@ export function LayoutModule() {
 
   const layout = layouts.find((l) => l.id === selectedId);
   const shownTrace = tracing ? allTraces.find((t) => t.id === traceId && t.layoutId === layout?.id) : undefined;
-  const toggleMode = (m: 'cabling' | 'tracing') => { setMode(mode === m ? 'plan' : m); openTrace(undefined); };
   const editor = useLayoutEditor(lib, designs, layout);
   useLayoutShortcuts(editor, sel, setSel, !!layout);
 
@@ -101,12 +100,11 @@ export function LayoutModule() {
             fitKey={`${layout.id}:${layout.room.widthMm}x${layout.room.depthMm}:${layout.viewRotation ?? 0}:${shownTrace?.id ?? ''}`}
             toolbar={<LayoutToolbar layout={layout} editor={editor} selection={sel} onSelect={setSel} />}
             viewControls={<>
-              <Button variant={cabling ? 'primary' : 'default'} aria-pressed={cabling}
-                title="Cabling view: cross-rack cables between racks (A / B sides in the right panel)"
-                onClick={() => toggleMode('cabling')}>⇄ Cabling</Button>
-              <Button variant={tracing ? 'primary' : 'default'} aria-pressed={tracing}
-                title="Topo tracing: trace everything connected from an A side (rack, device or port), optionally to a B side"
-                onClick={() => toggleMode('tracing')}>⌖ Tracing</Button>
+              <Segmented label="View mode" value={mode} onChange={(m) => { setMode(m); openTrace(undefined); }} options={[
+                { value: 'plan', label: 'Layout', title: 'Layout: edit rows, aisles, trays and racks' },
+                { value: 'cabling', label: 'Cabling', title: 'Cabling: cross-rack cables between racks (A / B sides in the right panel)' },
+                { value: 'tracing', label: 'Tracing', title: 'Topo tracing: trace what is connected from an A side, optionally to a B side' },
+              ]} />
               <CheckMenu label="View" items={LAYOUT_VIEW_ITEMS} hidden={hiddenView} onChange={setHiddenView} noBulk compact
                 title="Show or hide trays, floating trays, row labels and cable traces (drawing only; cables keep following hidden trays)" />
               <LayoutViewControls editor={editor} />

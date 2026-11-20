@@ -164,7 +164,7 @@ Cables between racks (trunks) attach to the racks' **cross-rack connectors** (ma
 view, `design.crossRack`). They are stored on the layout: `layout.crossCables[]` = `{ id, mediaId, from, to }`, each
 end `{ assignmentId, placementId, portRef, connector }` (the rack in this layout + the connector in its design).
 
-**Cabling mode** (toolbar latch `⇄ Cabling`): the right side bar becomes two columns, **A side** and **B side**.
+**Cabling mode** (view switch `Layout | Cabling | Tracing`, a sliding segmented control in the view controls): the right side bar becomes two columns, **A side** and **B side**.
 Select a rack on the plan and press *Set A* / *Set B* (*Swap A ↔ B* exchanges the two racks and their picked connectors); that side lists the rack's cross-rack connectors laid out like
 its cabling view: devices top to bottom (devices without a cross-rack connector left out), each device's port groups
 in drawing order (mirrored faces right to left), the groups of a face side by side left to right as on the faceplate (all groups of a face with a cross-rack connector, empty ones as placeholders), each group drawn on its faceplate grid (same cells as the faceplate and cabling view: fill order, holes, bottom-up, mirroring; stacked connectors A at the bottom), ports that are not cross-rack shown as faint dashed placeholders so every position stays recognisable; connectors labelled by printed port name, + A/B only on multi-connector ports (a one-connector port marked on its leg 1 — fiber port, module cage — is the plain port and pickable). Click toggles a connector; press and sweep over connectors to select (or, starting on a selected one, deselect) them all, in sweep order. Pick connectors on
@@ -197,7 +197,7 @@ for problems.
 
 ## Topo tracing
 
-- **⌖ Tracing** (canvas view controls, next to ⇄ Cabling; the two modes are exclusive) traces what is connected,
+- **Tracing** (third segment of the `Layout | Cabling | Tracing` view switch) traces what is connected,
   port to port, over in-rack cables, cross-rack cables and pass-through panels (a fiber housing's front port i
   continues as rear port i). Traffic does not cross a device: a switch's other ports are not walked.
 - Right panel, shaped like the cross-rack cabling one: select a rack on the plan, **Set A** / **Set B** (⇄ swaps
