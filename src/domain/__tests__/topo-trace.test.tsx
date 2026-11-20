@@ -7,7 +7,7 @@ import { newDesign } from '../design/factory';
 import { newPlacement } from '../design/placement';
 import type { RackDesign } from '../design/types';
 import type { DcLayout } from '../layout/types';
-import { cablePairs, rackPortLayout, traceDrawing, traceTopology, tracePortKey } from '../layout/topo-trace';
+import { cablePairs, defaultCollapsed, rackPortLayout, traceDrawing, traceTopology, tracePortKey } from '../layout/topo-trace';
 import { TraceView } from '../../features/layout/trace-view';
 import { TracePanel } from '../../features/layout/trace-panel';
 
@@ -85,6 +85,24 @@ describe('topo tracing', () => {
     expect(n[0].sub).toMatch(/2x .*1x /);
     expect(shut.edges.some((e) => e.lane !== undefined)).toBe(false);
     expect(shut.racks.find((x) => x.key === 'r1@0')).toMatchObject({ collapsed: true, devices: 3 });
+  });
+  it('racks of one design in a column merge into one block', () => {
+    // Two racks of design d3 reached from r1: make r3b a second rack of the same design, trunked like r3.
+    const l2 = {
+      ...layout,
+      assignments: [...layout.assignments, { id: 'r3b', rowId: 'x', startTile: 4, designId: 'd3', label: 'R3B' }],
+      crossCables: [...layout.crossCables!, { id: 'xc2', mediaId: 'mmc-smf', from: [{ assignmentId: 'r1', placementId: 'fh', portRef: 'rm1/2', connector: 1 }], to: [{ assignmentId: 'r3b', placementId: 'fh', portRef: 'rm1/1', connector: 1 }] }],
+    } as DcLayout;
+    const r = traceTopology(lib, designs, l2, { assignmentId: 'r1' });
+    const t = { id: 't', name: 'x', layoutId: 'l', a: { assignmentId: 'r1' }, ...r };
+    const init = defaultCollapsed(lib, designs, l2, t);
+    expect([...init]).toContain('design:d3@1');
+    const d = traceDrawing(lib, designs, l2, t, init);
+    const block = d.racks.find((x) => x.key === 'design:d3@1')!;
+    expect(block).toMatchObject({ racks: 2, label: '2x d3' });
+    expect(d.nodes.filter((n) => n.column === 1)).toHaveLength(1);
+    const open = traceDrawing(lib, designs, l2, t, new Set());
+    expect(open.racks.filter((x) => x.groupKey === 'design:d3@1').map((x) => x.label).sort()).toEqual(['R3', 'R3B']);
   });
   it('side picker layout lists every cable port of every device (not only cross-rack ones)', () => {
     const l = rackPortLayout(lib, d1);

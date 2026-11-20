@@ -2,11 +2,14 @@ import { useEffect, useState, type Ref } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { DcLayout } from '../../domain/layout/types';
 import type { DesignLookup } from '../../domain/layout/tiles';
-import { defaultCollapsed, TRACE_GEOM, traceDrawing, type TopoTrace } from '../../domain/layout/topo-trace';
+import { defaultCollapsed, TRACE_COLLAPSE_OVER, TRACE_GEOM, traceDrawing, type TopoTrace } from '../../domain/layout/topo-trace';
 import { categoryStyle, paint, RACK_FRAME } from '../../theme/paint';
 
 /** Drawing scale: 1 unit = 1 px at 100 %. */
 const FONT = 12;
+
+/** Cuts a label to `n` characters with an ellipsis (full text in the tooltip). */
+const fit = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
 /**
  * A traced topology: devices in columns by hops from side A (A devices left, outlined in the accent), devices of
@@ -20,7 +23,16 @@ export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }
 }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(() => initialCollapsed ?? defaultCollapsed(lib, designs, layout, trace));
   useEffect(() => setCollapsed(defaultCollapsed(lib, designs, layout, trace)), [trace.id]);
-  const toggle = (k: string) => setCollapsed((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
+  const toggle = (k: string) => setCollapsed((s) => {
+    const n = new Set(s);
+    if (!n.has(k)) { n.add(k); return n; }
+    n.delete(k);
+    // Splitting a merged group: its big racks stay collapsed one by one.
+    if (k.startsWith('design:')) {
+      for (const r of traceDrawing(lib, designs, layout, trace, n).racks) if (r.groupKey === k && r.devices > TRACE_COLLAPSE_OVER) n.add(r.key);
+    }
+    return n;
+  });
   const d = traceDrawing(lib, designs, layout, trace, collapsed);
   const byKey = new Map(d.nodes.map((n) => [n.key, n]));
   const G = TRACE_GEOM;
@@ -53,12 +65,20 @@ export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }
         <g key={r.key}>
           <rect x={r.x} y={r.y} width={r.w} height={r.h} rx={6} fill={RACK_FRAME.side} stroke={RACK_FRAME.sideLine} />
           <g style={{ cursor: 'pointer' }} onClick={() => toggle(r.key)}>
-            <title>{r.collapsed ? 'Expand: show every device' : 'Collapse into a device summary'}</title>
-            <rect x={r.x} y={r.y} width={r.w} height={G.rackHead} fill="transparent" />
+            <title>{r.racks > 1 ? 'Expand: show each rack' : r.collapsed ? 'Expand: show every device' : 'Collapse into a device summary'}</title>
+            <rect x={r.x} y={r.y} width={r.w - (r.groupKey ? 46 : 0)} height={G.rackHead} fill="none" pointerEvents="all" />
             <text x={r.x + 8} y={r.y + 15} fontWeight={700} fill={RACK_FRAME.sideText}>
-              <tspan data-export="skip">{r.collapsed ? '▸ ' : '▾ '}</tspan>{`${r.label}${r.collapsed ? '' : ` · ${r.devices}`}`}
+              <tspan data-export="skip">{r.collapsed ? '▸ ' : '▾ '}</tspan>{fit(`${r.label}${r.collapsed ? '' : ` · ${r.devices}`}`, r.groupKey ? 24 : 31)}
+              <title>{r.label}</title>
             </text>
           </g>
+          {r.groupKey && (
+            <g data-export="skip" style={{ cursor: 'pointer' }} onClick={() => toggle(r.groupKey!)}>
+              <title>Merge every rack of this design in the column into one block</title>
+              <rect x={r.x + r.w - 44} y={r.y + 3} width={38} height={16} rx={8} fill={paint.paper} stroke={paint.accent} />
+              <text x={r.x + r.w - 25} y={r.y + 15} textAnchor="middle" fontSize={10} fill={paint.ink}>merge</text>
+            </g>
+          )}
         </g>
       ))}
       {/* Casings first, then lines, then labels: later lines never cut earlier ones. */}
