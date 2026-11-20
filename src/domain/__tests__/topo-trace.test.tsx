@@ -7,7 +7,7 @@ import { newDesign } from '../design/factory';
 import { newPlacement } from '../design/placement';
 import type { RackDesign } from '../design/types';
 import type { DcLayout } from '../layout/types';
-import { cablePairs, defaultCollapsed, moveBlocks, rackPortLayout, topBlockOf, traceDrawing, traceTopology, tracePortKey } from '../layout/topo-trace';
+import { bypassPassThrough, cablePairs, defaultCollapsed, moveBlocks, rackPortLayout, topBlockOf, traceDrawing, traceTopology, tracePortKey } from '../layout/topo-trace';
 import { TraceView } from '../../features/layout/trace-view';
 import { TracePanel } from '../../features/layout/trace-panel';
 
@@ -170,6 +170,17 @@ describe('topo tracing', () => {
   it('mgmt / console / power ports are endpoints: traffic does not cross a switch through its mgmt port', () => {
     const r = traceTopology(lib, designs, layout, { assignmentId: 'r1', ports: [{ placementId: 'sw', portRef: 'mgmt/1' }] });
     expect(r.links).toEqual([]);
+  });
+  it('hiding pass-through devices: housings vanish, switch to switch through them is one direct link', () => {
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1', ports: SW1 }, { assignmentId: 'r3', ports: [{ placementId: 'sw', portRef: 'qsfpdd/1' }] });
+    const by = bypassPassThrough(lib, r.links);
+    expect(by).toHaveLength(1);
+    expect(by[0]).toMatchObject({ a: key('r1', 'sw', 'qsfpdd/1'), b: key('r3', 'sw', 'qsfpdd/1'), kind: 'cross' });
+    const t = { id: 't', name: 'x', layoutId: 'l', a: { assignmentId: 'r1', ports: SW1 }, ...r };
+    const d = traceDrawing(lib, designs, layout, t, new Set(), true);
+    expect(d.nodes.map((n) => n.label).sort()).toEqual(['SW1', 'SW1']);
+    expect(d.edges).toHaveLength(1);
+    expect(d.nodes.map((n) => n.column).sort()).toEqual([0, 1]);
   });
   it('side picker layout lists every cable port of every device (not only cross-rack ones)', () => {
     const l = rackPortLayout(lib, d1);

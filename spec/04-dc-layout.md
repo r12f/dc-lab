@@ -232,4 +232,7 @@ for problems.
   group block one level up (`16x GPU Rack`); folded it shows one summary (`16 racks · 192 devices`), unfolded the
   rack blocks inside it. Groups start folded. **Drag** a top-level block (anywhere on it) to
   move it with everything inside; lines re-route to follow and the drawing grows to fit. Moves are kept per trace
-  for the session; **↺ Reset layout** (canvas toolbar, view controls; enabled once a block was moved) puts every block back. **Export SVG** exports the shown trace.
+  for the session; **↺ Reset layout** (canvas toolbar, view controls; enabled once a block was moved) puts every block back. **Hide pass-through** (latch in the canvas toolbar while a trace is shown, kept for the session) leaves
+  out devices with pass-through groups (fiber housings, patch panels): each chain through them becomes ONE direct link
+  between the ports at its ends (e.g. switch ↔ switch), typed `via <cables of the chain>`, solid when any part is
+  cross-rack. **Export SVG** exports the shown trace.

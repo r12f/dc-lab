@@ -44,6 +44,8 @@ export function LayoutModule() {
   const allTraces = useTraces((s) => s.traces);
   const traceOffsets = useTraces((s) => s.offsets);
   const resetOffsets = useTraces((s) => s.resetOffsets);
+  const hidePass = useTraces((s) => s.hidePass);
+  const setHidePass = useTraces((s) => s.setHidePass);
   const [sides, setSides] = useState<CrossSides>({});
   const [hiddenView, setHiddenView] = useState<Set<string>>(new Set());
   const [picked, setPicked] = useState<string>();
@@ -103,6 +105,11 @@ export function LayoutModule() {
             fitKey={`${layout.id}:${layout.room.widthMm}x${layout.room.depthMm}:${layout.viewRotation ?? 0}:${shownTrace?.id ?? ''}`}
             toolbar={<LayoutToolbar layout={layout} editor={editor} selection={sel} onSelect={setSel} />}
             viewControls={<>
+              {shownTrace && (
+                <Button variant={hidePass ? 'primary' : 'default'} aria-pressed={hidePass}
+                  title={hidePass ? 'Show fiber housings / patch panels again' : 'Hide fiber housings / patch panels: link straight through them'}
+                  onClick={() => setHidePass(!hidePass)}>Hide pass-through</Button>
+              )}
               {shownTrace && (
                 <Button disabled={!Object.keys(traceOffsets[shownTrace.id] ?? {}).length}
                   title="Put every dragged block back in its automatic place" onClick={() => resetOffsets(shownTrace.id)}>↺ Reset layout</Button>

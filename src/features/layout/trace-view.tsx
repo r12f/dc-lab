@@ -29,8 +29,9 @@ export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }
   /** Blocks collapsed at first (default: the big ones). */
   initialCollapsed?: Set<string>;
 }) {
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => initialCollapsed ?? defaultCollapsed(lib, designs, layout, trace));
-  useEffect(() => setCollapsed(defaultCollapsed(lib, designs, layout, trace)), [trace.id]);
+  const hidePass = useTraces((s) => s.hidePass);
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => initialCollapsed ?? defaultCollapsed(lib, designs, layout, trace, hidePass));
+  useEffect(() => setCollapsed(defaultCollapsed(lib, designs, layout, trace, hidePass)), [trace.id, hidePass]);
   const toggle = (k: string) => setCollapsed((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
   const saved = useTraces((s) => s.offsets[trace.id]);
   const setOffset = useTraces((s) => s.setOffset);
@@ -39,7 +40,7 @@ export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }
   const moved = useRef(false);
   const svgEl = useRef<SVGSVGElement | null>(null);
   const offsets = { ...saved, ...(drag ? { [drag.key]: drag.o } : {}) };
-  const base = traceDrawing(lib, designs, layout, trace, collapsed);
+  const base = traceDrawing(lib, designs, layout, trace, collapsed, hidePass);
   const d = moveBlocks(base, offsets);
   /** Drawing coordinates of a pointer (CSS zoom-safe via the screen CTM). */
   const toSvg = (e: { clientX: number; clientY: number }) => {
@@ -82,7 +83,7 @@ export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }
     if (typeof ref === 'function') ref(el);
     else if (ref) (ref as { current: SVGSVGElement | null }).current = el;
   };
-  const mediaName = (id: string) => lib.cableMedia.get(id)?.name ?? id;
+  const mediaName = (id: string) => lib.cableMedia.get(id)?.name ?? id.replace(/^via:/, 'via ');
   const byKey = new Map(d.nodes.map((n) => [n.key, n]));
   const G = TRACE_GEOM;
   const title = 50;

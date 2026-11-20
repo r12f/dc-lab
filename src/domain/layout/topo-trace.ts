@@ -376,9 +376,46 @@ export const TRACE_COLLAPSE_OVER = 8;
 
 const deviceKey = (portKey: string) => { const p = parseTracePortKey(portKey); return `${p.assignmentId}#${p.placementId}`; };
 
+/**
+ * Links with the pass-through devices (fiber housings, patch panels) taken out: every chain of pass-through ports
+ * (front ↔ rear twins, trunks between housings) is followed, and the ports at its two ends — a switch / server port on
+ * each side — get one direct link. Its type names the cables of the chain ("Y cable → trunk → Y cable"), cross-rack
+ * when any part was. Links that touch no pass-through port are kept as they are.
+ */
+export function bypassPassThrough(lib: Library, links: TraceLink[]): TraceLink[] {
+  const pass = new Set(links.filter((l) => l.kind === 'pass').flatMap((l) => [l.a, l.b]));
+  if (!pass.size) return links;
+  // Union-find over pass-through ports joined by any link between two of them.
+  const parent = new Map<string, string>();
+  const find = (x: string): string => { const p = parent.get(x) ?? x; if (p === x) return x; const r = find(p); parent.set(x, r); return r; };
+  for (const l of links) if (pass.has(l.a) && pass.has(l.b)) parent.set(find(l.a), find(l.b));
+  // Per chain: the outside ports touching it, the cable types and whether any part is cross-rack.
+  const chains = new Map<string, { ends: Set<string>; media: Set<string>; cross: boolean }>();
+  const chain = (k: string) => { const r = find(k); let c = chains.get(r); if (!c) { c = { ends: new Set(), media: new Set(), cross: false }; chains.set(r, c); } return c; };
+  const out: TraceLink[] = [];
+  for (const l of links) {
+    const [pa, pb] = [pass.has(l.a), pass.has(l.b)];
+    if (!pa && !pb) { out.push(l); continue; }
+    const c = chain(pa ? l.a : l.b);
+    if (pa !== pb) c.ends.add(pa ? l.b : l.a);
+    if (l.mediaId) c.media.add(lib.cableMedia.get(l.mediaId)?.name ?? l.mediaId);
+    if (l.kind === 'cross') c.cross = true;
+  }
+  for (const [r, c] of chains) {
+    const ends = [...c.ends].sort();
+    const via = [...c.media].sort().join(' + ') || 'pass-through';
+    for (let i = 0; i < ends.length; i++) {
+      for (let j = i + 1; j < ends.length; j++) {
+        out.push({ a: ends[i], b: ends[j], kind: c.cross ? 'cross' : 'cable', mediaId: `via:${via}`, cable: `chain/${r}/${ends[i]}/${ends[j]}` });
+      }
+    }
+  }
+  return out;
+}
+
 /** Collapse keys (`assignmentId@column`) of the blocks that start collapsed: those with many devices. */
-export function defaultCollapsed(lib: Library, designs: DesignLookup, layout: DcLayout, trace: TopoTrace): Set<string> {
-  const d = traceDrawing(lib, designs, layout, trace, new Set());
+export function defaultCollapsed(lib: Library, designs: DesignLookup, layout: DcLayout, trace: TopoTrace, hidePass = false): Set<string> {
+  const d = traceDrawing(lib, designs, layout, trace, new Set(), hidePass);
   // Design groups start collapsed, and so do big racks (seen when a group is opened).
   return new Set(d.racks.filter((r) => r.racks > 1 || r.devices > TRACE_COLLAPSE_OVER).map((r) => r.key));
 }
@@ -396,14 +433,17 @@ function summary(nodes: TraceNode[]): string {
  * collapsed block shows one summary box; its devices' edges attach to it (summed), edges inside it are dropped.
  * Same-column edges bracket out to the left on lanes that never overlap; columns widen to fit the lanes.
  */
-export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayout, trace: TopoTrace, collapsed: ReadonlySet<string> = new Set()): TraceDrawing {
+export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayout, trace0: TopoTrace, collapsed: ReadonlySet<string> = new Set(), hidePass = false): TraceDrawing {
   const G = TRACE_GEOM;
+  // Hiding pass-through devices: their chains become direct links; their ports are not drawn (nor start / end there).
+  const passPorts = hidePass ? new Set(trace0.links.filter((l) => l.kind === 'pass').flatMap((l) => [l.a, l.b])) : new Set<string>();
+  const trace = hidePass ? { ...trace0, links: bypassPassThrough(lib, trace0.links), start: trace0.start.filter((k) => !passPorts.has(k)) } : trace0;
   const ports = new Map<string, Set<string>>();
   const touch = (k: string) => { const d = deviceKey(k); const s = ports.get(d) ?? new Set(); s.add(k); ports.set(d, s); };
   for (const l of trace.links) { touch(l.a); touch(l.b); }
   const startDevs = new Set(trace.start.map(deviceKey).filter((d) => ports.has(d)));
   if (!ports.size) for (const k of trace.start) { touch(k); startDevs.add(deviceKey(k)); }
-  const bSide = trace.b ? new Set(sidePorts(lib, designs, layout, trace.b).map(deviceKey)) : new Set<string>();
+  const bSide = trace.b ? new Set(sidePorts(lib, designs, layout, trace.b).filter((k) => !passPorts.has(k)).map(deviceKey)) : new Set<string>();
   // Device-level edges (links inside one device, e.g. pass-through, are not drawn).
   const devEdges = new Map<string, { a: string; b: string; mediaId: string; ends: [Set<string>, Set<string>]; cables: Set<string>; kinds: TraceLinkKind[] }>();
   for (const l of trace.links) {
@@ -526,7 +566,7 @@ export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayo
     const [a, b] = [x, y].sort();
     const ek = `${a}|${b}|${e.mediaId}`;
     const m = lib.cableMedia.get(e.mediaId);
-    const t = edgeMap.get(ek) ?? { a, b, mediaId: e.mediaId, media: m?.name ?? e.mediaId, color: m?.color ?? '#64748b', count: 0, cables: 0, kinds: [], index: 0, of: 1 };
+    const t = edgeMap.get(ek) ?? { a, b, mediaId: e.mediaId, media: m?.name ?? e.mediaId.replace(/^via:/, ''), color: m?.color ?? '#64748b', count: 0, cables: 0, kinds: [], index: 0, of: 1 };
     t.count += Math.max(e.ends[0].size, e.ends[1].size);
     const seenCables = cablesOf.get(ek) ?? new Set<string>();
     for (const c of e.cables) seenCables.add(c);

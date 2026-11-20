@@ -10,6 +10,9 @@ interface TraceState {
   openId?: string;
   /** trace id -> top-level block key -> offset from its automatic position. */
   offsets: Record<string, Record<string, BlockOffset>>;
+  /** Trace drawings leave out pass-through devices (fiber housings, patch panels), linking through them. */
+  hidePass: boolean;
+  setHidePass(on: boolean): void;
   add(t: TopoTrace): void;
   remove(id: string): void;
   rename(id: string, name: string): void;
@@ -21,6 +24,8 @@ interface TraceState {
 export const useTraces = create<TraceState>()((set) => ({
   traces: [],
   offsets: {},
+  hidePass: false,
+  setHidePass: (hidePass) => set({ hidePass }),
   add: (t) => set((s) => ({ traces: [...s.traces, t], openId: t.id })),
   remove: (id) => set((s) => {
     const { [id]: _gone, ...offsets } = s.offsets;
