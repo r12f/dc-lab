@@ -68,7 +68,10 @@ describe('topo tracing', () => {
     const t = { id: 't', name: 'R1 → all', layoutId: 'l', a: { assignmentId: 'r1' }, ...r };
     const d = traceDrawing(lib, designs, layout, t);
     expect(d.nodes.filter((n) => n.side === 'a').map((n) => n.label).sort()).toEqual(['FH1', 'SW1', 'SW2']);
-    expect(d.nodes.find((n) => n.label === 'SW1' && n.assignmentId === 'r3')?.column).toBe(2);
+    // Fiber housings add no level: r1 SW1 -> FH1 -> trunk -> r3 FH1 -> SW1 is one hop; each housing sits in the column
+    // of the switch it serves.
+    const colOf = (rack: string, label: string) => d.nodes.find((n) => n.label === label && n.assignmentId === rack)?.column;
+    expect([colOf('r1', 'SW1'), colOf('r1', 'FH1'), colOf('r3', 'FH1'), colOf('r3', 'SW1')]).toEqual([0, 0, 1, 1]);
     const svg = renderToStaticMarkup(<TraceView lib={lib} designs={designs} layout={layout} trace={t} />);
     expect(svg.match(/<polyline/g)!.length).toBe(d.edges.length * 3);
     // One line per cable type between two boxes, with its cable count; hover tells count and type.
@@ -88,7 +91,8 @@ describe('topo tracing', () => {
     expect(n).toHaveLength(1);
     expect(n[0].devices).toBe(3);
     expect(n[0].sub).toMatch(/2x .*1x /);
-    expect(shut.edges.some((e) => e.lane !== undefined)).toBe(false);
+    // Edges inside the collapsed block are gone (r1's same-column brackets).
+    expect(shut.edges.some((e) => e.lane !== undefined && e.a.includes('r1') && e.b.includes('r1'))).toBe(false);
     expect(shut.racks.find((x) => x.key === 'r1@0')).toMatchObject({ collapsed: true, devices: 3 });
   });
   it('racks of one design in a column merge into one block', () => {
@@ -162,6 +166,10 @@ describe('topo tracing', () => {
     const r = traceTopology(lib, designs, layout, { assignmentId: 'r1' }, { assignmentId: 'r3' });
     const devs = new Set(r.links.flatMap((l) => [l.a, l.b]).filter((k) => k.startsWith('r1#')).map((k) => k.split('#')[1]));
     expect([...devs].sort()).toEqual(['fh', 'sw', 'sw2']);
+  });
+  it('mgmt / console / power ports are endpoints: traffic does not cross a switch through its mgmt port', () => {
+    const r = traceTopology(lib, designs, layout, { assignmentId: 'r1', ports: [{ placementId: 'sw', portRef: 'mgmt/1' }] });
+    expect(r.links).toEqual([]);
   });
   it('side picker layout lists every cable port of every device (not only cross-rack ones)', () => {
     const l = rackPortLayout(lib, d1);

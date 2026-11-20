@@ -199,7 +199,9 @@ for problems.
 
 - **Tracing** (third segment of the `Layout | Cabling | Tracing` view switch) traces what is connected over in-rack
   cables, cross-rack cables, pass-through port groups (from the device model: port i continues as port i on the other face only) and
-  THROUGH devices: a switch or server reached on one port continues on all its other cabled ports.
+  THROUGH devices on their DATA ports: a switch or server reached on a data port continues on all its other data
+  ports. Mgmt, console and power ports are endpoints (a switch's mgmt port does not forward to its data ports, so the
+  management network and PDUs never join otherwise separate paths).
 - Right panel, shaped like the cross-rack cabling one: select a rack on the plan, **Set A** / **Set B** (⇄ swaps
   with the picks). Each side column lists EVERY cable port of every device of its rack (not only cross-rack ones),
   laid out like the cabling view (devices top to bottom, faces, groups on the faceplate grid). Pick ports by press and
@@ -216,7 +218,9 @@ for problems.
   all-to-all on shuffles.
 - Left sidebar in tracing mode: a **Traces** pane (instead of the rack palette) lists the session's traces of the
   layout (not saved in the project); click one to show it on the canvas, again to go back to the plan, ✕ deletes.
-- Trace drawing: one box per device with a traced port, in columns by hops from A (A and B devices outlined in the
+- Trace drawing: one box per device with a traced port, in columns by hops from A (devices with pass-through groups add no level: a link to
+  or from one inside its own rack costs 0, so a fiber housing sits in the column of the device it serves and
+  SW → FH → trunk → FH → server is one hop) (A and B devices outlined in the
   accent, labelled `A ·` / `B ·`), devices of one rack inside a rack box
   (titled `<design name> · <rack label>`, e.g. `OVL3 Compute Rack · Row1-09`; inside a design group just the rack label); one line per cable TYPE per box pair, each
   type in its own colour (legend under the title) and on its own offset so types never share a line; the badge is

@@ -33,7 +33,15 @@ export interface TopoTrace {
   links: TraceLink[];
 }
 
-export const tracePortKey = (p: TracePort) => `${p.assignmentId}#${p.placementId}#${p.portRef}`;
+/**
+ * Key of a port in the trace graph. Ports with several connectors (a housing slot with 2x MMC-16) are separate
+ * per connector (`~2`): connector A of a pass-through slot only continues to connector A on the other face.
+ */
+export const tracePortKey = (p: TracePort, connector?: number) => `${p.assignmentId}#${p.placementId}#${p.portRef}${connector ? `~${connector}` : ''}`;
+
+/** Connector legs of a group that the trace keeps apart (only multi-connector ports). */
+const legsOf = (g: PortGroup | undefined) => ((g?.connectorsPerPort ?? 1) > 1 ? g!.connectorsPerPort! : 0);
+const groupOfRef = (portRef: string) => portRef.split('~')[0].split('/')[0];
 
 export function parseTracePortKey(key: string): TracePort {
   const [assignmentId, placementId, ...rest] = key.split('#');
@@ -65,11 +73,19 @@ export function sidePorts(lib: Library, designs: DesignLookup, layout: DcLayout,
   const a = layout.assignments.find((x) => x.id === side.assignmentId);
   const design = a && designs(a.designId);
   if (!a || !design) return [];
-  if (side.ports?.length) return side.ports.map((x) => tracePortKey({ assignmentId: a.id, ...x }));
+  // One key per connector of a multi-connector port.
+  const keys = (placementId: string, portRef: string) => {
+    const pl = design.placements.find((x) => x.id === placementId);
+    const g = pl && lib.devices.get(pl.deviceId)?.ports.find((x) => x.id === groupOfRef(portRef));
+    const n = legsOf(g);
+    const base = { assignmentId: a.id, placementId, portRef };
+    return n ? Array.from({ length: n }, (_, i) => tracePortKey(base, i + 1)) : [tracePortKey(base)];
+  };
+  if (side.ports?.length) return side.ports.flatMap((x) => keys(x.placementId, x.portRef));
   const out: string[] = [];
   for (const p of design.placements) {
     const d = lib.devices.get(p.deviceId);
-    if (d) for (const portRef of devicePorts(d, false)) out.push(tracePortKey({ assignmentId: a.id, placementId: p.id, portRef }));
+    if (d) for (const portRef of devicePorts(d, false)) out.push(...keys(p.id, portRef));
   }
   return out;
 }
@@ -134,14 +150,24 @@ export function traceGraph(lib: Library, designs: DesignLookup, layout: DcLayout
       adj.set(u, l);
     }
   };
+  // assignment -> placement -> group id -> connectors kept apart (multi-connector groups only).
+  const legs = new Map<string, number>();
+  for (const a of layout.assignments) {
+    for (const p of designs(a.designId)?.placements ?? []) {
+      for (const g of lib.devices.get(p.deviceId)?.ports ?? []) if (legsOf(g)) legs.set(`${a.id}#${p.id}#${g.id}`, legsOf(g));
+    }
+  }
+  const endKey = (aid: string, e: CableEndpoint) => {
+    const multi = legs.has(`${aid}#${e.placementId}#${groupOfRef(e.portRef)}`);
+    return tracePortKey({ assignmentId: aid, placementId: e.placementId, portRef: e.portRef }, multi ? e.connector ?? 1 : undefined);
+  };
   const cable = (aid: string, from: CableEndpoint[], to: CableEndpoint[], mediaId: string, kind: TraceLinkKind, bid: string, cableId: string) => {
     const m = lib.cableMedia.get(mediaId);
     for (const [i, j] of cablePairs(from.length, to.length, m?.mapping === 'shuffle')) {
       const x = from[i];
       const y = to[j];
       if (!x?.portRef || !y?.portRef) continue;
-      add({ kind, mediaId, cable: cableId, a: tracePortKey({ assignmentId: aid, placementId: x.placementId, portRef: x.portRef }),
-        b: tracePortKey({ assignmentId: bid, placementId: y.placementId, portRef: y.portRef }) });
+      add({ kind, mediaId, cable: cableId, a: endKey(aid, x), b: endKey(bid, y) });
     }
   };
   for (const a of layout.assignments) {
@@ -153,9 +179,13 @@ export function traceGraph(lib: Library, designs: DesignLookup, layout: DcLayout
       const d = lib.devices.get(p.deviceId);
       for (const g of d?.ports ?? []) {
         if (!g.passThrough) continue;
+        // Connector c of port i continues as connector c of port i (multi-connector slots per connector).
+        const cs = legsOf(g) ? Array.from({ length: legsOf(g) }, (_, k) => k + 1) : [undefined];
         for (let i = 1; i <= g.count; i++) {
-          add({ kind: 'pass', a: tracePortKey({ assignmentId: a.id, placementId: p.id, portRef: formatPortRef({ groupId: g.id, index: i }) }),
-            b: tracePortKey({ assignmentId: a.id, placementId: p.id, portRef: formatPortRef({ groupId: g.passThrough.rearId, index: i }) }) });
+          for (const c of cs) {
+            add({ kind: 'pass', a: tracePortKey({ assignmentId: a.id, placementId: p.id, portRef: formatPortRef({ groupId: g.id, index: i }) }, c),
+              b: tracePortKey({ assignmentId: a.id, placementId: p.id, portRef: formatPortRef({ groupId: g.passThrough.rearId, index: i }) }, c) });
+          }
         }
       }
     }
@@ -169,25 +199,30 @@ export function traceGraph(lib: Library, designs: DesignLookup, layout: DcLayout
 }
 
 /**
- * Node of the walk a port belongs to: its device (traffic crosses a switch / server from any port to any other), or
- * the port itself when it is on a pass-through group (it only continues as the same port on the other face).
+ * Node of the walk a port belongs to: its device for data ports (traffic crosses a switch / server from any data port
+ * to any other), else the port itself (pass-through ports continue only to their twin; mgmt / console / power ports
+ * are endpoints).
  */
 type NodeOf = (portKey: string) => string;
 
 function nodeFn(lib: Library, designs: DesignLookup, layout: DcLayout): NodeOf {
-  // assignment#placement -> ids of its pass-through groups (both faces).
-  const pass = new Map<string, Set<string>>();
+  // assignment#placement -> port group id -> whether traffic crosses the device through it: DATA ports only. Mgmt,
+  // console and power ports are reached but never transited (else every switch would connect to every other through
+  // the management switch or the PDU feeding them); pass-through groups only continue to their own twin port.
+  const transit = new Map<string, Map<string, boolean>>();
   for (const a of layout.assignments) {
     for (const p of designs(a.designId)?.placements ?? []) {
       const d = lib.devices.get(p.deviceId);
-      if (!hasPassThrough(d)) continue;
-      pass.set(`${a.id}#${p.id}`, new Set(d!.ports.flatMap((g) => (g.passThrough ? [g.id, g.passThrough.rearId] : []))));
+      if (!d) continue;
+      const m = new Map<string, boolean>();
+      for (const g of cableGroupsOnFace(d, 'front').concat(cableGroupsOnFace(d, 'rear'))) m.set(g.id, g.role === 'data' && !g.passThrough && !g.passThroughOf);
+      transit.set(`${a.id}#${p.id}`, m);
     }
   }
   return (k) => {
     const p = parseTracePortKey(k);
     const d = `${p.assignmentId}#${p.placementId}`;
-    return pass.get(d)?.has(p.portRef.split('/')[0]) ? k : d;
+    return transit.get(d)?.get(groupOfRef(p.portRef)) ? d : k;
   };
 }
 
@@ -220,26 +255,36 @@ function expand(adj: Adj, start: string[], nodeOf: NodeOf): { ports: Set<string>
   return { ports, links: [...links] };
 }
 
-/** Hop distance (breadth first, over nodes) from the nodes of `start` to every node reached. */
+/**
+ * Cost of entering a node: devices TRANSITED count 1; pass-through ports (a fiber housing adds no hop) and the nodes of
+ * the two sides themselves count 0, so a path is measured in devices crossed between A and B whichever A / B port
+ * (server or housing) it starts and ends on.
+ */
+const nodeWeight = (n: string) => (free.has(n) ? 0 : 1);
+let free = new Set<string>();
+
+/**
+ * Distance from the nodes of `start` to every node reached, counted in DEVICES crossed (node-weighted, 0-1 breadth
+ * first): pass-through ports weigh 0, so SW -> FH -> trunk -> FH -> SW is one hop, as on the drawing.
+ */
 function hops(adj: Adj, start: string[], nodeOf: NodeOf): Map<string, number> {
   const members = new Map<string, string[]>();
   for (const k of adj.keys()) { const n = nodeOf(k); members.set(n, [...(members.get(n) ?? []), k]); }
   const dist = new Map<string, number>();
-  let layer = [...new Set(start.map(nodeOf))];
-  for (const n of layer) dist.set(n, 0);
-  for (let d = 1; layer.length; d++) {
-    const next: string[] = [];
-    for (const n of layer) {
-      for (const k of members.get(n) ?? []) {
-        for (const { to } of adj.get(k) ?? []) {
-          const m = nodeOf(to);
-          if (dist.has(m)) continue;
-          dist.set(m, d);
-          next.push(m);
-        }
+  const deque: string[] = [];
+  for (const n of new Set(start.map(nodeOf))) { dist.set(n, nodeWeight(n)); deque.push(n); }
+  while (deque.length) {
+    const n = deque.shift()!;
+    const dn = dist.get(n)!;
+    for (const k of members.get(n) ?? []) {
+      for (const { to } of adj.get(k) ?? []) {
+        const m = nodeOf(to);
+        const w = nodeWeight(m);
+        if (dn + w >= (dist.get(m) ?? Infinity)) continue;
+        dist.set(m, dn + w);
+        if (w === 0) deque.unshift(m); else deque.push(m);
       }
     }
-    layer = next;
   }
   return dist;
 }
@@ -247,8 +292,8 @@ function hops(adj: Adj, start: string[], nodeOf: NodeOf): Map<string, number> {
 /**
  * Traces from side A outward, breadth first, over cables, cross-rack cables, pass-through panels and through devices
  * (a switch reached on one port continues on all its others). Without B: everything connected to A. With B: the
- * SHORTEST paths from A to B — the walk stops at the first layer that reaches B, and only links on a shortest path
- * are kept (hops from A to one end + 1 + hops from the other end to B = the A-to-B distance).
+ * SHORTEST paths from A to B, counted in devices crossed (fiber housings / pass-through ports cost nothing): a link is
+ * kept when the devices from A up to one end plus from the other end on to B equal the A-to-B distance.
  */
 export function traceTopology(lib: Library, designs: DesignLookup, layout: DcLayout, a: TraceSide, b?: TraceSide): { start: string[]; links: TraceLink[] } {
   const adj = traceGraph(lib, designs, layout);
@@ -256,9 +301,11 @@ export function traceTopology(lib: Library, designs: DesignLookup, layout: DcLay
   const start = sidePorts(lib, designs, layout, a);
   if (!b) return { start, links: expand(adj, start, nodeOf).links };
   const end = sidePorts(lib, designs, layout, b);
+  free = new Set([...[...adj.values()].flat().filter((x) => x.link.kind === 'pass').flatMap((x) => [x.link.a, x.link.b]), ...[...start, ...end].map(nodeOf)]);
   const dA = hops(adj, start, nodeOf);
   const dB = hops(adj, end, nodeOf);
   const goal = Math.min(...[...new Set(end.map(nodeOf))].map((n) => dA.get(n) ?? Infinity));
+  // A link u-v is on a shortest path when the devices crossed from A up to u plus from v on to B add up to the goal.
   if (!Number.isFinite(goal)) return { start, links: [] };
   // Inside each side, everything cabled within it is shown too (a rack side's servers behind its fiber housing):
   // the path reaches the side's nearest port, the side's own links show how it fans out to the rest.
@@ -267,7 +314,7 @@ export function traceTopology(lib: Library, designs: DesignLookup, layout: DcLay
   const seen = new Set<TraceLink>();
   for (const l of [...adj.values()].flat().map((x) => x.link)) {
     const [u, v] = [nodeOf(l.a), nodeOf(l.b)];
-    const on = (x: string, y: string) => (dA.get(x) ?? Infinity) + 1 + (dB.get(y) ?? Infinity) === goal;
+    const on = (x: string, y: string) => (dA.get(x) ?? Infinity) + (dB.get(y) ?? Infinity) === goal;
     const within = (s: Set<string>) => s.has(l.a) && s.has(l.b);
     if (on(u, v) || on(v, u) || within(sideA) || within(sideB)) seen.add(l);
   }
@@ -372,15 +419,58 @@ export function traceDrawing(lib: Library, designs: DesignLookup, layout: DcLayo
     if (!e.kinds.includes(l.kind)) e.kinds.push(l.kind);
     devEdges.set(ek, e);
   }
-  // Columns: hops from the A devices.
-  const col = new Map<string, number>([...startDevs].map((d) => [d, 0]));
-  const queue = [...startDevs];
-  const nbr = new Map<string, string[]>();
-  for (const e of devEdges.values()) { nbr.set(e.a, [...(nbr.get(e.a) ?? []), e.b]); nbr.set(e.b, [...(nbr.get(e.b) ?? []), e.a]); }
-  while (queue.length) {
-    const u = queue.shift()!;
-    for (const v of nbr.get(u) ?? []) if (!col.has(v)) { col.set(v, col.get(u)! + 1); queue.push(v); }
+  // Columns: devices crossed from A, measured on the PORT graph (a housing is many independent ports, not one hub —
+  // as a device node it would join unrelated paths at no cost). Pass-through ports cost 0, so cables through fiber
+  // housings add no level; then each pass-through device takes the column of the device it serves in its own rack.
+  const walkNode = nodeFn(lib, designs, layout);
+  const passPort = new Set(trace.links.filter((l) => l.kind === 'pass').flatMap((l) => [l.a, l.b]));
+  const portAdj = new Map<string, string[]>();
+  for (const l of trace.links) { portAdj.set(l.a, [...(portAdj.get(l.a) ?? []), l.b]); portAdj.set(l.b, [...(portAdj.get(l.b) ?? []), l.a]); }
+  const members = new Map<string, string[]>();
+  for (const k of portAdj.keys()) { const n = walkNode(k); members.set(n, [...(members.get(n) ?? []), k]); }
+  const startNodes = new Set(trace.start.map(walkNode));
+  const w = (n: string) => (passPort.has(n) || startNodes.has(n) ? 0 : 1);
+  const dist = new Map<string, number>();
+  const dq: string[] = [];
+  for (const n of startNodes) if (members.has(n)) { dist.set(n, 0); dq.push(n); }
+  while (dq.length) {
+    const n = dq.shift()!;
+    for (const k of members.get(n) ?? []) {
+      for (const to of portAdj.get(k) ?? []) {
+        const m = walkNode(to);
+        const c = dist.get(n)! + w(m);
+        if (c >= (dist.get(m) ?? Infinity)) continue;
+        dist.set(m, c);
+        if (w(m) === 0) dq.unshift(m); else dq.push(m);
+      }
+    }
   }
+  const col = new Map<string, number>();
+  for (const k of ports.keys()) col.set(k, Infinity);
+  for (const [n, c] of dist) { const dk = deviceKey(n.includes('#') && n.split('#').length === 3 ? n : `${n}#x`); col.set(dk, Math.min(col.get(dk) ?? Infinity, c)); }
+  // A pass-through device sits with the device it serves in its rack (nearest column), not where its far side lands.
+  const rackOf = (k: string) => k.split('#')[0];
+  for (const k of ports.keys()) {
+    const [aid, pid] = k.split('#');
+    const a = layout.assignments.find((x) => x.id === aid);
+    const pl = a && designs(a.designId)?.placements.find((x) => x.id === pid);
+    if (!hasPassThrough(pl ? lib.devices.get(pl.deviceId) : undefined)) continue;
+    const served = trace.links.flatMap((l) => (deviceKey(l.a) === k ? [l.b] : deviceKey(l.b) === k ? [l.a] : []))
+      .map(deviceKey).filter((d) => d !== k && rackOf(d) === rackOf(k) && Number.isFinite(col.get(d)));
+    if (served.length) col.set(k, Math.min(...served.map((d) => col.get(d)!)));
+  }
+  // Devices only reached over an endpoint port (a mgmt switch cabled to servers' BMC ports) sit one column after the
+  // device they hang off.
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const l of trace.links) {
+      const [x, y] = [deviceKey(l.a), deviceKey(l.b)];
+      for (const [u, v] of [[x, y], [y, x]]) {
+        if (Number.isFinite(col.get(u)) && !Number.isFinite(col.get(v))) { col.set(v, col.get(u)! + 1); changed = true; }
+      }
+    }
+  }
+  for (const [k, c] of col) if (!Number.isFinite(c)) col.set(k, 0);
   const devNodes: TraceNode[] = [];
   for (const [key, set] of ports) {
     const [assignmentId, placementId] = key.split('#');
