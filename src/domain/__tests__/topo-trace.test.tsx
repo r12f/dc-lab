@@ -125,6 +125,10 @@ describe('topo tracing', () => {
     expect(m.racks.find((x) => x.key === blk.key)).toMatchObject({ x: blk.x + 50, y: blk.y + 400 });
     expect(m.nodes.find((n) => n.key === node.key)).toMatchObject({ x: node.x + 50, y: node.y + 400 });
     expect(m.nodes.filter((n) => n.assignmentId === 'r1')).toEqual(d.nodes.filter((n) => n.assignmentId === 'r1'));
+    // A dragged block is found again where it is drawn (pressing it again to fold / drag must work).
+    const movedNode = m.nodes.find((n) => n.key === node.key)!;
+    expect(topBlockOf(m, movedNode)?.key).toBe(blk.key);
+    expect(topBlockOf(m, m.racks.find((x) => x.key === blk.key)!)?.key).toBe(blk.key);
     expect(m.height).toBeGreaterThan(blk.y + 400 + blk.h);
   });
   it('every drawn line has cables on it; links without a cable id count by port, never 0', () => {

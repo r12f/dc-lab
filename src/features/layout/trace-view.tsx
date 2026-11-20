@@ -50,12 +50,15 @@ export function TraceView({ ref, lib, designs, layout, trace, initialCollapsed }
   };
   /** Press on a block (header, body or a box in it): dragging moves the whole top-level block. */
   const startDrag = (box: { x: number; y: number; w: number; h: number }) => (ev: ReactPointerEvent) => {
+    moved.current = false;
     if (ev.button !== 0) return;
-    const top = topBlockOf(base, box);
+    // `box` comes from the drawn (moved) drawing: find its block there, not in the unmoved one — a dragged block no
+    // longer sits where it was, so looking it up in `base` failed and left `moved` stuck (clicks stopped folding).
+    const shown = topBlockOf(d, box);
+    const top = shown && base.racks.find((r) => r.key === shown.key);
     if (!top) return;
     const start = toSvg(ev);
     const from = saved?.[top.key] ?? { dx: 0, dy: 0 };
-    moved.current = false;
     // Blocks stay inside the drawing's top-left corner (the drawing grows to the right / down).
     const clamp = (dx: number, dy: number) => ({ dx: Math.max(4 - top.x, dx), dy: Math.max(4 - top.y, dy) });
     const move = (e: PointerEvent) => {
