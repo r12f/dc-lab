@@ -37,6 +37,8 @@ export interface GroupEstimate {
   group: VGroup;
   /** Device type of the members, when set and in the library. */
   deviceId?: string;
+  /** Name of the breakout profile the members run (the device type's default when the group names none). */
+  profileName?: string;
   pools: PoolEstimate[];
 }
 
@@ -96,12 +98,12 @@ function estimateGroup(lib: Library, v: VirtualTopo, g: VGroup): GroupEstimate {
       optics: [...perOptic].map(([opticId, n]) => ({ opticId, perDevice: n, total: n * g.count })),
     };
   });
-  return { group: g, deviceId: hw.device?.id, pools };
+  return { group: g, deviceId: hw.device?.id, profileName: hw.profile?.name, pools };
 }
 
 /**
- * Estimated BOM of a virtual topology: each group's devices as its `device_type`, and the optic its `port_map` puts
- * in every cage its pools use. Lines merge by item type; the line's note is its derivation (`dt0 512 + t1 256`).
+ * Estimated BOM of a virtual topology: each group's devices as its `device_type`, and the optic its breakout profile
+ * puts in every cage (device port of the `port_map`) its pools use. Lines merge by item type; the line's note is its derivation (`dt0 512 + t1 256`).
  * Cables, housings, racks and power need the physical layout and are not estimated.
  */
 export function estimateTopoBom(lib: Library, v: VirtualTopo, s: TopoBomSettings): TopoBom {

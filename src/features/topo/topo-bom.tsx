@@ -33,8 +33,9 @@ function withKey(m: Record<string, string> | undefined, key: string, value: stri
 }
 
 /**
- * Pane under the virtual topology: what building it takes. Device types, port maps and optics come from the YAML
- * (`device_type`, `port_map`); the item bought for each line is picked here (saved with the topology).
+ * Pane under the virtual topology: what building it takes. Hardware comes from the YAML: `device_type`, its
+ * `breakout_profile` (modes and optics, Devices module) and `port_map`; the item bought for each line is picked here
+ * (saved with the topology).
  */
 export function TopoBomPane({ lib, topo, settings, onChange, filename, height }: Props) {
   const defs = useAppStore((s) => s.project.propertyDefs);
@@ -61,12 +62,12 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
             <table className="table topo-bom-hw">
               <thead>
                 <tr>
-                  <th>Group</th><th>Role</th><th className="num">Devices</th><th>Device type</th><th>Pool</th><th className="num">Speed</th>
+                  <th>Group</th><th>Role</th><th className="num">Devices</th><th>Device type</th><th>Breakout profile</th><th>Pool</th><th className="num">Speed</th>
                   <th className="num">Ports / device</th><th className="num">Cages / device</th><th>Optic per cage</th><th className="num">Optics</th>
                 </tr>
               </thead>
               <tbody>
-                {bom.groups.map(({ group: g, deviceId, pools }) => {
+                {bom.groups.map(({ group: g, deviceId, profileName, pools }) => {
                   const rows = pools.length ? pools : [undefined];
                   const device = lib.devices.get(deviceId);
                   return rows.map((p, i) => (
@@ -79,6 +80,7 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
                           <td rowSpan={rows.length} className={device ? undefined : 'muted'} title={device?.id}>
                             {device ? device.name : g.deviceType ? `${g.deviceType} (unknown)` : 'no device_type'}
                           </td>
+                          <td rowSpan={rows.length} className={profileName ? undefined : 'muted'}>{profileName ?? (device ? 'unknown' : '')}</td>
                         </>
                       )}
                       {p ? (
