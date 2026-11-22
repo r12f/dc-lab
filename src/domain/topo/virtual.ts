@@ -33,6 +33,14 @@ export interface VLink {
   links?: number;
   /** Instance pairs (from instances that find a peer). */
   pairs?: number;
+  /** Devices in one from / to instance (after filters). */
+  fromSize?: number;
+  toSize?: number;
+  /** From instances per to instance (map fan-in; 1 without a map). */
+  fanIn?: number;
+  /** Ports one from / to device uses for this spec. */
+  fromPorts?: number;
+  toPorts?: number;
 }
 export interface Problem { line?: number; message: string }
 export interface VirtualTopo { name: string; groups: VGroup[]; links: VLink[]; problems: Problem[] }
@@ -176,6 +184,8 @@ export function parseVirtual(source: string): VirtualTopo {
     for (const [side, g, e] of [['from', ga, l.from], ['to', gb, l.to]] as const) {
       const need = devicePorts(l, side, a, b);
       const have = g.pools[e.ports] ?? 0;
+      if (side === 'from') { l.fromPorts = need; l.fromSize = a.size; } else { l.toPorts = need; l.toSize = b.size; }
+      l.fanIn = l.map.length ? Math.max(...l.map.map((m) => m.from.length)) : 1;
       if (need > have) problems.push({ message: `${l.name}: each ${g.name} device needs ${need} ports, pool ${e.ports} has ${have}` });
     }
   }

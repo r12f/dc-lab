@@ -79,26 +79,51 @@ topo:
     expect(y.server).toBeGreaterThan(y.t0);
     expect(y.t0).toBeGreaterThan(y.t1);
     expect(y.t1).toBeGreaterThan(y.t2);
-    expect(d.links).toHaveLength(3);
+    expect(d.labels).toHaveLength(3);
   });
-  it('draws each group as its sets of the chosen partition, with port pools on the linked edges', () => {
+  it('nests each group by the keys its links use (reached-by outer, reaches-with inner), pools on the edges', () => {
     const d = layoutDiagram(v);
     const t0 = d.boxes.find((b) => b.group.name === 't0')!;
-    expect(t0.partition).toBe('su');
-    expect(t0.sets.map((s) => s.label)).toEqual(['su 1', 'su 2', 'su 3', 'su 4']);
+    expect(t0.nesting).toEqual(['su', 'plane']);
+    expect(t0.sets.map((s) => s.label)).toEqual(['su 1', 'su 2', '+2']);
+    // Planes a map groups together sit side by side (1,5 -> 1; 2,6 -> 2; ...).
+    expect(t0.sets[0].children.map((s) => s.label)).toEqual(['plane 1', 'plane 5', 'plane 2', 'plane 6', 'plane 3', 'plane 7', 'plane 4', 'plane 8']);
+    // Leaf sets show their devices: 1-4, ellipsis, n past 6.
+    const su1 = d.boxes.find((b) => b.group.name === 'server')!.sets[0];
+    expect(su1.dots.map((x) => x.n)).toEqual([1, 2, 3, 4, null, 16]);
+    expect(d.boxes.find((b) => b.group.name === 'server')!.nesting).toEqual(['su']);
     expect(t0.pools.map((p) => `${p.name}:${p.side}:${p.slots.join('/')}`)).toEqual(['down:bottom:8/8', 'up:top:8']);
-    // A link ends on the pool strip it uses.
-    const up = t0.pools.find((p) => p.name === 'up')!;
-    const l = d.links.find((x) => x.name === 't0-t1')!;
-    expect(l.points[0][0]).toBeGreaterThan(t0.x + up.x);
-    expect(l.points[0][0]).toBeLessThan(t0.x + up.x + up.w);
-    expect(l.points[0][1]).toBe(t0.y + up.y);
   });
-  it('lets the partition and port pools be chosen; many sets collapse into +N', () => {
-    const d = layoutDiagram(v, { partition: { t0: 'plane', server: '' }, ports: false });
+  it('draws one line per connected set pair, following the key and the map', () => {
+    const d = layoutDiagram(v, { partition: { t0: 'plane' }, ports: true });
     const t0 = d.boxes.find((b) => b.group.name === 't0')!;
-    expect(t0.sets.map((s) => s.label)).toEqual(['plane 1', 'plane 2', 'plane 3', 'plane 4', 'plane 5', 'plane 6', 'plane 7', 'plane 8']);
+    const t1 = d.boxes.find((b) => b.group.name === 't1')!;
+    const t01 = d.links.filter((p) => p.name === 't0-t1' && !p.device);
+    // 8 plane pairs: the first drawn device to device (mesh 4 x 4 = 16 lines), 7 set to set.
+    expect(t01).toHaveLength(7);
+    expect(d.links.filter((p) => p.name === 't0-t1' && p.device)).toHaveLength(16);
+    const l01 = v.links.find((l) => l.name === 't0-t1')!;
+    expect([l01.fanIn, l01.fromSize, l01.toSize, l01.fromPorts, l01.toPorts]).toEqual([2, 4, 4, 4, 8]);
+    // T0 plane 5 lands on T1 plane 1 (map 1,5 -> 1).
+    const center = (g: typeof t0, label: string) => { const s = g.sets.find((x) => x.label === label)!; return [g.x + s.x, g.x + s.x + s.w]; };
+    const [p5a, p5b] = center(t0, 'plane 5'); const [q1a, q1b] = center(t1, 'plane 1');
+    const line = t01.find((p) => p.points[0][0] >= p5a && p.points[0][0] <= p5b)!;
+    expect(line.points[3][0]).toBeGreaterThanOrEqual(q1a);
+    expect(line.points[3][0]).toBeLessThanOrEqual(q1b);
+    // server-t0 by su: t0 shown by plane, so each su box of server goes to the t0 group box.
+    expect(d.links.filter((p) => p.name === 'server-t0')).toHaveLength(4);
+    // t1-t2 has no key on t2: every t1 plane to the t2 box.
+    expect(d.links.filter((p) => p.name === 't1-t2')).toHaveLength(4);
+  });
+  it('nests partitions outer > inner and lets ports be hidden; many sets collapse into +N', () => {
+    const d = layoutDiagram(v, { partition: { t0: 'su>plane', server: '' }, ports: false });
+    const t0 = d.boxes.find((b) => b.group.name === 't0')!;
+    expect(t0.sets.map((s) => s.label)).toEqual(['su 1', 'su 2', '+2']);
+    expect(t0.sets[0].children.every((s) => s.sub === '1 dev')).toBe(true);
     expect(t0.pools).toEqual([]);
+    // Lines from every su's plane 5 box to T1 plane 1.
+    // 2 drawn su x 8 planes; one pair drawn device to device.
+    expect(d.links.filter((p) => p.name === 't0-t1' && !p.device)).toHaveLength(15);
     const server = d.boxes.find((b) => b.group.name === 'server')!;
     expect(server.sets).toEqual([]);
     expect(server.lines).toEqual(['su: 4 x 16']);

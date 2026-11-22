@@ -231,20 +231,26 @@ source is the YAML text, saved as typed).
   diagram is draggable (double-click resets).
 - **Right pane — virtual topology**: a canvas (zoom, Export SVG, maximize) drawing the VIRTUAL part only, updated
   as the source changes:
-  - one box per device set group, nested: header (name, role, count); inside it one box per set of the shown
-    partition (`key value`, devices per set; a partition with `sizes` shows its named sets; past 8 sets the rest
-    collapse into `+N`); without a shown partition, every partition as a `key: count x size` line;
+  - one box per device set group, nested by partition up to two levels (outer › inner): header (name, role,
+    count); inside it one box per outer set, inside that one box per inner set (`key value`, devices per set).
+    Default nesting: the key the group is reached by from below (outer), then the key it reaches up with (inner),
+    so every link lands on the sets it pairs. Partitions are orthogonal: an inner set holds outer size / inner
+    count devices (`per` keeps the declared size). Values a `map` groups together are drawn side by side.
+    Past 8 sets (3 outer sets when nested) the rest collapse into `+N`;
+  - leaf sets show their devices as cells: all when 6 or fewer, else 1-4, an ellipsis, and the last;
   - port pools as strips on the group box edges, one cell per port (capped at 96, gaps between slots when the pool
     is listed per slot), labelled `name ports · N slots`; a pool sits on the top edge when it links to a higher
     tier, else on the bottom edge;
-  - toolbar **Groups ▾**: Port pools on/off, and per group the partition drawn as sets (any of its keys, or none;
-    default its first key);
+  - toolbar **Groups ▾**: Port pools on/off, and per group the nesting (any key, any ordered pair of keys, or
+    none);
   - tiers bottom-up by link direction (a group sits one tier above the highest group linking into it);
-  - one line per link spec, from the pool strip it uses to the peer's (box edge when pools are hidden; several
-    specs on one end side by side), labelled
-    `name: pattern [xN] · L links`; the link count follows from the partition sizes (mesh: from x to devices per
-    instance pair; round-robin: one peer per from device; times `per_pair`). Hover shows both ends (key, filters,
-    pool) and the map.
+  - each link spec draws one line per drawn instance pair: from the set box of each from value to the set box of
+    the to value it pairs with (`map`, else the same value; filters drop values); an end whose key is not a drawn
+    level ends on its group box. One pair, the most vertical, is drawn device to device instead, between the device
+    cells: mesh = every cell to every cell, round-robin = each from cell to the next to cell;
+  - a label box per spec: name and total links; how instances pair (`1:1 (same value)`, `N:1 by map`, `each x →
+    all y`); the pattern with devices per pair (`mesh: 38 x 256 dev per pair, each to each`, `x2 per device
+    pair`); ports each device uses on each side. Hover adds both ends (key, filters, pool) and the map.
 
 The YAML reader covers block maps / lists, flow `{}` / `[]` (may span lines), quoted and plain scalars and `#`
 comments; anchors, tags and block scalars are not supported.

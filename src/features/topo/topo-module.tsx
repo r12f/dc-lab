@@ -60,7 +60,7 @@ export function TopoModule() {
             onChange={(v) => update('topologies', topo.id, (t) => ({ ...t, source: v }))} />
           <Splitter label="Code width" width={codeW} direction={1} onResize={(px) => setCodeW(Math.max(240, Math.min(1600, px)))} onReset={() => setCodeW(CODE_W)} />
           <CanvasFrame title={`${topo.name} — virtual topology`} exportName={`${topo.id}-virtual`} fitKey={`${topo.id}:${diagram.width}`}
-            viewControls={<DiagramMenu groups={virtual.groups} options={options} onChange={setOptions} />}>
+            viewControls={<DiagramMenu topo={virtual} options={options} onChange={setOptions} />}>
             {(ref) => virtual.groups.length
               ? <TopoDiagramView ref={ref} topo={virtual} diagram={diagram} />
               : <div className="empty-canvas">No device set groups to draw.</div>}
