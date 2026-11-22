@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { parseYaml, YamlError } from '../topo/yaml';
 import { expandPorts, parseVirtual, poolPorts } from '../topo/virtual';
-import { groupDevices, layoutDiagram } from '../topo/diagram';
+import { groupDevices, layoutDiagram, type GroupBox } from '../topo/diagram';
+import { pick, sliceTopo, withGaps } from '../topo/slice';
+import { portLayout, portUse } from '../topo/ports';
+import { ruleText } from '../topo/rule';
 import { SAMPLE_TOPOLOGY } from '../topo/sample';
 import { normalizeProject, serializeProject } from '../project/serializer';
 import { emptyProject } from '../project/types';
@@ -73,76 +76,110 @@ topo:
 `).problems.map((x) => x.message);
     expect(p).toEqual(['l: each a device needs 3 ports, pool p has 2']);
   });
-  it('lays tiers out bottom-up from the link direction', () => {
-    const d = layoutDiagram(v);
-    const y = Object.fromEntries(d.boxes.map((b) => [b.group.name, b.y]));
-    expect(y.server).toBeGreaterThan(y.t0);
-    expect(y.t0).toBeGreaterThan(y.t1);
-    expect(y.t1).toBeGreaterThan(y.t2);
-    expect(d.labels).toHaveLength(3);
+});
+
+describe('slice', () => {
+  it('picks first, second and last, and marks the gaps', () => {
+    expect(pick(['1', '2', '3', '4'])).toEqual(['1', '2', '4']);
+    expect(pick(['1', '2'])).toEqual(['1', '2']);
+    expect(withGaps(['1', '2', '4'], ['1', '2', '3', '4'])).toEqual(['1', '2', null, '4']);
+    expect(withGaps(['2', '3'], ['1', '2', '3', '4'])).toEqual([null, '2', '3', null]);
   });
-  const labels = (b: ReturnType<typeof layoutDiagram>['boxes'][number]) => groupDevices(b).map((x) => x.label);
-  const sets = (b: ReturnType<typeof layoutDiagram>['boxes'][number]) => b.body.sets.map((s) => s.label);
-  it('splits a group by the mapped key, then the key it is reached by; three values at most, ellipsis between', () => {
-    const d = layoutDiagram(v);
-    const box = (n: string) => d.boxes.find((b) => b.group.name === n)!;
-    // t1 planes 1, 2, ..., 4; t0 planes in map order: those onto t1 plane 1 (1, 5), plane 2 (2, 6), ..., plane 4 (4, 8).
+  it('follows a map: first, second, last targets, each with its mapped sources in map order', () => {
+    const v = parseVirtual(SAMPLE_TOPOLOGY);
+    const s = sliceTopo(v, new Map([['server', ['su']], ['t0', ['plane', 'su']], ['t1', ['plane']], ['t2', ['plane']]]));
+    expect(s.get('t1')!.get('plane')!.values).toEqual(['1', '2', '4']);
+    expect(s.get('t0')!.get('plane')!.values).toEqual(['1', '5', '2', '6', '4', '8']);
+    expect(s.get('t0')!.get('plane')!.order).toEqual(['1', '5', '2', '6', '3', '7', '4', '8']);
+    // server-t0 by su, no map: the same su values on both ends.
+    expect(s.get('server')!.get('su')!.values).toEqual(['1', '2', '4']);
+    expect(s.get('t0')!.get('su')!.values).toEqual(['1', '2', '4']);
+  });
+});
+
+describe('ports', () => {
+  const v = parseVirtual(SAMPLE_TOPOLOGY);
+  const t0 = v.groups.find((g) => g.name === 't0')!;
+  it('lays out every port of a device: a column per number, a row per lane, the full cage', () => {
+    const l = portLayout(t0);
+    expect(l.cols).toEqual(['etp1', 'etp2', 'etp3', 'etp4', 'etp5', 'etp6', 'etp7', 'etp8', 'etp9', 'etp10']);
+    expect(l.rows).toEqual(['a', 'b', 'c', 'd']);
+    expect(l.cells).toHaveLength(40);
+    expect(l.cells.find((c) => c.port === 'etp10c')).toEqual({ port: 'etp10c', col: 9, row: 2 });
+    // No lane suffix: rows of 64 in pool order.
+    const server = portLayout(v.groups.find((g) => g.name === 'server')!);
+    expect([server.cols.length, server.rows.length]).toEqual([8, 1]);
+  });
+  it('fills each pool in order, link specs in topo order', () => {
+    const u = portUse(t0, v);
+    expect(u.used.get('down')).toBe(16);
+    expect(u.used.get('up')).toBe(4);
+    expect(['etp9a', 'etp9b', 'etp9c', 'etp9d', 'etp10a'].map((p) => u.owner.get(p))).toEqual([1, 1, 1, 1, undefined]);
+  });
+});
+
+describe('rule text', () => {
+  it('states pairing, pattern, devices per pair and ports per device', () => {
+    const v = parseVirtual(SAMPLE_TOPOLOGY);
+    const r = Object.fromEntries(v.links.map((l) => [l.name, ruleText(l)]));
+    expect(r['t0-t1']).toEqual(['t0-t1 · 128 links', '2 t0 planes → 1 t1 plane (map) · mesh 4 x 4 per pair · each t0 4 up · each t1 8 down']);
+    expect(r['server-t0'][1]).toBe('server su k → t0 su k · mesh 16 x 8 per pair · each server 8 nic · each t0 16 down');
+    expect(r['t1-t2'][1]).toMatch(/^each t1 plane → all t2 plane\.index 1-3 · round-robin/);
+  });
+});
+
+describe('diagram', () => {
+  const v = parseVirtual(SAMPLE_TOPOLOGY);
+  const d = layoutDiagram(v);
+  const box = (n: string, dd = d) => dd.boxes.find((b) => b.group.name === n)!;
+  const sets = (b: GroupBox) => b.body.sets.map((s) => s.label.split(' · ')[0]);
+  const labels = (b: GroupBox) => groupDevices(b).map((x) => x.label);
+  it('stacks tiers bottom-up from the link direction', () => {
+    expect(box('server').y).toBeGreaterThan(box('t0').y);
+    expect(box('t0').y).toBeGreaterThan(box('t1').y);
+    expect(box('t1').y).toBeGreaterThan(box('t2').y);
+    expect(d.rules).toHaveLength(3);
+  });
+  it('splits a group by the mapped key, then the key it is reached by; three values at most', () => {
     expect(box('t0').nesting).toEqual(['plane', 'su']);
     expect(sets(box('t1'))).toEqual(['plane 1', 'plane 2', 'plane 4']);
     expect(box('t1').body.ellipses).toHaveLength(1);
     expect(sets(box('t0'))).toEqual(['plane 1', 'plane 5', 'plane 2', 'plane 6', 'plane 4', 'plane 8']);
-    expect(box('t0').body.ellipses).toHaveLength(1);
-    // Inside, one device per su, labelled by su.
+    // One device per su inside a t0 plane, labelled by su; 16 servers per su labelled 1, 2, ..., 16.
     expect(labels(box('t0')).slice(0, 3)).toEqual(['1', '2', '4']);
-    expect(box('t0').body.sets[0].sets[0].ellipses).toHaveLength(1);
-    expect(labels(box('t1')).slice(0, 3)).toEqual(['1', '2', '4']);
-    // server su 1, 2, ..., 4; 16 devices each: 1, 2, ..., 16.
     expect(sets(box('server'))).toEqual(['su 1', 'su 2', 'su 4']);
     expect(labels(box('server')).slice(0, 3)).toEqual(['1', '2', '16']);
   });
   it('draws device-to-device lines following the key, the map and the pattern', () => {
-    const d = layoutDiagram(v);
-    const n = (name: string) => d.links.filter((p) => p.name === name).length;
-    // t0-t1 mesh, per drawn t1 plane: 6 t0 devices (2 planes x 3 su) x 3 t1 devices; 3 t1 planes.
-    expect(n('t0-t1')).toBe(54);
-    // server-t0 by su: 3 servers per su x 6 drawn t0 planes, for su 1, 2, 4.
-    expect(n('server-t0')).toBe(54);
-    // t1-t2 round-robin: each drawn t1 device (3 planes x 3) to one t2 device, only t2 1-3 of a plane.
-    const t12 = d.links.filter((p) => p.name === 't1-t2');
+    const n = (li: number) => d.lines.filter((p) => p.link === li).length;
+    // server-t0: per drawn su, 3 servers x 6 drawn t0 devices; t0-t1 mesh: per t1 plane, 6 t0 x 3 t1.
+    expect(n(0)).toBe(54);
+    expect(n(1)).toBe(54);
+    // t1-t2 round-robin: each drawn t1 device to one t2 device, t2 1-3 of a plane only.
+    const t12 = d.lines.filter((p) => p.link === 2);
     expect(t12).toHaveLength(9);
-    const t2 = groupDevices(d.boxes.find((b) => b.group.name === 't2')!);
-    const hit = new Set(t12.map((p) => t2.find((x) => Math.abs(x.x + x.w / 2 - p.points[1][0]) < 1)!.label));
-    expect([...hit].every((x) => Number(x) <= 3)).toBe(true);
-    const l01 = v.links.find((l) => l.name === 't0-t1')!;
-    expect([l01.fanIn, l01.fromSize, l01.toSize, l01.fromPorts, l01.toPorts]).toEqual([2, 4, 4, 4, 8]);
+    const t2 = groupDevices(box('t2'));
+    expect(t12.every((p) => Number(t2.find((x) => Math.abs(x.x + x.w / 2 - p.to[0]) < 1)!.label) <= 3)).toBe(true);
   });
-  it('draws every port of a device as a grid: up pools above the sets, down pools below, same columns', () => {
-    const d = layoutDiagram(v);
-    const t0 = d.boxes.find((b) => b.group.name === 't0')!;
-    const [top, bottom] = [t0.grids.find((q) => q.side === 'top')!, t0.grids.find((q) => q.side === 'bottom')!];
-    // The whole device: etp1..etp10 x lanes a-d = 40 cells on both edges, same layout.
-    expect(top.cols).toEqual(['etp1', 'etp2', 'etp3', 'etp4', 'etp5', 'etp6', 'etp7', 'etp8', 'etp9', 'etp10']);
-    expect(top.rows).toEqual(['a', 'b', 'c', 'd']);
-    expect(top.cells).toHaveLength(40);
-    expect(bottom.cols).toEqual(top.cols);
+  it('draws the port grids: up pools above the sets, down pools below, same columns', () => {
+    const t0 = box('t0');
+    const top = t0.grids.find((q) => q.side === 'top')!; const bottom = t0.grids.find((q) => q.side === 'bottom')!;
+    expect(top.cols).toEqual(bottom.cols);
     expect(top.x).toBe(bottom.x);
     expect(top.y).toBeLessThan(t0.body.y);
     expect(bottom.y).toBeGreaterThan(t0.body.y);
-    // Up: etp9-10 a-d, first 4 used by t0-t1. Down: etp1-8 a,b, all 16 used by server-t0.
     expect(top.pools).toEqual([{ name: 'up', ports: 8, used: 4, slots: 1 }]);
-    const up = top.cells.filter((c) => c.pool === 'up');
-    expect(up.filter((c) => c.link !== undefined).map((c) => c.port)).toEqual(['etp9a', 'etp9b', 'etp9c', 'etp9d']);
-    expect(bottom.cells.filter((c) => c.pool === 'down' && c.link !== undefined)).toHaveLength(16);
-    expect(up.find((c) => c.port === 'etp10a')).toMatchObject({ col: 9, row: 0 });
+    expect(bottom.pools).toEqual([{ name: 'down', ports: 16, used: 16, slots: 2 }]);
+    // Each edge marks its own pool; the other edge's ports are 'other'.
+    expect(top.cells.find((c) => c.port === 'etp1a')).toMatchObject({ other: 'down' });
+    expect(top.cells.find((c) => c.port === 'etp9a')).toMatchObject({ pool: 'up', link: 1 });
   });
-  it('lets the split be chosen per group', () => {
-    const d = layoutDiagram(v, { partition: { t0: 'su>plane', server: '' }, ports: false });
-    const t0 = d.boxes.find((b) => b.group.name === 't0')!;
-    expect(sets(t0)).toEqual(['su 1', 'su 2', 'su 4']);
-    expect(t0.grids).toEqual([]);
-    const server = d.boxes.find((b) => b.group.name === 'server')!;
-    expect(server.nesting).toEqual([]);
-    expect(labels(server)).toEqual(['1', '2', '64']);
+  it('lets the split be chosen per group, and the port grids hidden', () => {
+    const e = layoutDiagram(v, { partition: { t0: 'su>plane', server: '' }, ports: false });
+    expect(sets(box('t0', e))).toEqual(['su 1', 'su 2', 'su 4']);
+    expect(box('t0', e).grids).toEqual([]);
+    expect(box('server', e).nesting).toEqual([]);
+    expect(labels(box('server', e))).toEqual(['1', '2', '64']);
   });
 });
 

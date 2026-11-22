@@ -4,8 +4,8 @@ import { nestingChoices, shownNesting, type DiagramOptions } from '../../domain/
 import type { VirtualTopo } from '../../domain/topo/virtual';
 
 /**
- * Toolbar dropdown choosing what the group boxes show: per group, which partition is drawn as sets (or none),
- * and whether port pools are drawn.
+ * Toolbar dropdown choosing what the group boxes show: per group, the partition keys it is split by (outer › inner,
+ * or none), and whether port grids are drawn.
  */
 export function DiagramMenu({ topo, options, onChange }: { topo: VirtualTopo; options: DiagramOptions; onChange(o: DiagramOptions): void }) {
   const [open, setOpen] = useState(false);
@@ -21,13 +21,13 @@ export function DiagramMenu({ topo, options, onChange }: { topo: VirtualTopo; op
   const withSets = topo.groups.filter((g) => g.partitions.length);
   return (
     <div className="dropdown" ref={root}>
-      <Button aria-haspopup="true" aria-expanded={open} title="How each group box is split (partition keys, outer › inner) and whether port pools are listed"
+      <Button aria-haspopup="true" aria-expanded={open} title="How each group box is split (partition keys, outer › inner) and whether port grids are drawn"
         onClick={() => setOpen(!open)}>Groups ▾</Button>
       {open && (
         <div className="dropdown-menu topo-menu" role="menu">
           <label className="check">
             <input type="checkbox" checked={options.ports} onChange={(e) => onChange({ ...options, ports: e.target.checked })} />
-            <span>Port pools</span>
+            <span>Port grids</span>
           </label>
           {withSets.length > 0 && <div className="check-group">Split by partition (outer › inner)</div>}
           {withSets.map((g) => (

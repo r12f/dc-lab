@@ -231,7 +231,7 @@ source is the YAML text, saved as typed).
   diagram is draggable (double-click resets).
 - **Right pane — virtual topology**: a canvas (zoom, Export SVG, maximize) drawing the VIRTUAL part only as a
   slice, updated as the source changes:
-  - one box per device set group (name, count, role; the split; with **Port pools** on, the device's port grid: every port of the device, a
+  - one box per device set group (name, count, role; the split; with **Port grids** on, the device's port grid: every port of the device, a
     column per port number (gaps kept) and a row per lane (`etp12c` = column 12, lane c; ports without a lane: rows
     of 64 in pool order). The pools linking up are drawn above the sets, the others below, both grids the same
     layout and centred, so a column lines up top to bottom. On each edge the ports of its pools are outlined and,
@@ -255,11 +255,15 @@ source is the YAML text, saved as typed).
   - beside each tier gap, the spec's rule: name and total links; how instances pair (`2 t0 planes → 1 t1 plane
     (map)`, `server su k → t0 su k`, `each t1 plane → all t2 ...`); the pattern with devices per pair (`mesh 4 x 4
     per pair`, `round-robin 4 over 6 x2`); ports each device uses on each side. Hover adds both ends and the map;
-  - toolbar **Groups ▾**: Port pools on/off, and per group the split (any key, any ordered pair of keys, or
+  - toolbar **Groups ▾**: Port grids on/off, and per group the split (any key, any ordered pair of keys, or
     none).
 
 The YAML reader covers block maps / lists, flow `{}` / `[]` (may span lines), quoted and plain scalars and `#`
 comments; anchors, tags and block scalars are not supported.
+
+Code (`src/domain/topo/`): `yaml.ts` reader; `virtual.ts` parses groups and link specs (link and port counts,
+problems); `slice.ts` picks the drawn values; `ports.ts` lays out a device's ports and their use; `rule.ts` the
+rule text; `diagram.ts` the layout. `src/features/topo/` renders it.
 
 ## Full example
 
