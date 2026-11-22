@@ -14,6 +14,9 @@ interface Props {
   ref?: Ref<SVGSVGElement>;
 }
 
+/** Distance (px) from the pane edge at which a drag scrolls the pane. */
+const EDGE = 32;
+
 const linkColor = (i: number) => LAYOUT_PAINT.traces[i % LAYOUT_PAINT.traces.length];
 
 /**
@@ -48,7 +51,14 @@ export function TopoDiagramView({ topo, diagram, view, onView, ref }: Props) {
     const start = toSvg(ev);
     const from = view.offsets?.[b.group.name] ?? { dx: 0, dy: 0 };
     let last = { dx: 0, dy: 0 };
+    const pane = svgEl.current?.closest('.canvas-scroll');
     const move = (e: PointerEvent) => {
+      // Near the pane's bottom / right edge, scroll it along so the box stays in view.
+      if (pane) {
+        const r = pane.getBoundingClientRect();
+        if (e.clientY > r.bottom - EDGE) pane.scrollTop += EDGE / 2;
+        if (e.clientX > r.right - EDGE) pane.scrollLeft += EDGE / 2;
+      }
       const p = toSvg(e);
       last = { dx: p.x - start.x, dy: p.y - start.y };
       setDrag({ group: b.group.name, ...last });
@@ -64,9 +74,13 @@ export function TopoDiagramView({ topo, diagram, view, onView, ref }: Props) {
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
   };
+  // While dragging, the drawing grows with the box (right / down), so it is never clipped mid-drag.
+  const moving = drag && diagram.boxes.find((b) => b.group.name === drag.group);
+  const width = Math.max(diagram.width, moving ? moving.x + drag.dx + moving.w + M.pad : 0);
+  const height = Math.max(diagram.height, moving ? moving.y + drag.dy + moving.h + M.pad : 0);
   return (
-    <svg ref={setRef} viewBox={`0 0 ${diagram.width} ${diagram.height}`} width={diagram.width} className="drawing" fontSize={12}>
-      <rect x={0} y={0} width={diagram.width} height={diagram.height} fill={paint.paper} />
+    <svg ref={setRef} viewBox={`0 0 ${width} ${height}`} width={width} className="drawing" fontSize={12}>
+      <rect x={0} y={0} width={width} height={height} fill={paint.paper} />
       {diagram.boxes.map((b, i) => (
         <Group key={b.group.name} b={b} i={i} shift={drag?.group === b.group.name ? drag : undefined}
           onHeaderDown={startDrag(b)} onToggle={() => toggle(b.group.name)} />
