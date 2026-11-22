@@ -6,7 +6,8 @@ import { Sidebar } from '../../ui/sidebar';
 import { CanvasFrame, EmptyCanvas } from '../../ui/canvas-frame';
 import { Splitter } from '../../ui/splitter';
 import { TOPOLOGY_SCHEMA, parseVirtual, type Topology } from '../../domain/topo/virtual';
-import { layoutDiagram } from '../../domain/topo/diagram';
+import { DEFAULT_OPTIONS, layoutDiagram, type DiagramOptions } from '../../domain/topo/diagram';
+import { DiagramMenu } from './diagram-menu';
 import { SAMPLE_TOPOLOGY } from '../../domain/topo/sample';
 import { TopoEditor } from './topo-editor';
 import { TopoDiagramView } from './topo-diagram';
@@ -22,11 +23,12 @@ export function TopoModule() {
   const update = useAppStore((s) => s.update);
   const remove = useAppStore((s) => s.remove);
   const [codeW, setCodeW] = useState(CODE_W);
+  const [options, setOptions] = useState<DiagramOptions>(DEFAULT_OPTIONS);
   const topo = topologies.find((t) => t.id === selectedId);
   // Parse off the typing path: the diagram follows the source a frame later on big files.
   const source = useDeferredValue(topo?.source ?? '');
   const virtual = useMemo(() => parseVirtual(source), [source]);
-  const diagram = useMemo(() => layoutDiagram(virtual), [virtual]);
+  const diagram = useMemo(() => layoutDiagram(virtual, options), [virtual, options]);
 
   const create = () => {
     const t: Topology = { schema: TOPOLOGY_SCHEMA, id: uniqueId(slugify('topology'), topologies.map((x) => x.id)), name: 'New topology', source: SAMPLE_TOPOLOGY };
@@ -57,7 +59,8 @@ export function TopoModule() {
           <TopoEditor value={topo.source} problems={virtual.problems}
             onChange={(v) => update('topologies', topo.id, (t) => ({ ...t, source: v }))} />
           <Splitter label="Code width" width={codeW} direction={1} onResize={(px) => setCodeW(Math.max(240, Math.min(1600, px)))} onReset={() => setCodeW(CODE_W)} />
-          <CanvasFrame title={`${topo.name} — virtual topology`} exportName={`${topo.id}-virtual`} fitKey={`${topo.id}:${diagram.width}`}>
+          <CanvasFrame title={`${topo.name} — virtual topology`} exportName={`${topo.id}-virtual`} fitKey={`${topo.id}:${diagram.width}`}
+            viewControls={<DiagramMenu groups={virtual.groups} options={options} onChange={setOptions} />}>
             {(ref) => virtual.groups.length
               ? <TopoDiagramView ref={ref} topo={virtual} diagram={diagram} />
               : <div className="empty-canvas">No device set groups to draw.</div>}

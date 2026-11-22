@@ -231,10 +231,17 @@ source is the YAML text, saved as typed).
   diagram is draggable (double-click resets).
 - **Right pane — virtual topology**: a canvas (zoom, Export SVG, maximize) drawing the VIRTUAL part only, updated
   as the source changes:
-  - one box per device set group: name, role, count, partitions (`key: count x size`), port pools with their
-    port counts;
+  - one box per device set group, nested: header (name, role, count); inside it one box per set of the shown
+    partition (`key value`, devices per set; a partition with `sizes` shows its named sets; past 8 sets the rest
+    collapse into `+N`); without a shown partition, every partition as a `key: count x size` line;
+  - port pools as strips on the group box edges, one cell per port (capped at 96, gaps between slots when the pool
+    is listed per slot), labelled `name ports · N slots`; a pool sits on the top edge when it links to a higher
+    tier, else on the bottom edge;
+  - toolbar **Groups ▾**: Port pools on/off, and per group the partition drawn as sets (any of its keys, or none;
+    default its first key);
   - tiers bottom-up by link direction (a group sits one tier above the highest group linking into it);
-  - one line per link spec between its two groups (several specs between the same groups side by side), labelled
+  - one line per link spec, from the pool strip it uses to the peer's (box edge when pools are hidden; several
+    specs on one end side by side), labelled
     `name: pattern [xN] · L links`; the link count follows from the partition sizes (mesh: from x to devices per
     instance pair; round-robin: one peer per from device; times `per_pair`). Hover shows both ends (key, filters,
     pool) and the map.

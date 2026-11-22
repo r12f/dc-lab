@@ -81,6 +81,30 @@ topo:
     expect(y.t1).toBeGreaterThan(y.t2);
     expect(d.links).toHaveLength(3);
   });
+  it('draws each group as its sets of the chosen partition, with port pools on the linked edges', () => {
+    const d = layoutDiagram(v);
+    const t0 = d.boxes.find((b) => b.group.name === 't0')!;
+    expect(t0.partition).toBe('su');
+    expect(t0.sets.map((s) => s.label)).toEqual(['su 1', 'su 2', 'su 3', 'su 4']);
+    expect(t0.pools.map((p) => `${p.name}:${p.side}:${p.slots.join('/')}`)).toEqual(['down:bottom:8/8', 'up:top:8']);
+    // A link ends on the pool strip it uses.
+    const up = t0.pools.find((p) => p.name === 'up')!;
+    const l = d.links.find((x) => x.name === 't0-t1')!;
+    expect(l.points[0][0]).toBeGreaterThan(t0.x + up.x);
+    expect(l.points[0][0]).toBeLessThan(t0.x + up.x + up.w);
+    expect(l.points[0][1]).toBe(t0.y + up.y);
+  });
+  it('lets the partition and port pools be chosen; many sets collapse into +N', () => {
+    const d = layoutDiagram(v, { partition: { t0: 'plane', server: '' }, ports: false });
+    const t0 = d.boxes.find((b) => b.group.name === 't0')!;
+    expect(t0.sets.map((s) => s.label)).toEqual(['plane 1', 'plane 2', 'plane 3', 'plane 4', 'plane 5', 'plane 6', 'plane 7', 'plane 8']);
+    expect(t0.pools).toEqual([]);
+    const server = d.boxes.find((b) => b.group.name === 'server')!;
+    expect(server.sets).toEqual([]);
+    expect(server.lines).toEqual(['su: 4 x 16']);
+    const many = parseVirtual('device_set_groups:\n  a: { role: x, count: 40, partitions: [ { key: k, count: 20, size: 2 } ] }\n');
+    expect(layoutDiagram(many).boxes[0].sets.map((s) => s.label).slice(-2)).toEqual(['k 7', '+13']);
+  });
 });
 
 describe('topologies in the project file', () => {

@@ -10,7 +10,7 @@ export interface Topology {
   source: string;
 }
 
-export interface Partition { key: string; count: number; size: number; sizes?: Record<string, number> }
+export interface Partition { key: string; count: number; size: number; sizes?: Record<string, number>; /** Shape holds inside each set of these keys. */ per?: string[] }
 export interface VGroup {
   name: string;
   role: string;
@@ -18,6 +18,8 @@ export interface VGroup {
   partitions: Partition[];
   /** Pool name -> number of ports. */
   pools: Record<string, number>;
+  /** Pool name -> ports per top-level list entry (a pool listed as several entries, e.g. one per peer slot). */
+  poolSlots: Record<string, number[]>;
 }
 export interface VEnd { group: string; key?: string; ports: string; filters: Record<string, string> }
 export interface VLink {
@@ -113,11 +115,15 @@ export function parseVirtual(source: string): VirtualTopo {
       if (c === undefined || s === undefined) { problems.push({ message: `group ${name}: partition ${p.key} needs count and size (or sizes)` }); continue; }
       const per = Array.isArray(p.per) ? p.per.map(String) : [];
       if (!per.length && count !== undefined && c * s !== count) problems.push({ message: `group ${name}: partition ${p.key} is ${c} x ${s} = ${c * s}, count is ${count}` });
-      partitions.push({ key: String(p.key), count: c, size: s });
+      partitions.push({ key: String(p.key), count: c, size: s, ...(per.length ? { per } : {}) });
     }
     const pools: Record<string, number> = {};
-    if (isObj(g.ports)) for (const [k, v] of Object.entries(g.ports)) pools[k] = poolPorts(v).length;
-    groups.push({ name, role: str(g.role) ?? '', count: count ?? 0, partitions, pools });
+    const poolSlots: Record<string, number[]> = {};
+    if (isObj(g.ports)) for (const [k, v] of Object.entries(g.ports)) {
+      pools[k] = poolPorts(v).length;
+      if (Array.isArray(v) && v.length > 1) poolSlots[k] = v.map((e) => poolPorts(e).length);
+    }
+    groups.push({ name, role: str(g.role) ?? '', count: count ?? 0, partitions, pools, poolSlots });
   }
   const byName = new Map(groups.map((g) => [g.name, g]));
   const links: VLink[] = [];
