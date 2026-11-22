@@ -79,9 +79,16 @@ describe('YAML edits in place', () => {
     const lines = typed.split('\n');
     expect(lines[lines.indexOf('    device_type: switch-64x800g-osfp') + 1]).toBe('    ports: { down: etp{1-4}{a,b}, up: etp{5-8} }');
     expect(setGroupField(typed, 'tor', ['device_type'], undefined)).toBe(SRC);
-    const mapped = setGroupField(SRC, 'server', ['port_map'], [{ ports: 'p{1-2}', device_ports: 'p/{1-2}' }]);
-    expect(mapped).toContain('    port_map:\n      - { ports: "p{1-2}", device_ports: "p/{1-2}" }\n    ports:\n');
-    expect(setGroupField(mapped, 'server', ['port_map'], undefined)).toBe(SRC);
+    const order = { order: ['role', 'count', 'partitions', 'spares', 'ports'] };
+    const listed = setYamlIn(SRC, ['device_set_groups', 'server', 'spares'], [{ ports: 'p{3-4}', why: 'x' }], order);
+    expect(listed).toContain('    spares:\n      - { ports: "p{3-4}", why: x }\n    ports:\n');
+    expect(setYamlIn(listed, ['device_set_groups', 'server', 'spares'], undefined)).toBe(SRC);
+    // A pool given its optic becomes a map on its line, keeping the comment; or, asked, a block under its key.
+    expect(changed(SRC, setGroupField(SRC, 'server', ['ports', 'nic'], { ports: 'p{1-2}', optic: 'o1' })))
+      .toEqual(['      nic: { ports: "p{1-2}", optic: o1 }        # both NICs']);
+    const block = setGroupField(SRC, 'server', ['ports', 'nic'], { ports: 'p{1-2}', optic: 'o1' }, { block: true });
+    expect(block).toContain('    ports:\n      nic:               # both NICs\n        ports: p{1-2}\n        optic: o1\n\n  tor:');
+    expect(setGroupField(block, 'server', ['ports', 'nic'], 'p{1-2}')).toBe(SRC.replace('      nic: p{1-2}        # both NICs', '      nic: p{1-2}'));
   });
   it('appends and removes list items; a list emptied stays a list', () => {
     const more = setGroupField(SRC, 'server', ['partitions', 2], { key: 'x', count: 1, size: 4 });

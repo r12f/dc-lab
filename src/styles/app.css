@@ -281,11 +281,12 @@ button.link { width: auto; background: none; border: none; padding: 0; color: va
 .topo-insp-note { font-size: 11px; margin: 0 0 6px; }
 .topo-insp-grid { display: grid; gap: 4px; align-items: center; }
 .topo-insp-grid.part { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) auto; }
-.topo-insp-grid.map { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
 .topo-insp-grid.pool { grid-template-columns: minmax(0, .8fr) minmax(0, 2fr) auto auto; }
 .topo-insp-grid .head { font-size: 11px; color: var(--muted); }
 .topo-insp-grid input { min-width: 0; width: 100%; padding: 3px 5px; font-size: 12px; }
 .topo-insp-grid .btn-icon { min-width: 22px; padding: 2px 4px; font-size: 11px; }
 .topo-insp .num { text-align: right; }
+.topo-insp-gear { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px; margin-bottom: 6px; }
+.topo-insp-gear select { min-width: 0; width: 100%; font-size: 12px; padding: 2px 4px; }
 .topo-menu-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 3px 0; }
 .topo-menu-row select { width: auto; }

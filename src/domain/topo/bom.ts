@@ -3,15 +3,19 @@ import type { BomLine } from '../bom/types';
 import { bomColumns, SI_HEADER, type BomColumn } from '../bom/columns';
 import type { PropertyDef } from '../properties/types';
 import type { ItemVariant } from '../items/types';
+import type { CableEnd, CableMedia } from '../optics/types';
 import { traitsOf } from '../device/categories';
-import { opticPowerW, variantLabel, withItemSpecs } from '../items/variants';
+import { cablePowerWPerEnd, opticPowerW, variantLabel, withItemSpecs } from '../items/variants';
+import { connectorsMate } from '../optics/connectors';
+import { moduleFits } from '../ports/form-factors';
+import { cablesPerPort } from '../ports/optic-match';
 import { poolSpeeds, topoHardware, type GroupHardware } from './hardware';
 import { portUse } from './ports';
-import type { VGroup, VirtualTopo } from './virtual';
+import { portNumber, type VEnd, type VGroup, type VLink, type VirtualTopo } from './virtual';
 
 /**
  * Procurement picks of a topology's estimated BOM, saved with the topology (`Topology.bom`). The hardware itself
- * (device type, port map, optics) is in the YAML.
+ * (device types, pool optics and cables) is in the YAML.
  */
 export interface TopoBomSettings {
   /** Item type id -> item (vendor product) bought for it; absent = its Generic item. */
@@ -23,14 +27,16 @@ export interface PoolEstimate {
   pool: string;
   /** Ports one device uses. */
   ports: number;
-  /** Speed of the pool's ports on the device type (one speed), from the port map. */
+  /** Speed of the pool's ports on the device type (one speed). */
   speedGbps?: number;
-  /** Device ports (cages) those ports sit in; a cage shared with an earlier pool counts there. No port map: undefined. */
-  cages?: number;
+  /** Device ports (cages) those ports sit in (`etp3a`, `etp3b`: one); a cage shared with an earlier pool counts there. */
+  cages: number;
   /** Every device of the group uses exactly `ports`; false = an upper bound (uneven sets, filtered ends). */
   exact: boolean;
-  /** Optics in those cages by optic type: per device, and over the group. */
+  /** The pool's optic in those cages: per device, and over the group. */
   optics: { opticId: string; perDevice: number; total: number }[];
+  /** Cable type the pool's ports take, when set. */
+  cableId?: string;
 }
 
 export interface GroupEstimate {
@@ -42,9 +48,21 @@ export interface GroupEstimate {
   pools: PoolEstimate[];
 }
 
+/** Cables of one link spec: one cable type, joining both ends or plugged into one end. */
+export interface CableEstimate {
+  link: VLink;
+  cableId: string;
+  /** The end the cable is counted at (its group); both ends take it: undefined. */
+  end?: string;
+  /** Links one cable carries (its connectors at that end x lanes each holds); < 1 = a link takes several cables. */
+  perCable: number;
+  qty: number;
+}
+
 export interface TopoBom {
   groups: GroupEstimate[];
-  /** One line per device type and per optic type (groups without a device type: one line each). */
+  cables: CableEstimate[];
+  /** One line per device type, optic type and cable type (groups without a device type: one line each). */
   lines: BomLine[];
   /** Links over every link spec whose count is known. */
   links: number;
@@ -74,40 +92,89 @@ function poolExact(v: VirtualTopo, g: VGroup, pool: string, ports: number): bool
   return taken === g.count * ports;
 }
 
-/** Pools of a group in pool order: the ports one device uses, the device ports (cages) they sit in, their optics. */
+/** The cage a pool port sits in: its device port, else (no device type or no fitting profile) its name without the lane. */
+function cageKey(hw: GroupHardware, name: string): string | undefined {
+  const p = portNumber(name);
+  return hw.ports.get(name)?.cage ?? (p && `${p.prefix}${p.n}`);
+}
+
+/** Pools of a group in pool order: the ports one device uses, the cages they sit in, the optic in them. */
 function estimateGroup(lib: Library, v: VirtualTopo, g: VGroup, hw: GroupHardware): GroupEstimate {
-  const mapped = !!hw.device && g.portMap.length > 0;
   const use = portUse(g, v);
   const counted = new Set<string>();
   const pools = Object.entries(g.poolNames).map(([pool, names]): PoolEstimate => {
     const used = names.filter((p) => use.owner.has(p));
-    const perOptic = new Map<string, number>();
     let cages = 0;
     for (const p of used) {
-      const dp = hw.ports.get(p);
-      if (!dp || counted.has(dp.cage)) continue;
-      counted.add(dp.cage);
+      const c = cageKey(hw, p);
+      if (c === undefined || counted.has(c)) continue;
+      counted.add(c);
       cages++;
-      if (dp.opticId && lib.optics.get(dp.opticId)) perOptic.set(dp.opticId, (perOptic.get(dp.opticId) ?? 0) + 1);
     }
     const speeds = poolSpeeds(g, hw, pool);
+    const opticId = g.poolOptics[pool];
     return {
-      pool, ports: used.length, ...(speeds.length === 1 ? { speedGbps: speeds[0] } : {}), ...(mapped ? { cages } : {}),
+      pool, ports: used.length, ...(speeds.length === 1 ? { speedGbps: speeds[0] } : {}), cages,
       exact: poolExact(v, g, pool, used.length),
-      optics: [...perOptic].map(([opticId, n]) => ({ opticId, perDevice: n, total: n * g.count })),
+      optics: opticId && lib.optics.get(opticId) && cages ? [{ opticId, perDevice: cages, total: cages * g.count }] : [],
+      ...(g.poolCables[pool] ? { cableId: g.poolCables[pool] } : {}),
     };
   });
   return { group: g, deviceId: hw.device?.id, profileName: hw.profile?.name, pools };
 }
 
 /**
- * Estimated BOM of a virtual topology: each group's devices as its `device_type`, and the optic the breakout profile
- * matched to its ports puts in every cage (device port of the `port_map`) its pools use. Lines merge by item type; the line's note is its derivation (`dt0 512 + t1 256`).
- * Cables, housings, racks and power need the physical layout and are not estimated.
+ * Links one cable carries at a link end: the cable's connectors on that side (the end that mates the pool's optic,
+ * or plugs into the cage) x the lanes each optic connector holds (cage fanout / connectors per cage: 2x400G on a
+ * 2xDR4 module = 1, 8x100G = 4, 1x800G = 1/2). Without a device type, one lane per connector.
+ */
+function linksPerCable(lib: Library, g: VGroup, hw: GroupHardware | undefined, pool: string, cable: CableMedia): number {
+  const optic = lib.optics.get(g.poolOptics[pool]);
+  const port = (g.poolNames[pool] ?? []).map((n) => hw?.ports.get(n)).find((p) => !!p);
+  const connector = optic?.fiberConnector.replace(/^\d+x\s*/i, '');
+  const fits = (e: CableEnd) => (connector ? connectorsMate(e.connector, connector) : !!port && moduleFits(port.group.formFactor, e.connector));
+  const end = fits(cable.ends.a) || !fits(cable.ends.b) ? cable.ends.a : cable.ends.b;
+  if (!port) return end.count;
+  return (end.count * port.fanout) / (optic ? cablesPerPort(port.group, optic) : 1);
+}
+
+/**
+ * Cables per link spec: a cable type both ends take is one cable joining them; different types (patch cords to a
+ * panel at each end) count at each end. Qty = links / links per cable at that end.
+ */
+function estimateCables(lib: Library, v: VirtualTopo, hw: Map<string, GroupHardware>): CableEstimate[] {
+  const byName = new Map(v.groups.map((g) => [g.name, g]));
+  const out: CableEstimate[] = [];
+  for (const l of v.links) {
+    if (l.links === undefined) continue;
+    const at = (e: VEnd) => { const g = byName.get(e.group); return g && { g, cable: lib.cableMedia.get(g.poolCables[e.ports]), pool: e.ports }; };
+    const ends = [at(l.from), at(l.to)];
+    const shared = ends[0]?.cable && ends[0].cable.id === ends[1]?.cable?.id;
+    for (const [i, e] of ends.entries()) {
+      if (!e?.cable || (shared && i > 0)) continue;
+      const perCable = linksPerCable(lib, e.g, hw.get(e.g.name), e.pool, e.cable);
+      out.push({ link: l, cableId: e.cable.id, ...(shared ? {} : { end: e.g.name }), perCable, qty: Math.ceil(l.links / perCable) });
+    }
+  }
+  return out;
+}
+
+/** How a cable quantity follows from the links: `compute-dt0 720`, `dt0-t1 32,768 ÷ 4`, `x 64 × 2`. */
+function cableDerivation(c: CableEstimate): string {
+  const per = c.perCable === 1 ? '' : c.perCable > 1 ? ` ÷ ${fmt(c.perCable)}` : ` × ${fmt(1 / c.perCable)}`;
+  return `${c.link.name}${c.end ? ` (${c.end} end)` : ''} ${fmt(c.link.links ?? 0)}${per}`;
+}
+
+/**
+ * Estimated BOM of a virtual topology: each group's devices as its `device_type`; per pool, its optic in every cage
+ * its used ports sit in (cage = the port's number); per link spec, the cables its pools take. Lines merge by item
+ * type; the line's note is its derivation (`dt0 512 + t1 256`). Housings, trunks, racks and power need the physical
+ * layout and are not estimated.
  */
 export function estimateTopoBom(lib: Library, v: VirtualTopo, s: TopoBomSettings): TopoBom {
   const hw = topoHardware(lib, v);
   const groups = v.groups.map((g) => estimateGroup(lib, v, g, hw.get(g.name)!));
+  const cables = estimateCables(lib, v, hw);
   const lines: BomLine[] = [];
   const merged = new Map<string, { line: BomLine; parts: string[] }>();
   const add = (line: BomLine, qty: number, part: string) => {
@@ -139,8 +206,16 @@ export function estimateTopoBom(lib: Library, v: VirtualTopo, s: TopoBomSettings
       }
     }
   }
+  for (const c of cables) {
+    const m = lib.cableMedia.get(c.cableId)!;
+    const it = itemFor(lib, s, m.id);
+    // Active cables (AEC / AOC) draw power at every plug.
+    add({ key: `cable:${m.id}`, kind: 'cable', item: m.name, category: 'Cable', itemTypeId: m.id, pickKey: m.id, itemId: it?.id,
+      vendorModel: variantLabel(it), qty: 0, unitW: cablePowerWPerEnd(it, m) * (m.ends.a.count + m.ends.b.count), notes: [], properties: it?.properties },
+    c.qty, cableDerivation(c));
+  }
   for (const { line, parts } of merged.values()) line.notes = [parts.join(' + ')];
-  return { groups, lines, links: v.links.reduce((n, l) => n + (l.links ?? 0), 0) };
+  return { groups, cables, lines, links: v.links.reduce((n, l) => n + (l.links ?? 0), 0) };
 }
 
 /** Header of the per-item power column (typical W of one piece, from the picked item). */

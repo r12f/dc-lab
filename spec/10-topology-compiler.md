@@ -83,8 +83,7 @@ One entry per tier, keyed by group name.
 | `count` | number of devices |
 | `partitions` | list of `{ key, count, size }` — the group is cut into `count` sets of `size` devices by the value of `key`; or `{ key, sizes: { "<value>": n, … } }` for uneven sets |
 | `device_type` | optional: the device type of every member — an item type id of the Devices module (`switch-64x800g-osfp`) |
-| `port_map` | optional, needs `device_type`: how the pools' port names sit on the device type's ports (below) |
-| `ports` | named port pools, each in the order its ports are used |
+| `ports` | named port pools, each in the order its ports are used; a pool is its ports, or `{ ports, optic, cable }` (below) |
 
 Each partition key is a logical property of the member. Its value comes from the mapping, never from the physical
 location. Built in per partition: `<key>.index` = a member's position inside its set (1..size, in member order).
@@ -106,40 +105,52 @@ A port pool may be split per peer slot when the ports a device gives a peer depe
 (e.g. one sub-list per server rack of the unit; comment `# slot N`). The slot order is the peer group's member
 order.
 
-#### Device type and port map
+#### Device type, optics and cables
 
-`device_type` names the members' hardware in the Devices module; `port_map` ties the topology's port names to the
-device's ports. Each entry is `{ ports, device_ports }`:
+`device_type` names the members' hardware in the Devices module. A pool port names its device port by number —
+`<port group id><n>` is port n of that port group (`fe1` = `fe/1`); any other prefix counts the device's data ports
+in order, port groups in order (`etp12` = the 12th data port) — and its lane letter is the sub-port of the cage's
+breakout (`etp12b` = lane b of cage 12). No mapping is written: the cages a pool needs follow from its ports and the
+breakout (`etp{3,4}{a,b}` at 2x400G = 2 cages).
+
+A pool written as a map also sets what its ports take:
 
 | Field | Meaning |
 |---|---|
-| `ports` | topology ports (a port pool pattern), e.g. `etp{1-64}` |
-| `device_ports` | as many device ports, `<port group id>/<index>` of the device type, e.g. `osfp/{1-64}`; the n-th topology port is the n-th device port |
+| `ports` | the pool's ports, as above |
+| `optic` | optional: the optic in its cages — an optic type id of Optics & Cables (`osfp-800g-2xdr4-ihs`) |
+| `cable` | optional: the cable plugged into its ports — a fiber cable into the optic, or a DAC / AEC / AOC into the cage (no `optic`) |
 
 ```yaml
   dt0:
     role: dT0
     count: 512
     device_type: switch-64x800g-osfp
-    port_map:
-      - { ports: "etp{1-64}", device_ports: "osfp/{1-64}" }
     ports:
-      down: etp{33-64}{a,b}
-      up:   etp{1-32}{a,b}
+      down:
+        ports: etp{33-64}{a,b}
+        optic: osfp-800g-2xdr4-ihs
+        cable: mpo12-smf
+      up: { ports: "etp{1-32}{a,b}", optic: osfp-800g-2xdr4-ihs }
 ```
 
-The topology sets no breakout, mode or optic. Each group runs the breakout profile of its device type (Devices
-module) that gives what its ports need, each device port resolved as a Rack Designer placement with that profile
-resolves it:
+The topology sets no breakout or mode. Each group runs the breakout profile of its device type (Devices module)
+that gives what its pools need, each cage resolved as a Rack Designer placement with that profile resolves it:
 
-- every pool port exists — a device port the profile breaks out n ways gives sub-ports `<port>a`, `<port>b`, …
-  (`etp3a` … `etp3h` at 8x100G), an unsplit port keeps the port name;
-- every port a link uses has an optic or a direct-attach cable (DAC / AEC / AOC) in its cage;
+- every pool port exists — a cage the profile breaks out n ways gives sub-ports `<port>a`, `<port>b`, …
+  (`etp3a` … `etp3h` at 8x100G), an unsplit cage the plain name;
+- a pool's optic carries its cages' mode (an 800G module runs 2x400G or 8x100G; a 400G module 1x400G or 1x200G);
 - both ends of every link run one speed (the sub-port speed of their pools) — linked groups are matched together.
 
-Among the profiles that fit, the one fitting the fewest modules in cages no used port needs wins, then the device's
+Among the profiles that fit, the one leaving the fewest used cages at native defaults (no setting for the cage or
+its port group) wins, then the one fitting the fewest modules in cages the group does not use, then the device's
 profile order. In the example the shipped "All 2x400G, 2xDR4" fits. No profile fits: a problem lists, per profile,
-the first need it misses. Also checked: every device port exists, and no port is mapped twice.
+the first need it misses. The profile's own optics are not used: optics and cables come from the pools.
+
+Also checked: every pool port has a number and names a port the device has; a pool's optic fits its cages (form
+factor, heat sink, no faster than the cage); a fiber cable mates the pool's optic (connector, gender, fiber type)
+and a DAC / AEC / AOC plugs into the cage with no optic; a direct-attach cable on one end of a link faces no optic
+and no other cable at the other end. A leftover `port_map` is a problem.
 
 ### `topo`
 
@@ -250,8 +261,9 @@ A compiler / checker on a file asserts:
   group has partitions, each key given once per device;
 - every group meets its `count` and each partition's `count`/`size` (or `sizes`);
 - every topo instance finds its peer instance; no device needs more ports than its pool holds;
-- with a `device_type`: the port map's device ports exist, a breakout profile of the device type gives every pool
-  port (with a module where a link uses it), and both ends of a link run at the same speed;
+- with a `device_type`: every pool port names a port of the device type, a breakout profile of the device type
+  gives every pool port and carries each pool's optic, pool optics and cables fit, and both ends of a link run at
+  the same speed;
 - against existing wiring: per link spec, expected vs actual vs matched / missing / extra links (both ends'
   ports); every existing link is generated by exactly one spec; no group is unused.
 
@@ -265,9 +277,10 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
 - **Sidebar**: the project's topologies (+ New starts from the full example below, ⧉ duplicate, ✕ delete), and the
   selected one's name. Under the list (divider draggable), the **panel** of what is selected in the diagram:
   - a device set group: name, role, count, device type (the Devices module's types; the matched breakout profile
-    under it), partitions (key, count, size, or `sizes` as `1: 54, 2: 18`), port map (with a device type) and port
-    pools with the ports each holds; + adds a row, ✕ removes it; **Delete** removes the group with the link specs
-    and mapping entries naming it;
+    under it), partitions (key, count, size, or `sizes` as `1: 54, 2: 18`) and port pools — ports, port count, and
+    under each the optic (those its cages take) and cable (for the optic, else direct-attach cables for the cage);
+    a pool given an optic or cable is written `{ ports, optic, cable }`, back to its ports when both are cleared;
+    + adds a row, ✕ removes it; **Delete** removes the group with the link specs and mapping entries naming it;
   - a link spec: name and its link count, per end the group, port pool and key, the pattern (mesh / round-robin,
     per pair); filters and `map` are shown and edited in the code. **Delete** removes it.
 
@@ -277,8 +290,8 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
   collapsed state; renaming a pool renames the link ends using it. The panel needs the file to parse.
 - **Left pane — code**: the YAML source, monospace, line numbers, Tab inserts two spaces. Under it the problems found
   in the file (YAML syntax with its line; undefined groups, pools or partition keys; partition sizes that do not
-  add up to `count`; map values that are not strings; a pool too small for a link spec; device types, port maps
-  and link speeds checked against the Devices and Optics modules). The divider to the diagram is draggable
+  add up to `count`; map values that are not strings; a pool too small for a link spec; device types, pool ports,
+  optics, cables and link speeds checked against the Devices and Optics & Cables modules). The divider to the diagram is draggable
   (double-click resets); « hides the pane to a rail (» Code, with the problem count) and » shows it again,
   remembered across sessions.
 - **Right pane — virtual topology**: a canvas (zoom, Export SVG, maximize) drawing the VIRTUAL part only as a
@@ -320,28 +333,32 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
   - toolbar **Groups ▾**: Port grids on/off, per group the split (any key, any ordered pair of keys, or none),
     and **Reset box positions** (shown when a box is moved or collapsed).
 - **Under the diagram — Estimated BOM From Virtual Topo** (the divider above it is draggable, double-click resets):
-  what building the virtual topology takes, from each group's `device_type` and `port_map` at the breakout profile
-  matched to its ports. Only the item bought per line is picked here, saved with the topology:
+  what building the virtual topology takes, from each group's `device_type` at the breakout profile matched to its
+  ports and each pool's optic and cable. Only the item bought per line is picked here, saved with the topology:
   `bom: { items: { <item type>: <item> } }`.
-  - totals: devices, links, optics, typical power (sum of the BOM lines);
+  - totals: devices, links, optics, cables, typical power (sum of the BOM lines);
   - **Hardware per group**, a row per pool: the group's device type and matched breakout profile, the pool's speed, the
     ports one device uses (the port grid's fill), the device ports (cages) they sit in (a cage shared with an earlier
-    pool of the group counts there), the optic per cage (the profile's) and the optics over the group (devices x
-    cages). `≤`
+    pool of the group counts there), the pool's optic and the optics over the group (devices x cages), the pool's
+    cable. `≤`
     marks an upper bound: when devices of uneven sets or filtered link ends use fewer ports, every device is counted
     at the largest set's need;
-  - **BOM**: a line per device type and per optic type, quantities summed over the groups; a group without a device
-    type is its own line (`<role> (no device type)`). Columns: Item, Category, Vendor / Model (PN) (the item picked
-    per line, Generic by default), custom properties, Qty, Derivation (`dt0 512 + t1 256`, `t1 down 256 × 64`),
-    Power/pcs (typical power of one piece, from the picked item), Total W (Qty x Power/pcs). Export CSV;
-  - cables, fiber housings, racks and power distribution depend on the DC layout and are not estimated.
+  - **BOM**: a line per device type, optic type and cable type, quantities summed over the groups / link specs; a
+    group without a device type is its own line (`<role> (no device type)`). Cables per link spec: a cable type
+    both ends' pools take is one cable joining them, different types (e.g. patch cords to a panel at each end) count
+    at each end; qty = links / the links one cable carries at that end = its connectors there x the lanes each optic
+    connector holds (fanout / connectors per cage: 2x400G on 2xDR4 = 1, 8x100G = 4; a 1 MPO to 4 LC breakout = 4).
+    Columns: Item, Category, Vendor / Model (PN) (the item picked per line, Generic by default), custom properties,
+    Qty, Derivation (`dt0 512 + t1 256`, `t1 down 256 × 64`, `dt0-t1 131,072 ÷ 4`), Power/pcs (typical power of one
+    piece, from the picked item; an active cable per plug), Total W (Qty x Power/pcs). Export CSV;
+  - cable lengths, fiber housings, trunks, racks and power distribution depend on the DC layout and are not estimated.
 
 The YAML reader covers block maps / lists, flow `{}` / `[]` (may span lines), quoted and plain scalars and `#`
 comments; anchors, tags and block scalars are not supported.
 
 Code (`src/domain/topo/`): `yaml.ts` reader; `yaml-edit.ts` in-place edits of the YAML text; `edit.ts` the panel's
 topology edits (fields, add / rename / delete groups, pools and link specs); `virtual.ts` parses groups and link specs (link and port counts,
-problems); `hardware.ts` resolves device types and port maps and matches breakout profiles on the Devices module; `slice.ts` picks the
+problems); `hardware.ts` puts pool ports on device ports, matches breakout profiles on the Devices module and checks pool optics and cables; `slice.ts` picks the
 drawn values; `ports.ts` lays out a device's ports and their use; `rule.ts` the rule text; `diagram.ts` the layout;
 `bom.ts` the estimated BOM. `src/features/topo/` renders them.
 

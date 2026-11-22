@@ -33,8 +33,8 @@ function withKey(m: Record<string, string> | undefined, key: string, value: stri
 }
 
 /**
- * Pane under the virtual topology: what building it takes. Hardware: each group's `device_type` and `port_map`, run
- * at the device type's breakout profile matched to the group's ports (modes and optics, Devices module); the item
+ * Pane under the virtual topology: what building it takes. Hardware: each group's `device_type`, run at its breakout
+ * profile matched to the group's ports (modes, Devices module), with the optic and cable each pool sets; the item
  * bought for each line is picked here (saved with the topology).
  */
 export function TopoBomPane({ lib, topo, settings, onChange, filename, height }: Props) {
@@ -43,9 +43,11 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
   const columns = useMemo(() => topoBomColumns(defs), [defs]);
   const devices = topo.groups.reduce((n, g) => n + g.count, 0);
   const optics = bom.lines.filter((l) => l.kind === 'optic').reduce((n, l) => n + l.qty, 0);
+  const cables = bom.lines.filter((l) => l.kind === 'cable').reduce((n, l) => n + l.qty, 0);
   const power = bom.lines.reduce((w, l) => w + lineTotalW(l), 0);
   const upperBound = bom.groups.some((g) => g.pools.some((p) => p.ports && !p.exact));
-  const opticName = (id: string) => lib.optics.get(id)?.name ?? id;
+  const opticName = (id: string) => lib.optics.get(id)?.name ?? `${id} (unknown)`;
+  const cableName = (id: string) => lib.cableMedia.get(id)?.name ?? `${id} (unknown)`;
 
   return (
     <section className="topo-bom" style={{ height }} aria-label="Estimated BOM From Virtual Topo">
@@ -55,6 +57,7 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
           { label: 'Devices', value: fmt(devices) },
           { label: 'Links', value: fmt(bom.links) },
           { label: 'Optics', value: fmt(optics) },
+          { label: 'Cables', value: fmt(cables) },
           { label: 'Typical power', value: formatPower(power) },
         ]} />
         <Section title="Hardware per group">
@@ -63,7 +66,7 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
               <thead>
                 <tr>
                   <th>Group</th><th>Role</th><th className="num">Devices</th><th>Device type</th><th>Breakout profile</th><th>Pool</th><th className="num">Speed</th>
-                  <th className="num">Ports / device</th><th className="num">Cages / device</th><th>Optic per cage</th><th className="num">Optics</th>
+                  <th className="num">Ports / device</th><th className="num">Cages / device</th><th>Optic per cage</th><th className="num">Optics</th><th>Cable</th>
                 </tr>
               </thead>
               <tbody>
@@ -80,7 +83,7 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
                           <td rowSpan={rows.length} className={device ? undefined : 'muted'} title={device?.id}>
                             {device ? device.name : g.deviceType ? `${g.deviceType} (unknown)` : 'no device_type'}
                           </td>
-                          <td rowSpan={rows.length} className={profileName ? undefined : 'muted'}>{profileName ?? (device && g.portMap.length ? 'none fits' : '')}</td>
+                          <td rowSpan={rows.length} className={profileName ? undefined : 'muted'}>{profileName ?? (device && Object.keys(g.poolNames).length ? 'none fits' : '')}</td>
                         </>
                       )}
                       {p ? (
@@ -88,13 +91,12 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
                           <td>{p.pool}</td>
                           <td className="num">{p.speedGbps ? formatGbps(p.speedGbps) : ''}</td>
                           <td className="num">{bound(p, p.ports)}</td>
-                          <td className="num">{p.cages === undefined ? '' : bound(p, p.cages)}</td>
-                          <td className={p.optics.length ? undefined : 'muted'}>
-                            {p.optics.length ? p.optics.map((o) => opticName(o.opticId)).join(', ') : p.cages === undefined ? 'no port_map' : 'none'}
-                          </td>
+                          <td className="num">{bound(p, p.cages)}</td>
+                          <td className={g.poolOptics[p.pool] ? undefined : 'muted'}>{g.poolOptics[p.pool] ? opticName(g.poolOptics[p.pool]) : 'not set'}</td>
                           <td className="num">{p.optics.length ? p.optics.map((o) => `${p.exact ? '' : '≤ '}${fmt(o.total)}`).join(', ') : ''}</td>
+                          <td className={p.cableId ? undefined : 'muted'}>{p.cableId ? cableName(p.cableId) : 'not set'}</td>
                         </>
-                      ) : <td colSpan={6} className="muted">no port pools</td>}
+                      ) : <td colSpan={7} className="muted">no port pools</td>}
                     </tr>
                   ));
                 })}
@@ -108,7 +110,11 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
         <Section title="BOM">
           <BomTable lines={bom.lines} filename={`${filename}-estimated`} columns={columns}
             itemsOf={(id) => lib.variants.of(id)} onPick={(key, itemId) => onChange({ ...settings, items: withKey(settings.items, key, itemId) })} />
-          <p className="muted">Cables, fiber housings, racks and power distribution depend on the DC layout and are not estimated.</p>
+          <p className="muted">
+            Cables: per link spec, the cable its pools take — one joining both ends when they take the same, else one at
+            each end — over the links one cable carries. Cable lengths, fiber housings, trunks, racks and power
+            distribution depend on the DC layout and are not estimated.
+          </p>
         </Section>
       </div>
     </section>

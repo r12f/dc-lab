@@ -414,6 +414,11 @@ export interface EditOptions {
   depth?: number;
   /** A blank line before a new entry (between groups, between links). */
   gap?: boolean;
+  /**
+   * A map or list set where a scalar was written inline becomes a block under its key (a pool's ports becoming
+   * `{ ports, optic }`), the line's comment kept on the key; otherwise inline stays inline.
+   */
+  block?: boolean;
 }
 
 function applyIn(lines: string[], b: Block, path: YamlPath, value: YamlValue | undefined, opts: EditOptions,
@@ -441,7 +446,19 @@ function applyIn(lines: string[], b: Block, path: YamlPath, value: YamlValue | u
     setEntry(lines, b, e, next);
     return;
   }
-  if (value !== undefined) { setEntry(lines, b, e, value); return; }
+  if (value !== undefined) {
+    if (opts.block && e.inline && e.key !== undefined && !e.onDash && value && typeof value === 'object' && !empty(value)
+      && e.inline.from.line === e.inline.to.line) {
+      const line = lines[e.inline.from.line];
+      const comment = line.slice(e.inline.to.col).trim();
+      const out = emitEntry(e.key, value, b.indent, opts.depth ?? 1);
+      if (comment.startsWith('#')) out[0] = `${out[0]}${' '.repeat(Math.max(1, line.indexOf(comment) - out[0].length))}${comment}`;
+      lines.splice(e.first, e.last - e.first + 1, ...out);
+      return;
+    }
+    setEntry(lines, b, e, value);
+    return;
+  }
   // Removing the last entry leaves an empty collection, not a null.
   if (b.entries.length === 1 && owner && !e.onDash) { setEntry(lines, owner.parent, owner.entry, b.kind === 'list' ? [] : {}); return; }
   removeEntry(lines, e, owner);

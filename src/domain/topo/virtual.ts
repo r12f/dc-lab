@@ -12,30 +12,26 @@ export interface Topology {
   source: string;
   /** Diagram view: moved and collapsed group boxes. */
   view?: DiagramView;
-  /** Hardware assumed for the estimated BOM (device type per group, optic per pool, item per line). */
+  /** Items bought for the estimated BOM's lines. */
   bom?: TopoBomSettings;
 }
 
 export interface Partition { key: string; count: number; size: number; sizes?: Record<string, number>; /** Shape holds inside each set of these keys. */ per?: string[] }
-/**
- * One `port_map` entry: topology port names zipped in order with ports of the device type. Modes and optics come from
- * the device type's breakout profile matched to the group's ports.
- */
-export interface PortMapEntry {
-  /** Topology ports (`etp1` … `etp64`); a port the profile breaks out splits into sub-ports `etp1a`, `etp1b`, … */
-  ports: string[];
-  /** Device type ports, `<port group id>/<index>` (`osfp/1` … `osfp/64`), as many as `ports`. */
-  devicePorts: string[];
-}
 export interface VGroup {
   name: string;
   role: string;
   count: number;
   partitions: Partition[];
-  /** Device type of every member: an item type id of the Devices module. */
+  /**
+   * Device type of every member: an item type id of the Devices module. A pool port's number is its device port:
+   * `fe1` = port 1 of port group `fe`; any other prefix counts the data ports in order (`etp12b` = data port 12,
+   * lane b of its breakout).
+   */
   deviceType?: string;
-  /** How the topology's port names sit on the device type's ports (needs `deviceType`). */
-  portMap: PortMapEntry[];
+  /** Pool name -> optic type in its ports' cages (Optics module id), when set. */
+  poolOptics: Record<string, string>;
+  /** Pool name -> type of the cable plugged into its ports (fiber, or a DAC / AEC / AOC into the cage), when set. */
+  poolCables: Record<string, string>;
   /** Pool name -> number of ports. */
   pools: Record<string, number>;
   /** Pool name -> ports per top-level list entry (a pool listed as several entries, e.g. one per peer slot). */
@@ -89,6 +85,15 @@ export function expandPorts(pat: string): string[] {
     } else items.push(part);
   }
   return items.flatMap((it) => expandPorts(pat.slice(0, m.index) + it + pat.slice(m.index + m[0].length)));
+}
+
+/** Keys of a pool written as a map. */
+export const POOL_KEYS = ['ports', 'optic', 'cable'];
+
+/** A pool port's prefix, number and lane: `etp12c` = etp, port 12, lane c (index 2); `fe1` = fe, port 1, no lane. */
+export function portNumber(name: string): { prefix: string; n: number; lane?: number } | undefined {
+  const m = /^(.*?)(\d+)([a-z])?$/.exec(name);
+  return m ? { prefix: m[1], n: Number(m[2]), ...(m[3] ? { lane: m[3].charCodeAt(0) - 97 } : {}) } : undefined;
 }
 
 /** A pool: a string or (nested) list of entries, in order. */
@@ -152,17 +157,31 @@ export function parseVirtual(source: string): VirtualTopo {
     const pools: Record<string, number> = {};
     const poolSlots: Record<string, number[]> = {};
     const poolNames: Record<string, string[]> = {};
-    if (isObj(g.ports)) for (const [k, v] of Object.entries(g.ports)) {
+    const poolOptics: Record<string, string> = {};
+    const poolCables: Record<string, string> = {};
+    if (isObj(g.ports)) for (const [k, raw] of Object.entries(g.ports)) {
+      // A pool is its ports, or a map of its ports with the optic and cable they take.
+      let v: YamlValue | undefined = raw;
+      if (isObj(raw)) {
+        v = raw.ports;
+        if (v === undefined) problems.push({ message: `group ${name}: pool ${k} has no ports` });
+        const extra = Object.keys(raw).filter((x) => !POOL_KEYS.includes(x));
+        if (extra.length) problems.push({ message: `group ${name}: pool ${k} takes ${POOL_KEYS.join(', ')}, not ${extra.join(', ')}` });
+        const optic = str(raw.optic); const cable = str(raw.cable);
+        if (optic) poolOptics[k] = optic;
+        if (cable) poolCables[k] = cable;
+      }
       poolNames[k] = poolPorts(v);
       pools[k] = poolNames[k].length;
       if (Array.isArray(v) && v.length > 1) poolSlots[k] = v.map((e) => poolPorts(e).length);
     }
     const deviceType = str(g.device_type);
-    const portMap = parsePortMap(name, g.port_map, problems);
-    if (portMap.length && !deviceType) problems.push({ message: `group ${name}: port_map needs a device_type` });
+    if (g.port_map !== undefined) {
+      problems.push({ message: `group ${name}: port_map is not used: a pool port's number is its device port (etp12b = data port 12, lane b; fe1 = port 1 of port group fe)` });
+    }
     groups.push({
       name, role: str(g.role) ?? '', count: count ?? 0, partitions, ...(deviceType ? { deviceType } : {}),
-      portMap, pools, poolSlots, poolNames,
+      poolOptics, poolCables, pools, poolSlots, poolNames,
     });
   }
   const byName = new Map(groups.map((g) => [g.name, g]));
@@ -222,24 +241,6 @@ export function parseVirtual(source: string): VirtualTopo {
     }
   }
   return { name: str(doc.topology) ?? '', groups, links, problems };
-}
-
-/** A group's `port_map`: entries `{ ports, device_ports }`, the two port lists the same length. */
-function parsePortMap(group: string, v: YamlValue | undefined, problems: Problem[]): PortMapEntry[] {
-  if (v === undefined) return [];
-  if (!Array.isArray(v)) { problems.push({ message: `group ${group}: port_map must be a list` }); return []; }
-  const out: PortMapEntry[] = [];
-  for (const e of v) {
-    const ports = isObj(e) ? poolPorts(e.ports) : [];
-    const devicePorts = isObj(e) ? poolPorts(e.device_ports) : [];
-    if (!isObj(e) || !ports.length || !devicePorts.length) { problems.push({ message: `group ${group}: a port_map entry needs ports and device_ports` }); continue; }
-    if (ports.length !== devicePorts.length) {
-      problems.push({ message: `group ${group}: port_map ${str(e.ports)} names ${ports.length} ports, device_ports ${str(e.device_ports)} ${devicePorts.length}` });
-    }
-    if ('mode' in e || 'optic' in e) problems.push({ message: `group ${group}: port_map takes no mode or optic: they come from the device type's breakout profiles` });
-    out.push({ ports, devicePorts });
-  }
-  return out;
 }
 
 /** Instances of an end: how many, devices per instance (mean), and devices in the largest instance. */

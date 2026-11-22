@@ -405,8 +405,8 @@ function migrateBomItems(p: Json): Json {
 }
 
 /**
- * Topologies: the estimated BOM's device type per group and optic per pool moved into the YAML (`device_type`,
- * `port_map`); only the item picks stay in `bom`.
+ * Topologies: the estimated BOM's device type per group and optic per pool moved into the YAML (`device_type`, a
+ * pool's `optic`); only the item picks stay in `bom`.
  */
 function migrateTopology(t: Json): Json {
   const bom = t.bom as Json | undefined;
