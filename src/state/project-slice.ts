@@ -4,7 +4,7 @@ import { mergeProjects } from '../domain/project/serializer';
 import type { PropertyDef, PropertyValue } from '../domain/properties/types';
 import { withValue } from '../domain/properties/properties';
 
-export type ListKey = 'devices' | 'racks' | 'optics' | 'cableMedia' | 'variants' | 'rackDesigns' | 'layouts';
+export type ListKey = 'devices' | 'racks' | 'optics' | 'cableMedia' | 'variants' | 'rackDesigns' | 'layouts' | 'topologies';
 type ItemOf<K extends ListKey> = Project[K][number];
 
 export interface ProjectSlice {

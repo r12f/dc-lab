@@ -1,0 +1,69 @@
+import { useDeferredValue, useMemo, useState } from 'react';
+import { useAppStore } from '../../state/store';
+import { slugify, uniqueId } from '../../domain/ids';
+import { ModuleLayout } from '../../ui/module-layout';
+import { Sidebar } from '../../ui/sidebar';
+import { CanvasFrame, EmptyCanvas } from '../../ui/canvas-frame';
+import { Splitter } from '../../ui/splitter';
+import { TOPOLOGY_SCHEMA, parseVirtual, type Topology } from '../../domain/topo/virtual';
+import { layoutDiagram } from '../../domain/topo/diagram';
+import { SAMPLE_TOPOLOGY } from '../../domain/topo/sample';
+import { TopoEditor } from './topo-editor';
+import { TopoDiagramView } from './topo-diagram';
+
+const CODE_W = 560;
+
+/** Topo Builder: a topology file's source (left) and the diagram of its virtual topology (right). */
+export function TopoModule() {
+  const topologies = useAppStore((s) => s.project.topologies);
+  const selectedId = useAppStore((s) => s.selected.topo);
+  const select = useAppStore((s) => s.select);
+  const upsert = useAppStore((s) => s.upsert);
+  const update = useAppStore((s) => s.update);
+  const remove = useAppStore((s) => s.remove);
+  const [codeW, setCodeW] = useState(CODE_W);
+  const topo = topologies.find((t) => t.id === selectedId);
+  // Parse off the typing path: the diagram follows the source a frame later on big files.
+  const source = useDeferredValue(topo?.source ?? '');
+  const virtual = useMemo(() => parseVirtual(source), [source]);
+  const diagram = useMemo(() => layoutDiagram(virtual), [virtual]);
+
+  const create = () => {
+    const t: Topology = { schema: TOPOLOGY_SCHEMA, id: uniqueId(slugify('topology'), topologies.map((x) => x.id)), name: 'New topology', source: SAMPLE_TOPOLOGY };
+    upsert('topologies', t);
+    select('topo', t.id);
+  };
+  const duplicate = (id: string) => {
+    const src = topologies.find((t) => t.id === id);
+    if (!src) return;
+    const copy = { ...src, id: uniqueId(`${src.id}-copy`, topologies.map((x) => x.id)), name: `${src.name} (copy)` };
+    upsert('topologies', copy);
+    select('topo', copy.id);
+  };
+  return (
+    <ModuleLayout
+      sidebar={<Sidebar title="Topologies" filterable selectedId={selectedId}
+        items={topologies.map((t) => ({ id: t.id, name: t.name, path: [], keywords: t.source.slice(0, 400) }))}
+        onSelect={(id) => select('topo', id)} onNew={create} onDuplicate={duplicate}
+        onDelete={(id) => { if (confirm('Delete this topology?')) { remove('topologies', id); select('topo', undefined); } }}
+        emptyText="Create a topology."
+        header={topo && (
+          <div className="pad topo-name">
+            <input aria-label="Topology name" value={topo.name} onChange={(e) => update('topologies', topo.id, (t) => ({ ...t, name: e.target.value }))} />
+          </div>
+        )} />}
+      canvas={topo ? (
+        <div className="topo-split" style={{ gridTemplateColumns: `minmax(0, ${codeW}px) 0 minmax(240px, 1fr)` }}>
+          <TopoEditor value={topo.source} problems={virtual.problems}
+            onChange={(v) => update('topologies', topo.id, (t) => ({ ...t, source: v }))} />
+          <Splitter label="Code width" width={codeW} direction={1} onResize={(px) => setCodeW(Math.max(240, Math.min(1600, px)))} onReset={() => setCodeW(CODE_W)} />
+          <CanvasFrame title={`${topo.name} — virtual topology`} exportName={`${topo.id}-virtual`} fitKey={`${topo.id}:${diagram.width}`}>
+            {(ref) => virtual.groups.length
+              ? <TopoDiagramView ref={ref} topo={virtual} diagram={diagram} />
+              : <div className="empty-canvas">No device set groups to draw.</div>}
+          </CanvasFrame>
+        </div>
+      ) : <EmptyCanvas text="Select or create a topology." />}
+    />
+  );
+}

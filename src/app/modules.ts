@@ -5,6 +5,7 @@ import { RacksModule } from '../features/racks/racks-module';
 import { OpticsModule } from '../features/optics/optics-module';
 import { DesignerModule } from '../features/designer/designer-module';
 import { LayoutModule } from '../features/layout/layout-module';
+import { TopoModule } from '../features/topo/topo-module';
 
 export interface ModuleDef {
   id: ModuleTab;
@@ -19,4 +20,5 @@ export const MODULES: ModuleDef[] = [
   { id: 'racks', label: 'Racks', component: RacksModule },
   { id: 'designer', label: 'Rack Designer (L11)', component: DesignerModule },
   { id: 'layout', label: 'DC Layout (L12)', component: LayoutModule },
+  { id: 'topo', label: 'Topo Builder', component: TopoModule },
 ];

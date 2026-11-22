@@ -1,7 +1,7 @@
 # DC Lab — Overview
 
 DC Lab is a browser-based prototyping tool for data center hardware design.
-It is organized as five modules that build on each other:
+It is organized as six modules that build on each other:
 
 | Module | Level | Purpose | Spec |
 |---|---|---|---|
@@ -10,11 +10,12 @@ It is organized as five modules that build on each other:
 | Racks | — | Define rack templates: units, dimensions, footprint tiles, limits | [02-racks.md](02-racks.md) |
 | Rack Designer | L11 | Populate a rack template with devices, optics, cables; BOM + metrics | [03-rack-designer.md](03-rack-designer.md) |
 | DC Layout | L12 | Rows, tiles, aisles, trays; assign rack designs to tiles; DC BOM | [04-dc-layout.md](04-dc-layout.md) |
+| Topo Builder | — | Write a topology file; see its virtual topology as a diagram | [10-topology-compiler.md](10-topology-compiler.md) |
 
 Cross-cutting concerns: [05-project-file.md](05-project-file.md) (single-file JSON project,
 built-in catalog), [06-architecture.md](06-architecture.md) (code structure) and
 [07-themes.md](07-themes.md) (color themes), [09-item-variants.md](09-item-variants.md) (Type → Item type → Item),
-[10-topology-compiler.md](10-topology-compiler.md) (topology DSL syntax, not implemented yet).
+[10-topology-compiler.md](10-topology-compiler.md) (topology DSL syntax; compiling onto a layout is not implemented yet).
 
 ## UI shell
 

@@ -242,3 +242,17 @@ button.link { width: auto; background: none; border: none; padding: 0; color: va
 .segmented button { position: relative; z-index: 1; width: auto; background: none; border: 0; padding: 3px 12px; border-radius: 999px; cursor: pointer; color: var(--text); white-space: nowrap; }
 .segmented button.active { color: var(--general-on-accent); font-weight: 600; }
 .segmented-pill { position: absolute; top: 2px; bottom: 2px; left: 2px; border-radius: 999px; background: var(--accent); transition: transform 0.18s ease; }
+
+/* Topo Builder: code pane | splitter | diagram canvas */
+.topo-split { flex: 1; display: grid; min-width: 0; min-height: 0; }
+.topo-split > .canvas-frame { min-height: 0; }
+.topo-editor { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--border); background: var(--panel); }
+.topo-code { flex: 1; display: flex; min-height: 0; font-family: ui-monospace, Consolas, "Cascadia Mono", monospace; font-size: 12.5px; line-height: 18px; }
+.topo-gutter { flex: none; min-width: 40px; padding: 8px 6px 8px 0; overflow: hidden; text-align: right; color: var(--muted); background: var(--surface-panel-alt); border-right: 1px solid var(--border); user-select: none; }
+.topo-gutter .bad { color: var(--danger); font-weight: 700; }
+.topo-code textarea { flex: 1; width: auto; min-width: 0; margin: 0; padding: 8px 10px; border: 0; border-radius: 0; resize: none; outline: none;
+  font: inherit; line-height: inherit; white-space: pre; overflow: auto; tab-size: 2; background: var(--surface-input); color: var(--text); }
+.topo-problems { flex: none; max-height: 30%; overflow: auto; padding: 6px 10px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+.topo-problems.has { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--panel)); }
+.topo-problems ul { margin: 0; padding-left: 18px; }
+.topo-name { padding: 6px 12px; border-bottom: 1px solid var(--border); }

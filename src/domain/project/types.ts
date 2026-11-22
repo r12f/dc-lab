@@ -4,6 +4,7 @@ import type { DcLayout } from '../layout/types';
 import type { PropertyDef, PropertyValue } from '../properties/types';
 import type { ItemVariant } from '../items/types';
 import type { BreakoutProfile } from '../device/types';
+import type { Topology } from '../topo/virtual';
 
 export const PROJECT_SCHEMA = 'dc-lab/project@1';
 
@@ -13,6 +14,8 @@ export interface Project extends CatalogSet {
   name: string;
   rackDesigns: RackDesign[];
   layouts: DcLayout[];
+  /** Topology files (Topo Builder). */
+  topologies: Topology[];
   /** Built-in item ids deleted in this project. */
   hiddenBuiltins: string[];
   /** Project-wide custom property definitions. */
@@ -31,6 +34,6 @@ export interface BuiltinProfiles {
 export function emptyProject(name = 'Untitled project'): Project {
   return {
     schema: PROJECT_SCHEMA, name,
-    devices: [], racks: [], optics: [], cableMedia: [], variants: [], rackDesigns: [], layouts: [], hiddenBuiltins: [], propertyDefs: [], builtinProperties: {}, builtinProfiles: {},
+    devices: [], racks: [], optics: [], cableMedia: [], variants: [], rackDesigns: [], layouts: [], topologies: [], hiddenBuiltins: [], propertyDefs: [], builtinProperties: {}, builtinProfiles: {},
   };
 }
