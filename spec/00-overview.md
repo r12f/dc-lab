@@ -10,7 +10,7 @@ It is organized as six modules that build on each other:
 | Racks | — | Define rack templates: units, dimensions, footprint tiles, limits | [02-racks.md](02-racks.md) |
 | Rack Designer | L11 | Populate a rack template with devices, optics, cables; BOM + metrics | [03-rack-designer.md](03-rack-designer.md) |
 | DC Layout | L12 | Rows, tiles, aisles, trays; assign rack designs to tiles; DC BOM | [04-dc-layout.md](04-dc-layout.md) |
-| Topo Builder | — | Write a topology file; see its virtual topology as a diagram | [10-topology-compiler.md](10-topology-compiler.md) |
+| Topo Builder | — | Write a topology file; see its virtual topology as a diagram and its estimated BOM | [10-topology-compiler.md](10-topology-compiler.md) |
 
 Cross-cutting concerns: [05-project-file.md](05-project-file.md) (single-file JSON project,
 built-in catalog), [06-architecture.md](06-architecture.md) (code structure) and

@@ -1,5 +1,5 @@
 import type { BomLine } from '../domain/bom/types';
-import { bomColumns } from '../domain/bom/columns';
+import { bomColumns, type BomColumn } from '../domain/bom/columns';
 import { bomToCsv } from '../domain/bom/csv';
 import { formatPower } from '../domain/units';
 import { downloadText } from '../io/download';
@@ -9,14 +9,16 @@ import type { ItemVariant } from '../domain/items/types';
 import { GENERIC_SUFFIX } from '../domain/items/types';
 import { variantLabel } from '../domain/items/variants';
 
-export function BomTable({ lines, filename, itemsOf, onPick }: {
+export function BomTable({ lines, filename, itemsOf, onPick, columns }: {
   lines: BomLine[]; filename: string;
   /** Items of an item type; with `onPick`, lines carrying a pick key get a Vendor / Model (PN) picker. */
   itemsOf?(itemTypeId: string): ItemVariant[];
   onPick?(pickKey: string, itemId: string | undefined): void;
+  /** Columns shown (default: the rack BOM's); the CSV keeps the full column set. */
+  columns?: BomColumn[];
 }) {
   const defs = useAppStore((s) => s.project.propertyDefs);
-  const cols = bomColumns(defs);
+  const cols = columns ?? bomColumns(defs);
   return (
     <div className="table-scroll">
       <table className="table">

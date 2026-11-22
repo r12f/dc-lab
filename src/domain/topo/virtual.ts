@@ -1,5 +1,6 @@
 import { parseYaml, YamlError, type YamlValue } from './yaml';
 import type { DiagramView } from './diagram';
+import type { TopoBomSettings } from './bom';
 
 export const TOPOLOGY_SCHEMA = 'dc-lab/topology@1';
 
@@ -11,6 +12,8 @@ export interface Topology {
   source: string;
   /** Diagram view: moved and collapsed group boxes. */
   view?: DiagramView;
+  /** Hardware assumed for the estimated BOM (device type per group, optic per pool, item per line). */
+  bom?: TopoBomSettings;
 }
 
 export interface Partition { key: string; count: number; size: number; sizes?: Record<string, number>; /** Shape holds inside each set of these keys. */ per?: string[] }

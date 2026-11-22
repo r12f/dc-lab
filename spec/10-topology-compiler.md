@@ -220,8 +220,8 @@ Realize (wire) and check are actions in the app, not part of the file.
 
 ## Topo Builder module
 
-Topology files are kept in the project (`topologies[]`: `{ id, name, source, view? }`, schema `dc-lab/topology@1`; the
-source is the YAML text, saved as typed).
+Topology files are kept in the project (`topologies[]`: `{ id, name, source, view?, bom? }`, schema
+`dc-lab/topology@1`; the source is the YAML text, saved as typed).
 
 - **Sidebar**: the project's topologies (+ New starts from the full example below, ⧉ duplicate, ✕ delete), and the
   selected one's name.
@@ -261,13 +261,29 @@ source is the YAML text, saved as typed).
     and folds are saved with the topology (`view: { offsets: { <group>: { dx, dy } }, collapsed: [<group>] }`);
   - toolbar **Groups ▾**: Port grids on/off, per group the split (any key, any ordered pair of keys, or none),
     and **Reset box positions** (shown when a box is moved or collapsed).
+- **Under the diagram — Estimated BOM From Virtual Topo** (the divider above it is draggable, double-click resets):
+  what building the virtual topology takes. The hardware is an assumption saved with the topology, never in the
+  YAML (groups stay logical): `bom: { devices: { <group>: <device type> }, optics: { "<group>.<pool>": <optic type> },
+  items: { <item type>: <item> } }`.
+  - totals: devices, links, optics, typical power (sum of the BOM lines);
+  - **Hardware per group**, a row per pool: the group's device type (picker: every device but fillers and room
+    equipment), the ports one device uses (the port grid's fill), the cages they sit in (one optic each: `etp12c` is
+    lane c of cage `etp12`, a port without lanes is its own cage; a cage shared with an earlier pool of the group
+    counts there), the optic per cage (picker: optics that fit the device type's data cages, or None) and the optics
+    over the group (devices x cages). `≤` marks an upper bound: when devices of uneven sets or filtered link ends
+    use fewer ports, every device is counted at the largest set's need;
+  - **BOM**: a line per device type and per optic type, quantities summed over the groups; a group without a device
+    type is its own line (`<role> (no device type)`). Columns: Item, Category, Vendor / Model (PN) (the item picked
+    per line, Generic by default), custom properties, Qty, Derivation (`dt0 512 + t1 256`, `t1 down 256 × 64`),
+    Total W (from the picked item). Export CSV;
+  - cables, fiber housings, racks and power distribution depend on the DC layout and are not estimated.
 
 The YAML reader covers block maps / lists, flow `{}` / `[]` (may span lines), quoted and plain scalars and `#`
 comments; anchors, tags and block scalars are not supported.
 
 Code (`src/domain/topo/`): `yaml.ts` reader; `virtual.ts` parses groups and link specs (link and port counts,
 problems); `slice.ts` picks the drawn values; `ports.ts` lays out a device's ports and their use; `rule.ts` the
-rule text; `diagram.ts` the layout. `src/features/topo/` renders it.
+rule text; `diagram.ts` the layout; `bom.ts` the estimated BOM. `src/features/topo/` renders them.
 
 ## Full example
 
