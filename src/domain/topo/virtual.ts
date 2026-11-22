@@ -17,11 +17,26 @@ export interface Topology {
 }
 
 export interface Partition { key: string; count: number; size: number; sizes?: Record<string, number>; /** Shape holds inside each set of these keys. */ per?: string[] }
+/** One `port_map` entry: topology port names zipped in order with ports of the device type, in one mode. */
+export interface PortMapEntry {
+  /** Topology ports (`etp1` … `etp64`); a breakout mode splits each into sub-ports `etp1a`, `etp1b`, … */
+  ports: string[];
+  /** Device type ports, `<port group id>/<index>` (`osfp/1` … `osfp/64`), as many as `ports`. */
+  devicePorts: string[];
+  /** Breakout mode of those device ports (`8x100G`); absent = the native mode. */
+  mode?: string;
+  /** Optic type (Optics module id) in each of those cages. */
+  optic?: string;
+}
 export interface VGroup {
   name: string;
   role: string;
   count: number;
   partitions: Partition[];
+  /** Device type of every member: an item type id of the Devices module. */
+  deviceType?: string;
+  /** How the topology's port names sit on the device type's ports (needs `deviceType`). */
+  portMap: PortMapEntry[];
   /** Pool name -> number of ports. */
   pools: Record<string, number>;
   /** Pool name -> ports per top-level list entry (a pool listed as several entries, e.g. one per peer slot). */
@@ -141,7 +156,10 @@ export function parseVirtual(source: string): VirtualTopo {
       pools[k] = poolNames[k].length;
       if (Array.isArray(v) && v.length > 1) poolSlots[k] = v.map((e) => poolPorts(e).length);
     }
-    groups.push({ name, role: str(g.role) ?? '', count: count ?? 0, partitions, pools, poolSlots, poolNames });
+    const deviceType = str(g.device_type);
+    const portMap = parsePortMap(name, g.port_map, problems);
+    if (portMap.length && !deviceType) problems.push({ message: `group ${name}: port_map needs a device_type` });
+    groups.push({ name, role: str(g.role) ?? '', count: count ?? 0, partitions, ...(deviceType ? { deviceType } : {}), portMap, pools, poolSlots, poolNames });
   }
   const byName = new Map(groups.map((g) => [g.name, g]));
   const links: VLink[] = [];
@@ -200,6 +218,24 @@ export function parseVirtual(source: string): VirtualTopo {
     }
   }
   return { name: str(doc.topology) ?? '', groups, links, problems };
+}
+
+/** A group's `port_map`: entries `{ ports, device_ports, mode?, optic? }`, the two port lists the same length. */
+function parsePortMap(group: string, v: YamlValue | undefined, problems: Problem[]): PortMapEntry[] {
+  if (v === undefined) return [];
+  if (!Array.isArray(v)) { problems.push({ message: `group ${group}: port_map must be a list` }); return []; }
+  const out: PortMapEntry[] = [];
+  for (const e of v) {
+    const ports = isObj(e) ? poolPorts(e.ports) : [];
+    const devicePorts = isObj(e) ? poolPorts(e.device_ports) : [];
+    if (!isObj(e) || !ports.length || !devicePorts.length) { problems.push({ message: `group ${group}: a port_map entry needs ports and device_ports` }); continue; }
+    if (ports.length !== devicePorts.length) {
+      problems.push({ message: `group ${group}: port_map ${str(e.ports)} names ${ports.length} ports, device_ports ${str(e.device_ports)} ${devicePorts.length}` });
+    }
+    const mode = str(e.mode); const optic = str(e.optic);
+    out.push({ ports, devicePorts, ...(mode ? { mode } : {}), ...(optic ? { optic } : {}) });
+  }
+  return out;
 }
 
 /** Instances of an end: how many, devices per instance (mean), and devices in the largest instance. */

@@ -3,9 +3,10 @@ import { parseYaml, YamlError } from '../topo/yaml';
 import { expandPorts, parseVirtual, poolPorts } from '../topo/virtual';
 import { DEFAULT_OPTIONS, groupDevices, layoutDiagram, type GroupBox } from '../topo/diagram';
 import { pick, sliceTopo, withGaps } from '../topo/slice';
-import { cageOf, portLayout, portUse } from '../topo/ports';
+import { portLayout, portUse } from '../topo/ports';
 import { ruleText } from '../topo/rule';
-import { estimateTopoBom, opticChoices, topoBomColumns, type TopoBomSettings } from '../topo/bom';
+import { estimateTopoBom, topoBomColumns } from '../topo/bom';
+import { groupHardware, hardwareProblems } from '../topo/hardware';
 import { SAMPLE_TOPOLOGY } from '../topo/sample';
 import { normalizeProject, serializeProject } from '../project/serializer';
 import { emptyProject } from '../project/types';
@@ -225,33 +226,113 @@ describe('diagram', () => {
   });
 });
 
-describe('estimated BOM', () => {
+describe('device type and port map', () => {
+  // Test-local item (made-up vendor, model and power).
+  const sw: ItemVariant = { id: 'sw-x', name: 'SW', target: 'device', itemId: 'switch-64x800g-osfp', vendor: 'V', model: 'SW', properties: {}, specs: { typicalW: 100 } };
+  const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, { ...emptyProject(), variants: [sw] });
   const v = parseVirtual(`device_set_groups:
-  s: { role: server, count: 8, partitions: [ { key: pod, count: 2, size: 4 } ], ports: { nic: p{1-2}{a-b} } }
-  t: { role: tor, count: 4, partitions: [ { key: pod, count: 2, size: 2 } ], ports: { down: etp{1-4}{a-b}, up: etp{5-8}{a-b} } }
-  u: { role: spine, count: 2, ports: { down: etp{1-8} } }
+  s:
+    role: server
+    count: 8
+    device_type: server-gpu-8u
+    port_map:
+      - { ports: "p{1-2}", device_ports: "fe/{1-2}", mode: 4x100G, optic: qsfp112-400g-dr4 }
+    partitions: [ { key: pod, count: 2, size: 4 } ]
+    ports: { nic: p{1-2}{a-b} }
+  t:
+    role: tor
+    count: 4
+    device_type: switch-64x800g-osfp
+    port_map:
+      - { ports: "etp{1-8}", device_ports: "osfp/{1-8}", mode: 8x100G, optic: osfp-800g-2xdr4-ihs }
+    partitions: [ { key: pod, count: 2, size: 2 } ]
+    ports: { down: etp{1-4}{a-b}, up: etp{5-8}{a-b} }
+  u:
+    role: spine
+    count: 2
+    device_type: switch-64x800g-osfp
+    port_map:
+      - { ports: "etp{1-8}", device_ports: "osfp/{1-8}", mode: 8x100G, optic: osfp-800g-2xdr4-ihs }
+    ports: { down: etp{1-8}a }
 topo:
   - { name: s-t, from: { group: s, key: "\${pod}", ports: nic }, to: { group: t, key: "\${pod}", ports: down }, pattern: { type: mesh, per_pair: 1 } }
   - { name: t-u, from: { group: t, ports: up }, to: { group: u, ports: down }, pattern: { type: mesh, per_pair: 1 } }
 `);
-  // Test-local item (made-up vendor, model and power).
-  const sw: ItemVariant = { id: 'sw-x', name: 'SW', target: 'device', itemId: 'switch-64x800g-osfp', vendor: 'V', model: 'SW', properties: {}, specs: { typicalW: 100 } };
-  const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, { ...emptyProject(), variants: [sw] });
-  const settings: TopoBomSettings = {
-    devices: { s: 'server-2u-2s', t: 'switch-64x800g-osfp', u: 'switch-64x800g-osfp' },
-    optics: { 's.nic': 'qsfp112-400g-dr4', 't.down': 'osfp-800g-2xdr4-ihs', 't.up': 'osfp-800g-2xdr4-ihs', 'u.down': 'osfp-800g-2xdr4-ihs' },
-    items: { 'switch-64x800g-osfp': 'sw-x' },
-  };
-  const bom = estimateTopoBom(lib, v, settings);
+  const group = (n: string, vv = v) => vv.groups.find((g) => g.name === n)!;
 
-  it('counts one optic per used cage: the lanes of a cage share it', () => {
-    expect(['etp12c', 'p1a', 'etp7', 'Ethernet5/1/1'].map(cageOf)).toEqual(['etp12', 'p1', 'etp7', 'Ethernet5/1/1']);
-    const pools = Object.fromEntries(bom.groups.flatMap((g) => g.pools.map((p) => [`${g.group.name}.${p.pool}`, [p.ports, p.cages, p.optics, p.exact]])));
-    expect(pools).toEqual({ 's.nic': [2, 1, 8, true], 't.down': [4, 2, 8, true], 't.up': [2, 1, 4, true], 'u.down': [4, 4, 8, true] });
+  it('parses device_type and port_map', () => {
+    expect(v.problems).toEqual([]);
+    const t = group('t');
+    expect([t.deviceType, t.portMap[0].ports[2], t.portMap[0].devicePorts[2], t.portMap[0].mode, t.portMap[0].optic])
+      .toEqual(['switch-64x800g-osfp', 'etp3', 'osfp/3', '8x100G', 'osfp-800g-2xdr4-ihs']);
+    const bad = parseVirtual(`device_set_groups:
+  d: { role: w, count: 1, port_map: [ { ports: "q{1-2}", device_ports: "osfp/1" } ], ports: { p: q1 } }
+  e: { role: w, count: 1, device_type: x, port_map: { ports: q1 }, ports: { p: q1 } }
+`);
+    expect(bad.problems.map((p) => p.message)).toEqual([
+      'group d: port_map q{1-2} names 2 ports, device_ports osfp/1 1',
+      'group d: port_map needs a device_type',
+      'group e: port_map must be a list',
+    ]);
+  });
+  it('resolves topology ports on the device type: a breakout mode gives sub-ports a, b, …; native keeps the name', () => {
+    const hw = groupHardware(lib, group('t'));
+    expect(hw.ports.size).toBe(64);
+    expect(hw.ports.get('etp3c')).toEqual({ cage: 'osfp/3', speedGbps: 100, opticId: 'osfp-800g-2xdr4-ihs' });
+    const native = parseVirtual(`device_set_groups:
+  n: { role: w, count: 1, device_type: switch-64x800g-osfp, port_map: [ { ports: "x{1-2}", device_ports: "osfp/{9-10}" } ], ports: { p: x{1-2} } }
+`);
+    expect(groupHardware(lib, group('n', native)).ports.get('x2')).toEqual({ cage: 'osfp/10', speedGbps: 800 });
+    expect(hardwareProblems(lib, v)).toEqual([]);
+  });
+  it('reports what the device type does not take, and link ends at different speeds', () => {
+    const bad = parseVirtual(`device_set_groups:
+  a:
+    role: x
+    count: 2
+    device_type: switch-64x800g-osfp
+    port_map:
+      - { ports: "e{1-2}", device_ports: "osfp/{1-2}", mode: 2x400G, optic: qsfp112-400g-dr4 }
+      - { ports: "f{1-2}", device_ports: "osfp/{64-65}", mode: 16x50G }
+    ports: { up: e{1-2}{a-b}, more: g1a }
+  b:
+    role: y
+    count: 2
+    device_type: switch-64x800g-osfp
+    port_map:
+      - { ports: "e{1-2}", device_ports: "osfp/{1-2}", mode: 8x100G }
+    ports: { down: e1{a-d} }
+  c: { role: z, count: 1, device_type: no-such-device, ports: { p: q1 } }
+topo:
+  - { name: ab, from: { group: a, ports: up }, to: { group: b, ports: down }, pattern: { type: mesh, per_pair: 1 } }
+`);
+    expect(bad.problems).toEqual([]);
+    const msgs = hardwareProblems(lib, bad).map((p) => p.message);
+    expect(msgs).toHaveLength(6);
+    expect(msgs).toEqual(expect.arrayContaining([
+      expect.stringMatching(/^group a: .+ does not fit .+ ports at 2x400G$/),
+      expect.stringMatching(/^group a: .+ has no port osfp\/65$/),
+      expect.stringMatching(/^group a: .+ ports have no mode 16x50G \(1x800G, 2x400G/),
+      'group a: pool more port g1a is not in the port map',
+      'group c: device type "no-such-device" is not in the Devices module',
+      'ab: a up runs 400G, b down 100G',
+    ]));
+  });
+
+  const bom = estimateTopoBom(lib, v, { items: { 'switch-64x800g-osfp': 'sw-x' } });
+  it('estimates the BOM from the device types: one optic per used cage of the port map', () => {
+    const pools = Object.fromEntries(bom.groups.flatMap((g) => g.pools.map((p) => [`${g.group.name}.${p.pool}`,
+      [p.ports, p.speedGbps, p.cages, p.optics.map((o) => `${o.opticId} ${o.perDevice} ${o.total}`), p.exact]])));
+    expect(pools).toEqual({
+      's.nic': [2, 100, 1, ['qsfp112-400g-dr4 1 8'], true],
+      't.down': [4, 100, 2, ['osfp-800g-2xdr4-ihs 2 8'], true],
+      't.up': [2, 100, 1, ['osfp-800g-2xdr4-ihs 1 4'], true],
+      'u.down': [4, 100, 4, ['osfp-800g-2xdr4-ihs 4 8'], true],
+    });
   });
   it('merges lines by item type, with the derivation and the picked item', () => {
     expect(bom.lines.map((l) => [l.key, l.qty, l.notes[0]])).toEqual([
-      ['device:server-2u-2s', 8, 's 8'],
+      ['device:server-gpu-8u', 8, 's 8'],
       ['device:switch-64x800g-osfp', 6, 't 4 + u 2'],
       ['optic:qsfp112-400g-dr4', 8, 's nic 8 × 1'],
       ['optic:osfp-800g-2xdr4-ihs', 20, 't down 4 × 2 + t up 4 × 1 + u down 2 × 4'],
@@ -264,20 +345,35 @@ topo:
   it('lists a group without a device type by its role; uneven sets give an upper bound', () => {
     const u = parseVirtual(`device_set_groups:
   s: { role: x, count: 72, partitions: [ { key: p, sizes: { "1": 54, "2": 18 } } ], ports: { n: e{1-2} } }
-  t: { role: y, count: 4, partitions: [ { key: p, count: 2, size: 2 } ], ports: { d: e{1-60} } }
+  t:
+    role: y
+    count: 4
+    device_type: switch-64x800g-osfp
+    port_map:
+      - { ports: "e{1-64}", device_ports: "osfp/{1-64}", optic: osfp-800g-2xdr4-ihs }
+    partitions: [ { key: p, count: 2, size: 2 } ]
+    ports: { d: e{1-60} }
 topo:
   - { name: l, from: { group: s, key: "\${p}", ports: n }, to: { group: t, key: "\${p}", ports: d }, pattern: { type: mesh, per_pair: 1 } }
 `);
-    const b = estimateTopoBom(lib, u, { optics: { 't.d': 'osfp-800g-2xdr4-ihs' } });
+    expect(hardwareProblems(lib, u)).toEqual([]);
+    const b = estimateTopoBom(lib, u, {});
     expect(b.lines.map((l) => [l.item, l.qty, l.notes[0]])).toEqual([
-      ['x (no device type)', 72, 's 72'], ['y (no device type)', 4, 't 4'], [lib.optics.get('osfp-800g-2xdr4-ihs')!.name, 216, 't d 4 × ≤54'],
+      ['x (no device type)', 72, 's 72'],
+      [lib.devices.get('switch-64x800g-osfp')!.name, 4, 't 4'],
+      [lib.optics.get('osfp-800g-2xdr4-ihs')!.name, 216, 't d 4 × ≤54'],
     ]);
     // 54 + 54 + 18 + 18 links: the dT0 of the small set use 18 ports, not 54.
     expect(b.groups.map((g) => g.pools[0].exact)).toEqual([true, false]);
   });
   it('counts a cage two pools share once, under the first pool', () => {
     const u = parseVirtual(`device_set_groups:
-  x: { role: x, count: 1, ports: { a: etp1{a-b}, b: etp1{c-d} } }
+  x:
+    role: x
+    count: 1
+    device_type: switch-64x800g-osfp
+    port_map: [ { ports: "etp1", device_ports: "osfp/1", mode: 4x200G } ]
+    ports: { a: etp1{a-b}, b: etp1{c-d} }
   y: { role: y, count: 2, ports: { p: q{1-4} } }
 topo:
   - { name: l1, from: { group: x, ports: a }, to: { group: y, ports: p }, pattern: { type: mesh, per_pair: 1 } }
@@ -285,16 +381,10 @@ topo:
 `);
     expect(estimateTopoBom(lib, u, {}).groups[0].pools.map((p) => [p.pool, p.ports, p.cages])).toEqual([['a', 2, 1], ['b', 2, 0]]);
   });
-  it('offers the optics that fit the device type; the table adds the derivation column', () => {
-    const ids = opticChoices(lib, 'switch-64x800g-osfp').map((o) => o.id);
-    expect(ids).toContain('osfp-800g-2xdr4-ihs');
-    expect(ids).not.toContain('osfp-800g-2xdr4');
-    expect(ids).not.toContain('qsfp112-400g-dr4');
-    expect(opticChoices(lib, undefined)).toHaveLength(lib.optics.items().length);
+  it('shows the derivation column and Qty with thousands separators', () => {
     expect(topoBomColumns([]).map((c) => c.header)).toEqual(['Item', 'Category', 'Vendor / Model (PN)', 'Qty', 'Derivation', 'Total W']);
-    expect(topoBomColumns([]).map((c) => c.cell(bom.lines[3]))).toEqual([
-      lib.optics.get('osfp-800g-2xdr4-ihs')!.name, 'Optic', 'Generic ' + lib.optics.get('osfp-800g-2xdr4-ihs')!.name, '20', 't down 4 × 2 + t up 4 × 1 + u down 2 × 4', '',
-    ]);
+    const optic = lib.optics.get('osfp-800g-2xdr4-ihs')!.name;
+    expect(topoBomColumns([]).map((c) => c.cell(bom.lines[3]))).toEqual([optic, 'Optic', `Generic ${optic}`, '20', 't down 4 × 2 + t up 4 × 1 + u down 2 × 4', '']);
     expect(topoBomColumns([]).find((c) => c.header === 'Qty')!.cell({ ...bom.lines[0], qty: 16384 })).toBe('16,384');
   });
 });
@@ -303,8 +393,13 @@ describe('topologies in the project file', () => {
   it('round-trips and defaults to an empty list', () => {
     expect(emptyProject().topologies).toEqual([]);
     const p = { ...emptyProject(), topologies: [{ id: 't', name: 'T', source: 'topology: x', view: { offsets: { a: { dx: 10, dy: -5 } }, collapsed: ['b'] },
-      bom: { devices: { a: 'dev' }, optics: { 'a.p': 'opt' }, items: { dev: 'item' } } }] };
+      bom: { items: { dev: 'item' } } }] };
     expect(normalizeProject(JSON.parse(serializeProject(p))).topologies).toEqual(p.topologies);
     expect(normalizeProject({}).topologies).toEqual([]);
+  });
+  it('drops device types and optics older files picked in the BOM pane (they are in the YAML now)', () => {
+    const t = (bom: object) => normalizeProject({ topologies: [{ id: 't', name: 'T', source: '', bom }] }).topologies[0];
+    expect(t({ devices: { a: 'd' }, optics: { 'a.p': 'o' }, items: { d: 'i' } }).bom).toEqual({ items: { d: 'i' } });
+    expect('bom' in t({ devices: { a: 'd' } })).toBe(false);
   });
 });

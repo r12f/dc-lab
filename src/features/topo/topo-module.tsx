@@ -9,6 +9,7 @@ import { Splitter } from '../../ui/splitter';
 import { TOPOLOGY_SCHEMA, parseVirtual, type Topology } from '../../domain/topo/virtual';
 import { DEFAULT_OPTIONS, layoutDiagram, type DiagramOptions } from '../../domain/topo/diagram';
 import type { TopoBomSettings } from '../../domain/topo/bom';
+import { hardwareProblems } from '../../domain/topo/hardware';
 import { DiagramMenu } from './diagram-menu';
 import { SAMPLE_TOPOLOGY } from '../../domain/topo/sample';
 import { TopoEditor } from './topo-editor';
@@ -39,6 +40,8 @@ export function TopoModule() {
   // Parse off the typing path: the diagram follows the source a frame later on big files.
   const source = useDeferredValue(topo?.source ?? '');
   const virtual = useMemo(() => parseVirtual(source), [source]);
+  // Device types and port maps are checked against the Devices / Optics modules.
+  const problems = useMemo(() => [...virtual.problems, ...hardwareProblems(lib, virtual)], [virtual, lib]);
   const view = topo?.view;
   const diagram = useMemo(() => layoutDiagram(virtual, options, view), [virtual, options, view]);
 
@@ -68,7 +71,7 @@ export function TopoModule() {
         )} />}
       canvas={topo ? (
         <div className="topo-split" style={{ gridTemplateColumns: `minmax(0, ${codeW}px) 0 minmax(240px, 1fr)` }}>
-          <TopoEditor value={topo.source} problems={virtual.problems}
+          <TopoEditor value={topo.source} problems={problems}
             onChange={(v) => update('topologies', topo.id, (t) => ({ ...t, source: v }))} />
           <Splitter label="Code width" width={codeW} direction={1} onResize={(px) => setCodeW(Math.max(240, Math.min(1600, px)))} onReset={() => setCodeW(CODE_W)} />
           <div className="topo-right">
@@ -84,7 +87,7 @@ export function TopoModule() {
             <Splitter orientation="horizontal" label="BOM height" width={bomH} direction={-1}
               onResize={(px) => setBomH(Math.max(60, Math.min(1200, px)))} onReset={() => setBomH(BOM_H)} />
             <TopoBomPane lib={lib} topo={virtual} settings={topo.bom ?? NO_BOM} filename={topo.id} height={bomH}
-              onChange={(b) => update('topologies', topo.id, (t) => ({ ...t, bom: b.devices || b.optics || b.items ? b : undefined }))} />
+              onChange={(b) => update('topologies', topo.id, (t) => ({ ...t, bom: b.items ? b : undefined }))} />
           </div>
         </div>
       ) : <EmptyCanvas text="Select or create a topology." />}

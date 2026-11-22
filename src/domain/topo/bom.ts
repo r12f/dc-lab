@@ -2,23 +2,18 @@ import type { Library } from '../library/library';
 import type { BomLine } from '../bom/types';
 import { bomColumns, SI_HEADER, type BomColumn } from '../bom/columns';
 import type { PropertyDef } from '../properties/types';
-import type { OpticDefinition } from '../optics/types';
 import type { ItemVariant } from '../items/types';
 import { traitsOf } from '../device/categories';
 import { opticPowerW, variantLabel, withItemSpecs } from '../items/variants';
-import { opticFitsCage } from '../ports/optic-match';
-import { cageOf, portUse } from './ports';
+import { groupHardware, poolSpeeds } from './hardware';
+import { portUse } from './ports';
 import type { VGroup, VirtualTopo } from './virtual';
 
 /**
- * Hardware assumed for the estimated BOM of a virtual topology. Saved with the topology (`Topology.bom`), never in its
- * YAML: device set groups stay logical.
+ * Procurement picks of a topology's estimated BOM, saved with the topology (`Topology.bom`). The hardware itself
+ * (device type, port map, optics) is in the YAML.
  */
 export interface TopoBomSettings {
-  /** Group name -> device type (library device id) of its members. */
-  devices?: Record<string, string>;
-  /** `<group>.<pool>` (see `poolKey`) -> optic type in each cage the pool uses. */
-  optics?: Record<string, string>;
   /** Item type id -> item (vendor product) bought for it; absent = its Generic item. */
   items?: Record<string, string>;
 }
@@ -28,13 +23,14 @@ export interface PoolEstimate {
   pool: string;
   /** Ports one device uses. */
   ports: number;
-  /** Cages those ports sit in, one optic each; a cage shared with an earlier pool of the group counts there. */
-  cages: number;
+  /** Speed of the pool's ports on the device type (one speed), from the port map. */
+  speedGbps?: number;
+  /** Device ports (cages) those ports sit in; a cage shared with an earlier pool counts there. No port map: undefined. */
+  cages?: number;
   /** Every device of the group uses exactly `ports`; false = an upper bound (uneven sets, filtered ends). */
   exact: boolean;
-  opticId?: string;
-  /** Optics over the group: devices x cages (0 without an optic). */
-  optics: number;
+  /** Optics in those cages by optic type: per device, and over the group. */
+  optics: { opticId: string; perDevice: number; total: number }[];
 }
 
 export interface GroupEstimate {
@@ -51,9 +47,6 @@ export interface TopoBom {
   /** Links over every link spec whose count is known. */
   links: number;
 }
-
-/** Key of a pool's optic in `TopoBomSettings.optics`. */
-export const poolKey = (group: string, pool: string) => `${group}.${pool}`;
 
 const fmt = (n: number) => n.toLocaleString('en-US');
 
@@ -79,30 +72,40 @@ function poolExact(v: VirtualTopo, g: VGroup, pool: string, ports: number): bool
   return taken === g.count * ports;
 }
 
-/** Pools of a group in pool order, each with the ports and cages one device uses and the optics they take. */
-function estimateGroup(lib: Library, v: VirtualTopo, s: TopoBomSettings, g: VGroup): GroupEstimate {
+/** Pools of a group in pool order: the ports one device uses, the device ports (cages) they sit in, their optics. */
+function estimateGroup(lib: Library, v: VirtualTopo, g: VGroup): GroupEstimate {
+  const hw = groupHardware(lib, g);
+  const mapped = !!hw.device && g.portMap.length > 0;
   const use = portUse(g, v);
   const counted = new Set<string>();
   const pools = Object.entries(g.poolNames).map(([pool, names]): PoolEstimate => {
     const used = names.filter((p) => use.owner.has(p));
-    const cages = [...new Set(used.map(cageOf))].filter((c) => !counted.has(c));
-    for (const c of cages) counted.add(c);
-    const optic = lib.optics.get(s.optics?.[poolKey(g.name, pool)]);
+    const perOptic = new Map<string, number>();
+    let cages = 0;
+    for (const p of used) {
+      const dp = hw.ports.get(p);
+      if (!dp || counted.has(dp.cage)) continue;
+      counted.add(dp.cage);
+      cages++;
+      if (dp.opticId && lib.optics.get(dp.opticId)) perOptic.set(dp.opticId, (perOptic.get(dp.opticId) ?? 0) + 1);
+    }
+    const speeds = poolSpeeds(g, hw, pool);
     return {
-      pool, ports: used.length, cages: cages.length, exact: poolExact(v, g, pool, used.length),
-      opticId: optic?.id, optics: optic ? g.count * cages.length : 0,
+      pool, ports: used.length, ...(speeds.length === 1 ? { speedGbps: speeds[0] } : {}), ...(mapped ? { cages } : {}),
+      exact: poolExact(v, g, pool, used.length),
+      optics: [...perOptic].map(([opticId, n]) => ({ opticId, perDevice: n, total: n * g.count })),
     };
   });
-  return { group: g, deviceId: lib.devices.get(s.devices?.[g.name])?.id, pools };
+  return { group: g, deviceId: hw.device?.id, pools };
 }
 
 /**
- * Estimated BOM of a virtual topology: each group's devices as its device type, and one optic in every cage its
- * pools use. Lines merge by item type; the line's note is its derivation (`dt0 512 + t1 256`). Cables, housings,
- * racks and power need the physical layout and are not estimated.
+ * Estimated BOM of a virtual topology: each group's devices as its `device_type`, and the optic its `port_map` puts
+ * in every cage its pools use. Lines merge by item type; the line's note is its derivation (`dt0 512 + t1 256`).
+ * Cables, housings, racks and power need the physical layout and are not estimated.
  */
 export function estimateTopoBom(lib: Library, v: VirtualTopo, s: TopoBomSettings): TopoBom {
-  const groups = v.groups.map((g) => estimateGroup(lib, v, s, g));
+  const groups = v.groups.map((g) => estimateGroup(lib, v, g));
   const lines: BomLine[] = [];
   const merged = new Map<string, { line: BomLine; parts: string[] }>();
   const add = (line: BomLine, qty: number, part: string) => {
@@ -125,25 +128,17 @@ export function estimateTopoBom(lib: Library, v: VirtualTopo, s: TopoBomSettings
   }
   for (const { group: g, pools } of groups) {
     for (const p of pools) {
-      const o = lib.optics.get(p.opticId);
-      if (!o) continue;
-      const it = itemFor(lib, s, o.id);
-      add({ key: `optic:${o.id}`, kind: 'optic', item: o.name, category: 'Optic', itemTypeId: o.id, pickKey: o.id, itemId: it?.id,
-        vendorModel: variantLabel(it), qty: 0, unitW: opticPowerW(it, o), notes: [], properties: it?.properties },
-      p.optics, `${g.name} ${p.pool} ${fmt(g.count)} × ${p.exact ? '' : '≤'}${fmt(p.cages)}`);
+      for (const { opticId, perDevice, total } of p.optics) {
+        const o = lib.optics.get(opticId)!;
+        const it = itemFor(lib, s, o.id);
+        add({ key: `optic:${o.id}`, kind: 'optic', item: o.name, category: 'Optic', itemTypeId: o.id, pickKey: o.id, itemId: it?.id,
+          vendorModel: variantLabel(it), qty: 0, unitW: opticPowerW(it, o), notes: [], properties: it?.properties },
+        total, `${g.name} ${p.pool} ${fmt(g.count)} × ${p.exact ? '' : '≤'}${fmt(perDevice)}`);
+      }
     }
   }
   for (const { line, parts } of merged.values()) line.notes = [parts.join(' + ')];
   return { groups, lines, links: v.links.reduce((n, l) => n + (l.links ?? 0), 0) };
-}
-
-/** Optics that fit a data cage of the device type (any optic when no device type is set). */
-export function opticChoices(lib: Library, deviceId: string | undefined): OpticDefinition[] {
-  const all = lib.optics.items();
-  const d = lib.devices.get(deviceId);
-  if (!d) return all;
-  const cages = d.ports.filter((g) => g.role === 'data');
-  return all.filter((o) => cages.some((g) => opticFitsCage(g, o)));
 }
 
 /**

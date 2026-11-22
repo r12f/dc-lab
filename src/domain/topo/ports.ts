@@ -3,12 +3,6 @@ import type { VGroup, VirtualTopo } from './virtual';
 /** Ports without a lane suffix are laid out in rows of this many, in pool order. */
 const FALLBACK_COLS = 64;
 
-/** Cage a port sits in: the port without its lane letters (`etp12c` -> `etp12`); a port without lanes is its own cage. */
-export function cageOf(port: string): string {
-  const m = /^(.*?\d+)[a-z]+$/.exec(port);
-  return m ? m[1] : port;
-}
-
 /** Every port of a device as a grid: a column per port number (gaps kept), a row per lane (`etp12c`: etp12, c). */
 export interface PortLayout {
   cols: string[];

@@ -1,11 +1,9 @@
 import { useMemo } from 'react';
 import type { Library } from '../../domain/library/library';
-import type { DeviceDefinition } from '../../domain/device/types';
 import type { VirtualTopo } from '../../domain/topo/virtual';
-import { estimateTopoBom, opticChoices, poolKey, topoBomColumns, type PoolEstimate, type TopoBomSettings } from '../../domain/topo/bom';
-import { traitsOf } from '../../domain/device/categories';
+import { estimateTopoBom, topoBomColumns, type PoolEstimate, type TopoBomSettings } from '../../domain/topo/bom';
 import { lineTotalW } from '../../domain/bom/types';
-import { formatPower } from '../../domain/units';
+import { formatGbps, formatPower } from '../../domain/units';
 import { useAppStore } from '../../state/store';
 import { BomTable } from '../../ui/bom-table';
 import { StatGrid } from '../../ui/stat-grid';
@@ -35,28 +33,18 @@ function withKey(m: Record<string, string> | undefined, key: string, value: stri
 }
 
 /**
- * Pane under the virtual topology: what building it takes. Each group's device type and each pool's optic are
- * picked here (saved with the topology, not in its YAML); the BOM merges them by item type.
+ * Pane under the virtual topology: what building it takes. Device types, port maps and optics come from the YAML
+ * (`device_type`, `port_map`); the item bought for each line is picked here (saved with the topology).
  */
 export function TopoBomPane({ lib, topo, settings, onChange, filename, height }: Props) {
   const defs = useAppStore((s) => s.project.propertyDefs);
   const bom = useMemo(() => estimateTopoBom(lib, topo, settings), [lib, topo, settings]);
   const columns = useMemo(() => topoBomColumns(defs), [defs]);
-  // Device types a group can be: every device but fillers and room-level equipment, by category.
-  const deviceTypes = useMemo(() => {
-    const byCat = new Map<string, DeviceDefinition[]>();
-    for (const d of lib.devices.items()) {
-      const t = traitsOf(d.category);
-      if (t.filler || t.facility) continue;
-      byCat.set(t.label, [...(byCat.get(t.label) ?? []), d]);
-    }
-    return [...byCat.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [lib]);
-  const set = (patch: Partial<TopoBomSettings>) => onChange({ ...settings, ...patch });
   const devices = topo.groups.reduce((n, g) => n + g.count, 0);
   const optics = bom.lines.filter((l) => l.kind === 'optic').reduce((n, l) => n + l.qty, 0);
   const power = bom.lines.reduce((w, l) => w + lineTotalW(l), 0);
   const upperBound = bom.groups.some((g) => g.pools.some((p) => p.ports && !p.exact));
+  const opticName = (id: string) => lib.optics.get(id)?.name ?? id;
 
   return (
     <section className="topo-bom" style={{ height }} aria-label="Estimated BOM From Virtual Topo">
@@ -73,14 +61,14 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
             <table className="table topo-bom-hw">
               <thead>
                 <tr>
-                  <th>Group</th><th>Role</th><th className="num">Devices</th><th>Device type</th><th>Pool</th>
+                  <th>Group</th><th>Role</th><th className="num">Devices</th><th>Device type</th><th>Pool</th><th className="num">Speed</th>
                   <th className="num">Ports / device</th><th className="num">Cages / device</th><th>Optic per cage</th><th className="num">Optics</th>
                 </tr>
               </thead>
               <tbody>
                 {bom.groups.map(({ group: g, deviceId, pools }) => {
-                  const choices = opticChoices(lib, deviceId);
                   const rows = pools.length ? pools : [undefined];
+                  const device = lib.devices.get(deviceId);
                   return rows.map((p, i) => (
                     <tr key={`${g.name}\u0000${p?.pool ?? ''}`}>
                       {i === 0 && (
@@ -88,34 +76,23 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
                           <td rowSpan={rows.length}>{g.name}</td>
                           <td rowSpan={rows.length}>{g.role}</td>
                           <td rowSpan={rows.length} className="num">{fmt(g.count)}</td>
-                          <td rowSpan={rows.length}>
-                            <select aria-label={`Device type of ${g.name}`} value={deviceId ?? ''}
-                              onChange={(e) => set({ devices: withKey(settings.devices, g.name, e.target.value || undefined) })}>
-                              <option value="">— not set —</option>
-                              {deviceTypes.map(([cat, ds]) => (
-                                <optgroup key={cat} label={cat}>{ds.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</optgroup>
-                              ))}
-                            </select>
+                          <td rowSpan={rows.length} className={device ? undefined : 'muted'} title={device?.id}>
+                            {device ? device.name : g.deviceType ? `${g.deviceType} (unknown)` : 'no device_type'}
                           </td>
                         </>
                       )}
                       {p ? (
                         <>
                           <td>{p.pool}</td>
+                          <td className="num">{p.speedGbps ? formatGbps(p.speedGbps) : ''}</td>
                           <td className="num">{bound(p, p.ports)}</td>
-                          <td className="num">{bound(p, p.cages)}</td>
-                          <td>
-                            <select aria-label={`Optic of ${g.name} ${p.pool}`} value={p.opticId ?? ''}
-                              onChange={(e) => set({ optics: withKey(settings.optics, poolKey(g.name, p.pool), e.target.value || undefined) })}>
-                              <option value="">None</option>
-                              {/* A picked optic that no longer fits the device type stays listed, so the pick shows. */}
-                              {[...choices, ...(p.opticId && !choices.some((o) => o.id === p.opticId) ? [lib.optics.get(p.opticId)!] : [])]
-                                .map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                            </select>
+                          <td className="num">{p.cages === undefined ? '' : bound(p, p.cages)}</td>
+                          <td className={p.optics.length ? undefined : 'muted'}>
+                            {p.optics.length ? p.optics.map((o) => opticName(o.opticId)).join(', ') : p.cages === undefined ? 'no port_map' : 'none'}
                           </td>
-                          <td className="num">{p.opticId ? bound(p, p.optics) : ''}</td>
+                          <td className="num">{p.optics.length ? p.optics.map((o) => `${p.exact ? '' : '≤ '}${fmt(o.total)}`).join(', ') : ''}</td>
                         </>
-                      ) : <td colSpan={5} className="muted">no port pools</td>}
+                      ) : <td colSpan={6} className="muted">no port pools</td>}
                     </tr>
                   ));
                 })}
@@ -128,7 +105,7 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
         </Section>
         <Section title="BOM">
           <BomTable lines={bom.lines} filename={`${filename}-estimated`} columns={columns}
-            itemsOf={(id) => lib.variants.of(id)} onPick={(key, itemId) => set({ items: withKey(settings.items, key, itemId) })} />
+            itemsOf={(id) => lib.variants.of(id)} onPick={(key, itemId) => onChange({ ...settings, items: withKey(settings.items, key, itemId) })} />
           <p className="muted">Cables, fiber housings, racks and power distribution depend on the DC layout and are not estimated.</p>
         </Section>
       </div>

@@ -404,10 +404,22 @@ function migrateBomItems(p: Json): Json {
   };
 }
 
+/**
+ * Topologies: the estimated BOM's device type per group and optic per pool moved into the YAML (`device_type`,
+ * `port_map`); only the item picks stay in `bom`.
+ */
+function migrateTopology(t: Json): Json {
+  const bom = t.bom as Json | undefined;
+  if (!bom || !('devices' in bom || 'optics' in bom)) return t;
+  const rest = Object.fromEntries(Object.entries(t).filter(([k]) => k !== 'bom'));
+  return bom.items ? { ...rest, bom: { items: bom.items } } : rest;
+}
+
 export function migrateProjectJson(raw: Json): Json {
   const p = migrateBomItems(moveDirectOptics(migrateVariants(migrateRenames(raw))));
   return {
     ...p,
+    ...(Array.isArray(p.topologies) ? { topologies: (p.topologies as Json[]).map(migrateTopology) } : {}),
     cableMedia: ((p.cableMedia as Json[]) ?? []).map(migrateCable),
     layouts: ((p.layouts as Json[]) ?? []).map(migrateLayout),
     optics: ((p.optics as Json[]) ?? []).map(migrateOptic),
