@@ -231,8 +231,10 @@ source is the YAML text, saved as typed).
   diagram is draggable (double-click resets).
 - **Right pane — virtual topology**: a canvas (zoom, Export SVG, maximize) drawing the VIRTUAL part only as a
   slice, updated as the source changes:
-  - one box per device set group (name, count, role; the split; with **Port pools** on, its pools with port
-    counts and slots), tiers bottom-up by link direction (a group sits one tier above the highest group linking
+  - one box per device set group (name, count, role; the split; with **Port pools** on, a port bitmap per pool:
+    `name · used/ports used · N slots x size`, one cell per port in pool order, wrapped every 128, a gap between
+    slots; the ports one device uses for each link spec are filled in that spec's line color, in topo order from
+    the first port, free ports left empty; hover lists each spec's port range), tiers bottom-up by link direction (a group sits one tier above the highest group linking
     into it);
   - the box is split by at most two partition keys (outer › inner): by default the key a mapped link uses on the
     group, then the key it is reached by from below, then the key it reaches up with. Inner sets hold outer size /

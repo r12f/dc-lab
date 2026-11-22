@@ -1,6 +1,6 @@
 import type { Ref } from 'react';
 import { paint, LAYOUT_PAINT } from '../../theme/paint';
-import type { GroupBox, SetBox, TopoDiagram } from '../../domain/topo/diagram';
+import { CELL, type GroupBox, type PoolBitmap, type SetBox, type TopoDiagram } from '../../domain/topo/diagram';
 import type { VirtualTopo } from '../../domain/topo/virtual';
 
 interface Props {
@@ -48,8 +48,33 @@ function Group({ b, i }: { b: GroupBox; i: number }) {
       <rect width={b.w} height={b.h} rx={8} fill={s.fill} stroke={s.stroke} strokeWidth={1.5} />
       <text x={12} y={20} fontSize={14} fontWeight={700} fill={s.text}>{`${g.name} · ${fmt(g.count)} ${g.role}`}</text>
       <text x={12} y={36} fill={s.text} opacity={0.85}>{`by ${b.caption}`}</text>
-      {b.portsLine && <text x={12} y={52} fontSize={11} fill={s.text} opacity={0.85}>{b.portsLine}</text>}
+      {b.pools.map((q) => <Pool key={q.name} q={q} stroke={s.stroke} text={s.text} />)}
       <Level s={b.body} stroke={s.stroke} text={s.text} />
+    </g>
+  );
+}
+
+const PER_ROW = 128;
+
+/** Port bitmap of a pool: one cell per port; taken ports filled in the color of the link spec using them. */
+function Pool({ q, stroke, text }: { q: PoolBitmap; stroke: string; text: string }) {
+  const owner: (number | undefined)[] = Array.from({ length: q.ports });
+  for (const r of q.runs) for (let i = r.start; i < r.start + r.count; i++) owner[i] = r.link;
+  // x of each port: slots add a gap; rows wrap every PER_ROW ports.
+  const slotOf: number[] = [];
+  q.slots.forEach((n, si) => { for (let i = 0; i < n; i++) slotOf.push(si); });
+  const summary = `${q.name} · ${q.used}/${q.ports} used${q.slots.length > 1 ? ` · ${q.slots.length} slots x ${[...new Set(q.slots)].join('/')}` : ''}`
+    + (q.runs.length > 1 ? ` (${q.runs.map((r) => `${r.name} ${r.count}`).join(', ')})` : '');
+  return (
+    <g transform={`translate(${q.x},${q.y})`}>
+      <text x={0} y={10} fontSize={11} fill={text}>{summary}</text>
+      {owner.map((l, i) => {
+        const row = Math.floor(i / PER_ROW);
+        const x = (i % PER_ROW) * CELL + 2 * (slotOf[i] ?? 0) - 2 * (slotOf[row * PER_ROW] ?? 0);
+        return <rect key={i} x={x} y={14 + row * 8} width={CELL - 1} height={6}
+          fill={l === undefined ? paint.paper : LAYOUT_PAINT.traces[l % LAYOUT_PAINT.traces.length]} stroke={l === undefined ? stroke : 'none'} strokeWidth={0.5} />;
+      })}
+      <title>{`${q.name}: ${q.ports} ports, ${q.used} used, ${q.ports - q.used} free${q.runs.map((r) => `\n${r.name}: ports ${r.start + 1}-${r.start + r.count}`).join('')}`}</title>
     </g>
   );
 }

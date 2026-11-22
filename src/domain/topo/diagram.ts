@@ -19,7 +19,11 @@ const PAD = 24;
 const GAP_X = 40;
 const GAP_Y = 120;
 const HEAD = 44;
-const PORTS_H = 16;
+/** Port bitmap: one cell per port, wrapped. */
+export const CELL = 4;
+const CELLS_PER_ROW = 128;
+const POOL_HEAD = 14;
+const POOL_ROW_H = 8;
 const DW = 34;
 const DH = 20;
 const GAP = 6;
@@ -36,8 +40,23 @@ export interface GroupBox {
   /** Partition keys the box is split by, outer first (empty = none). */
   nesting: string[];
   caption: string;
-  portsLine?: string;
+  /** Port pools with their bitmap (when Port pools is on), relative to the box. */
+  pools: PoolBitmap[];
   body: SetBox;
+}
+/**
+ * One pool of a group as a bitmap: the ports a device has in it, in pool order; the first `used` are taken (each
+ * device fills its pool in order), split by link spec. Slots break the cells into runs.
+ */
+export interface PoolBitmap {
+  name: string;
+  ports: number;
+  used: number;
+  /** Ports per slot (one entry when the pool is not listed per slot). */
+  slots: number[];
+  /** Consecutive port runs taken by each link spec, in topo order. */
+  runs: { link: number; name: string; start: number; count: number }[];
+  x: number; y: number; w: number; h: number;
 }
 /** A device-to-device line of a link spec. */
 export interface LinkPath { link: number; name: string; points: [number, number][] }
@@ -244,13 +263,27 @@ export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTION
     const caption = nesting.length
       ? nesting.map((k) => { const p = group.partitions.find((x) => x.key === k)!; return p.sizes ? k : `${k} ${p.count} x ${p.size}`; }).join(' › ')
       : 'devices';
-    const portsLine = o.ports && Object.keys(group.pools).length
-      ? `ports: ${Object.entries(group.pools).map(([k, n]) => `${k} ${n}${group.poolSlots[k] ? ` (${group.poolSlots[k].length} slots)` : ''}`).join(' · ')}`
-      : undefined;
-    const top = HEAD + (portsLine ? PORTS_H : 0);
+    const pools: PoolBitmap[] = [];
+    let py = HEAD;
+    if (o.ports) for (const [name, ports] of Object.entries(group.pools)) {
+      const runs: PoolBitmap['runs'] = [];
+      let at = 0;
+      v.links.forEach((l, li) => {
+        for (const [e, n] of [[l.from, l.fromPorts], [l.to, l.toPorts]] as const) {
+          if (e.group !== group.name || e.ports !== name || n === undefined) continue;
+          const count = Math.min(Math.round(n), ports - at);
+          if (count > 0) { runs.push({ link: li, name: l.name, start: at, count }); at += count; }
+        }
+      });
+      const rows = Math.max(1, Math.ceil(ports / CELLS_PER_ROW));
+      const w = Math.min(ports, CELLS_PER_ROW) * CELL + 2 * (group.poolSlots[name]?.length ?? 1);
+      pools.push({ name, ports, used: at, slots: group.poolSlots[name] ?? [ports], runs, x: 12, y: py, w, h: POOL_HEAD + rows * POOL_ROW_H });
+      py += POOL_HEAD + rows * POOL_ROW_H + 6;
+    }
+    const top = py + (pools.length ? 4 : 0);
     body.x = 12; body.y = top;
-    const w = Math.max(body.w + 24, group.name.length * 9 + 200, caption.length * 6.4 + 24, (portsLine?.length ?? 0) * 6.4 + 24);
-    return { group, level: level.get(group.name) ?? 0, x: 0, y: 0, w, h: top + body.h + 12, nesting, caption, portsLine, body };
+    const w = Math.max(body.w + 24, group.name.length * 9 + 200, caption.length * 6.4 + 24, ...pools.map((q) => q.w + 24));
+    return { group, level: level.get(group.name) ?? 0, x: 0, y: 0, w, h: top + body.h + 12, nesting, caption, pools, body };
   });
   const topLevel = Math.max(0, ...boxes.map((b) => b.level));
   const tiers = Array.from({ length: topLevel + 1 }, (_, i) => boxes.filter((b) => b.level === topLevel - i));
