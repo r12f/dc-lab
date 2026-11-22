@@ -54,6 +54,19 @@ describe('virtual topology', () => {
     // 4 su x 16 servers x 8 T0; 4 T1 planes x (2 x 4 T0) x 4 T1; 16 T1 x 2 per pair.
     expect(n).toEqual({ 'server-t0': 512, 't0-t1': 128, 't1-t2': 32 });
   });
+  it("derives a partition's set size from the counts; a written size must agree", () => {
+    const v = parseVirtual(`device_set_groups:
+  a: { role: x, count: 12, partitions: [ { key: pod, count: 3 }, { key: rack, count: 2, per: [pod] } ], ports: { p: e1 } }
+  b: { role: y, count: 10, partitions: [ { key: k, count: 4 } ], ports: { p: e1 } }
+  c: { role: z, count: 8, partitions: [ { key: k, count: 2, size: 4 }, { key: j, count: 4, size: 3 } ], ports: { p: e1 } }
+`);
+    // 12 / 3 pods; 4 per pod / 2 racks.
+    expect(v.groups[0].partitions.map((p) => p.size)).toEqual([4, 2]);
+    expect(v.problems.map((p) => p.message).filter((m) => m.startsWith('group'))).toEqual([
+      'group b: partition k: 10 devices do not split into 4 equal sets (give sizes)',
+      'group c: partition j is 4 x 3 = 12, count is 8',
+    ]);
+  });
   it('reports undefined groups, pools, keys and partition sizes', () => {
     const bad = parseVirtual(`device_set_groups:
   a: { role: x, count: 10, partitions: [ { key: k, count: 3, size: 3 } ], ports: { p: e{1-4} } }

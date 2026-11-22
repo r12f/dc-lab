@@ -16,6 +16,10 @@ export interface Topology {
   bom?: TopoBomSettings;
 }
 
+/**
+ * A partition key: `count` sets of `size` devices, size derived (the group's count ÷ count; inside each set of the
+ * `per` keys ÷ their counts too), or uneven `sizes` per value (size 0).
+ */
 export interface Partition { key: string; count: number; size: number; sizes?: Record<string, number>; /** Shape holds inside each set of these keys. */ per?: string[] }
 export interface VGroup {
   name: string;
@@ -139,6 +143,7 @@ export function parseVirtual(source: string): VirtualTopo {
     if (count === undefined) problems.push({ message: `group ${name}: count missing` });
     if (!str(g.role)) problems.push({ message: `group ${name}: role missing` });
     const partitions: Partition[] = [];
+    const written = new Map<Partition, number | undefined>();
     for (const p of Array.isArray(g.partitions) ? g.partitions : []) {
       if (!isObj(p) || !str(p.key)) { problems.push({ message: `group ${name}: partition needs a key` }); continue; }
       if (isObj(p.sizes)) {
@@ -148,11 +153,26 @@ export function parseVirtual(source: string): VirtualTopo {
         partitions.push({ key: String(p.key), count: Object.keys(sizes).length, size: 0, sizes });
         continue;
       }
-      const c = num(p.count); const s = num(p.size);
-      if (c === undefined || s === undefined) { problems.push({ message: `group ${name}: partition ${p.key} needs count and size (or sizes)` }); continue; }
+      const c = num(p.count);
+      if (!c) { problems.push({ message: `group ${name}: partition ${p.key} needs a count (or sizes)` }); continue; }
       const per = Array.isArray(p.per) ? p.per.map(String) : [];
-      if (!per.length && count !== undefined && c * s !== count) problems.push({ message: `group ${name}: partition ${p.key} is ${c} x ${s} = ${c * s}, count is ${count}` });
-      partitions.push({ key: String(p.key), count: c, size: s, ...(per.length ? { per } : {}) });
+      const part: Partition = { key: String(p.key), count: c, size: 0, ...(per.length ? { per } : {}) };
+      partitions.push(part);
+      written.set(part, num(p.size));
+    }
+    // A set's size follows from the group's count; a written size (no longer needed) must agree.
+    for (const [p, s] of written) {
+      const outer = (p.per ?? []).reduce((n, k) => n * (partitions.find((x) => x.key === k)?.count || 1), 1);
+      const devices = (count ?? 0) / outer;
+      p.size = devices / p.count;
+      if (count === undefined) continue;
+      if (s !== undefined && s !== p.size) {
+        problems.push({ message: outer === 1
+          ? `group ${name}: partition ${p.key} is ${p.count} x ${s} = ${p.count * s}, count is ${count}`
+          : `group ${name}: partition ${p.key} is ${p.count} x ${s} per ${p.per!.join(' x ')} set, a set has ${devices}` });
+      } else if (s === undefined && !Number.isInteger(p.size)) {
+        problems.push({ message: `group ${name}: partition ${p.key}: ${devices} devices${outer === 1 ? '' : ` per ${p.per!.join(' x ')} set`} do not split into ${p.count} equal sets (give sizes)` });
+      }
     }
     const pools: Record<string, number> = {};
     const poolSlots: Record<string, number[]> = {};
@@ -281,7 +301,8 @@ function instances(g: VGroup, e: VEnd): Inst | undefined {
 function devicePorts(l: VLink, side: 'from' | 'to', a: Inst, b: Inst): number {
   // With a map, one to-instance takes several from-instances.
   const fanIn = l.map.length ? Math.max(...l.map.map((m) => m.from.length)) : 1;
-  if (l.pattern === 'mesh') return (side === 'from' ? b.max : a.max * fanIn) * l.perPair;
+  // An uneven split's largest set holds whole devices.
+  if (l.pattern === 'mesh') return Math.ceil(side === 'from' ? b.max : a.max * fanIn) * l.perPair;
   return (side === 'from' ? 1 : Math.ceil((a.max * fanIn) / b.size)) * l.perPair;
 }
 

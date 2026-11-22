@@ -81,7 +81,7 @@ One entry per tier, keyed by group name.
 |---|---|
 | `role` | device role of every member |
 | `count` | number of devices |
-| `partitions` | list of `{ key, count, size }` — the group is cut into `count` sets of `size` devices by the value of `key`; or `{ key, sizes: { "<value>": n, … } }` for uneven sets |
+| `partitions` | list of `{ key, count }` — the group is cut into `count` equal sets by the value of `key`; a set's size is the group's `count` ÷ the partition's, not written (an older `size` must agree); or `{ key, sizes: { "<value>": n, … } }` for uneven sets |
 | `device_type` | optional: the device type of every member — an item type id of the Devices module (`switch-64x800g-osfp`) |
 | `ports` | named port pools, each in the order its ports are used; a pool is its ports, or `{ ports, optic, cable }` (below) |
 
@@ -94,8 +94,8 @@ device_set_groups:
     role: tor
     count: 32
     partitions:
-      - { key: su,    count: 4, size: 8 }
-      - { key: plane, count: 8, size: 4 }
+      - { key: su,    count: 4 }
+      - { key: plane, count: 8 }
     ports:
       down: etp{1-8}{a,b}
       up:   etp{9-10}{a-d}
@@ -259,7 +259,7 @@ A compiler / checker on a file asserts:
 
 - every in-scope device lands in exactly one group; `select` uses only defined labels; `set_keys` given iff the
   group has partitions, each key given once per device;
-- every group meets its `count` and each partition's `count`/`size` (or `sizes`);
+- every group meets its `count` and each partition's `count` (equal sets) or `sizes`;
 - every topo instance finds its peer instance; no device needs more ports than its pool holds;
 - with a `device_type`: every pool port names a port of the device type, a breakout profile of the device type
   gives every pool port and carries each pool's optic, pool optics and cables fit, and both ends of a link run at
@@ -278,7 +278,7 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
   selected one's name. Under the list (divider draggable), the **panel** of what is selected in the diagram:
   - a device set group: name, role, count, category (switch, server, …: the current device type's, else every
     category) and device type (the Devices module's types of that category with a port that is not power; the
-    category only narrows the list, the file keeps `device_type: <id>`; the matched breakout profile under it), partitions (key, count, size, or `sizes` as `1: 54, 2: 18`) and port pools — ports, port count, and
+    category only narrows the list, the file keeps `device_type: <id>`; the matched breakout profile under it), partitions (key and count, the set size shown — a count edit drops a `size` still written — or `sizes` as `1: 54, 2: 18`) and port pools — ports, port count, and
     under each the optic (those its cages take) and cable (for the optic, else direct-attach cables for the cage);
     a pool given an optic or cable is written `{ ports, optic, cable }`, back to its ports when both are cleared;
     + adds a row, ✕ removes it; **Delete** removes the group with the link specs and mapping entries naming it;
@@ -290,8 +290,8 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
   order puts it. Renaming a group renames the link ends and mapping entries naming it and carries its moved /
   collapsed state; renaming a pool renames the link ends using it. The panel needs the file to parse.
 - **Left pane — code**: the YAML source, monospace, line numbers, Tab inserts two spaces. Under it the problems found
-  in the file (YAML syntax with its line; undefined groups, pools or partition keys; partition sizes that do not
-  add up to `count`; map values that are not strings; a pool too small for a link spec; device types, pool ports,
+  in the file (YAML syntax with its line; undefined groups, pools or partition keys; a partition count that does not
+  split the group into equal sets, `sizes` that do not add up to `count`; map values that are not strings; a pool too small for a link spec; device types, pool ports,
   optics, cables and link speeds checked against the Devices and Optics & Cables modules). The divider to the diagram is draggable
   (double-click resets); « hides the pane to a rail (» Code, with the problem count) and » shows it again,
   remembered across sessions.
@@ -308,7 +308,7 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
     into it);
   - the box is split by at most two partition keys (outer › inner): by default the key a mapped link uses on the
     group, then the key it is reached by from below, then the key it reaches up with. Inner sets hold outer size /
-    inner count devices (`per` keeps the declared size);
+    inner count devices (a `per` partition: its size inside each set of those keys);
   - every level shows at most three values, first, second and last, with `…` between; each set shows at most
     three devices the same way, labelled by their number in the set (a level whose sets hold one device draws the
     devices labelled by the value);
@@ -374,7 +374,7 @@ device_set_groups:
     role: server
     count: 64
     partitions:
-      - { key: su, count: 4, size: 16 }
+      - { key: su, count: 4 }
     ports:
       nic: p{1-8}
 
@@ -382,8 +382,8 @@ device_set_groups:
     role: tor
     count: 32
     partitions:
-      - { key: su,    count: 4, size: 8 }
-      - { key: plane, count: 8, size: 4 }
+      - { key: su,    count: 4 }
+      - { key: plane, count: 8 }
     ports:
       down:                       # 8 ports per server rack of the su, racks in member order
         - etp{1-4}{a,b}           # slot 1
@@ -394,7 +394,7 @@ device_set_groups:
     role: leaf
     count: 16
     partitions:
-      - { key: plane, count: 4, size: 4 }
+      - { key: plane, count: 4 }
     ports:
       down: etp{1-8}
       up:   etp{9-10}
@@ -403,7 +403,7 @@ device_set_groups:
     role: spine
     count: 8
     partitions:
-      - { key: plane, count: 2, size: 4 }
+      - { key: plane, count: 2 }
     ports:
       down: etp{1-16}
 

@@ -8,7 +8,7 @@ device_set_groups:
     role: server
     count: 64
     partitions:
-      - { key: su, count: 4, size: 16 }
+      - { key: su, count: 4 }
     ports:
       nic: p{1-8}
 
@@ -16,8 +16,8 @@ device_set_groups:
     role: tor
     count: 32
     partitions:
-      - { key: su,    count: 4, size: 8 }
-      - { key: plane, count: 8, size: 4 }
+      - { key: su,    count: 4 }
+      - { key: plane, count: 8 }
     ports:
       down:                       # 8 ports per server rack of the su, racks in member order
         - etp{1-4}{a,b}           # slot 1
@@ -28,7 +28,7 @@ device_set_groups:
     role: leaf
     count: 16
     partitions:
-      - { key: plane, count: 4, size: 4 }
+      - { key: plane, count: 4 }
     ports:
       down: etp{1-8}
       up:   etp{9-10}
@@ -37,7 +37,7 @@ device_set_groups:
     role: spine
     count: 8
     partitions:
-      - { key: plane, count: 2, size: 4 }
+      - { key: plane, count: 2 }
     ports:
       down: etp{1-16}
 
