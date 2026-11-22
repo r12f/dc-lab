@@ -231,10 +231,14 @@ source is the YAML text, saved as typed).
   diagram is draggable (double-click resets).
 - **Right pane — virtual topology**: a canvas (zoom, Export SVG, maximize) drawing the VIRTUAL part only as a
   slice, updated as the source changes:
-  - one box per device set group (name, count, role; the split; with **Port pools** on, a port bitmap per pool:
-    `name · used/ports used · N slots x size`, one cell per port in pool order, wrapped every 128, a gap between
-    slots; the ports one device uses for each link spec are filled in that spec's line color, in topo order from
-    the first port, free ports left empty; hover lists each spec's port range), tiers bottom-up by link direction (a group sits one tier above the highest group linking
+  - one box per device set group (name, count, role; the split; with **Port pools** on, the device's port grid: every port of the device, a
+    column per port number (gaps kept) and a row per lane (`etp12c` = column 12, lane c; ports without a lane: rows
+    of 64 in pool order). The pools linking up are drawn above the sets, the others below, both grids the same
+    layout and centred, so a column lines up top to bottom. On each edge the ports of its pools are outlined and,
+    where a link spec uses them, filled in that spec's line color (each device fills a pool in order, specs in
+    topo order); ports of the other edge's pools are grey, ports in no pool are empty. Summary
+    `▲ up 256/256 used` / `▼ down 252/252 used · 14 slots`, column numbers every 8, lane letters at the left;
+    hover names the port, its pool and whether it is free), tiers bottom-up by link direction (a group sits one tier above the highest group linking
     into it);
   - the box is split by at most two partition keys (outer › inner): by default the key a mapped link uses on the
     group, then the key it is reached by from below, then the key it reaches up with. Inner sets hold outer size /

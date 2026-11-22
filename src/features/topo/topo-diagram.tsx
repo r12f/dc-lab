@@ -1,6 +1,6 @@
 import type { Ref } from 'react';
 import { paint, LAYOUT_PAINT } from '../../theme/paint';
-import { CELL, type GroupBox, type PoolBitmap, type SetBox, type TopoDiagram } from '../../domain/topo/diagram';
+import { CELL_H, CELL_W, GRID_HEAD, GRID_LEFT, type GroupBox, type PortGrid, type SetBox, type TopoDiagram } from '../../domain/topo/diagram';
 import type { VirtualTopo } from '../../domain/topo/virtual';
 
 interface Props {
@@ -48,33 +48,40 @@ function Group({ b, i }: { b: GroupBox; i: number }) {
       <rect width={b.w} height={b.h} rx={8} fill={s.fill} stroke={s.stroke} strokeWidth={1.5} />
       <text x={12} y={20} fontSize={14} fontWeight={700} fill={s.text}>{`${g.name} · ${fmt(g.count)} ${g.role}`}</text>
       <text x={12} y={36} fill={s.text} opacity={0.85}>{`by ${b.caption}`}</text>
-      {b.pools.map((q) => <Pool key={q.name} q={q} stroke={s.stroke} text={s.text} />)}
+      {b.grids.map((q) => <Grid key={q.side} q={q} stroke={s.stroke} text={s.text} />)}
       <Level s={b.body} stroke={s.stroke} text={s.text} />
     </g>
   );
 }
 
-const PER_ROW = 128;
-
-/** Port bitmap of a pool: one cell per port; taken ports filled in the color of the link spec using them. */
-function Pool({ q, stroke, text }: { q: PoolBitmap; stroke: string; text: string }) {
-  const owner: (number | undefined)[] = Array.from({ length: q.ports });
-  for (const r of q.runs) for (let i = r.start; i < r.start + r.count; i++) owner[i] = r.link;
-  // x of each port: slots add a gap; rows wrap every PER_ROW ports.
-  const slotOf: number[] = [];
-  q.slots.forEach((n, si) => { for (let i = 0; i < n; i++) slotOf.push(si); });
-  const summary = `${q.name} · ${q.used}/${q.ports} used${q.slots.length > 1 ? ` · ${q.slots.length} slots x ${[...new Set(q.slots)].join('/')}` : ''}`
-    + (q.runs.length > 1 ? ` (${q.runs.map((r) => `${r.name} ${r.count}`).join(', ')})` : '');
+/**
+ * Port grid of one device: every port as a cell (column = port number, row = lane). Ports of this edge's pools are
+ * outlined; the ones a link spec uses are filled in its line color. Ports of the other edge are faint.
+ */
+function Grid({ q, stroke, text }: { q: PortGrid; stroke: string; text: string }) {
+  const summary = q.pools.map((p) => `${p.name} ${p.used}/${p.ports} used${p.slots > 1 ? ` · ${p.slots} slots` : ''}`).join('   ');
+  const top = q.side === 'top';
+  // Top grid: summary, column numbers, cells. Bottom grid: cells, column numbers, summary.
+  const cy = top ? GRID_HEAD : 0;
+  const numY = top ? GRID_HEAD - 3 : q.rows.length * CELL_H + 8;
+  const sumY = top ? 9 : q.rows.length * CELL_H + 20;
+  const ticks = q.cols.map((c, i) => ({ c, i })).filter(({ i }) => i === 0 || (i + 1) % 8 === 0 || i === q.cols.length - 1);
   return (
     <g transform={`translate(${q.x},${q.y})`}>
-      <text x={0} y={10} fontSize={11} fill={text}>{summary}</text>
-      {owner.map((l, i) => {
-        const row = Math.floor(i / PER_ROW);
-        const x = (i % PER_ROW) * CELL + 2 * (slotOf[i] ?? 0) - 2 * (slotOf[row * PER_ROW] ?? 0);
-        return <rect key={i} x={x} y={14 + row * 8} width={CELL - 1} height={6}
-          fill={l === undefined ? paint.paper : LAYOUT_PAINT.traces[l % LAYOUT_PAINT.traces.length]} stroke={l === undefined ? stroke : 'none'} strokeWidth={0.5} />;
-      })}
-      <title>{`${q.name}: ${q.ports} ports, ${q.used} used, ${q.ports - q.used} free${q.runs.map((r) => `\n${r.name}: ports ${r.start + 1}-${r.start + r.count}`).join('')}`}</title>
+      <text x={q.w / 2} y={sumY} textAnchor="middle" fontSize={11} fill={text}>{`${top ? '▲' : '▼'} ${summary}`}</text>
+      {ticks.map(({ c, i }) => (
+        <text key={c} x={GRID_LEFT + i * CELL_W + CELL_W / 2} y={numY} textAnchor="middle" fontSize={7} fill={text} opacity={0.75}>{c.replace(/^\D+/, '')}</text>
+      ))}
+      {q.rows.length > 1 && q.rows.map((r, i) => (
+        <text key={r} x={GRID_LEFT - 3} y={cy + i * CELL_H + CELL_H - 1} textAnchor="end" fontSize={7} fill={text} opacity={0.75}>{r}</text>
+      ))}
+      {q.cells.map((c) => (
+        <rect key={c.port} x={GRID_LEFT + c.col * CELL_W} y={cy + c.row * CELL_H} width={CELL_W - 1} height={CELL_H - 1}
+          fill={c.link !== undefined ? LAYOUT_PAINT.traces[c.link % LAYOUT_PAINT.traces.length] : c.other ? stroke : paint.paper}
+          fillOpacity={c.other ? 0.25 : 1} stroke={c.pool ? stroke : 'none'} strokeWidth={0.5} strokeOpacity={c.pool ? 1 : 0}>
+          <title>{`${c.port}${c.pool ? ` · ${c.pool}${c.link === undefined ? ' · free' : ''}` : c.other ? ` · ${c.other} (other edge)` : ' · not in a pool'}`}</title>
+        </rect>
+      ))}
     </g>
   );
 }

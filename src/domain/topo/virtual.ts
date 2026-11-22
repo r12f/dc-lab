@@ -20,6 +20,8 @@ export interface VGroup {
   pools: Record<string, number>;
   /** Pool name -> ports per top-level list entry (a pool listed as several entries, e.g. one per peer slot). */
   poolSlots: Record<string, number[]>;
+  /** Pool name -> its port names, in pool order. */
+  poolNames: Record<string, string[]>;
 }
 export interface VEnd { group: string; key?: string; ports: string; filters: Record<string, string> }
 export interface VLink {
@@ -127,11 +129,13 @@ export function parseVirtual(source: string): VirtualTopo {
     }
     const pools: Record<string, number> = {};
     const poolSlots: Record<string, number[]> = {};
+    const poolNames: Record<string, string[]> = {};
     if (isObj(g.ports)) for (const [k, v] of Object.entries(g.ports)) {
-      pools[k] = poolPorts(v).length;
+      poolNames[k] = poolPorts(v);
+      pools[k] = poolNames[k].length;
       if (Array.isArray(v) && v.length > 1) poolSlots[k] = v.map((e) => poolPorts(e).length);
     }
-    groups.push({ name, role: str(g.role) ?? '', count: count ?? 0, partitions, pools, poolSlots });
+    groups.push({ name, role: str(g.role) ?? '', count: count ?? 0, partitions, pools, poolSlots, poolNames });
   }
   const byName = new Map(groups.map((g) => [g.name, g]));
   const links: VLink[] = [];

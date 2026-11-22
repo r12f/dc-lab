@@ -116,20 +116,30 @@ topo:
     const l01 = v.links.find((l) => l.name === 't0-t1')!;
     expect([l01.fanIn, l01.fromSize, l01.toSize, l01.fromPorts, l01.toPorts]).toEqual([2, 4, 4, 4, 8]);
   });
-  it('shows each pool as a port bitmap: used ports in pool order, per link spec', () => {
+  it('draws every port of a device as a grid: up pools above the sets, down pools below, same columns', () => {
     const d = layoutDiagram(v);
-    const pool = (g: string, n: string) => d.boxes.find((b) => b.group.name === g)!.pools.find((q) => q.name === n)!;
-    // t0: down 16 in 2 slots, 16 used by server-t0 (16 servers per su); up 8, 4 used by t0-t1 (4 t1 per plane).
-    expect(pool('t0', 'down')).toMatchObject({ ports: 16, used: 16, slots: [8, 8], runs: [{ name: 'server-t0', start: 0, count: 16 }] });
-    expect(pool('t0', 'up')).toMatchObject({ ports: 8, used: 4 });
-    // t1 down 8, all used: 2 t0 planes x 4 devices.
-    expect(pool('t1', 'down').used).toBe(8);
+    const t0 = d.boxes.find((b) => b.group.name === 't0')!;
+    const [top, bottom] = [t0.grids.find((q) => q.side === 'top')!, t0.grids.find((q) => q.side === 'bottom')!];
+    // The whole device: etp1..etp10 x lanes a-d = 40 cells on both edges, same layout.
+    expect(top.cols).toEqual(['etp1', 'etp2', 'etp3', 'etp4', 'etp5', 'etp6', 'etp7', 'etp8', 'etp9', 'etp10']);
+    expect(top.rows).toEqual(['a', 'b', 'c', 'd']);
+    expect(top.cells).toHaveLength(40);
+    expect(bottom.cols).toEqual(top.cols);
+    expect(top.x).toBe(bottom.x);
+    expect(top.y).toBeLessThan(t0.body.y);
+    expect(bottom.y).toBeGreaterThan(t0.body.y);
+    // Up: etp9-10 a-d, first 4 used by t0-t1. Down: etp1-8 a,b, all 16 used by server-t0.
+    expect(top.pools).toEqual([{ name: 'up', ports: 8, used: 4, slots: 1 }]);
+    const up = top.cells.filter((c) => c.pool === 'up');
+    expect(up.filter((c) => c.link !== undefined).map((c) => c.port)).toEqual(['etp9a', 'etp9b', 'etp9c', 'etp9d']);
+    expect(bottom.cells.filter((c) => c.pool === 'down' && c.link !== undefined)).toHaveLength(16);
+    expect(up.find((c) => c.port === 'etp10a')).toMatchObject({ col: 9, row: 0 });
   });
   it('lets the split be chosen per group', () => {
     const d = layoutDiagram(v, { partition: { t0: 'su>plane', server: '' }, ports: false });
     const t0 = d.boxes.find((b) => b.group.name === 't0')!;
     expect(sets(t0)).toEqual(['su 1', 'su 2', 'su 4']);
-    expect(t0.pools).toEqual([]);
+    expect(t0.grids).toEqual([]);
     const server = d.boxes.find((b) => b.group.name === 'server')!;
     expect(server.nesting).toEqual([]);
     expect(labels(server)).toEqual(['1', '2', '64']);

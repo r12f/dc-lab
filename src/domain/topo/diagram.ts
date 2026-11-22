@@ -19,11 +19,13 @@ const PAD = 24;
 const GAP_X = 40;
 const GAP_Y = 120;
 const HEAD = 44;
-/** Port bitmap: one cell per port, wrapped. */
-export const CELL = 4;
-const CELLS_PER_ROW = 128;
-const POOL_HEAD = 14;
-const POOL_ROW_H = 8;
+/** Port grid cell size. */
+export const CELL_W = 7;
+export const CELL_H = 7;
+/** Room for the summary line and the column numbers; lane letters sit left of the grid. */
+export const GRID_HEAD = 24;
+export const GRID_LEFT = 12;
+const FALLBACK_COLS = 64;
 const DW = 34;
 const DH = 20;
 const GAP = 6;
@@ -40,22 +42,23 @@ export interface GroupBox {
   /** Partition keys the box is split by, outer first (empty = none). */
   nesting: string[];
   caption: string;
-  /** Port pools with their bitmap (when Port pools is on), relative to the box. */
-  pools: PoolBitmap[];
+  /** Port grids (when Port pools is on): pools facing up above the sets, the rest below; same layout, centred. */
+  grids: PortGrid[];
   body: SetBox;
 }
 /**
- * One pool of a group as a bitmap: the ports a device has in it, in pool order; the first `used` are taken (each
- * device fills its pool in order), split by link spec. Slots break the cells into runs.
+ * Every port of one device, laid out the same way on both edges: a column per port number, a row per lane
+ * (`etp12c`: column etp12, row c; number gaps kept), else rows of 64 in pool order. Cells of the pools on this
+ * edge carry their pool, and the link spec using the port (each device fills a pool in order, specs in topo order).
  */
-export interface PoolBitmap {
-  name: string;
-  ports: number;
-  used: number;
-  /** Ports per slot (one entry when the pool is not listed per slot). */
-  slots: number[];
-  /** Consecutive port runs taken by each link spec, in topo order. */
-  runs: { link: number; name: string; start: number; count: number }[];
+export interface PortGrid {
+  side: 'top' | 'bottom';
+  cols: string[];
+  rows: string[];
+  /** `pool` = pool of this edge; `other` = pool on the opposite edge (drawn grey, so both edges show the split). */
+  cells: { port: string; col: number; row: number; pool?: string; other?: string; link?: number }[];
+  /** Per pool on this edge: name, used/total, slots. */
+  pools: { name: string; ports: number; used: number; slots: number }[];
   x: number; y: number; w: number; h: number;
 }
 /** A device-to-device line of a link spec. */
@@ -255,6 +258,13 @@ export function groupDevices(b: GroupBox): DevBox[] {
 export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTIONS): TopoDiagram {
   const level = levels(v);
   const nest = new Map(v.groups.map((g) => { const s = shownNesting(g, o, v); return [g.name, s ? s.split('>') : []]; }));
+  // A pool faces up when it links to a higher tier (equal tiers: the from end).
+  const up = new Set<string>();
+  for (const l of v.links) {
+    if (l.from.group === l.to.group) continue;
+    const la = level.get(l.from.group) ?? 0; const lb = level.get(l.to.group) ?? 0;
+    up.add(lb >= la ? `${l.from.group}\u0000${l.from.ports}` : `${l.to.group}\u0000${l.to.ports}`);
+  }
   orderOf.clear();
   const shown = focus(v, nest);
   const boxes: GroupBox[] = v.groups.map((group) => {
@@ -263,27 +273,46 @@ export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTION
     const caption = nesting.length
       ? nesting.map((k) => { const p = group.partitions.find((x) => x.key === k)!; return p.sizes ? k : `${k} ${p.count} x ${p.size}`; }).join(' › ')
       : 'devices';
-    const pools: PoolBitmap[] = [];
-    let py = HEAD;
-    if (o.ports) for (const [name, ports] of Object.entries(group.pools)) {
-      const runs: PoolBitmap['runs'] = [];
-      let at = 0;
-      v.links.forEach((l, li) => {
-        for (const [e, n] of [[l.from, l.fromPorts], [l.to, l.toPorts]] as const) {
-          if (e.group !== group.name || e.ports !== name || n === undefined) continue;
-          const count = Math.min(Math.round(n), ports - at);
-          if (count > 0) { runs.push({ link: li, name: l.name, start: at, count }); at += count; }
-        }
-      });
-      const rows = Math.max(1, Math.ceil(ports / CELLS_PER_ROW));
-      const w = Math.min(ports, CELLS_PER_ROW) * CELL + 2 * (group.poolSlots[name]?.length ?? 1);
-      pools.push({ name, ports, used: at, slots: group.poolSlots[name] ?? [ports], runs, x: 12, y: py, w, h: POOL_HEAD + rows * POOL_ROW_H });
-      py += POOL_HEAD + rows * POOL_ROW_H + 6;
+    const grids: PortGrid[] = [];
+    if (o.ports && Object.keys(group.pools).length) {
+      const layout = portLayout(group);
+      // Ports each pool uses per link spec, in pool order.
+      const owner = new Map<string, number>();
+      const used = new Map<string, number>();
+      for (const [name, ports] of Object.entries(group.poolNames)) {
+        let at = 0;
+        v.links.forEach((l, li) => {
+          for (const [e, n] of [[l.from, l.fromPorts], [l.to, l.toPorts]] as const) {
+            if (e.group !== group.name || e.ports !== name || n === undefined) continue;
+            for (let k = 0; k < Math.round(n) && at < ports.length; k++, at++) owner.set(ports[at], li);
+          }
+        });
+        used.set(name, at);
+      }
+      const anyPool = new Map<string, string>();
+      for (const [n, ps] of Object.entries(group.poolNames)) for (const port of ps) anyPool.set(port, n);
+      for (const side of ['top', 'bottom'] as const) {
+        const names = Object.keys(group.pools).filter((n) => (up.has(`${group.name}\u0000${n}`) ? 'top' : 'bottom') === side);
+        if (!names.length) continue;
+        const poolOf = new Map<string, string>();
+        for (const n of names) for (const port of group.poolNames[n]) poolOf.set(port, n);
+        grids.push({
+          side, cols: layout.cols, rows: layout.rows,
+          cells: layout.cells.map((c) => ({ ...c, pool: poolOf.get(c.port), other: poolOf.has(c.port) ? undefined : anyPool.get(c.port), link: poolOf.has(c.port) ? owner.get(c.port) : undefined })),
+          pools: names.map((n) => ({ name: n, ports: group.pools[n], used: used.get(n) ?? 0, slots: group.poolSlots[n]?.length ?? 1 })),
+          x: 0, y: 0, w: GRID_LEFT + layout.cols.length * CELL_W, h: GRID_HEAD + layout.rows.length * CELL_H,
+        });
+      }
     }
-    const top = py + (pools.length ? 4 : 0);
+    const topGrid = grids.find((q) => q.side === 'top'); const bottomGrid = grids.find((q) => q.side === 'bottom');
+    const top = HEAD + (topGrid ? topGrid.h + 8 : 0);
     body.x = 12; body.y = top;
-    const w = Math.max(body.w + 24, group.name.length * 9 + 200, caption.length * 6.4 + 24, ...pools.map((q) => q.w + 24));
-    return { group, level: level.get(group.name) ?? 0, x: 0, y: 0, w, h: top + body.h + 12, nesting, caption, pools, body };
+    const w = Math.max(body.w + 24, group.name.length * 9 + 200, caption.length * 6.4 + 24, ...grids.map((q) => q.w + 24));
+    const h = top + body.h + 12 + (bottomGrid ? bottomGrid.h + 4 : 0);
+    if (topGrid) { topGrid.x = (w - topGrid.w) / 2; topGrid.y = HEAD; }
+    if (bottomGrid) { bottomGrid.x = (w - bottomGrid.w) / 2; bottomGrid.y = top + body.h + 8; }
+    body.x = (w - body.w) / 2;
+    return { group, level: level.get(group.name) ?? 0, x: 0, y: 0, w, h, nesting, caption, grids, body };
   });
   const topLevel = Math.max(0, ...boxes.map((b) => b.level));
   const tiers = Array.from({ length: topLevel + 1 }, (_, i) => boxes.filter((b) => b.level === topLevel - i));
@@ -345,4 +374,28 @@ function devicePairs(l: VLink, from: DevBox[], to: DevBox[]): [DevBox, DevBox][]
     else out.push([x, ys[i % ys.length]]);
   });
   return out;
+}
+
+/** Grid layout of every port in a group's pools (see PortGrid). */
+function portLayout(g: VGroup): { cols: string[]; rows: string[]; cells: { port: string; col: number; row: number }[] } {
+  const ports = [...new Set(Object.values(g.poolNames).flat())];
+  const parsed = ports.map((port) => ({ port, m: /^(.*?)(\d+)([a-z]+)$/.exec(port) }));
+  if (ports.length && parsed.every((x) => x.m)) {
+    const lanes = [...new Set(parsed.map((x) => x.m![3]))].sort((a, b) => a.length - b.length || a.localeCompare(b));
+    const byPrefix = new Map<string, number[]>();
+    for (const x of parsed) (byPrefix.get(x.m![1]) ?? byPrefix.set(x.m![1], []).get(x.m![1])!).push(Number(x.m![2]));
+    const cols: string[] = [];
+    for (const [prefix, nums] of byPrefix) for (let n = Math.min(...nums); n <= Math.max(...nums); n++) cols.push(`${prefix}${n}`);
+    const ci = new Map(cols.map((c, i) => [c, i])); const ri = new Map(lanes.map((r, i) => [r, i]));
+    // The full cage: every column x lane, so ports no pool lists show as empty cells.
+    const cells = cols.flatMap((c, col) => lanes.map((r, row) => ({ port: `${c}${r}`, col, row })));
+    void ci; void ri;
+    return { cols, rows: lanes, cells };
+  }
+  const n = Math.min(ports.length, FALLBACK_COLS);
+  return {
+    cols: Array.from({ length: n }, (_, i) => String(i + 1)),
+    rows: Array.from({ length: Math.ceil(ports.length / FALLBACK_COLS) }, (_, i) => String(i + 1)),
+    cells: ports.map((port, i) => ({ port, col: i % FALLBACK_COLS, row: Math.floor(i / FALLBACK_COLS) })),
+  };
 }
