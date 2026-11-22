@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseYaml, YamlError } from '../topo/yaml';
 import { expandPorts, parseVirtual, poolPorts, type VirtualTopo } from '../topo/virtual';
-import { DEFAULT_OPTIONS, groupDevices, layoutDiagram, type GroupBox } from '../topo/diagram';
+import { DEFAULT_OPTIONS, groupDevices, layoutDiagram, M, type GroupBox } from '../topo/diagram';
 import { pick, sliceTopo, withGaps } from '../topo/slice';
 import { portLayout, portUse } from '../topo/ports';
 import { ruleText } from '../topo/rule';
@@ -217,6 +217,13 @@ describe('diagram', () => {
     expect(touching.every((p) => p.bundle)).toBe(true);
     // Lines not touching it stay device to device.
     expect(c.lines.filter((p) => p.link === 0).every((p) => !p.bundle)).toBe(true);
+  });
+  it('names the device type in the box header, which grows a line', () => {
+    const d = layoutDiagram(v, DEFAULT_OPTIONS, {}, { t1: '64x800G OSFP Switch (2PSU)' });
+    const [plain, named] = [box('t1'), box('t1', d)];
+    expect([plain.device, plain.head, named.device, named.head]).toEqual([undefined, M.head, '64x800G OSFP Switch (2PSU)', M.head + M.headLine]);
+    expect([named.body.y - plain.body.y, named.h - plain.h]).toEqual([M.headLine, M.headLine]);
+    expect(box('t1', layoutDiagram(v, DEFAULT_OPTIONS, { collapsed: ['t1'] }, { t1: 'X' })).h).toBe(M.head + M.headLine);
   });
   it('lets the split be chosen per group, and the port grids hidden', () => {
     const e = layoutDiagram(v, { partition: { t0: 'su>plane', server: '' }, ports: false });

@@ -114,14 +114,14 @@ interface GroupProps {
   onToggle(): void;
 }
 
-/** A group box: header (drag to move, ▾ / ▸ to collapse or expand), port grids and sets. */
+/** A group box: header (drag to move, ▾ / ▸ to collapse or expand; title, device type, split), port grids and sets. */
 function Group({ b, i, shift, onHeaderDown, onToggle }: GroupProps) {
   const s = LAYOUT_PAINT.itRack(i);
   const g = b.group;
   return (
     <g transform={`translate(${b.x + (shift?.dx ?? 0)},${b.y + (shift?.dy ?? 0)})`} opacity={shift ? 0.85 : 1}>
       <rect width={b.w} height={b.h} rx={8} fill={s.fill} stroke={s.stroke} strokeWidth={1.5} />
-      <rect width={b.w} height={M.head} rx={8} fill="transparent" style={{ cursor: shift ? 'grabbing' : 'grab' }} onPointerDown={onHeaderDown}>
+      <rect width={b.w} height={b.head} rx={8} fill="transparent" style={{ cursor: shift ? 'grabbing' : 'grab' }} onPointerDown={onHeaderDown}>
         <title>Drag to move</title>
       </rect>
       <g style={{ cursor: 'pointer' }} onClick={onToggle} onPointerDown={(e) => e.stopPropagation()}>
@@ -130,7 +130,10 @@ function Group({ b, i, shift, onHeaderDown, onToggle }: GroupProps) {
         <title>{b.collapsed ? 'Expand' : 'Collapse'}</title>
       </g>
       <text x={28} y={20} fontSize={14} fontWeight={700} fill={s.text} pointerEvents="none">{`${g.name} · ${g.count.toLocaleString('en-US')} ${g.role}`}</text>
-      <text x={28} y={36} fill={s.text} opacity={0.85} pointerEvents="none">{`by ${b.caption}`}</text>
+      {b.device && (
+        <text x={28} y={36} fontWeight={600} fill={s.text} pointerEvents="none">{b.device}</text>
+      )}
+      <text x={28} y={b.device ? 36 + M.headLine : 36} fill={s.text} opacity={0.85} pointerEvents="none">{`by ${b.caption}`}</text>
       {b.grids.map((q) => <Grid key={q.side} q={q} stroke={s.stroke} text={s.text} />)}
       {!b.collapsed && <Level s={b.body} stroke={s.stroke} text={s.text} />}
     </g>

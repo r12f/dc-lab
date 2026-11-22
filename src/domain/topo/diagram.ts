@@ -26,6 +26,8 @@ export const DEFAULT_OPTIONS: DiagramOptions = { partition: {}, ports: true };
 /** Layout metrics (SVG units). */
 export const M = {
   pad: 24, gapX: 40, gapY: 120, head: 44, minW: 720, ruleRoom: 40,
+  /** Extra header line (the device type). */
+  headLine: 16,
   /** Height of one rule (two text lines and a gap). */
   ruleH: 40,
   dev: { w: 34, h: 20 }, gap: 6, ellipsis: 16, set: { head: 18, pad: 6, minW: 64 },
@@ -63,6 +65,10 @@ export interface GroupBox {
   /** Partition keys the box is split by, outer first (empty = none). */
   nesting: string[];
   caption: string;
+  /** Device type of the members, as the Devices module names it (shown under the title). */
+  device?: string;
+  /** Header height: the title, the device type when set, the split. */
+  head: number;
   /** Drawn as its header only: no sets, devices or port grids; links end on the box edge. */
   collapsed: boolean;
   grids: PortGrid[];
@@ -211,8 +217,9 @@ function portGrids(g: VGroup, v: VirtualTopo, facesUp: (pool: string) => boolean
 /**
  * Tiered diagram of a virtual topology, drawn as a slice (see slice.ts): each group box is split by at most two
  * partition keys and shows its port grids; each link spec draws device-to-device lines between the drawn devices.
+ * `devices`: group name -> its device type's name, shown in the box header.
  */
-export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTIONS, view: DiagramView = {}): TopoDiagram {
+export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTIONS, view: DiagramView = {}, devices: Record<string, string> = {}): TopoDiagram {
   const collapsed = new Set(view.collapsed ?? []);
   const tier = tiers(v);
   const nesting = new Map(v.groups.map((g) => { const s = shownNesting(g, o, v); return [g.name, s ? s.split('>') : []]; }));
@@ -233,13 +240,15 @@ export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTION
       : 'devices';
     const grids = o.ports && !folded ? portGrids(group, v, (pool) => up.has(`${group.name}\u0000${pool}`)) : [];
     const top = grids.find((q) => q.side === 'top'); const bottom = grids.find((q) => q.side === 'bottom');
-    const w = Math.max(body.w + 24, group.name.length * 9 + 200, caption.length * 6.4 + 24, ...grids.map((q) => q.w + 24));
-    body.y = M.head + (top ? top.h + 8 : 0);
+    const device = devices[group.name];
+    const head = M.head + (device ? M.headLine : 0);
+    const w = Math.max(body.w + 24, group.name.length * 9 + 200, caption.length * 6.4 + 24, (device?.length ?? 0) * 7 + 40, ...grids.map((q) => q.w + 24));
+    body.y = head + (top ? top.h + 8 : 0);
     body.x = (w - body.w) / 2;
-    if (top) { top.x = (w - top.w) / 2; top.y = M.head; }
+    if (top) { top.x = (w - top.w) / 2; top.y = head; }
     if (bottom) { bottom.x = (w - bottom.w) / 2; bottom.y = body.y + body.h + 8; }
-    const h = folded ? M.head : body.y + body.h + 12 + (bottom ? bottom.h + 4 : 0);
-    return { group, tier: tier.get(group.name) ?? 0, x: 0, y: 0, w, h, nesting: keys, caption, collapsed: folded, grids, body };
+    const h = folded ? head : body.y + body.h + 12 + (bottom ? bottom.h + 4 : 0);
+    return { group, tier: tier.get(group.name) ?? 0, x: 0, y: 0, w, h, nesting: keys, caption, ...(device ? { device } : {}), head, collapsed: folded, grids, body };
   });
   // Tiers top-down, each centred on the widest.
   const top = Math.max(0, ...boxes.map((b) => b.tier));

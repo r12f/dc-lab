@@ -43,7 +43,10 @@ export function TopoModule() {
   // Device types and port maps are checked against the Devices / Optics modules.
   const problems = useMemo(() => [...virtual.problems, ...hardwareProblems(lib, virtual)], [virtual, lib]);
   const view = topo?.view;
-  const diagram = useMemo(() => layoutDiagram(virtual, options, view), [virtual, options, view]);
+  // Each box names its device type as the Devices module does (an id it lacks: as written, flagged in the problems).
+  const devices = useMemo(() => Object.fromEntries(virtual.groups.filter((g) => g.deviceType)
+    .map((g) => [g.name, lib.devices.get(g.deviceType)?.name ?? g.deviceType!])), [virtual, lib]);
+  const diagram = useMemo(() => layoutDiagram(virtual, options, view, devices), [virtual, options, view, devices]);
 
   const create = () => {
     const t: Topology = { schema: TOPOLOGY_SCHEMA, id: uniqueId(slugify('topology'), topologies.map((x) => x.id)), name: 'New topology', source: SAMPLE_TOPOLOGY };

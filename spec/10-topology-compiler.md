@@ -271,7 +271,7 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
   (double-click resets).
 - **Right pane — virtual topology**: a canvas (zoom, Export SVG, maximize) drawing the VIRTUAL part only as a
   slice, updated as the source changes:
-  - one box per device set group (name, count, role; the split; with **Port grids** on, the device's port grid: every port of the device, a
+  - one box per device set group (name, count, role; the device type as the Devices module names it, when set; the split; with **Port grids** on, the device's port grid: every port of the device, a
     column per port number (gaps kept) and a row per lane (`etp12c` = column 12, lane c; ports without a lane: rows
     of 64 in pool order). The pools linking up are drawn above the sets, the others below, both grids the same
     layout and centred, so a column lines up top to bottom. On each edge the ports of its pools are outlined and,
