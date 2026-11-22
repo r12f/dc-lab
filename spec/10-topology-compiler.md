@@ -315,7 +315,7 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
   - **BOM**: a line per device type and per optic type, quantities summed over the groups; a group without a device
     type is its own line (`<role> (no device type)`). Columns: Item, Category, Vendor / Model (PN) (the item picked
     per line, Generic by default), custom properties, Qty, Derivation (`dt0 512 + t1 256`, `t1 down 256 × 64`),
-    Total W (from the picked item). Export CSV;
+    Power/pcs (typical power of one piece, from the picked item), Total W (Qty x Power/pcs). Export CSV;
   - cables, fiber housings, racks and power distribution depend on the DC layout and are not estimated.
 
 The YAML reader covers block maps / lists, flow `{}` / `[]` (may span lines), quoted and plain scalars and `#`

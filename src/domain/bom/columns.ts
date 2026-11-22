@@ -10,6 +10,8 @@ export const SI_HEADER = 'SI may adjust';
 export interface BomColumn {
   header: string;
   numeric?: boolean;
+  /** The cell is watts: the table shows it as power (W / kW); the CSV keeps the number. */
+  power?: boolean;
   cell(line: BomLine): string | number;
 }
 
@@ -31,8 +33,8 @@ export function bomColumns(defs: readonly PropertyDef[], withPowerDetail = false
     ...propertyColumns(defs),
     { header: 'Qty', numeric: true, cell: (l) => l.qty },
     { header: SI_HEADER, cell: (l) => (l.siAdjustable ? 'Yes' : '') },
-    ...(withPowerDetail ? [{ header: 'Unit W', numeric: true, cell: (l: BomLine) => l.unitW }] : []),
-    { header: 'Total W', numeric: true, cell: (l) => (withPowerDetail ? lineTotalW(l) : l.unitW ? lineTotalW(l) : '') },
+    ...(withPowerDetail ? [{ header: 'Unit W', numeric: true, power: true, cell: (l: BomLine) => l.unitW }] : []),
+    { header: 'Total W', numeric: true, power: true, cell: (l) => (withPowerDetail ? lineTotalW(l) : l.unitW ? lineTotalW(l) : '') },
     ...(withPowerDetail ? [{ header: 'Notes', cell: (l: BomLine) => l.notes.join(' ') }] : []),
   ];
 }

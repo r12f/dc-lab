@@ -143,13 +143,23 @@ export function estimateTopoBom(lib: Library, v: VirtualTopo, s: TopoBomSettings
   return { groups, lines, links: v.links.reduce((n, l) => n + (l.links ?? 0), 0) };
 }
 
+/** Header of the per-item power column (typical W of one piece, from the picked item). */
+export const POWER_PCS_HEADER = 'Power/pcs';
+
 /**
  * Columns of the estimated BOM: the rack BOM's without "SI may adjust", Qty with thousands separators (topology
- * quantities run to tens of thousands), and the derivation after Qty.
+ * quantities run to tens of thousands), the derivation after Qty, and Power/pcs before Total W (Qty x Power/pcs).
  */
 export function topoBomColumns(defs: readonly PropertyDef[]): BomColumn[] {
   const cols = bomColumns(defs).filter((c) => c.header !== SI_HEADER)
     .map((c) => (c.header === 'Qty' ? { ...c, cell: (l: BomLine) => fmt(l.qty) } : c));
-  const at = cols.findIndex((c) => c.header === 'Qty') + 1;
-  return [...cols.slice(0, at), { header: 'Derivation', cell: (l) => l.notes.join('; ') }, ...cols.slice(at)];
+  const qty = cols.findIndex((c) => c.header === 'Qty') + 1;
+  const total = cols.findIndex((c) => c.header === 'Total W');
+  return [
+    ...cols.slice(0, qty),
+    { header: 'Derivation', cell: (l) => l.notes.join('; ') },
+    ...cols.slice(qty, total),
+    { header: POWER_PCS_HEADER, numeric: true, power: true, cell: (l) => (l.unitW ? l.unitW : '') },
+    ...cols.slice(total),
+  ];
 }

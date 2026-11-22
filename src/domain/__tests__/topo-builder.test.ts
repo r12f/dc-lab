@@ -421,9 +421,11 @@ topo:
     expect(estimateTopoBom(lib, u, {}).groups[0].pools.map((p) => [p.pool, p.ports, p.cages])).toEqual([['a', 2, 1], ['b', 2, 0]]);
   });
   it('shows the derivation column and Qty with thousands separators', () => {
-    expect(topoBomColumns([]).map((c) => c.header)).toEqual(['Item', 'Category', 'Vendor / Model (PN)', 'Qty', 'Derivation', 'Total W']);
+    expect(topoBomColumns([]).map((c) => c.header)).toEqual(['Item', 'Category', 'Vendor / Model (PN)', 'Qty', 'Derivation', 'Power/pcs', 'Total W']);
     const optic = lib.optics.get(O)!.name;
-    expect(topoBomColumns([]).map((c) => c.cell(bom.lines[3]))).toEqual([optic, 'Optic', `Generic ${optic}`, '20', 't down 4 × 2 + t up 4 × 1 + u down 2 × 4', '']);
+    expect(topoBomColumns([]).map((c) => c.cell(bom.lines[3]))).toEqual([optic, 'Optic', `Generic ${optic}`, '20', 't down 4 × 2 + t up 4 × 1 + u down 2 × 4', '', '']);
+    // Power of one piece (the picked item's typical W), then Qty x that; both shown as power in the table.
+    expect(topoBomColumns([]).slice(-2).map((c) => [c.cell(bom.lines[1]), c.power])).toEqual([[100, true], [600, true]]);
     expect(topoBomColumns([]).find((c) => c.header === 'Qty')!.cell({ ...bom.lines[0], qty: 16384 })).toBe('16,384');
   });
 });

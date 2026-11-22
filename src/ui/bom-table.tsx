@@ -41,7 +41,7 @@ export function BomTable({ lines, filename, itemsOf, onPick, columns }: {
                   );
                 }
                 const v = c.cell(l);
-                return <td key={c.header} className={c.numeric ? 'num' : undefined}>{c.header === 'Total W' && typeof v === 'number' ? formatPower(v) : v}</td>;
+                return <td key={c.header} className={c.numeric ? 'num' : undefined}>{c.power && typeof v === 'number' ? formatPower(v) : v}</td>;
               })}
             </tr>
           ))}
