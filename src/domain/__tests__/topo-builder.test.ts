@@ -303,6 +303,12 @@ topo:
       - { ports: "e{1-2}", device_ports: "osfp/{1-2}", mode: 8x100G }
     ports: { down: e1{a-d} }
   c: { role: z, count: 1, device_type: no-such-device, ports: { p: q1 } }
+  ok:   # a 400G optic run at 1x200G on a 400G port: the Rack Designer takes it, so does the port map
+    role: w
+    count: 1
+    device_type: server-gpu-8u
+    port_map: [ { ports: "p{1-2}", device_ports: "fe/{1-2}", mode: 1x200G, optic: qsfp112-400g-dr4 } ]
+    ports: { p: p{1-2} }
 topo:
   - { name: ab, from: { group: a, ports: up }, to: { group: b, ports: down }, pattern: { type: mesh, per_pair: 1 } }
 `);
@@ -310,7 +316,7 @@ topo:
     const msgs = hardwareProblems(lib, bad).map((p) => p.message);
     expect(msgs).toHaveLength(6);
     expect(msgs).toEqual(expect.arrayContaining([
-      expect.stringMatching(/^group a: .+ does not fit .+ ports at 2x400G$/),
+      expect.stringMatching(/^group a: .+ does not fit .+ ports$/),
       expect.stringMatching(/^group a: .+ has no port osfp\/65$/),
       expect.stringMatching(/^group a: .+ ports have no mode 16x50G \(1x800G, 2x400G/),
       'group a: pool more port g1a is not in the port map',

@@ -2,7 +2,7 @@ import type { Library } from '../library/library';
 import type { DeviceDefinition, PortGroup } from '../device/types';
 import { isModeAllowed, modesOf, nativeMode, parseMode } from '../device/breakout';
 import { parsePortRef } from '../device/ports';
-import { compatibleOptics } from '../ports/optic-match';
+import { pickOptic } from '../ports/optic-match';
 import { formatGbps } from '../units';
 import type { Problem, VGroup, VirtualTopo } from './virtual';
 
@@ -32,7 +32,8 @@ const firstOf = (xs: string[]) => `${xs[0]}${xs.length > 1 ? ` (and ${xs.length 
  * Resolves a group's port map on its device type (Devices module). Each entry zips its topology ports with device
  * ports; the entry's mode (default: native) splits each into `fanout` sub-ports named `<port>a`, `<port>b`, …
  * (fanout 1 keeps the port name). Problems: unknown device type, device ports the type lacks, modes or optics the
- * port group does not take, ports mapped twice, pool ports the map does not name.
+ * port group does not take (an optic as the Rack Designer takes a chosen module: it fits the cage and is not faster
+ * than the port), ports mapped twice, pool ports the map does not name.
  */
 export function groupHardware(lib: Library, g: VGroup): GroupHardware {
   const problems: Problem[] = [];
@@ -72,7 +73,7 @@ export function groupHardware(lib: Library, g: VGroup): GroupHardware {
       if (!e.optic) continue;
       const o = lib.optics.get(e.optic);
       if (!o) problems.push({ message: `group ${g.name}: optic "${e.optic}" is not in the Optics module` });
-      else if (!compatibleOptics(lib, pg, mode).some((x) => x.id === o.id)) problems.push({ message: `group ${g.name}: ${o.name} does not fit ${pg.label} ports at ${mode}` });
+      else if (pickOptic(lib, pg, mode, undefined, o.id)?.id !== o.id) problems.push({ message: `group ${g.name}: ${o.name} does not fit ${pg.label} ports` });
     }
   }
   if (twice.length) problems.push({ message: `group ${g.name}: port_map maps ${firstOf(twice)} twice` });

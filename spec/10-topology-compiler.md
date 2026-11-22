@@ -116,7 +116,7 @@ device's ports. Each entry is `{ ports, device_ports, mode?, optic? }`:
 | `ports` | topology ports (a port pool pattern), e.g. `etp{1-64}` |
 | `device_ports` | as many device ports, `<port group id>/<index>` of the device type, e.g. `osfp/{1-64}`; the n-th topology port is the n-th device port |
 | `mode` | breakout mode of those device ports, one the port group offers (`8x100G`); absent = the native mode. A fanout of n splits each topology port into sub-ports `<port>a`, `<port>b`, … (`etp3a` … `etp3h`); fanout 1 keeps the port name |
-| `optic` | optic type in each of those cages (Optics module id); it must fit the cage and the mode's total speed |
+| `optic` | optic type in each of those cages (Optics module id); as a module chosen in the Rack Designer, it must fit the cage (form factor, heat sink) and not be faster than the port |
 
 ```yaml
   dt0:
