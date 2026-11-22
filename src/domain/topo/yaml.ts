@@ -138,6 +138,27 @@ function parseFlow(src: string, no: number): YamlValue {
   return v;
 }
 
+/** One inline value as it follows `key: ` or `- `: a flow collection or a scalar. */
+export function parseInlineYaml(text: string, line = 1): YamlValue {
+  const s = text.trim();
+  return s[0] === '{' || s[0] === '[' ? parseFlow(s, line) : scalar(s, line);
+}
+
+/** Text with its comment stripped (a `#` outside quotes, at the start or after whitespace). */
+export function withoutComment(line: string): string {
+  return stripComment(line);
+}
+
+/** Change in flow bracket depth over a text (quotes skipped). */
+export function bracketDepth(text: string): number {
+  return depthDelta(text);
+}
+
+/** Index of the `:` ending a mapping key in a line's text, or -1. */
+export function mappingColon(text: string): number {
+  return keyColon(text);
+}
+
 export function parseYaml(text: string): YamlValue {
   const lines: Line[] = [];
   const raw = text.replace(/\r\n?/g, '\n').split('\n');

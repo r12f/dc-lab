@@ -45,6 +45,8 @@ export interface VGroup {
 }
 export interface VEnd { group: string; key?: string; ports: string; filters: Record<string, string> }
 export interface VLink {
+  /** Position of the spec in the file's `topo` list. */
+  index: number;
   name: string;
   from: VEnd;
   to: VEnd;
@@ -167,7 +169,7 @@ export function parseVirtual(source: string): VirtualTopo {
   const links: VLink[] = [];
   const topo = doc.topo;
   if (topo !== undefined && !Array.isArray(topo)) problems.push({ message: 'topo: must be a list' });
-  for (const t of Array.isArray(topo) ? topo : []) {
+  for (const [index, t] of (Array.isArray(topo) ? topo : []).entries()) {
     if (!isObj(t)) continue;
     const name = str(t.name) ?? `link ${links.length + 1}`;
     const end = (v: YamlValue | undefined, side: string): VEnd | undefined => {
@@ -203,7 +205,7 @@ export function parseVirtual(source: string): VirtualTopo {
       }
     }
     if (!from || !to) continue;
-    const link: VLink = { name, from, to, pattern: type === 'round-robin' ? 'round-robin' : 'mesh', perPair: num(pt.per_pair) ?? 1, map };
+    const link: VLink = { index, name, from, to, pattern: type === 'round-robin' ? 'round-robin' : 'mesh', perPair: num(pt.per_pair) ?? 1, map };
     Object.assign(link, linkCount(link, byName));
     links.push(link);
   }

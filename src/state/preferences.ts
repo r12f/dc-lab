@@ -24,6 +24,8 @@ export interface Preferences {
 export interface PaneCollapse {
   sidebar: boolean;
   inspector: boolean;
+  /** Topo Builder's code pane. */
+  topoCode: boolean;
 }
 
 export interface PaneWidths {
@@ -35,7 +37,7 @@ export const DEFAULT_PANES: PaneWidths = { sidebar: 260, inspector: 360 };
 /** Default inspector width per module where the shared default is too narrow. */
 export const DEFAULT_INSPECTOR_WIDTHS: Record<string, number> = { designer: 640 };
 export const DEFAULT_SIDEBAR_LIST_HEIGHT = 180;
-export const NO_COLLAPSE: PaneCollapse = { sidebar: false, inspector: false };
+export const NO_COLLAPSE: PaneCollapse = { sidebar: false, inspector: false, topoCode: false };
 export const LIST_HEIGHT_LIMITS = { min: 60, max: 1200 };
 /** Inspector can grow to most of a wide screen so faceplates and port boxes stay legible. */
 export const PANE_LIMITS = { min: 180, max: 1600 };

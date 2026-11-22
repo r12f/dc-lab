@@ -263,12 +263,24 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
 `dc-lab/topology@1`; the source is the YAML text, saved as typed).
 
 - **Sidebar**: the project's topologies (+ New starts from the full example below, ⧉ duplicate, ✕ delete), and the
-  selected one's name.
+  selected one's name. Under the list (divider draggable), the **panel** of what is selected in the diagram:
+  - a device set group: name, role, count, device type (the Devices module's types; the matched breakout profile
+    under it), partitions (key, count, size, or `sizes` as `1: 54, 2: 18`), port map (with a device type) and port
+    pools with the ports each holds; + adds a row, ✕ removes it; **Delete** removes the group with the link specs
+    and mapping entries naming it;
+  - a link spec: name and its link count, per end the group, port pool and key, the pattern (mesh / round-robin,
+    per pair); filters and `map` are shown and edited in the code. **Delete** removes it.
+
+  A text field commits on Enter or leaving it (Esc restores). Each edit rewrites only the lines (or, in a flow
+  `{ }` / `[ ]`, only the value) it changes, so comments and alignment stay; a new key goes where the file's key
+  order puts it. Renaming a group renames the link ends and mapping entries naming it and carries its moved /
+  collapsed state; renaming a pool renames the link ends using it. The panel needs the file to parse.
 - **Left pane — code**: the YAML source, monospace, line numbers, Tab inserts two spaces. Under it the problems found
   in the file (YAML syntax with its line; undefined groups, pools or partition keys; partition sizes that do not
   add up to `count`; map values that are not strings; a pool too small for a link spec; device types, port maps
   and link speeds checked against the Devices and Optics modules). The divider to the diagram is draggable
-  (double-click resets).
+  (double-click resets); « hides the pane to a rail (» Code, with the problem count) and » shows it again,
+  remembered across sessions.
 - **Right pane — virtual topology**: a canvas (zoom, Export SVG, maximize) drawing the VIRTUAL part only as a
   slice, updated as the source changes:
   - one box per device set group (name, count, role; the device type as the Devices module names it, when set; the split; with **Port grids** on, the device's port grid: every port of the device, a
@@ -299,6 +311,12 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
     it; lines follow on release) and collapses / expands with ▾ / ▸ in its header: a collapsed box is its header
     only, and each link spec touching it draws one thick line between box edges instead of device lines. Moves
     and folds are saved with the topology (`view: { offsets: { <group>: { dx, dy } }, collapsed: [<group>] }`);
+  - a click on a box selects the group (outlined; a drag of its header only moves it), a click on a spec's lines
+    (between boxes) or rule selects the spec (its lines stand out, the others turn faint grey); a click on the
+    empty drawing or on the selected item again, or Escape, clears it;
+  - toolbar **+ New ▾** (before Export SVG, set off by `|`): **Device set group** adds `group` (role `device`,
+    count 1, pool `p: p{1-4}`) after the other groups; **Link** adds `link` (mesh, 1 per pair) from the selected
+    group (else the first) to another one, first pool on each end, after the other specs. The new item is selected;
   - toolbar **Groups ▾**: Port grids on/off, per group the split (any key, any ordered pair of keys, or none),
     and **Reset box positions** (shown when a box is moved or collapsed).
 - **Under the diagram — Estimated BOM From Virtual Topo** (the divider above it is draggable, double-click resets):
@@ -321,7 +339,8 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
 The YAML reader covers block maps / lists, flow `{}` / `[]` (may span lines), quoted and plain scalars and `#`
 comments; anchors, tags and block scalars are not supported.
 
-Code (`src/domain/topo/`): `yaml.ts` reader; `virtual.ts` parses groups and link specs (link and port counts,
+Code (`src/domain/topo/`): `yaml.ts` reader; `yaml-edit.ts` in-place edits of the YAML text; `edit.ts` the panel's
+topology edits (fields, add / rename / delete groups, pools and link specs); `virtual.ts` parses groups and link specs (link and port counts,
 problems); `hardware.ts` resolves device types and port maps and matches breakout profiles on the Devices module; `slice.ts` picks the
 drawn values; `ports.ts` lays out a device's ports and their use; `rule.ts` the rule text; `diagram.ts` the layout;
 `bom.ts` the estimated BOM. `src/features/topo/` renders them.
