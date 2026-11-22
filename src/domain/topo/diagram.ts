@@ -18,6 +18,8 @@ export const DEFAULT_OPTIONS: DiagramOptions = { partition: {}, ports: true };
 /** Layout metrics (SVG units). */
 export const M = {
   pad: 24, gapX: 40, gapY: 120, head: 44, minW: 720, ruleRoom: 40,
+  /** Height of one rule (two text lines and a gap). */
+  ruleH: 40,
   dev: { w: 34, h: 20 }, gap: 6, ellipsis: 16, set: { head: 18, pad: 6, minW: 64 },
   /** Port grid: cell size, room for the summary and column numbers, room for lane letters. */
   grid: { cell: 7, head: 24, left: 12 },
@@ -252,6 +254,10 @@ export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTION
     const [lo, hi] = aBelow ? [a, b] : [b, a];
     rules.push({ link: li, x: width - M.pad, y: (hi.y + hi.h + lo.y) / 2 });
   });
+  // Rules sharing a tier gap stack, centred on it.
+  const byGap = new Map<number, RuleAnchor[]>();
+  for (const r of rules) byGap.set(r.y, [...(byGap.get(r.y) ?? []), r]);
+  for (const [y0, rs] of byGap) rs.forEach((r, i) => { r.y = y0 + (i - (rs.length - 1) / 2) * M.ruleH; });
   return { width, height: Math.max(M.pad * 2, y - M.gapY + M.pad), boxes, lines, rules };
 }
 

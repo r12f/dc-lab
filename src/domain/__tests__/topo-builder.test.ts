@@ -67,6 +67,16 @@ topo:
       'l: map values must be strings ("1", not 1)',
     ]));
   });
+  it('sizes ports per device by the largest of uneven sets', () => {
+    const u = parseVirtual(`device_set_groups:
+  s: { role: x, count: 72, partitions: [ { key: p, sizes: { "1": 54, "2": 18 } } ], ports: { n: e{1-2} } }
+  t: { role: y, count: 4, partitions: [ { key: p, count: 2, size: 2 } ], ports: { d: e{1-60} } }
+topo:
+  - { name: l, from: { group: s, key: "\${p}", ports: n }, to: { group: t, key: "\${p}", ports: d }, pattern: { type: mesh, per_pair: 1 } }
+`);
+    expect(u.problems).toEqual([]);
+    expect(u.links[0].toPorts).toBe(54);
+  });
   it('flags a pool too small for the pattern', () => {
     const p = parseVirtual(`device_set_groups:
   a: { role: x, count: 4, ports: { p: e{1-2} } }
@@ -139,6 +149,9 @@ describe('diagram', () => {
     expect(box('t0').y).toBeGreaterThan(box('t1').y);
     expect(box('t1').y).toBeGreaterThan(box('t2').y);
     expect(d.rules).toHaveLength(3);
+    // Rules sharing a tier gap do not overlap.
+    const ys = d.rules.map((r) => r.y);
+    expect(new Set(ys).size).toBe(ys.length);
   });
   it('splits a group by the mapped key, then the key it is reached by; three values at most', () => {
     expect(box('t0').nesting).toEqual(['plane', 'su']);

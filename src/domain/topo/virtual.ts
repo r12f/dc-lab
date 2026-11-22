@@ -196,9 +196,9 @@ export function parseVirtual(source: string): VirtualTopo {
   return { name: str(doc.topology) ?? '', groups, links, problems };
 }
 
-interface Inst { n: number; size: number }
+/** Instances of an end: how many, devices per instance (mean), and devices in the largest instance. */
+interface Inst { n: number; size: number; max: number }
 
-/** Instances of one end: how many, and devices per instance (after filters). */
 function instances(g: VGroup, e: VEnd): Inst | undefined {
   const vars = e.key ? keyVars(e.key) : [];
   let n = 1;
@@ -208,6 +208,12 @@ function instances(g: VGroup, e: VEnd): Inst | undefined {
     n *= p.count;
   }
   let size = g.count / n;
+  // Uneven sets (`sizes`): the largest one bounds the ports a device needs.
+  let max = size;
+  for (const v of vars) {
+    const p = g.partitions.find((x) => x.key === v)!;
+    if (p.sizes && vars.length === 1) max = Math.max(...Object.values(p.sizes));
+  }
   for (const [k, v] of Object.entries(e.filters)) {
     const p = g.partitions.find((x) => x.key === (k.endsWith('.index') ? k.slice(0, -6) : k));
     if (!p) return undefined;
@@ -215,20 +221,21 @@ function instances(g: VGroup, e: VEnd): Inst | undefined {
       const r = rangeSize(v);
       if (r === undefined || !p.size) return undefined;
       size = (size * r) / p.size;
+      max = (max * r) / p.size;
     } else {
       const share = p.sizes ? (p.sizes[v] ?? 0) / g.count : 1 / p.count;
-      if (vars.includes(p.key)) { n = Math.max(1, n / p.count); } else size *= share;
+      if (vars.includes(p.key)) { n = Math.max(1, n / p.count); } else { size *= share; max *= share; }
     }
   }
-  return { n, size };
+  return { n, size, max };
 }
 
 /** Ports one device of a side needs: its peers times per_pair. */
 function devicePorts(l: VLink, side: 'from' | 'to', a: Inst, b: Inst): number {
   // With a map, one to-instance takes several from-instances.
   const fanIn = l.map.length ? Math.max(...l.map.map((m) => m.from.length)) : 1;
-  if (l.pattern === 'mesh') return (side === 'from' ? b.size : a.size * fanIn) * l.perPair;
-  return (side === 'from' ? 1 : Math.ceil((a.size * fanIn) / b.size)) * l.perPair;
+  if (l.pattern === 'mesh') return (side === 'from' ? b.max : a.max * fanIn) * l.perPair;
+  return (side === 'from' ? 1 : Math.ceil((a.max * fanIn) / b.size)) * l.perPair;
 }
 
 function linkCount(l: VLink, groups: Map<string, VGroup>): Pick<VLink, 'links' | 'pairs'> {
