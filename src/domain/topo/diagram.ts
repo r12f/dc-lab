@@ -31,8 +31,9 @@ export interface PortCell {
   port: string; col: number; row: number;
   /** Pool of this edge holding the port. */
   pool?: string;
-  /** Pool on the opposite edge holding it (drawn grey, so both edges show the split). */
+  /** Pool on the opposite edge holding it; `otherUsed` when a link spec uses it there (drawn grey). */
   other?: string;
+  otherUsed?: boolean;
   /** Link spec using the port. */
   link?: number;
 }
@@ -185,7 +186,8 @@ function portGrids(g: VGroup, v: VirtualTopo, facesUp: (pool: string) => boolean
       side, cols: layout.cols, rows: layout.rows,
       cells: layout.cells.map((c) => {
         const pool = use.pool.get(c.port);
-        return pool && mine.has(pool) ? { ...c, pool, link: use.owner.get(c.port) } : { ...c, other: pool };
+        if (pool && mine.has(pool)) return { ...c, pool, link: use.owner.get(c.port) };
+        return { ...c, other: pool, otherUsed: use.owner.has(c.port) };
       }),
       pools: names.map((n) => ({ name: n, ports: g.pools[n], used: use.used.get(n) ?? 0, slots: g.poolSlots[n]?.length ?? 1 })),
       x: 0, y: 0, w: M.grid.left + layout.cols.length * M.grid.cell, h: M.grid.head + layout.rows.length * M.grid.cell,

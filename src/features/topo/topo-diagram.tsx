@@ -56,7 +56,7 @@ function Group({ b, i }: { b: GroupBox; i: number }) {
 
 /**
  * Port grid of one device: every port a cell (column = port number, row = lane). Ports of this edge's pools are
- * outlined, and filled in the color of the link spec using them; ports of the other edge's pools are grey.
+ * outlined, and filled in the color of the link spec using them; ports the other edge's pools use are grey.
  */
 function Grid({ q, stroke, text }: { q: PortGrid; stroke: string; text: string }) {
   const { cell, head, left } = M.grid;
@@ -76,11 +76,12 @@ function Grid({ q, stroke, text }: { q: PortGrid; stroke: string; text: string }
       {q.rows.length > 1 && q.rows.map((r, i) => (
         <text key={r} x={left - 3} y={cy + i * cell + cell - 1} textAnchor="end" fontSize={7} fill={text} opacity={0.75}>{r}</text>
       ))}
+      <rect x={left} y={cy} width={q.cols.length * cell - 1} height={q.rows.length * cell - 1} fill={paint.paper} />
       {q.cells.map((c) => (
         <rect key={c.port} x={left + c.col * cell} y={cy + c.row * cell} width={cell - 1} height={cell - 1}
-          fill={c.link !== undefined ? linkColor(c.link) : c.other ? stroke : paint.paper}
-          fillOpacity={c.other ? 0.25 : 1} stroke={c.pool ? stroke : 'none'} strokeWidth={0.5}>
-          <title>{`${c.port} · ${c.pool ? `${c.pool}${c.link === undefined ? ' · free' : ''}` : c.other ? `${c.other} (other edge)` : 'not in a pool'}`}</title>
+          fill={c.link !== undefined ? linkColor(c.link) : c.otherUsed ? paint.inkMuted : paint.paper}
+          fillOpacity={c.otherUsed ? 0.55 : 1} stroke={c.pool || c.other ? stroke : 'none'} strokeWidth={0.5} strokeOpacity={c.pool ? 1 : 0.35}>
+          <title>{`${c.port} · ${c.pool ? `${c.pool}${c.link === undefined ? ' · free' : ''}` : c.other ? `${c.other} (other edge${c.otherUsed ? '' : ', free'})` : 'not in a pool'}`}</title>
         </rect>
       ))}
     </g>

@@ -171,7 +171,9 @@ describe('diagram', () => {
     expect(top.pools).toEqual([{ name: 'up', ports: 8, used: 4, slots: 1 }]);
     expect(bottom.pools).toEqual([{ name: 'down', ports: 16, used: 16, slots: 2 }]);
     // Each edge marks its own pool; the other edge's ports are 'other'.
-    expect(top.cells.find((c) => c.port === 'etp1a')).toMatchObject({ other: 'down' });
+    expect(top.cells.find((c) => c.port === 'etp1a')).toMatchObject({ other: 'down', otherUsed: true });
+    // Free up ports show as unused on the bottom edge too.
+    expect(bottom.cells.find((c) => c.port === 'etp10a')).toMatchObject({ other: 'up', otherUsed: false });
     expect(top.cells.find((c) => c.port === 'etp9a')).toMatchObject({ pool: 'up', link: 1 });
   });
   it('lets the split be chosen per group, and the port grids hidden', () => {

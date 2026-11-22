@@ -236,7 +236,7 @@ source is the YAML text, saved as typed).
     of 64 in pool order). The pools linking up are drawn above the sets, the others below, both grids the same
     layout and centred, so a column lines up top to bottom. On each edge the ports of its pools are outlined and,
     where a link spec uses them, filled in that spec's line color (each device fills a pool in order, specs in
-    topo order); ports of the other edge's pools are grey, ports in no pool are empty. Summary
+    topo order); ports the other edge's pools use are grey (on both edges), free ports and ports in no pool are empty. Summary
     `▲ up 256/256 used` / `▼ down 252/252 used · 14 slots`, column numbers every 8, lane letters at the left;
     hover names the port, its pool and whether it is free), tiers bottom-up by link direction (a group sits one tier above the highest group linking
     into it);
