@@ -229,28 +229,27 @@ source is the YAML text, saved as typed).
   in the file (YAML syntax with its line; undefined groups, pools or partition keys; partition sizes that do not
   add up to `count`; map values that are not strings; a pool too small for a link spec). The divider to the
   diagram is draggable (double-click resets).
-- **Right pane — virtual topology**: a canvas (zoom, Export SVG, maximize) drawing the VIRTUAL part only, updated
-  as the source changes:
-  - one box per device set group, nested by partition up to two levels (outer › inner): header (name, role,
-    count); inside it one box per outer set, inside that one box per inner set (`key value`, devices per set).
-    Default nesting: the key the group is reached by from below (outer), then the key it reaches up with (inner),
-    so every link lands on the sets it pairs. Partitions are orthogonal: an inner set holds outer size / inner
-    count devices (`per` keeps the declared size). Values a `map` groups together are drawn side by side.
-    Past 8 sets (3 outer sets when nested) the rest collapse into `+N`;
-  - leaf sets show their devices as cells: all when 6 or fewer, else 1-4, an ellipsis, and the last;
-  - port pools as strips on the group box edges, one cell per port (capped at 96, gaps between slots when the pool
-    is listed per slot), labelled `name ports · N slots`; a pool sits on the top edge when it links to a higher
-    tier, else on the bottom edge;
-  - toolbar **Groups ▾**: Port pools on/off, and per group the nesting (any key, any ordered pair of keys, or
-    none);
-  - tiers bottom-up by link direction (a group sits one tier above the highest group linking into it);
-  - each link spec draws one line per drawn instance pair: from the set box of each from value to the set box of
-    the to value it pairs with (`map`, else the same value; filters drop values); an end whose key is not a drawn
-    level ends on its group box. One pair, the most vertical, is drawn device to device instead, between the device
-    cells: mesh = every cell to every cell, round-robin = each from cell to the next to cell;
-  - a label box per spec: name and total links; how instances pair (`1:1 (same value)`, `N:1 by map`, `each x →
-    all y`); the pattern with devices per pair (`mesh: 38 x 256 dev per pair, each to each`, `x2 per device
-    pair`); ports each device uses on each side. Hover adds both ends (key, filters, pool) and the map.
+- **Right pane — virtual topology**: a canvas (zoom, Export SVG, maximize) drawing the VIRTUAL part only as a
+  slice, updated as the source changes:
+  - one box per device set group (name, count, role; the split; with **Port pools** on, its pools with port
+    counts and slots), tiers bottom-up by link direction (a group sits one tier above the highest group linking
+    into it);
+  - the box is split by at most two partition keys (outer › inner): by default the key a mapped link uses on the
+    group, then the key it is reached by from below, then the key it reaches up with. Inner sets hold outer size /
+    inner count devices (`per` keeps the declared size);
+  - every level shows at most three values, first, second and last, with `…` between; each set shows at most
+    three devices the same way, labelled by their number in the set (a level whose sets hold one device draws the
+    devices labelled by the value);
+  - the slice follows the links: a mapped link shows its first to value and the from values mapping onto it
+    (e.g. T0 planes 1 and 5 → T1 plane 1); a keyed link without a map shows the same values on both ends;
+  - lines run device to device: a from device pairs with the drawn to devices whose key value it maps to (`map`,
+    else the same value; filters drop devices, `key.index` by the device's number in its set): all of them for
+    mesh, the next in turn for round-robin;
+  - beside each tier gap, the spec's rule: name and total links; how instances pair (`2 t0 planes → 1 t1 plane
+    (map)`, `server su k → t0 su k`, `each t1 plane → all t2 ...`); the pattern with devices per pair (`mesh 4 x 4
+    per pair`, `round-robin 4 over 6 x2`); ports each device uses on each side. Hover adds both ends and the map;
+  - toolbar **Groups ▾**: Port pools on/off, and per group the split (any key, any ordered pair of keys, or
+    none).
 
 The YAML reader covers block maps / lists, flow `{}` / `[]` (may span lines), quoted and plain scalars and `#`
 comments; anchors, tags and block scalars are not supported.

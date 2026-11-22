@@ -21,7 +21,7 @@ export function DiagramMenu({ topo, options, onChange }: { topo: VirtualTopo; op
   const withSets = topo.groups.filter((g) => g.partitions.length);
   return (
     <div className="dropdown" ref={root}>
-      <Button aria-haspopup="true" aria-expanded={open} title="What the group boxes show: partition sets and port pools"
+      <Button aria-haspopup="true" aria-expanded={open} title="How each group box is split (partition keys, outer › inner) and whether port pools are listed"
         onClick={() => setOpen(!open)}>Groups ▾</Button>
       {open && (
         <div className="dropdown-menu topo-menu" role="menu">
@@ -29,7 +29,7 @@ export function DiagramMenu({ topo, options, onChange }: { topo: VirtualTopo; op
             <input type="checkbox" checked={options.ports} onChange={(e) => onChange({ ...options, ports: e.target.checked })} />
             <span>Port pools</span>
           </label>
-          {withSets.length > 0 && <div className="check-group">Sets by partition (outer › inner)</div>}
+          {withSets.length > 0 && <div className="check-group">Split by partition (outer › inner)</div>}
           {withSets.map((g) => (
             <label key={g.name} className="topo-menu-row">
               <span>{g.name}</span>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseYaml, YamlError } from '../topo/yaml';
 import { expandPorts, parseVirtual, poolPorts } from '../topo/virtual';
-import { layoutDiagram } from '../topo/diagram';
+import { groupDevices, layoutDiagram } from '../topo/diagram';
 import { SAMPLE_TOPOLOGY } from '../topo/sample';
 import { normalizeProject, serializeProject } from '../project/serializer';
 import { emptyProject } from '../project/types';
@@ -81,54 +81,46 @@ topo:
     expect(y.t1).toBeGreaterThan(y.t2);
     expect(d.labels).toHaveLength(3);
   });
-  it('nests each group by the keys its links use (reached-by outer, reaches-with inner), pools on the edges', () => {
+  const labels = (b: ReturnType<typeof layoutDiagram>['boxes'][number]) => groupDevices(b).map((x) => x.label);
+  const sets = (b: ReturnType<typeof layoutDiagram>['boxes'][number]) => b.body.sets.map((s) => s.label);
+  it('splits a group by the mapped key, then the key it is reached by; three values at most, ellipsis between', () => {
     const d = layoutDiagram(v);
-    const t0 = d.boxes.find((b) => b.group.name === 't0')!;
-    expect(t0.nesting).toEqual(['su', 'plane']);
-    expect(t0.sets.map((s) => s.label)).toEqual(['su 1', 'su 2', '+2']);
-    // Planes a map groups together sit side by side (1,5 -> 1; 2,6 -> 2; ...).
-    expect(t0.sets[0].children.map((s) => s.label)).toEqual(['plane 1', 'plane 5', 'plane 2', 'plane 6', 'plane 3', 'plane 7', 'plane 4', 'plane 8']);
-    // Leaf sets show their devices: 1-4, ellipsis, n past 6.
-    const su1 = d.boxes.find((b) => b.group.name === 'server')!.sets[0];
-    expect(su1.dots.map((x) => x.n)).toEqual([1, 2, 3, 4, null, 16]);
-    expect(d.boxes.find((b) => b.group.name === 'server')!.nesting).toEqual(['su']);
-    expect(t0.pools.map((p) => `${p.name}:${p.side}:${p.slots.join('/')}`)).toEqual(['down:bottom:8/8', 'up:top:8']);
+    const box = (n: string) => d.boxes.find((b) => b.group.name === n)!;
+    // t0 planes 1, 5 map onto t1 plane 1: only those planes; inside, one device per su, labelled by su.
+    expect(box('t0').nesting).toEqual(['plane', 'su']);
+    expect(sets(box('t0'))).toEqual(['plane 1', 'plane 5']);
+    expect(labels(box('t0'))).toEqual(['1', '2', '4', '1', '2', '4']);
+    expect(box('t0').body.sets[0].sets[0].ellipses).toHaveLength(1);
+    expect(sets(box('t1'))).toEqual(['plane 1']);
+    expect(labels(box('t1'))).toEqual(['1', '2', '4']);
+    // server su 1, 2, ..., 4; 16 devices each: 1, 2, ..., 16.
+    expect(sets(box('server'))).toEqual(['su 1', 'su 2', 'su 4']);
+    expect(labels(box('server')).slice(0, 3)).toEqual(['1', '2', '16']);
   });
-  it('draws one line per connected set pair, following the key and the map', () => {
-    const d = layoutDiagram(v, { partition: { t0: 'plane' }, ports: true });
-    const t0 = d.boxes.find((b) => b.group.name === 't0')!;
-    const t1 = d.boxes.find((b) => b.group.name === 't1')!;
-    const t01 = d.links.filter((p) => p.name === 't0-t1' && !p.device);
-    // 8 plane pairs: the first drawn device to device (mesh 4 x 4 = 16 lines), 7 set to set.
-    expect(t01).toHaveLength(7);
-    expect(d.links.filter((p) => p.name === 't0-t1' && p.device)).toHaveLength(16);
+  it('draws device-to-device lines following the key, the map and the pattern', () => {
+    const d = layoutDiagram(v);
+    const n = (name: string) => d.links.filter((p) => p.name === name).length;
+    // t0-t1 mesh: 6 drawn t0 devices (planes 1, 5) x 3 drawn t1 plane-1 devices.
+    expect(n('t0-t1')).toBe(18);
+    // server-t0 by su: server su 1 devices (3) to t0 devices of su 1 (planes 1, 5) = 6, same for su 2 and su 4.
+    expect(n('server-t0')).toBe(18);
+    // t1-t2 round-robin: each drawn t1 device to one t2 device, only t2 1-3 of a plane (t2 #4 gets none).
+    const t12 = d.links.filter((p) => p.name === 't1-t2');
+    expect(t12).toHaveLength(3);
+    const t2 = groupDevices(d.boxes.find((b) => b.group.name === 't2')!);
+    const hit = new Set(t12.map((p) => t2.find((x) => Math.abs(x.x + x.w / 2 - p.points[1][0]) < 1)!.label));
+    expect([...hit].every((x) => Number(x) <= 3)).toBe(true);
     const l01 = v.links.find((l) => l.name === 't0-t1')!;
     expect([l01.fanIn, l01.fromSize, l01.toSize, l01.fromPorts, l01.toPorts]).toEqual([2, 4, 4, 4, 8]);
-    // T0 plane 5 lands on T1 plane 1 (map 1,5 -> 1).
-    const center = (g: typeof t0, label: string) => { const s = g.sets.find((x) => x.label === label)!; return [g.x + s.x, g.x + s.x + s.w]; };
-    const [p5a, p5b] = center(t0, 'plane 5'); const [q1a, q1b] = center(t1, 'plane 1');
-    const line = t01.find((p) => p.points[0][0] >= p5a && p.points[0][0] <= p5b)!;
-    expect(line.points[3][0]).toBeGreaterThanOrEqual(q1a);
-    expect(line.points[3][0]).toBeLessThanOrEqual(q1b);
-    // server-t0 by su: t0 shown by plane, so each su box of server goes to the t0 group box.
-    expect(d.links.filter((p) => p.name === 'server-t0')).toHaveLength(4);
-    // t1-t2 has no key on t2: every t1 plane to the t2 box.
-    expect(d.links.filter((p) => p.name === 't1-t2')).toHaveLength(4);
   });
-  it('nests partitions outer > inner and lets ports be hidden; many sets collapse into +N', () => {
+  it('lets the split be chosen per group', () => {
     const d = layoutDiagram(v, { partition: { t0: 'su>plane', server: '' }, ports: false });
     const t0 = d.boxes.find((b) => b.group.name === 't0')!;
-    expect(t0.sets.map((s) => s.label)).toEqual(['su 1', 'su 2', '+2']);
-    expect(t0.sets[0].children.every((s) => s.sub === '1 dev')).toBe(true);
-    expect(t0.pools).toEqual([]);
-    // Lines from every su's plane 5 box to T1 plane 1.
-    // 2 drawn su x 8 planes; one pair drawn device to device.
-    expect(d.links.filter((p) => p.name === 't0-t1' && !p.device)).toHaveLength(15);
+    expect(sets(t0)).toEqual(['su 1', 'su 2', 'su 4']);
+    expect(t0.portsLine).toBeUndefined();
     const server = d.boxes.find((b) => b.group.name === 'server')!;
-    expect(server.sets).toEqual([]);
-    expect(server.lines).toEqual(['su: 4 x 16']);
-    const many = parseVirtual('device_set_groups:\n  a: { role: x, count: 40, partitions: [ { key: k, count: 20, size: 2 } ] }\n');
-    expect(layoutDiagram(many).boxes[0].sets.map((s) => s.label).slice(-2)).toEqual(['k 7', '+13']);
+    expect(server.nesting).toEqual([]);
+    expect(labels(server)).toEqual(['1', '2', '64']);
   });
 });
 
