@@ -5,7 +5,7 @@ import type { PropertyDef } from '../properties/types';
 import type { ItemVariant } from '../items/types';
 import { traitsOf } from '../device/categories';
 import { opticPowerW, variantLabel, withItemSpecs } from '../items/variants';
-import { groupHardware, poolSpeeds } from './hardware';
+import { poolSpeeds, topoHardware, type GroupHardware } from './hardware';
 import { portUse } from './ports';
 import type { VGroup, VirtualTopo } from './virtual';
 
@@ -37,7 +37,7 @@ export interface GroupEstimate {
   group: VGroup;
   /** Device type of the members, when set and in the library. */
   deviceId?: string;
-  /** Name of the breakout profile the members run (the device type's default when the group names none). */
+  /** Name of the breakout profile matched to the group's ports (none fits: undefined). */
   profileName?: string;
   pools: PoolEstimate[];
 }
@@ -75,8 +75,7 @@ function poolExact(v: VirtualTopo, g: VGroup, pool: string, ports: number): bool
 }
 
 /** Pools of a group in pool order: the ports one device uses, the device ports (cages) they sit in, their optics. */
-function estimateGroup(lib: Library, v: VirtualTopo, g: VGroup): GroupEstimate {
-  const hw = groupHardware(lib, g);
+function estimateGroup(lib: Library, v: VirtualTopo, g: VGroup, hw: GroupHardware): GroupEstimate {
   const mapped = !!hw.device && g.portMap.length > 0;
   const use = portUse(g, v);
   const counted = new Set<string>();
@@ -102,12 +101,13 @@ function estimateGroup(lib: Library, v: VirtualTopo, g: VGroup): GroupEstimate {
 }
 
 /**
- * Estimated BOM of a virtual topology: each group's devices as its `device_type`, and the optic its breakout profile
- * puts in every cage (device port of the `port_map`) its pools use. Lines merge by item type; the line's note is its derivation (`dt0 512 + t1 256`).
+ * Estimated BOM of a virtual topology: each group's devices as its `device_type`, and the optic the breakout profile
+ * matched to its ports puts in every cage (device port of the `port_map`) its pools use. Lines merge by item type; the line's note is its derivation (`dt0 512 + t1 256`).
  * Cables, housings, racks and power need the physical layout and are not estimated.
  */
 export function estimateTopoBom(lib: Library, v: VirtualTopo, s: TopoBomSettings): TopoBom {
-  const groups = v.groups.map((g) => estimateGroup(lib, v, g));
+  const hw = topoHardware(lib, v);
+  const groups = v.groups.map((g) => estimateGroup(lib, v, g, hw.get(g.name)!));
   const lines: BomLine[] = [];
   const merged = new Map<string, { line: BomLine; parts: string[] }>();
   const add = (line: BomLine, qty: number, part: string) => {

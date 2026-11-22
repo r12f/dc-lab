@@ -33,9 +33,9 @@ function withKey(m: Record<string, string> | undefined, key: string, value: stri
 }
 
 /**
- * Pane under the virtual topology: what building it takes. Hardware comes from the YAML: `device_type`, its
- * `breakout_profile` (modes and optics, Devices module) and `port_map`; the item bought for each line is picked here
- * (saved with the topology).
+ * Pane under the virtual topology: what building it takes. Hardware: each group's `device_type` and `port_map`, run
+ * at the device type's breakout profile matched to the group's ports (modes and optics, Devices module); the item
+ * bought for each line is picked here (saved with the topology).
  */
 export function TopoBomPane({ lib, topo, settings, onChange, filename, height }: Props) {
   const defs = useAppStore((s) => s.project.propertyDefs);
@@ -80,7 +80,7 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
                           <td rowSpan={rows.length} className={device ? undefined : 'muted'} title={device?.id}>
                             {device ? device.name : g.deviceType ? `${g.deviceType} (unknown)` : 'no device_type'}
                           </td>
-                          <td rowSpan={rows.length} className={profileName ? undefined : 'muted'}>{profileName ?? (device ? 'unknown' : '')}</td>
+                          <td rowSpan={rows.length} className={profileName ? undefined : 'muted'}>{profileName ?? (device && g.portMap.length ? 'none fits' : '')}</td>
                         </>
                       )}
                       {p ? (

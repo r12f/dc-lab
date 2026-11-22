@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { parseYaml, YamlError } from '../topo/yaml';
-import { expandPorts, parseVirtual, poolPorts } from '../topo/virtual';
+import { expandPorts, parseVirtual, poolPorts, type VirtualTopo } from '../topo/virtual';
 import { DEFAULT_OPTIONS, groupDevices, layoutDiagram, type GroupBox } from '../topo/diagram';
 import { pick, sliceTopo, withGaps } from '../topo/slice';
 import { portLayout, portUse } from '../topo/ports';
 import { ruleText } from '../topo/rule';
 import { estimateTopoBom, topoBomColumns } from '../topo/bom';
-import { groupHardware, hardwareProblems } from '../topo/hardware';
+import { hardwareProblems, topoHardware } from '../topo/hardware';
 import { SAMPLE_TOPOLOGY } from '../topo/sample';
 import { normalizeProject, serializeProject } from '../project/serializer';
 import { emptyProject } from '../project/types';
@@ -227,30 +227,37 @@ describe('diagram', () => {
   });
 });
 
-describe('device type, breakout profile and port map', () => {
+describe('device type and port map: the breakout profile is matched to the ports', () => {
   // Test-local item (made-up vendor, model and power) and breakout profiles.
   const sw: ItemVariant = { id: 'sw-x', name: 'SW', target: 'device', itemId: 'switch-64x800g-osfp', vendor: 'V', model: 'SW', properties: {}, specs: { typicalW: 100 } };
   const profile = (id: string, name: string, groupDefaults: Record<string, PortSetting>, overrides: Record<string, PortSetting> = {}): BreakoutProfile =>
     ({ id, name, groupDefaults, overrides });
-  const DEFAULT = profile('default', 'Default', {});
+  const O = 'osfp-800g-2xdr4-ihs';
+  const cages = (from: number, to: number, s: PortSetting) => Object.fromEntries(Array.from({ length: to - from + 1 }, (_, i) => [`osfp/${from + i}`, s]));
   const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, { ...emptyProject(), variants: [sw] }, [], {}, {
-    'switch-64x800g-osfp': { defaultProfileId: 'default', breakoutProfiles: [DEFAULT,
-      profile('p8', 'All 8x100G, 2xDR4', { osfp: { mode: '8x100G', opticId: 'osfp-800g-2xdr4-ihs' } }),
-      profile('n800', 'All 1x800G, 2xDR4', { osfp: { opticId: 'osfp-800g-2xdr4-ihs' } }),
-      profile('mixed', 'Up 2x400G, down 8x100G', {}, { 'osfp/1': { mode: '2x400G' }, 'osfp/2': { mode: '8x100G' } }),
-      profile('bad', 'Bad', { osfp: { mode: '16x50G' } }),
-      profile('twin-1', 'Twin', {}), profile('twin-2', 'Twin', {})] },
-    'server-gpu-8u': { defaultProfileId: 'default', breakoutProfiles: [DEFAULT,
-      profile('s4', 'All 4x100G, DR4', { fe: { mode: '4x100G', opticId: 'qsfp112-400g-dr4' } }),
-      profile('s1', 'All 1x200G, DR4', { fe: { mode: '1x200G', opticId: 'qsfp112-400g-dr4' } })] },
+    'switch-64x800g-osfp': { defaultProfileId: 'default', breakoutProfiles: [
+      profile('default', 'Default', {}),
+      profile('w2', 'All 2x400G', { osfp: { mode: '2x400G', opticId: O } }),
+      profile('w8', 'All 8x100G', { osfp: { mode: '8x100G', opticId: O } }),
+      profile('n800', 'All 1x800G', { osfp: { opticId: O } }),
+      profile('u2', 'Uplinks 2x400G', {}, cages(5, 8, { mode: '2x400G', opticId: O })),
+      profile('d4', 'Down 4x200G, up 2x400G', {}, { ...cages(1, 4, { mode: '4x200G', opticId: O }), ...cages(5, 8, { mode: '2x400G', opticId: O }) }),
+    ] },
+    'server-gpu-8u': { defaultProfileId: 'default', breakoutProfiles: [
+      profile('default', 'Default', {}),
+      profile('s4', 'All 4x100G', { fe: { mode: '4x100G', opticId: 'qsfp112-400g-dr4' } }),
+      profile('s1', 'All 1x200G', { fe: { mode: '1x200G', opticId: 'qsfp112-400g-dr4' } }),
+    ] },
   });
   const swName = lib.devices.get('switch-64x800g-osfp')!.name;
+  const SW = 'device_type: switch-64x800g-osfp, port_map: [ { ports: "etp{1-64}", device_ports: "osfp/{1-64}" } ]';
+  const SRV = 'device_type: server-gpu-8u, port_map: [ { ports: "p{1-2}", device_ports: "fe/{1-2}" } ]';
+  const matched = (vv: VirtualTopo) => Object.fromEntries([...topoHardware(lib, vv)].map(([n, h]) => [n, h.profile?.name]));
   const v = parseVirtual(`device_set_groups:
   s:
     role: server
     count: 8
     device_type: server-gpu-8u
-    breakout_profile: "All 4x100G, DR4"
     port_map: [ { ports: "p{1-2}", device_ports: "fe/{1-2}" } ]
     partitions: [ { key: pod, count: 2, size: 4 } ]
     ports: { nic: p{1-2}{a-b} }
@@ -258,7 +265,6 @@ describe('device type, breakout profile and port map', () => {
     role: tor
     count: 4
     device_type: switch-64x800g-osfp
-    breakout_profile: p8
     port_map: [ { ports: "etp{1-8}", device_ports: "osfp/{1-8}" } ]
     partitions: [ { key: pod, count: 2, size: 2 } ]
     ports: { down: etp{1-4}{a-b}, up: etp{5-8}{a-b} }
@@ -266,128 +272,109 @@ describe('device type, breakout profile and port map', () => {
     role: spine
     count: 2
     device_type: switch-64x800g-osfp
-    breakout_profile: "All 8x100G, 2xDR4"
     port_map: [ { ports: "etp{1-8}", device_ports: "osfp/{1-8}" } ]
     ports: { down: etp{1-8}a }
 topo:
   - { name: s-t, from: { group: s, key: "\${pod}", ports: nic }, to: { group: t, key: "\${pod}", ports: down }, pattern: { type: mesh, per_pair: 1 } }
   - { name: t-u, from: { group: t, ports: up }, to: { group: u, ports: down }, pattern: { type: mesh, per_pair: 1 } }
 `);
-  const group = (n: string, vv = v) => vv.groups.find((g) => g.name === n)!;
 
-  it('parses device_type, breakout_profile and port_map', () => {
+  it('parses device_type and port_map; port_map takes no mode or optic', () => {
     expect(v.problems).toEqual([]);
-    const t = group('t');
-    expect([t.deviceType, t.breakoutProfile, t.portMap[0].ports[2], t.portMap[0].devicePorts[2], group('s').breakoutProfile])
-      .toEqual(['switch-64x800g-osfp', 'p8', 'etp3', 'osfp/3', 'All 4x100G, DR4']);
+    const t = v.groups.find((g) => g.name === 't')!;
+    expect([t.deviceType, t.portMap[0].ports[2], t.portMap[0].devicePorts[2]]).toEqual(['switch-64x800g-osfp', 'etp3', 'osfp/3']);
     const bad = parseVirtual(`device_set_groups:
-  d: { role: w, count: 1, breakout_profile: x, port_map: [ { ports: "q{1-2}", device_ports: "osfp/1" } ], ports: { p: q1 } }
+  d: { role: w, count: 1, port_map: [ { ports: "q{1-2}", device_ports: "osfp/1" } ], ports: { p: q1 } }
   e: { role: w, count: 1, device_type: x, port_map: [ { ports: q1, device_ports: osfp/1, mode: 8x100G } ], ports: { p: q1 } }
   f: { role: w, count: 1, device_type: x, port_map: { ports: q1 }, ports: { p: q1 } }
 `);
     expect(bad.problems.map((p) => p.message)).toEqual([
       'group d: port_map q{1-2} names 2 ports, device_ports osfp/1 1',
       'group d: port_map needs a device_type',
-      'group d: breakout_profile needs a device_type',
-      'group e: port_map takes no mode or optic: the breakout_profile sets them',
+      "group e: port_map takes no mode or optic: they come from the device type's breakout profiles",
       'group f: port_map must be a list',
     ]);
   });
-  it('resolves topology ports through the breakout profile: n-way breakouts give sub-ports a, b, …; 1x keeps the name', () => {
-    const hw = groupHardware(lib, group('t'));
-    expect([hw.profile?.name, hw.ports.size]).toEqual(['All 8x100G, 2xDR4', 64]);
-    expect(hw.ports.get('etp3c')).toEqual({ cage: 'osfp/3', speedGbps: 100, opticId: 'osfp-800g-2xdr4-ihs' });
-    const other = parseVirtual(`device_set_groups:
-  m: { role: w, count: 1, device_type: switch-64x800g-osfp, breakout_profile: mixed, port_map: [ { ports: "x{1-2}", device_ports: "osfp/{1-2}" } ], ports: { p: x1{a-b} } }
-  n: { role: w, count: 1, device_type: switch-64x800g-osfp, port_map: [ { ports: "x{1-2}", device_ports: "osfp/{9-10}" } ], ports: { p: x{1-2} } }
-`);
-    // Per-port modes of the profile; no module set = no optic.
-    const m = groupHardware(lib, group('m', other));
-    expect([m.ports.get('x1b'), m.ports.has('x1c'), m.ports.get('x2h')?.speedGbps])
-      .toEqual([{ cage: 'osfp/1', speedGbps: 400 }, false, 100]);
-    // No breakout_profile: the device type's default profile (native, no module).
-    const n = groupHardware(lib, group('n', other));
-    expect([n.profile?.id, n.ports.get('x2')]).toEqual(['default', { cage: 'osfp/10', speedGbps: 800 }]);
+  it('matches each group a profile giving its ports, with both ends of every link at one speed', () => {
+    // t alone fits "Down 4x200G, up 2x400G" best (no spare optics), but its servers run 100G: All 8x100G.
+    expect(matched(v)).toEqual({ s: 'All 4x100G', t: 'All 8x100G', u: 'All 8x100G' });
     expect(hardwareProblems(lib, v)).toEqual([]);
-    expect(hardwareProblems(lib, other)).toEqual([]);
+    expect(topoHardware(lib, v).get('t')!.ports.get('etp3c')).toEqual({ cage: 'osfp/3', speedGbps: 100, opticId: O, module: true });
   });
-  it('takes a shipped profile by name, its reach picking the optic (the spec example)', () => {
+  it('needs a module in every port a link uses, and prefers the profile with the fewest optics no link needs', () => {
+    const w = parseVirtual(`device_set_groups:
+  m: { role: s, count: 4, ${SRV}, ports: { nic: p{1-2} } }
+  k: { role: l, count: 2, ${SW}, ports: { down: etp{1-4}{a-d} } }
+  x: { role: x, count: 1, ${SW}, ports: { up: etp{5-8}{a,b} } }
+topo:
+  - { name: mk, from: { group: m, ports: nic }, to: { group: k, ports: down }, pattern: { type: mesh, per_pair: 1 } }
+`);
+    // m: Default gives p1 and p2 but no optic; 4x100G splits them. k runs 200G with m. x fits 4 profiles, u2 tightest.
+    expect(matched(w)).toEqual({ m: 'All 1x200G', k: 'Down 4x200G, up 2x400G', x: 'Uplinks 2x400G' });
+    expect(hardwareProblems(lib, w)).toEqual([]);
+  });
+  it('takes a shipped profile, its reach picking the optic (the spec example)', () => {
     const plain = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
     const s = parseVirtual(`device_set_groups:
   dt0:
     role: dT0
     count: 2
     device_type: switch-64x800g-osfp
-    breakout_profile: "All 2x400G, 2xDR4"
     port_map:
       - { ports: "etp{1-64}", device_ports: "osfp/{1-64}" }
     ports:
       down: etp{33-64}{a,b}
       up:   etp{1-32}{a,b}
 `);
+    const hw = topoHardware(plain, s).get('dt0')!;
     expect(hardwareProblems(plain, s)).toEqual([]);
-    const p = groupHardware(plain, s.groups[0]).ports.get('etp33b')!;
-    expect([p.cage, p.speedGbps]).toEqual(['osfp/33', 400]);
-    expect(plain.optics.get(p.opticId)?.reach).toMatch(/^2xDR4/);
+    expect([hw.profile?.name, hw.ports.get('etp33b')?.cage, hw.ports.get('etp33b')?.speedGbps]).toEqual(['All 2x400G, 2xDR4', 'osfp/33', 400]);
+    expect(plain.optics.get(hw.ports.get('etp33b')!.opticId)?.reach).toMatch(/^2xDR4/);
   });
-  it('reports what the device type and its profile do not give, and link ends at different speeds', () => {
+  it('reports a group no profile fits, port map errors, and link ends no choice brings to one speed', () => {
     const bad = parseVirtual(`device_set_groups:
-  a:
-    role: x
-    count: 2
-    device_type: switch-64x800g-osfp
-    breakout_profile: mixed
-    port_map:
-      - { ports: "e{1-2}", device_ports: "osfp/{1-2}" }
-      - { ports: "f{1-2}", device_ports: "osfp/{64-65}" }
-      - { ports: "g1", device_ports: "osfp/1" }
-    ports: { up: e1{a-b}, more: e1c }
-  b: { role: y, count: 2, device_type: switch-64x800g-osfp, breakout_profile: p8, port_map: [ { ports: "e1", device_ports: "osfp/1" } ], ports: { down: e1{a-d} } }
-  c: { role: z, count: 1, device_type: no-such-device, ports: { p: q1 } }
-  d: { role: z, count: 1, device_type: switch-64x800g-osfp, breakout_profile: nope, ports: { p: q1 } }
-  e: { role: z, count: 1, device_type: switch-64x800g-osfp, breakout_profile: Twin, ports: { p: q1 } }
-  f: { role: z, count: 1, device_type: switch-64x800g-osfp, breakout_profile: Bad, ports: { p: q1 } }
-  ok:   # a 400G optic run at 1x200G on a 400G port: the Rack Designer takes it, so does the topology
-    role: w
-    count: 1
-    device_type: server-gpu-8u
-    breakout_profile: "All 1x200G, DR4"
-    port_map: [ { ports: "p{1-2}", device_ports: "fe/{1-2}" } ]
-    ports: { p: p{1-2} }
+  z: { role: z, count: 1, ${SW}, ports: { p: etp1{a-p} } }
+  n: { role: n, count: 1, device_type: switch-64x800g-osfp, port_map: [ { ports: "s{1-2}", device_ports: "service/{1-2}" } ], ports: { p: s{1-2} } }
+  q: { role: q, count: 2, device_type: switch-64x800g-osfp, port_map: [ { ports: "s{1-2}", device_ports: "service/{1-2}" } ], ports: { p: s{1-2} } }
+  c: { role: c, count: 1, device_type: switch-64x800g-osfp, port_map: [ { ports: "e{1-2}", device_ports: "osfp/{64-65}" }, { ports: "g1", device_ports: "osfp/64" } ], ports: { p: e1{a,b} } }
+  y: { role: y, count: 1, device_type: no-such-device, ports: { p: q1 } }
+  a: { role: a, count: 2, device_type: server-gpu-8u, port_map: [ { ports: "p1", device_ports: "fe/1" } ], ports: { nic: p1 } }
+  b: { role: b, count: 1, device_type: switch-64x800g-osfp, port_map: [ { ports: "etp1", device_ports: "osfp/1" } ], ports: { d: etp1{a-h} } }
 topo:
-  - { name: ab, from: { group: a, ports: up }, to: { group: b, ports: down }, pattern: { type: mesh, per_pair: 1 } }
+  - { name: nq, from: { group: n, ports: p }, to: { group: q, ports: p }, pattern: { type: mesh, per_pair: 1 } }
+  - { name: ab, from: { group: a, ports: nic }, to: { group: b, ports: d }, pattern: { type: mesh, per_pair: 1 } }
 `);
     expect(bad.problems).toEqual([]);
+    const all = '"Default", "All 2x400G", "All 8x100G", "All 1x800G", "Uplinks 2x400G", "Down 4x200G, up 2x400G"';
     expect(hardwareProblems(lib, bad).map((p) => p.message)).toEqual([
-      `group a: ${swName} has no port osfp/65`,
-      'group a: port_map maps osfp/1 twice',
-      'group a: pool more port e1c is not a device port (port_map, breakout profile "Up 2x400G, down 8x100G")',
-      'group c: device type "no-such-device" is not in the Devices module',
-      `group d: ${swName} has no breakout profile "nope" (Default, All 8x100G, 2xDR4, All 1x800G, 2xDR4, Up 2x400G, down 8x100G, Bad, Twin, Twin)`,
-      `group e: ${swName} has 2 breakout profiles named "Twin"`,
-      'group f: breakout profile "Bad": 16x50G not allowed on OSFP',
-      'ab: a up runs 400G, b down 100G',
+      `group z: no breakout profile of ${swName} gives its ports ("Default", "All 1x800G", "Uplinks 2x400G": no port etp1a; "All 2x400G": no port etp1c; "All 8x100G": no port etp1i; "Down 4x200G, up 2x400G": no port etp1e)`,
+      `group n: no breakout profile of ${swName} gives its ports (${all}: s1 has no optic or cable)`,
+      `group q: no breakout profile of ${swName} gives its ports (${all}: s1 has no optic or cable)`,
+      `group c: ${swName} has no port osfp/65`,
+      'group c: port_map maps osfp/64 twice',
+      'group y: device type "no-such-device" is not in the Devices module',
+      'ab: a nic runs 200G, b d 100G',
     ]);
   });
 
   const bom = estimateTopoBom(lib, v, { items: { 'switch-64x800g-osfp': 'sw-x' } });
-  it('estimates the BOM from the device types: one optic per used cage, as the breakout profile fits it', () => {
+  it('estimates the BOM from the device types: one optic per used cage, as the matched profile fits it', () => {
     const pools = Object.fromEntries(bom.groups.flatMap((g) => g.pools.map((p) => [`${g.group.name}.${p.pool}`,
       [p.ports, p.speedGbps, p.cages, p.optics.map((o) => `${o.opticId} ${o.perDevice} ${o.total}`), p.exact]])));
     expect(pools).toEqual({
       's.nic': [2, 100, 1, ['qsfp112-400g-dr4 1 8'], true],
-      't.down': [4, 100, 2, ['osfp-800g-2xdr4-ihs 2 8'], true],
-      't.up': [2, 100, 1, ['osfp-800g-2xdr4-ihs 1 4'], true],
-      'u.down': [4, 100, 4, ['osfp-800g-2xdr4-ihs 4 8'], true],
+      't.down': [4, 100, 2, [`${O} 2 8`], true],
+      't.up': [2, 100, 1, [`${O} 1 4`], true],
+      'u.down': [4, 100, 4, [`${O} 4 8`], true],
     });
-    expect(bom.groups.map((g) => g.profileName)).toEqual(['All 4x100G, DR4', 'All 8x100G, 2xDR4', 'All 8x100G, 2xDR4']);
+    expect(bom.groups.map((g) => g.profileName)).toEqual(['All 4x100G', 'All 8x100G', 'All 8x100G']);
   });
   it('merges lines by item type, with the derivation and the picked item', () => {
     expect(bom.lines.map((l) => [l.key, l.qty, l.notes[0]])).toEqual([
       ['device:server-gpu-8u', 8, 's 8'],
       ['device:switch-64x800g-osfp', 6, 't 4 + u 2'],
       ['optic:qsfp112-400g-dr4', 8, 's nic 8 × 1'],
-      ['optic:osfp-800g-2xdr4-ihs', 20, 't down 4 × 2 + t up 4 × 1 + u down 2 × 4'],
+      [`optic:${O}`, 20, 't down 4 × 2 + t up 4 × 1 + u down 2 × 4'],
     ]);
     const swLine = bom.lines[1];
     expect([swLine.vendorModel, swLine.unitW, swLine.pickKey, swLine.itemId]).toEqual(['V SW', 100, 'switch-64x800g-osfp', 'sw-x']);
@@ -401,7 +388,6 @@ topo:
     role: y
     count: 4
     device_type: switch-64x800g-osfp
-    breakout_profile: n800
     port_map: [ { ports: "e{1-64}", device_ports: "osfp/{1-64}" } ]
     partitions: [ { key: p, count: 2, size: 2 } ]
     ports: { d: e{1-60} }
@@ -410,10 +396,11 @@ topo:
 `);
     expect(hardwareProblems(lib, u)).toEqual([]);
     const b = estimateTopoBom(lib, u, {});
+    expect(b.groups[1].profileName).toBe('All 1x800G');
     expect(b.lines.map((l) => [l.item, l.qty, l.notes[0]])).toEqual([
       ['x (no device type)', 72, 's 72'],
       [swName, 4, 't 4'],
-      [lib.optics.get('osfp-800g-2xdr4-ihs')!.name, 216, 't d 4 × ≤54'],
+      [lib.optics.get(O)!.name, 216, 't d 4 × ≤54'],
     ]);
     // 54 + 54 + 18 + 18 links: the dT0 of the small set use 18 ports, not 54.
     expect(b.groups.map((g) => g.pools[0].exact)).toEqual([true, false]);
@@ -424,7 +411,6 @@ topo:
     role: x
     count: 1
     device_type: switch-64x800g-osfp
-    breakout_profile: p8
     port_map: [ { ports: "etp1", device_ports: "osfp/1" } ]
     ports: { a: etp1{a-b}, b: etp1{c-d} }
   y: { role: y, count: 2, ports: { p: q{1-4} } }
@@ -436,7 +422,7 @@ topo:
   });
   it('shows the derivation column and Qty with thousands separators', () => {
     expect(topoBomColumns([]).map((c) => c.header)).toEqual(['Item', 'Category', 'Vendor / Model (PN)', 'Qty', 'Derivation', 'Total W']);
-    const optic = lib.optics.get('osfp-800g-2xdr4-ihs')!.name;
+    const optic = lib.optics.get(O)!.name;
     expect(topoBomColumns([]).map((c) => c.cell(bom.lines[3]))).toEqual([optic, 'Optic', `Generic ${optic}`, '20', 't down 4 × 2 + t up 4 × 1 + u down 2 × 4', '']);
     expect(topoBomColumns([]).find((c) => c.header === 'Qty')!.cell({ ...bom.lines[0], qty: 16384 })).toBe('16,384');
   });
