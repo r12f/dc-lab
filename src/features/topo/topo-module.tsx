@@ -28,7 +28,8 @@ export function TopoModule() {
   // Parse off the typing path: the diagram follows the source a frame later on big files.
   const source = useDeferredValue(topo?.source ?? '');
   const virtual = useMemo(() => parseVirtual(source), [source]);
-  const diagram = useMemo(() => layoutDiagram(virtual, options), [virtual, options]);
+  const view = topo?.view;
+  const diagram = useMemo(() => layoutDiagram(virtual, options, view), [virtual, options, view]);
 
   const create = () => {
     const t: Topology = { schema: TOPOLOGY_SCHEMA, id: uniqueId(slugify('topology'), topologies.map((x) => x.id)), name: 'New topology', source: SAMPLE_TOPOLOGY };
@@ -60,9 +61,12 @@ export function TopoModule() {
             onChange={(v) => update('topologies', topo.id, (t) => ({ ...t, source: v }))} />
           <Splitter label="Code width" width={codeW} direction={1} onResize={(px) => setCodeW(Math.max(240, Math.min(1600, px)))} onReset={() => setCodeW(CODE_W)} />
           <CanvasFrame title={`${topo.name} — virtual topology`} exportName={`${topo.id}-virtual`} fitKey={`${topo.id}:${diagram.width}`}
-            viewControls={<DiagramMenu topo={virtual} options={options} onChange={setOptions} />}>
+            viewControls={<DiagramMenu topo={virtual} options={options} onChange={setOptions}
+              onResetView={view && (Object.keys(view.offsets ?? {}).length || view.collapsed?.length)
+                ? () => update('topologies', topo.id, (t) => ({ ...t, view: undefined })) : undefined} />}>
             {(ref) => virtual.groups.length
-              ? <TopoDiagramView ref={ref} topo={virtual} diagram={diagram} />
+              ? <TopoDiagramView ref={ref} topo={virtual} diagram={diagram} view={view ?? {}}
+                  onView={(vw) => update('topologies', topo.id, (t) => ({ ...t, view: vw }))} />
               : <div className="empty-canvas">No device set groups to draw.</div>}
           </CanvasFrame>
         </div>

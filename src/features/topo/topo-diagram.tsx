@@ -1,12 +1,16 @@
-import type { Ref } from 'react';
+import { useRef, useState, type PointerEvent as ReactPointerEvent, type Ref } from 'react';
 import { paint, LAYOUT_PAINT } from '../../theme/paint';
-import { M, type GroupBox, type PortGrid, type SetBox, type TopoDiagram } from '../../domain/topo/diagram';
+import { M, type DiagramView, type GroupBox, type PortGrid, type SetBox, type TopoDiagram } from '../../domain/topo/diagram';
 import { ruleDetail, ruleText } from '../../domain/topo/rule';
 import type { VirtualTopo } from '../../domain/topo/virtual';
 
 interface Props {
   topo: VirtualTopo;
   diagram: TopoDiagram;
+  /** Saved view the diagram was laid out with (moved and collapsed boxes). */
+  view: DiagramView;
+  /** A box was moved (on release) or folded. */
+  onView(view: DiagramView): void;
   ref?: Ref<SVGSVGElement>;
 }
 
@@ -16,13 +20,60 @@ const linkColor = (i: number) => LAYOUT_PAINT.traces[i % LAYOUT_PAINT.traces.len
  * Virtual topology diagram as a slice: group boxes split by partition with their port grids, device-to-device
  * lines per link spec, and each spec's rule beside its tier gap.
  */
-export function TopoDiagramView({ topo, diagram, ref }: Props) {
+export function TopoDiagramView({ topo, diagram, view, onView, ref }: Props) {
+  const svgEl = useRef<SVGSVGElement | null>(null);
+  // The box being dragged and how far (drawing units); committed to the view on release.
+  const [drag, setDrag] = useState<{ group: string; dx: number; dy: number }>();
+  const setRef = (el: SVGSVGElement | null) => {
+    svgEl.current = el;
+    if (typeof ref === 'function') ref(el);
+    else if (ref) (ref as { current: SVGSVGElement | null }).current = el;
+  };
+  /** Drawing coordinates of a pointer (CSS zoom-safe via the screen CTM). */
+  const toSvg = (e: { clientX: number; clientY: number }) => {
+    const m = svgEl.current?.getScreenCTM();
+    if (!m) return { x: e.clientX, y: e.clientY };
+    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+    return { x: pt.x, y: pt.y };
+  };
+  const toggle = (group: string) => {
+    const c = new Set(view.collapsed ?? []);
+    if (c.has(group)) c.delete(group); else c.add(group);
+    onView({ ...view, collapsed: [...c] });
+  };
+  /** Press on a box header: dragging moves the box; a press without a move does nothing (the ▾ button folds). */
+  const startDrag = (b: GroupBox) => (ev: ReactPointerEvent) => {
+    if (ev.button !== 0) return;
+    ev.preventDefault();
+    const start = toSvg(ev);
+    const from = view.offsets?.[b.group.name] ?? { dx: 0, dy: 0 };
+    let last = { dx: 0, dy: 0 };
+    const move = (e: PointerEvent) => {
+      const p = toSvg(e);
+      last = { dx: p.x - start.x, dy: p.y - start.y };
+      setDrag({ group: b.group.name, ...last });
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      setDrag(undefined);
+      if (Math.abs(last.dx) + Math.abs(last.dy) > 3) {
+        onView({ ...view, offsets: { ...view.offsets, [b.group.name]: { dx: Math.round(from.dx + last.dx), dy: Math.round(from.dy + last.dy) } } });
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
   return (
-    <svg ref={ref} viewBox={`0 0 ${diagram.width} ${diagram.height}`} width={diagram.width} className="drawing" fontSize={12}>
+    <svg ref={setRef} viewBox={`0 0 ${diagram.width} ${diagram.height}`} width={diagram.width} className="drawing" fontSize={12}>
       <rect x={0} y={0} width={diagram.width} height={diagram.height} fill={paint.paper} />
-      {diagram.boxes.map((b, i) => <Group key={b.group.name} b={b} i={i} />)}
+      {diagram.boxes.map((b, i) => (
+        <Group key={b.group.name} b={b} i={i} shift={drag?.group === b.group.name ? drag : undefined}
+          onHeaderDown={startDrag(b)} onToggle={() => toggle(b.group.name)} />
+      ))}
       {diagram.lines.map((p, i) => (
-        <line key={i} x1={p.from[0]} y1={p.from[1]} x2={p.to[0]} y2={p.to[1]} stroke={linkColor(p.link)} strokeWidth={0.9} opacity={0.7} />
+        <line key={i} x1={p.from[0]} y1={p.from[1]} x2={p.to[0]} y2={p.to[1]} stroke={linkColor(p.link)}
+          strokeWidth={p.bundle ? 3 : 0.9} opacity={drag ? 0.25 : p.bundle ? 0.85 : 0.7} />
       ))}
       {diagram.rules.map((p) => {
         const l = topo.links[p.link];
@@ -40,16 +91,34 @@ export function TopoDiagramView({ topo, diagram, ref }: Props) {
   );
 }
 
-function Group({ b, i }: { b: GroupBox; i: number }) {
+interface GroupProps {
+  b: GroupBox;
+  i: number;
+  /** Live drag offset (the box's lines follow on release). */
+  shift?: { dx: number; dy: number };
+  onHeaderDown(e: ReactPointerEvent): void;
+  onToggle(): void;
+}
+
+/** A group box: header (drag to move, ▾ / ▸ to collapse or expand), port grids and sets. */
+function Group({ b, i, shift, onHeaderDown, onToggle }: GroupProps) {
   const s = LAYOUT_PAINT.itRack(i);
   const g = b.group;
   return (
-    <g transform={`translate(${b.x},${b.y})`}>
+    <g transform={`translate(${b.x + (shift?.dx ?? 0)},${b.y + (shift?.dy ?? 0)})`} opacity={shift ? 0.85 : 1}>
       <rect width={b.w} height={b.h} rx={8} fill={s.fill} stroke={s.stroke} strokeWidth={1.5} />
-      <text x={12} y={20} fontSize={14} fontWeight={700} fill={s.text}>{`${g.name} · ${g.count.toLocaleString('en-US')} ${g.role}`}</text>
-      <text x={12} y={36} fill={s.text} opacity={0.85}>{`by ${b.caption}`}</text>
+      <rect width={b.w} height={M.head} rx={8} fill="transparent" style={{ cursor: shift ? 'grabbing' : 'grab' }} onPointerDown={onHeaderDown}>
+        <title>Drag to move</title>
+      </rect>
+      <g style={{ cursor: 'pointer' }} onClick={onToggle} onPointerDown={(e) => e.stopPropagation()}>
+        <rect x={6} y={6} width={18} height={18} rx={3} fill="transparent" />
+        <text x={15} y={20} textAnchor="middle" fontSize={12} fill={s.text}>{b.collapsed ? '▸' : '▾'}</text>
+        <title>{b.collapsed ? 'Expand' : 'Collapse'}</title>
+      </g>
+      <text x={28} y={20} fontSize={14} fontWeight={700} fill={s.text} pointerEvents="none">{`${g.name} · ${g.count.toLocaleString('en-US')} ${g.role}`}</text>
+      <text x={28} y={36} fill={s.text} opacity={0.85} pointerEvents="none">{`by ${b.caption}`}</text>
       {b.grids.map((q) => <Grid key={q.side} q={q} stroke={s.stroke} text={s.text} />)}
-      <Level s={b.body} stroke={s.stroke} text={s.text} />
+      {!b.collapsed && <Level s={b.body} stroke={s.stroke} text={s.text} />}
     </g>
   );
 }

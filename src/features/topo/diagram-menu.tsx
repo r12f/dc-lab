@@ -5,9 +5,13 @@ import type { VirtualTopo } from '../../domain/topo/virtual';
 
 /**
  * Toolbar dropdown choosing what the group boxes show: per group, the partition keys it is split by (outer › inner,
- * or none), and whether port grids are drawn.
+ * or none), whether port grids are drawn, and resetting moved / collapsed boxes.
  */
-export function DiagramMenu({ topo, options, onChange }: { topo: VirtualTopo; options: DiagramOptions; onChange(o: DiagramOptions): void }) {
+export function DiagramMenu({ topo, options, onChange, onResetView }: {
+  topo: VirtualTopo; options: DiagramOptions; onChange(o: DiagramOptions): void;
+  /** Put moved boxes back and expand collapsed ones; absent when nothing is moved or collapsed. */
+  onResetView?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -29,6 +33,7 @@ export function DiagramMenu({ topo, options, onChange }: { topo: VirtualTopo; op
             <input type="checkbox" checked={options.ports} onChange={(e) => onChange({ ...options, ports: e.target.checked })} />
             <span>Port grids</span>
           </label>
+          {onResetView && <Button onClick={() => { onResetView(); setOpen(false); }}>Reset box positions</Button>}
           {withSets.length > 0 && <div className="check-group">Split by partition (outer › inner)</div>}
           {withSets.map((g) => (
             <label key={g.name} className="topo-menu-row">

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseYaml, YamlError } from '../topo/yaml';
 import { expandPorts, parseVirtual, poolPorts } from '../topo/virtual';
-import { groupDevices, layoutDiagram, type GroupBox } from '../topo/diagram';
+import { DEFAULT_OPTIONS, groupDevices, layoutDiagram, type GroupBox } from '../topo/diagram';
 import { pick, sliceTopo, withGaps } from '../topo/slice';
 import { portLayout, portUse } from '../topo/ports';
 import { ruleText } from '../topo/rule';
@@ -189,6 +189,29 @@ describe('diagram', () => {
     expect(bottom.cells.find((c) => c.port === 'etp10a')).toMatchObject({ other: 'up', otherUsed: false });
     expect(top.cells.find((c) => c.port === 'etp9a')).toMatchObject({ pool: 'up', link: 1 });
   });
+  it('moves a box by its saved offset and grows the drawing to hold it', () => {
+    const m = layoutDiagram(v, DEFAULT_OPTIONS, { offsets: { t2: { dx: 400, dy: 30 } } });
+    expect(box('t2', m).x).toBe(box('t2').x + 400);
+    expect(box('t2', m).y).toBe(box('t2').y + 30);
+    expect(m.width).toBeGreaterThanOrEqual(box('t2', m).x + box('t2', m).w);
+    // Lines follow: t1-t2 lines end on the moved t2 devices.
+    const t2 = groupDevices(box('t2', m));
+    expect(m.lines.filter((p) => p.link === 2).every((p) => t2.some((x) => Math.abs(x.x + x.w / 2 - p.to[0]) < 1))).toBe(true);
+    // Never past the top-left corner.
+    expect(box('t2', layoutDiagram(v, DEFAULT_OPTIONS, { offsets: { t2: { dx: -9999, dy: -9999 } } })).x).toBe(4);
+  });
+  it('collapses a box to its header; its links become one line per spec to the box edge', () => {
+    const c = layoutDiagram(v, DEFAULT_OPTIONS, { collapsed: ['t1'] });
+    const t1 = box('t1', c);
+    expect(t1.collapsed).toBe(true);
+    expect([t1.grids, groupDevices(t1)]).toEqual([[], []]);
+    expect(t1.h).toBeLessThan(box('t1').h);
+    const touching = c.lines.filter((p) => p.link === 1 || p.link === 2);
+    expect(touching).toHaveLength(2);
+    expect(touching.every((p) => p.bundle)).toBe(true);
+    // Lines not touching it stay device to device.
+    expect(c.lines.filter((p) => p.link === 0).every((p) => !p.bundle)).toBe(true);
+  });
   it('lets the split be chosen per group, and the port grids hidden', () => {
     const e = layoutDiagram(v, { partition: { t0: 'su>plane', server: '' }, ports: false });
     expect(sets(box('t0', e))).toEqual(['su 1', 'su 2', 'su 4']);
@@ -201,7 +224,7 @@ describe('diagram', () => {
 describe('topologies in the project file', () => {
   it('round-trips and defaults to an empty list', () => {
     expect(emptyProject().topologies).toEqual([]);
-    const p = { ...emptyProject(), topologies: [{ id: 't', name: 'T', source: 'topology: x' }] };
+    const p = { ...emptyProject(), topologies: [{ id: 't', name: 'T', source: 'topology: x', view: { offsets: { a: { dx: 10, dy: -5 } }, collapsed: ['b'] } }] };
     expect(normalizeProject(JSON.parse(serializeProject(p))).topologies).toEqual(p.topologies);
     expect(normalizeProject({}).topologies).toEqual([]);
   });

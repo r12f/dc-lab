@@ -13,6 +13,14 @@ export interface DiagramOptions {
   ports: boolean;
 }
 
+/** Per-topology view state, saved with the topology: moved and collapsed group boxes. */
+export interface DiagramView {
+  /** Group name -> offset from its laid-out position. */
+  offsets?: Record<string, { dx: number; dy: number }>;
+  /** Groups drawn as their header only. */
+  collapsed?: string[];
+}
+
 export const DEFAULT_OPTIONS: DiagramOptions = { partition: {}, ports: true };
 
 /** Layout metrics (SVG units). */
@@ -55,11 +63,13 @@ export interface GroupBox {
   /** Partition keys the box is split by, outer first (empty = none). */
   nesting: string[];
   caption: string;
+  /** Drawn as its header only: no sets, devices or port grids; links end on the box edge. */
+  collapsed: boolean;
   grids: PortGrid[];
   body: SetBox;
 }
-/** A device-to-device line of a link spec. */
-export interface LinkLine { link: number; from: [number, number]; to: [number, number] }
+/** A line of a link spec: device to device, or to a collapsed group's box edge (`bundle`: stands for all its lines). */
+export interface LinkLine { link: number; from: [number, number]; to: [number, number]; bundle?: boolean }
 /** Where a link spec's rule text goes: right-aligned in the gap between its two tiers. */
 export interface RuleAnchor { link: number; x: number; y: number }
 export interface TopoDiagram { width: number; height: number; boxes: GroupBox[]; lines: LinkLine[]; rules: RuleAnchor[] }
@@ -202,7 +212,8 @@ function portGrids(g: VGroup, v: VirtualTopo, facesUp: (pool: string) => boolean
  * Tiered diagram of a virtual topology, drawn as a slice (see slice.ts): each group box is split by at most two
  * partition keys and shows its port grids; each link spec draws device-to-device lines between the drawn devices.
  */
-export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTIONS): TopoDiagram {
+export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTIONS, view: DiagramView = {}): TopoDiagram {
+  const collapsed = new Set(view.collapsed ?? []);
   const tier = tiers(v);
   const nesting = new Map(v.groups.map((g) => { const s = shownNesting(g, o, v); return [g.name, s ? s.split('>') : []]; }));
   // A pool faces up when it links to a higher tier (equal tiers: the from end).
@@ -215,19 +226,20 @@ export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTION
   const slice = sliceTopo(v, nesting);
   const boxes: GroupBox[] = v.groups.map((group) => {
     const keys = nesting.get(group.name)!;
-    const body = buildLevel(group, keys, undefined, group.count, {}, slice);
+    const folded = collapsed.has(group.name);
+    const body = folded ? { label: '', x: 0, y: 0, w: 0, h: 0, sets: [], devices: [], ellipses: [] } : buildLevel(group, keys, undefined, group.count, {}, slice);
     const caption = keys.length
       ? keys.map((k) => { const p = group.partitions.find((x) => x.key === k)!; return p.sizes ? k : `${k} ${p.count} x ${p.size}`; }).join(' › ')
       : 'devices';
-    const grids = o.ports ? portGrids(group, v, (pool) => up.has(`${group.name}\u0000${pool}`)) : [];
+    const grids = o.ports && !folded ? portGrids(group, v, (pool) => up.has(`${group.name}\u0000${pool}`)) : [];
     const top = grids.find((q) => q.side === 'top'); const bottom = grids.find((q) => q.side === 'bottom');
     const w = Math.max(body.w + 24, group.name.length * 9 + 200, caption.length * 6.4 + 24, ...grids.map((q) => q.w + 24));
     body.y = M.head + (top ? top.h + 8 : 0);
     body.x = (w - body.w) / 2;
     if (top) { top.x = (w - top.w) / 2; top.y = M.head; }
     if (bottom) { bottom.x = (w - bottom.w) / 2; bottom.y = body.y + body.h + 8; }
-    const h = body.y + body.h + 12 + (bottom ? bottom.h + 4 : 0);
-    return { group, tier: tier.get(group.name) ?? 0, x: 0, y: 0, w, h, nesting: keys, caption, grids, body };
+    const h = folded ? M.head : body.y + body.h + 12 + (bottom ? bottom.h + 4 : 0);
+    return { group, tier: tier.get(group.name) ?? 0, x: 0, y: 0, w, h, nesting: keys, caption, collapsed: folded, grids, body };
   });
   // Tiers top-down, each centred on the widest.
   const top = Math.max(0, ...boxes.map((b) => b.tier));
@@ -240,6 +252,11 @@ export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTION
     for (const b of t) { b.x = x; b.y = y; x += b.w + M.gapX; }
     y += Math.max(0, ...t.map((b) => b.h)) + M.gapY;
   }
+  // Moved boxes: their offset, kept inside the drawing's top-left corner (the drawing grows right / down).
+  for (const b of boxes) {
+    const off = view.offsets?.[b.group.name];
+    if (off) { b.x = Math.max(4, b.x + off.dx); b.y = Math.max(4, b.y + off.dy); }
+  }
   const at = new Map(boxes.map((b) => [b.group.name, b]));
   const devs = new Map(boxes.map((b) => [b.group.name, groupDevices(b)]));
   const lines: LinkLine[] = [];
@@ -247,9 +264,14 @@ export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTION
   v.links.forEach((l, li) => {
     const a = at.get(l.from.group); const b = at.get(l.to.group);
     if (!a || !b || a === b) return;
-    const aBelow = b.y < a.y;
-    for (const [da, db] of devicePairs(l, devs.get(a.group.name)!, devs.get(b.group.name)!)) {
-      lines.push({ link: li, from: [da.x + da.w / 2, aBelow ? da.y : da.y + da.h], to: [db.x + db.w / 2, aBelow ? db.y + db.h : db.y] });
+    const aBelow = b.y + b.h / 2 < a.y + a.h / 2;
+    if (a.collapsed || b.collapsed) {
+      // One line for the spec, between box edges (a collapsed group has no devices to end on).
+      lines.push({ link: li, bundle: true, from: [a.x + a.w / 2, aBelow ? a.y : a.y + a.h], to: [b.x + b.w / 2, aBelow ? b.y + b.h : b.y] });
+    } else {
+      for (const [da, db] of devicePairs(l, devs.get(a.group.name)!, devs.get(b.group.name)!)) {
+        lines.push({ link: li, from: [da.x + da.w / 2, aBelow ? da.y : da.y + da.h], to: [db.x + db.w / 2, aBelow ? db.y + db.h : db.y] });
+      }
     }
     const [lo, hi] = aBelow ? [a, b] : [b, a];
     rules.push({ link: li, x: width - M.pad, y: (hi.y + hi.h + lo.y) / 2 });
@@ -258,7 +280,11 @@ export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTION
   const byGap = new Map<number, RuleAnchor[]>();
   for (const r of rules) byGap.set(r.y, [...(byGap.get(r.y) ?? []), r]);
   for (const [y0, rs] of byGap) rs.forEach((r, i) => { r.y = y0 + (i - (rs.length - 1) / 2) * M.ruleH; });
-  return { width, height: Math.max(M.pad * 2, y - M.gapY + M.pad), boxes, lines, rules };
+  // The drawing grows to hold moved boxes.
+  const right = Math.max(width, ...boxes.map((b) => b.x + b.w + M.pad + M.ruleRoom));
+  const bottomEdge = Math.max(y - M.gapY + M.pad, ...boxes.map((b) => b.y + b.h + M.pad));
+  for (const r of rules) r.x = right - M.pad;
+  return { width: right, height: Math.max(M.pad * 2, bottomEdge), boxes, lines, rules };
 }
 
 /** Whether a device passes an end's filters: `key.index` by its number in its set, else by its key value. */

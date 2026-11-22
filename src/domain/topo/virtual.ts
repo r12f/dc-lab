@@ -1,4 +1,5 @@
 import { parseYaml, YamlError, type YamlValue } from './yaml';
+import type { DiagramView } from './diagram';
 
 export const TOPOLOGY_SCHEMA = 'dc-lab/topology@1';
 
@@ -8,6 +9,8 @@ export interface Topology {
   id: string;
   name: string;
   source: string;
+  /** Diagram view: moved and collapsed group boxes. */
+  view?: DiagramView;
 }
 
 export interface Partition { key: string; count: number; size: number; sizes?: Record<string, number>; /** Shape holds inside each set of these keys. */ per?: string[] }

@@ -220,7 +220,7 @@ Realize (wire) and check are actions in the app, not part of the file.
 
 ## Topo Builder module
 
-Topology files are kept in the project (`topologies[]`: `{ id, name, source }`, schema `dc-lab/topology@1`; the
+Topology files are kept in the project (`topologies[]`: `{ id, name, source, view? }`, schema `dc-lab/topology@1`; the
 source is the YAML text, saved as typed).
 
 - **Sidebar**: the project's topologies (+ New starts from the full example below, ⧉ duplicate, ✕ delete), and the
@@ -255,8 +255,12 @@ source is the YAML text, saved as typed).
   - beside each tier gap, the spec's rule: name and total links; how instances pair (`2 t0 planes → 1 t1 plane
     (map)`, `server su k → t0 su k`, `each t1 plane → all t2 ...`); the pattern with devices per pair (`mesh 4 x 4
     per pair`, `round-robin 4 over 6 x2`); ports each device uses on each side. Hover adds both ends and the map;
-  - toolbar **Groups ▾**: Port grids on/off, and per group the split (any key, any ordered pair of keys, or
-    none).
+  - a group box moves by dragging its header (kept inside the drawing's top-left corner; the drawing grows to hold
+    it; lines follow on release) and collapses / expands with ▾ / ▸ in its header: a collapsed box is its header
+    only, and each link spec touching it draws one thick line between box edges instead of device lines. Moves
+    and folds are saved with the topology (`view: { offsets: { <group>: { dx, dy } }, collapsed: [<group>] }`);
+  - toolbar **Groups ▾**: Port grids on/off, per group the split (any key, any ordered pair of keys, or none),
+    and **Reset box positions** (shown when a box is moved or collapsed).
 
 The YAML reader covers block maps / lists, flow `{}` / `[]` (may span lines), quoted and plain scalars and `#`
 comments; anchors, tags and block scalars are not supported.
