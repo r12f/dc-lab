@@ -46,6 +46,12 @@ export const CATEGORY_TRAITS: Record<DeviceCategory, CategoryTraits> = {
 
 export const DEVICE_CATEGORIES = Object.keys(CATEGORY_TRAITS) as DeviceCategory[];
 
+/** A category's name in a picker: categories sharing a label (rack PDU / room-level PDU) are told apart by the room-level flag. */
+export function categoryPickerLabel(category: DeviceCategory): string {
+  const t = traitsOf(category);
+  return t.facility && DEVICE_CATEGORIES.some((o) => o !== category && traitsOf(o).label === t.label) ? `${t.label} (room-level)` : t.label;
+}
+
 export function traitsOf(category: DeviceCategory): CategoryTraits {
   return CATEGORY_TRAITS[category] ?? CATEGORY_TRAITS.other;
 }

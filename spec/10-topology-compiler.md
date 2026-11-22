@@ -276,8 +276,9 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
 
 - **Sidebar**: the project's topologies (+ New starts from the full example below, ⧉ duplicate, ✕ delete), and the
   selected one's name. Under the list (divider draggable), the **panel** of what is selected in the diagram:
-  - a device set group: name, role, count, device type (the Devices module's types; the matched breakout profile
-    under it), partitions (key, count, size, or `sizes` as `1: 54, 2: 18`) and port pools — ports, port count, and
+  - a device set group: name, role, count, category (switch, server, …: the current device type's, else every
+    category) and device type (the Devices module's types of that category with a port that is not power; the
+    category only narrows the list, the file keeps `device_type: <id>`; the matched breakout profile under it), partitions (key, count, size, or `sizes` as `1: 54, 2: 18`) and port pools — ports, port count, and
     under each the optic (those its cages take) and cable (for the optic, else direct-attach cables for the cage);
     a pool given an optic or cable is written `{ ports, optic, cable }`, back to its ports when both are cleared;
     + adds a row, ✕ removes it; **Delete** removes the group with the link specs and mapping entries naming it;

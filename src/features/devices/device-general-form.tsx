@@ -1,5 +1,5 @@
 import type { DeviceCategory, DeviceDefinition } from '../../domain/device/types';
-import { DEVICE_CATEGORIES, isRepeatable, traitsOf } from '../../domain/device/categories';
+import { categoryPickerLabel, DEVICE_CATEGORIES, isRepeatable, traitsOf } from '../../domain/device/categories';
 import type { UnitSystem } from '../../domain/units';
 import { NumberField, Section, SelectField, TextField } from '../../ui/fields';
 
@@ -8,12 +8,7 @@ interface Props {
   onChange(device: DeviceDefinition): void;
 }
 
-// Categories sharing a label (rack PDU / room-level PDU) are told apart by their room-level flag.
-const categoryOptions = DEVICE_CATEGORIES.map((c) => ({
-  value: c,
-  label: DEVICE_CATEGORIES.some((o) => o !== c && traitsOf(o).label === traitsOf(c).label) && traitsOf(c).facility
-    ? `${traitsOf(c).label} (room-level)` : traitsOf(c).label,
-}));
+const categoryOptions = DEVICE_CATEGORIES.map((c) => ({ value: c, label: categoryPickerLabel(c) }));
 const systemOptions = [{ value: 'RU' as UnitSystem, label: 'RU' }, { value: 'OU' as UnitSystem, label: 'OU' }];
 
 export function DeviceGeneralForm({ device: d, onChange }: Props) {

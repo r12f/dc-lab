@@ -8,6 +8,8 @@ import { compatibleCables, opticFitsCage } from '../../domain/ports/optic-match'
 import { moduleFits } from '../../domain/ports/form-factors';
 import { isDirectAttach } from '../../domain/optics/cable-types';
 import { connectorsMate } from '../../domain/optics/connectors';
+import { categoryPickerLabel, DEVICE_CATEGORIES } from '../../domain/device/categories';
+import type { DeviceCategory } from '../../domain/device/types';
 import type { VirtualTopo } from '../../domain/topo/virtual';
 import { Button } from '../../ui/button';
 import { Field, Section } from '../../ui/fields';
@@ -96,7 +98,7 @@ export function TopoInspector(props: Props) {
   if (selection.kind === 'group') {
     const g = isObj(doc.device_set_groups) ? doc.device_set_groups[selection.name] : undefined;
     if (!isObj(g)) return <div className="topo-insp"><p className="muted">{`No device set group "${selection.name}".`}</p></div>;
-    return <GroupPanel {...props} doc={doc} name={selection.name} g={g} />;
+    return <GroupPanel key={selection.name} {...props} doc={doc} name={selection.name} g={g} />;
   }
   const t = Array.isArray(doc.topo) ? doc.topo[selection.index] : undefined;
   if (!isObj(t)) return <div className="topo-insp"><p className="muted">No such link.</p></div>;
@@ -125,7 +127,14 @@ function GroupPanel({ lib, source, virtual, hardware, onSource, onSelect, doc, n
   const deviceType = typeof g.device_type === 'string' ? g.device_type : '';
   const device = lib.devices.get(deviceType || undefined);
   const vg = virtual.groups.find((x) => x.name === name);
-  const devices = lib.devices.items().slice().sort((a, b) => a.name.localeCompare(b.name));
+  // The device type is picked within a category (the current type's, else every device until one is chosen),
+  // among devices with a port a link can use: not power (no fillers, power shelves, outlet-only PDUs...).
+  const all = lib.devices.items().filter((d) => d.ports.some((p) => p.role !== 'outlet' && p.role !== 'inlet'))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const [category, setCategory] = useState<DeviceCategory | ''>(device?.category ?? '');
+  useEffect(() => { if (device) setCategory(device.category); }, [device]);
+  const categories = DEVICE_CATEGORIES.filter((c) => all.some((d) => d.category === c));
+  const devices = all.filter((d) => !category || d.category === category || d.id === deviceType);
   const byName = <T extends { name: string }>(xs: T[]) => xs.slice().sort((a, b) => a.name.localeCompare(b.name));
   /** A pool's ports, whether it is written as its ports or as a map with its optic and cable. */
   const portsOf = (v: YamlValue) => (isObj(v) ? v.ports : v);
@@ -175,6 +184,12 @@ function GroupPanel({ lib, source, virtual, hardware, onSource, onSelect, doc, n
         <Field label="Role"><Draft value={text(g.role)} label="Role" accept={(v) => !!v.trim()} onCommit={(v) => set(['role'], v.trim())} /></Field>
         <Field label="Count"><Draft value={text(g.count)} label="Count" accept={(v) => int(v) !== undefined} onCommit={(v) => set(['count'], int(v)!)} /></Field>
       </div>
+      <Field label="Category">
+        <select aria-label="Device category" value={category} onChange={(e) => setCategory(e.target.value as DeviceCategory | '')}>
+          <option value="">every category</option>
+          {categories.map((c) => <option key={c} value={c}>{categoryPickerLabel(c)}</option>)}
+        </select>
+      </Field>
       <Field label="Device type">
         <select aria-label="Device type" value={deviceType} onChange={(e) => set(['device_type'], e.target.value || undefined)}>
           <option value="">none</option>
