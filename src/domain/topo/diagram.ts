@@ -113,6 +113,12 @@ function gapped(values: string[], all?: string[]): (string | null)[] {
   return out;
 }
 
+/** First two and last. */
+const pick3 = <T>(xs: T[]): T[] => (xs.length > MAX_SHOWN ? [...xs.slice(0, MAX_SHOWN - 1), xs[xs.length - 1]] : xs);
+
+/** Order a group's key values are walked in when drawn (a map's order), by `group\u0000key`. */
+const orderOf = new Map<string, string[]>();
+
 /** First two, null (ellipsis), last. */
 function capped<T>(xs: T[]): (T | null)[] {
   return xs.length > MAX_SHOWN ? [...xs.slice(0, MAX_SHOWN - 1), null, xs[xs.length - 1]] : xs;
@@ -129,11 +135,18 @@ function focus(v: VirtualTopo, nest: Map<string, string[]>): Map<string, Map<str
     if (!l.map.length) continue;
     const [ka] = keyVarsOf(l.from.key); const [kb] = keyVarsOf(l.to.key);
     if (!ka || !kb || !drawn(l.to.group, kb)) continue;
+    // To values: first, second, last target of the map; from values: per drawn target, first, second and last of
+    // the values mapping onto it, in map order (so the ellipses fall between and inside the map groups).
     const to = shown.get(l.to.group)!;
-    if (!to.has(kb)) to.set(kb, [l.map[0].to]);
+    const targets = [...new Set(l.map.map((m) => m.to))];
+    if (!to.has(kb)) to.set(kb, pick3(targets));
     const tv = to.get(kb)!;
     const from = shown.get(l.from.group)!;
-    if (!from.has(ka)) from.set(ka, l.map.filter((m) => tv.includes(m.to)).flatMap((m) => m.from));
+    if (!from.has(ka)) {
+      from.set(ka, tv.flatMap((t) => pick3(l.map.filter((m) => m.to === t).flatMap((m) => m.from))));
+      orderOf.set(`${l.from.group}\u0000${ka}`, l.map.flatMap((m) => m.from));
+      orderOf.set(`${l.to.group}\u0000${kb}`, targets);
+    }
   }
   for (let i = 0; i < v.links.length; i++) for (const l of v.links) {
     if (l.map.length || l.from.group === l.to.group) continue;
@@ -147,8 +160,7 @@ function focus(v: VirtualTopo, nest: Map<string, string[]>): Map<string, Map<str
       const ga = v.groups.find((g) => g.name === l.from.group)!; const gb = v.groups.find((g) => g.name === l.to.group)!;
       const inB = new Set(allValues(gb, kb));
       const common = allValues(ga, ka).filter((x) => inB.has(x));
-      const pick = common.length > MAX_SHOWN ? [...common.slice(0, MAX_SHOWN - 1), common[common.length - 1]] : common;
-      a.set(ka, pick); b.set(kb, pick);
+      a.set(ka, pick3(common)); b.set(kb, pick3(common));
     }
   }
   return shown;
@@ -176,7 +188,7 @@ function buildLevel(g: VGroup, keys: string[], outer: string | undefined, size: 
     devRow(capped(Array.from({ length: n }, (_, i) => i + 1)).map((i) => (i === null ? null : { label: String(i), title: `device ${i} of ${n}`, vals: { ...vals, '#': String(i) } })));
     return box;
   }
-  const all = allValues(g, key);
+  const all = orderOf.get(`${g.name}\u0000${key}`) ?? allValues(g, key);
   const picked = shown.get(key);
   const values = picked ?? all;
   const sizes = new Map(values.map((val) => [val, setSize(g, key, val, outer, size)]));
@@ -224,6 +236,7 @@ export function groupDevices(b: GroupBox): DevBox[] {
 export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTIONS): TopoDiagram {
   const level = levels(v);
   const nest = new Map(v.groups.map((g) => { const s = shownNesting(g, o, v); return [g.name, s ? s.split('>') : []]; }));
+  orderOf.clear();
   const shown = focus(v, nest);
   const boxes: GroupBox[] = v.groups.map((group) => {
     const nesting = nest.get(group.name)!;
@@ -242,10 +255,10 @@ export function layoutDiagram(v: VirtualTopo, o: DiagramOptions = DEFAULT_OPTION
   const topLevel = Math.max(0, ...boxes.map((b) => b.level));
   const tiers = Array.from({ length: topLevel + 1 }, (_, i) => boxes.filter((b) => b.level === topLevel - i));
   const widest = Math.max(0, ...tiers.map((t) => rowW(t, GAP_X)));
-  const width = PAD * 2 + Math.max(widest, 720);
+  const width = PAD * 2 + Math.max(widest, 720) + 40;
   let y = PAD;
   for (const t of tiers) {
-    let x = PAD;
+    let x = PAD + (widest - rowW(t, GAP_X)) / 2;
     for (const b of t) { b.x = x; b.y = y; x += b.w + GAP_X; }
     y += Math.max(0, ...t.map((b) => b.h)) + GAP_Y;
   }

@@ -240,8 +240,9 @@ source is the YAML text, saved as typed).
   - every level shows at most three values, first, second and last, with `…` between; each set shows at most
     three devices the same way, labelled by their number in the set (a level whose sets hold one device draws the
     devices labelled by the value);
-  - the slice follows the links: a mapped link shows its first to value and the from values mapping onto it
-    (e.g. T0 planes 1 and 5 → T1 plane 1); a keyed link without a map shows the same values on both ends;
+  - the slice follows the links: a mapped link shows the first, second and last of its to values, and for each of
+    them the first, second and last from values mapping onto it, in map order (e.g. T1 planes 1, 2, …, 4; T0
+    planes 1, 5 → 1; 2, 6 → 2; …; 4, 8 → 4); a keyed link without a map shows the same values on both ends;
   - lines run device to device: a from device pairs with the drawn to devices whose key value it maps to (`map`,
     else the same value; filters drop devices, `key.index` by the device's number in its set): all of them for
     mesh, the next in turn for round-robin;

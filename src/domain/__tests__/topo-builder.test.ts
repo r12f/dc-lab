@@ -86,13 +86,16 @@ topo:
   it('splits a group by the mapped key, then the key it is reached by; three values at most, ellipsis between', () => {
     const d = layoutDiagram(v);
     const box = (n: string) => d.boxes.find((b) => b.group.name === n)!;
-    // t0 planes 1, 5 map onto t1 plane 1: only those planes; inside, one device per su, labelled by su.
+    // t1 planes 1, 2, ..., 4; t0 planes in map order: those onto t1 plane 1 (1, 5), plane 2 (2, 6), ..., plane 4 (4, 8).
     expect(box('t0').nesting).toEqual(['plane', 'su']);
-    expect(sets(box('t0'))).toEqual(['plane 1', 'plane 5']);
-    expect(labels(box('t0'))).toEqual(['1', '2', '4', '1', '2', '4']);
+    expect(sets(box('t1'))).toEqual(['plane 1', 'plane 2', 'plane 4']);
+    expect(box('t1').body.ellipses).toHaveLength(1);
+    expect(sets(box('t0'))).toEqual(['plane 1', 'plane 5', 'plane 2', 'plane 6', 'plane 4', 'plane 8']);
+    expect(box('t0').body.ellipses).toHaveLength(1);
+    // Inside, one device per su, labelled by su.
+    expect(labels(box('t0')).slice(0, 3)).toEqual(['1', '2', '4']);
     expect(box('t0').body.sets[0].sets[0].ellipses).toHaveLength(1);
-    expect(sets(box('t1'))).toEqual(['plane 1']);
-    expect(labels(box('t1'))).toEqual(['1', '2', '4']);
+    expect(labels(box('t1')).slice(0, 3)).toEqual(['1', '2', '4']);
     // server su 1, 2, ..., 4; 16 devices each: 1, 2, ..., 16.
     expect(sets(box('server'))).toEqual(['su 1', 'su 2', 'su 4']);
     expect(labels(box('server')).slice(0, 3)).toEqual(['1', '2', '16']);
@@ -100,13 +103,13 @@ topo:
   it('draws device-to-device lines following the key, the map and the pattern', () => {
     const d = layoutDiagram(v);
     const n = (name: string) => d.links.filter((p) => p.name === name).length;
-    // t0-t1 mesh: 6 drawn t0 devices (planes 1, 5) x 3 drawn t1 plane-1 devices.
-    expect(n('t0-t1')).toBe(18);
-    // server-t0 by su: server su 1 devices (3) to t0 devices of su 1 (planes 1, 5) = 6, same for su 2 and su 4.
-    expect(n('server-t0')).toBe(18);
-    // t1-t2 round-robin: each drawn t1 device to one t2 device, only t2 1-3 of a plane (t2 #4 gets none).
+    // t0-t1 mesh, per drawn t1 plane: 6 t0 devices (2 planes x 3 su) x 3 t1 devices; 3 t1 planes.
+    expect(n('t0-t1')).toBe(54);
+    // server-t0 by su: 3 servers per su x 6 drawn t0 planes, for su 1, 2, 4.
+    expect(n('server-t0')).toBe(54);
+    // t1-t2 round-robin: each drawn t1 device (3 planes x 3) to one t2 device, only t2 1-3 of a plane.
     const t12 = d.links.filter((p) => p.name === 't1-t2');
-    expect(t12).toHaveLength(3);
+    expect(t12).toHaveLength(9);
     const t2 = groupDevices(d.boxes.find((b) => b.group.name === 't2')!);
     const hit = new Set(t12.map((p) => t2.find((x) => Math.abs(x.x + x.w / 2 - p.points[1][0]) < 1)!.label));
     expect([...hit].every((x) => Number(x) <= 3)).toBe(true);
