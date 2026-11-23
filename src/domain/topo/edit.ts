@@ -1,7 +1,7 @@
 import { uniqueId } from '../ids';
 import { parseYaml, type YamlValue } from './yaml';
 import { renameYamlKey, setYamlIn, type EditOptions, type YamlPath } from './yaml-edit';
-import { POOL_KEYS } from './virtual';
+import { GROUP_KEYS, POOL_KEYS } from './virtual';
 
 /**
  * Edits of a topology file the Topo Builder makes for its panels: each rewrites only the lines it changes (see
@@ -13,8 +13,6 @@ const isObj = (v: YamlValue | undefined): v is Obj => !!v && typeof v === 'objec
 
 /** Top-level keys of a topology file, in the order it writes them. */
 export const TOP_KEYS = ['topology', 'version', 'device_set_groups', 'topo', 'device_labels', 'mapping'];
-/** Keys of a device set group, in the order the file writes them. */
-export const GROUP_KEYS = ['role', 'count', 'partitions', 'device_type', 'ports'];
 /** Keys of a link spec, in the order the file writes them. */
 export const LINK_KEYS = ['name', 'from', 'to', 'pattern', 'map'];
 

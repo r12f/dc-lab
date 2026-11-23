@@ -122,9 +122,6 @@ function RemoveButton({ label, onClick }: { label: string; onClick(): void }) {
 
 function GroupPanel({ lib, source, virtual, hardware, onSource, onSelect, doc, name, g }: Props & { doc: Obj; name: string; g: Obj }) {
   const set = (path: YamlPath, v: YamlValue | undefined, opts?: EditOptions) => onSource(setGroupField(source, name, path, v, opts));
-  // A set's size follows from the counts: a written `size` (older files) goes when a count changes.
-  const withoutSizes = (src: string) => partitions.reduce<string>((s, p, i) => (isObj(p) && p.size !== undefined
-    ? setGroupField(s, name, ['partitions', i, 'size'], undefined) : s), src);
   const groups = Object.keys(isObj(doc.device_set_groups) ? doc.device_set_groups : {});
   const free = (n: string) => NAME.test(n) && !groups.includes(n);
   const partitions = Array.isArray(g.partitions) ? g.partitions : [];
@@ -187,7 +184,7 @@ function GroupPanel({ lib, source, virtual, hardware, onSource, onSelect, doc, n
       </Field>
       <div className="row2">
         <Field label="Role"><Draft value={text(g.role)} label="Role" accept={(v) => !!v.trim()} onCommit={(v) => set(['role'], v.trim())} /></Field>
-        <Field label="Count"><Draft value={text(g.count)} label="Count" accept={(v) => int(v) !== undefined} onCommit={(v) => onSource(withoutSizes(setGroupField(source, name, ['count'], int(v)!)))} /></Field>
+        <Field label="Count"><Draft value={text(g.count)} label="Count" accept={(v) => int(v) !== undefined} onCommit={(v) => set(['count'], int(v)!)} /></Field>
       </div>
       <Field label="Category">
         <select aria-label="Device category" value={category} onChange={(e) => setCategory(e.target.value as DeviceCategory | '')}>
@@ -222,8 +219,7 @@ function GroupPanel({ lib, source, virtual, hardware, onSource, onSelect, doc, n
                     accept={(v) => !!parseSizes(v)} onCommit={(v) => set(['partitions', i, 'sizes'], parseSizes(v)!)} />
                 ) : (
                   <>
-                    <Draft value={text(p.count)} label={`Partition ${i + 1} count`} accept={(v) => int(v) !== undefined}
-                      onCommit={(v) => onSource(withoutSizes(setGroupField(source, name, ['partitions', i, 'count'], int(v)!)))} />
+                    <Draft value={text(p.count)} label={`Partition ${i + 1} count`} accept={(v) => int(v) !== undefined} onCommit={(v) => set(['partitions', i, 'count'], int(v)!)} />
                     <span className="num muted" aria-label={`Partition ${i + 1} size`} title="Devices per set: the group's count ÷ count">
                       {sizeText(vg?.partitions.find((x) => x.key === text(p.key))?.size)}
                     </span>

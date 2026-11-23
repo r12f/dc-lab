@@ -91,8 +91,18 @@ export function expandPorts(pat: string): string[] {
   return items.flatMap((it) => expandPorts(pat.slice(0, m.index) + it + pat.slice(m.index + m[0].length)));
 }
 
+/** Keys of a device set group, in the order the file writes them. */
+export const GROUP_KEYS = ['role', 'count', 'partitions', 'device_type', 'ports'];
+/** Keys of a partition: equal sets (`count`, a set's size derived) or uneven `sizes`. */
+export const PARTITION_KEYS = ['key', 'count', 'sizes', 'per'];
 /** Keys of a pool written as a map. */
 export const POOL_KEYS = ['ports', 'optic', 'cable'];
+
+/** The keys of a map its schema does not define, as a problem (`<where> takes a, b, not x`). */
+function extraKeys(where: string, m: Obj, keys: string[]): Problem[] {
+  const extra = Object.keys(m).filter((k) => !keys.includes(k));
+  return extra.length ? [{ message: `${where} takes ${keys.join(', ')}, not ${extra.join(', ')}` }] : [];
+}
 
 /** A pool port's prefix, number and lane: `etp12c` = etp, port 12, lane c (index 2); `fe1` = fe, port 1, no lane. */
 export function portNumber(name: string): { prefix: string; n: number; lane?: number } | undefined {
@@ -139,13 +149,14 @@ export function parseVirtual(source: string): VirtualTopo {
   if (!isObj(dsg)) problems.push({ message: 'device_set_groups: missing or not a map' });
   else for (const [name, g] of Object.entries(dsg)) {
     if (!isObj(g)) { problems.push({ message: `group ${name}: not a map` }); continue; }
+    problems.push(...extraKeys(`group ${name}`, g, GROUP_KEYS));
     const count = num(g.count);
     if (count === undefined) problems.push({ message: `group ${name}: count missing` });
     if (!str(g.role)) problems.push({ message: `group ${name}: role missing` });
     const partitions: Partition[] = [];
-    const written = new Map<Partition, number | undefined>();
     for (const p of Array.isArray(g.partitions) ? g.partitions : []) {
       if (!isObj(p) || !str(p.key)) { problems.push({ message: `group ${name}: partition needs a key` }); continue; }
+      problems.push(...extraKeys(`group ${name}: partition ${p.key}`, p, PARTITION_KEYS));
       if (isObj(p.sizes)) {
         const sizes = Object.fromEntries(Object.entries(p.sizes).map(([k, v]) => [k, num(v) ?? 0]));
         const total = Object.values(sizes).reduce((a, b) => a + b, 0);
@@ -156,21 +167,15 @@ export function parseVirtual(source: string): VirtualTopo {
       const c = num(p.count);
       if (!c) { problems.push({ message: `group ${name}: partition ${p.key} needs a count (or sizes)` }); continue; }
       const per = Array.isArray(p.per) ? p.per.map(String) : [];
-      const part: Partition = { key: String(p.key), count: c, size: 0, ...(per.length ? { per } : {}) };
-      partitions.push(part);
-      written.set(part, num(p.size));
+      partitions.push({ key: String(p.key), count: c, size: 0, ...(per.length ? { per } : {}) });
     }
-    // A set's size follows from the group's count; a written size (no longer needed) must agree.
-    for (const [p, s] of written) {
+    // A set's size follows from the group's count (inside each set of the `per` keys, from theirs).
+    for (const p of partitions) {
+      if (p.sizes) continue;
       const outer = (p.per ?? []).reduce((n, k) => n * (partitions.find((x) => x.key === k)?.count || 1), 1);
       const devices = (count ?? 0) / outer;
       p.size = devices / p.count;
-      if (count === undefined) continue;
-      if (s !== undefined && s !== p.size) {
-        problems.push({ message: outer === 1
-          ? `group ${name}: partition ${p.key} is ${p.count} x ${s} = ${p.count * s}, count is ${count}`
-          : `group ${name}: partition ${p.key} is ${p.count} x ${s} per ${p.per!.join(' x ')} set, a set has ${devices}` });
-      } else if (s === undefined && !Number.isInteger(p.size)) {
+      if (count !== undefined && !Number.isInteger(p.size)) {
         problems.push({ message: `group ${name}: partition ${p.key}: ${devices} devices${outer === 1 ? '' : ` per ${p.per!.join(' x ')} set`} do not split into ${p.count} equal sets (give sizes)` });
       }
     }
@@ -185,8 +190,7 @@ export function parseVirtual(source: string): VirtualTopo {
       if (isObj(raw)) {
         v = raw.ports;
         if (v === undefined) problems.push({ message: `group ${name}: pool ${k} has no ports` });
-        const extra = Object.keys(raw).filter((x) => !POOL_KEYS.includes(x));
-        if (extra.length) problems.push({ message: `group ${name}: pool ${k} takes ${POOL_KEYS.join(', ')}, not ${extra.join(', ')}` });
+        problems.push(...extraKeys(`group ${name}: pool ${k}`, raw, POOL_KEYS));
         const optic = str(raw.optic); const cable = str(raw.cable);
         if (optic) poolOptics[k] = optic;
         if (cable) poolCables[k] = cable;
@@ -196,9 +200,6 @@ export function parseVirtual(source: string): VirtualTopo {
       if (Array.isArray(v) && v.length > 1) poolSlots[k] = v.map((e) => poolPorts(e).length);
     }
     const deviceType = str(g.device_type);
-    if (g.port_map !== undefined) {
-      problems.push({ message: `group ${name}: port_map is not used: a pool port's number is its device port (etp12b = data port 12, lane b; fe1 = port 1 of port group fe)` });
-    }
     groups.push({
       name, role: str(g.role) ?? '', count: count ?? 0, partitions, ...(deviceType ? { deviceType } : {}),
       poolOptics, poolCables, pools, poolSlots, poolNames,

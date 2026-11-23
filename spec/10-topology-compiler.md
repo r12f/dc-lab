@@ -81,7 +81,7 @@ One entry per tier, keyed by group name.
 |---|---|
 | `role` | device role of every member |
 | `count` | number of devices |
-| `partitions` | list of `{ key, count }` — the group is cut into `count` equal sets by the value of `key`; a set's size is the group's `count` ÷ the partition's, not written (an older `size` must agree); or `{ key, sizes: { "<value>": n, … } }` for uneven sets |
+| `partitions` | list of `{ key, count }` — the group is cut into `count` equal sets by the value of `key`; a set's size is the group's `count` ÷ the partition's, not written; or `{ key, sizes: { "<value>": n, … } }` for uneven sets |
 | `device_type` | optional: the device type of every member — an item type id of the Devices module (`switch-64x800g-osfp`) |
 | `ports` | named port pools, each in the order its ports are used; a pool is its ports, or `{ ports, optic, cable }` (below) |
 
@@ -150,7 +150,8 @@ the first need it misses. The profile's own optics are not used: optics and cabl
 Also checked: every pool port has a number and names a port the device has; a pool's optic fits its cages (form
 factor, heat sink, no faster than the cage); a fiber cable mates the pool's optic (connector, gender, fiber type)
 and a DAC / AEC / AOC plugs into the cage with no optic; a direct-attach cable on one end of a link faces no optic
-and no other cable at the other end. A leftover `port_map` is a problem.
+and no other cable at the other end. A key a group, partition or pool does not take is a problem
+(`group a takes role, count, partitions, device_type, ports, not port_map`).
 
 ### `topo`
 
@@ -278,7 +279,7 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
   selected one's name. Under the list (divider draggable), the **panel** of what is selected in the diagram:
   - a device set group: name, role, count, category (switch, server, …: the current device type's, else every
     category) and device type (the Devices module's types of that category with a port that is not power; the
-    category only narrows the list, the file keeps `device_type: <id>`; the matched breakout profile under it), partitions (key and count, the set size shown — a count edit drops a `size` still written — or `sizes` as `1: 54, 2: 18`) and port pools — ports, port count, and
+    category only narrows the list, the file keeps `device_type: <id>`; the matched breakout profile under it), partitions (key and count with the set size shown, or `sizes` as `1: 54, 2: 18`) and port pools — ports, port count, and
     under each the optic (those its cages take) and cable (for the optic, else direct-attach cables for the cage);
     a pool given an optic or cable is written `{ ports, optic, cable }`, back to its ports when both are cleared;
     + adds a row, ✕ removes it; **Delete** removes the group with the link specs and mapping entries naming it;
@@ -290,8 +291,8 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
   order puts it. Renaming a group renames the link ends and mapping entries naming it and carries its moved /
   collapsed state; renaming a pool renames the link ends using it. The panel needs the file to parse.
 - **Left pane — code**: the YAML source, monospace, line numbers, Tab inserts two spaces. Under it the problems found
-  in the file (YAML syntax with its line; undefined groups, pools or partition keys; a partition count that does not
-  split the group into equal sets, `sizes` that do not add up to `count`; map values that are not strings; a pool too small for a link spec; device types, pool ports,
+  in the file (YAML syntax with its line; keys a group, partition or pool does not take; undefined groups, pools or
+  partition keys; a partition count that does not split the group into equal sets, `sizes` that do not add up to `count`; map values that are not strings; a pool too small for a link spec; device types, pool ports,
   optics, cables and link speeds checked against the Devices and Optics & Cables modules). The divider to the diagram is draggable
   (double-click resets); « hides the pane to a rail (» Code, with the problem count) and » shows it again,
   remembered across sessions.

@@ -13,7 +13,7 @@ device_set_groups:
     role: OVL3 server   # the role
     count: 4
     partitions:
-      - { key: pod, count: 2, size: 2 }
+      - { key: pod, count: 2 }
       # second level
       - { key: pair, sizes: { "1": 3, "2": 1 } }
     ports:
@@ -22,7 +22,7 @@ device_set_groups:
   tor:
     role: T0
     count: 2
-    partitions: [ { key: pod, count: 2, size: 1 } ]
+    partitions: [ { key: pod, count: 2 } ]
     ports: { down: etp{1-4}{a,b}, up: etp{5-8} }
 
   flat: { role: x, count: 1, ports: { p: q{1-2} } }
@@ -58,7 +58,7 @@ describe('YAML edits in place', () => {
   });
   it('rewrites just the inline value a field sits in', () => {
     expect(changed(SRC, setYamlIn(SRC, ['device_set_groups', 'server', 'partitions', 0, 'count'], 4)))
-      .toEqual(['      - { key: pod, count: 4, size: 2 }']);
+      .toEqual(['      - { key: pod, count: 4 }']);
     expect(changed(SRC, setYamlIn(SRC, ['topo', 0, 'to', 'group'], 'flat')))
       .toEqual(['    to:   { group: flat,    key: "${pod}", ports: down }']);
     expect(changed(SRC, setYamlIn(SRC, ['topo', 0, 'to', 'key'], '${pod}-x')))
@@ -91,8 +91,8 @@ describe('YAML edits in place', () => {
     expect(setGroupField(block, 'server', ['ports', 'nic'], 'p{1-2}')).toBe(SRC.replace('      nic: p{1-2}        # both NICs', '      nic: p{1-2}'));
   });
   it('appends and removes list items; a list emptied stays a list', () => {
-    const more = setGroupField(SRC, 'server', ['partitions', 2], { key: 'x', count: 1, size: 4 });
-    expect(more).toContain('      - { key: pair, sizes: { "1": 3, "2": 1 } }\n      - { key: x, count: 1, size: 4 }\n');
+    const more = setGroupField(SRC, 'server', ['partitions', 2], { key: 'x', count: 1 });
+    expect(more).toContain('      - { key: pair, sizes: { "1": 3, "2": 1 } }\n      - { key: x, count: 1 }\n');
     expect(setGroupField(more, 'server', ['partitions', 2], undefined)).toBe(SRC);
     const none = deleteLink(deleteLink(SRC, 1), 0);
     expect((parseYaml(none) as { topo: unknown }).topo).toEqual([]);

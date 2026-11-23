@@ -54,22 +54,22 @@ describe('virtual topology', () => {
     // 4 su x 16 servers x 8 T0; 4 T1 planes x (2 x 4 T0) x 4 T1; 16 T1 x 2 per pair.
     expect(n).toEqual({ 'server-t0': 512, 't0-t1': 128, 't1-t2': 32 });
   });
-  it("derives a partition's set size from the counts; a written size must agree", () => {
+  it("derives a partition's set size from the counts; a written size is not a partition key", () => {
     const v = parseVirtual(`device_set_groups:
   a: { role: x, count: 12, partitions: [ { key: pod, count: 3 }, { key: rack, count: 2, per: [pod] } ], ports: { p: e1 } }
   b: { role: y, count: 10, partitions: [ { key: k, count: 4 } ], ports: { p: e1 } }
-  c: { role: z, count: 8, partitions: [ { key: k, count: 2, size: 4 }, { key: j, count: 4, size: 3 } ], ports: { p: e1 } }
+  c: { role: z, count: 8, partitions: [ { key: k, count: 2, size: 4 } ], ports: { p: e1 } }
 `);
     // 12 / 3 pods; 4 per pod / 2 racks.
     expect(v.groups[0].partitions.map((p) => p.size)).toEqual([4, 2]);
     expect(v.problems.map((p) => p.message).filter((m) => m.startsWith('group'))).toEqual([
       'group b: partition k: 10 devices do not split into 4 equal sets (give sizes)',
-      'group c: partition j is 4 x 3 = 12, count is 8',
+      'group c: partition k takes key, count, sizes, per, not size',
     ]);
   });
   it('reports undefined groups, pools, keys and partition sizes', () => {
     const bad = parseVirtual(`device_set_groups:
-  a: { role: x, count: 10, partitions: [ { key: k, count: 3, size: 3 } ], ports: { p: e{1-4} } }
+  a: { role: x, count: 10, partitions: [ { key: k, count: 3 } ], ports: { p: e{1-4} } }
 topo:
   - name: l
     from: { group: a, key: "\${z}", ports: q }
@@ -78,7 +78,7 @@ topo:
     pattern: { type: star }
 `).problems.map((p) => p.message);
     expect(bad).toEqual(expect.arrayContaining([
-      'group a: partition k is 3 x 3 = 9, count is 10',
+      'group a: partition k: 10 devices do not split into 3 equal sets (give sizes)',
       'l: from group a has no port pool "q"',
       'l: from key uses ${z}, not a partition key of a',
       'l: to group "b" is not defined',
@@ -89,7 +89,7 @@ topo:
   it('sizes ports per device by the largest of uneven sets', () => {
     const u = parseVirtual(`device_set_groups:
   s: { role: x, count: 72, partitions: [ { key: p, sizes: { "1": 54, "2": 18 } } ], ports: { n: e{1-2} } }
-  t: { role: y, count: 4, partitions: [ { key: p, count: 2, size: 2 } ], ports: { d: e{1-60} } }
+  t: { role: y, count: 4, partitions: [ { key: p, count: 2 } ], ports: { d: e{1-60} } }
 topo:
   - { name: l, from: { group: s, key: "\${p}", ports: n }, to: { group: t, key: "\${p}", ports: d }, pattern: { type: mesh, per_pair: 1 } }
 `);
@@ -277,13 +277,13 @@ describe('device type, pool optics and cables: the breakout profile is matched t
     role: server
     count: 8
     device_type: server-gpu-8u
-    partitions: [ { key: pod, count: 2, size: 4 } ]
+    partitions: [ { key: pod, count: 2 } ]
     ports: { nic: { ports: fe{1-2}{a-b}, optic: ${Q}, cable: mpo12-smf } }
   t:
     role: tor
     count: 4
     device_type: switch-64x800g-osfp
-    partitions: [ { key: pod, count: 2, size: 2 } ]
+    partitions: [ { key: pod, count: 2 } ]
     ports:
       down: { ports: etp{1-4}{a-b}, optic: ${O}, cable: mpo12-smf }
       up:
@@ -299,7 +299,7 @@ topo:
   - { name: t-u, from: { group: t, ports: up }, to: { group: u, ports: down }, pattern: { type: mesh, per_pair: 1 } }
 `);
 
-  it('parses pools with the optic and cable their ports take; port_map is not used', () => {
+  it('parses pools with the optic and cable their ports take; a key a group or pool does not take is a problem', () => {
     expect(v.problems).toEqual([]);
     const [s, t] = v.groups;
     expect([s.poolNames.nic, s.poolOptics, s.poolCables, t.poolOptics, t.poolCables])
@@ -309,7 +309,7 @@ topo:
   b: { role: w, count: 1, ports: { r: { optic: o1 }, s: { ports: q3, mode: 8x100G } } }
 `);
     expect(bad.problems.map((p) => p.message)).toEqual([
-      "group a: port_map is not used: a pool port's number is its device port (etp12b = data port 12, lane b; fe1 = port 1 of port group fe)",
+      'group a takes role, count, partitions, device_type, ports, not port_map',
       'group b: pool r has no ports',
       'group b: pool s takes ports, optic, cable, not mode',
     ]);
@@ -461,7 +461,7 @@ topo:
     role: y
     count: 4
     device_type: switch-64x800g-osfp
-    partitions: [ { key: p, count: 2, size: 2 } ]
+    partitions: [ { key: p, count: 2 } ]
     ports: { d: { ports: e{1-60}, optic: ${O} } }
 topo:
   - { name: l, from: { group: s, key: "\${p}", ports: n }, to: { group: t, key: "\${p}", ports: d }, pattern: { type: mesh, per_pair: 1 } }
