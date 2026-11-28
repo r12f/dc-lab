@@ -55,6 +55,14 @@ export function isInfoTipOpen(state: InfoTipState): boolean {
   return (state.hovered || state.focused) && !state.dismissed;
 }
 
+/** Whether any part of `anchor` remains visible within `viewport`. */
+export function isAnchorInViewport(
+  anchor: Pick<AnchorBox, 'left' | 'top' | 'right' | 'bottom'>,
+  viewport: { width: number; height: number },
+): boolean {
+  return anchor.bottom > 0 && anchor.top < viewport.height && anchor.right > 0 && anchor.left < viewport.width;
+}
+
 /** Position a `.tooltip` box cleanly inside the viewport without overlapping `anchor`. */
 export function computeInfoTipPosition(
   anchor: AnchorBox,
@@ -67,7 +75,7 @@ export function computeInfoTipPosition(
   const clampY = (y: number) => Math.max(MARGIN, Math.min(maxTop, y));
   const centeredX = clampX(anchor.left + anchor.width / 2 - tip.width / 2);
 
-  if (anchor.bottom + GAP + tip.height <= viewport.height - MARGIN) {
+  if (anchor.bottom + GAP >= MARGIN && anchor.bottom + GAP + tip.height <= viewport.height - MARGIN) {
     return { left: centeredX, top: anchor.bottom + GAP };
   }
   if (anchor.top - GAP - tip.height >= MARGIN) {
@@ -97,6 +105,7 @@ const TRIGGER_BASE_STYLE: CSSProperties = {
   fontSize: 12,
   lineHeight: 1,
   cursor: 'help',
+  userSelect: 'none',
   flex: 'none',
   verticalAlign: 'middle',
 };
@@ -108,41 +117,67 @@ export interface InfoTipProps {
   open?: boolean;
 }
 
-export function stopInfoTipClick(e: Pick<MouseEvent<HTMLButtonElement>, 'preventDefault' | 'stopPropagation'>): void {
+export function stopInfoTipClick(e: Pick<MouseEvent<HTMLElement>, 'preventDefault' | 'stopPropagation'>): void {
   e.preventDefault();
   e.stopPropagation();
 }
 
+export function handleInfoTipKeyDown(
+  e: Pick<KeyboardEvent<HTMLElement>, 'key' | 'preventDefault' | 'stopPropagation'>,
+  dispatch: (action: InfoTipAction) => void,
+): void {
+  if (e.key === 'Escape') {
+    e.stopPropagation();
+    dispatch('escape');
+  } else if (e.key === ' ' || e.key === 'Enter') {
+    e.preventDefault();
+    e.stopPropagation();
+    dispatch('focus');
+  }
+}
+
 /**
  * Compact keyboard-focusable `ⓘ` indicator that displays `text` in a floating `.tooltip`
- * portaled to `document.body` on mouse hover or keyboard focus.
+ * portaled to `document.body` on mouse hover or keyboard focus. Uses a non-form-control `<span role="button">`
+ * so ancestor `<fieldset disabled>` wrappers (read-only built-in catalog items) never disable hover or Tab focus.
  */
 export function InfoTip({ text, label = 'More information', open: controlledOpen }: InfoTipProps) {
   const tipId = useId();
   const [state, setState] = useState<InfoTipState>(INITIAL_INFO_TIP_STATE);
+  const [offscreen, setOffscreen] = useState(false);
   const [pos, setPos] = useState<{ left: number; top: number }>();
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLSpanElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
 
-  const isOpen = controlledOpen ?? isInfoTipOpen(state);
+  const wantOpen = controlledOpen ?? isInfoTipOpen(state);
+  const shown = wantOpen && !offscreen;
 
   const dispatch = (action: InfoTipAction) => setState((prev) => reduceInfoTipState(prev, action));
 
   useLayoutEffect(() => {
-    if (!isOpen) {
+    if (!wantOpen) {
+      setOffscreen(false);
       setPos(undefined);
       return;
     }
     const updatePosition = () => {
       const trigger = triggerRef.current;
-      const tip = tipRef.current;
-      if (!trigger || !tip || typeof window === 'undefined') return;
+      if (!trigger || typeof window === 'undefined') return;
       const rect = trigger.getBoundingClientRect();
+      const viewport = { width: window.innerWidth, height: window.innerHeight };
+      if (!isAnchorInViewport(rect, viewport)) {
+        setOffscreen(true);
+        setPos(undefined);
+        return;
+      }
+      setOffscreen(false);
+      const tip = tipRef.current;
+      if (!tip) return;
       setPos(
         computeInfoTipPosition(
           rect,
           { width: tip.offsetWidth, height: tip.offsetHeight },
-          { width: window.innerWidth, height: window.innerHeight },
+          viewport,
         ),
       );
     };
@@ -154,25 +189,18 @@ export function InfoTip({ text, label = 'More information', open: controlledOpen
       window.removeEventListener('scroll', updatePosition, true);
       window.removeEventListener('resize', updatePosition);
     };
-  }, [isOpen, text]);
+  }, [wantOpen, offscreen, text]);
 
   useEffect(() => {
-    if (!isOpen || typeof window === 'undefined') return;
+    if (!shown || typeof window === 'undefined') return;
     const onWindowKeyDown = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'Escape') dispatch('escape');
     };
     window.addEventListener('keydown', onWindowKeyDown);
     return () => window.removeEventListener('keydown', onWindowKeyDown);
-  }, [isOpen]);
+  }, [shown]);
 
-  const onTriggerKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      dispatch('escape');
-    }
-  };
-
-  const tooltipEl = isOpen ? (
+  const tooltipEl = shown ? (
     <div
       ref={tipRef}
       id={tipId}
@@ -186,21 +214,22 @@ export function InfoTip({ text, label = 'More information', open: controlledOpen
 
   return (
     <>
-      <button
+      <span
         ref={triggerRef}
-        type="button"
+        role="button"
+        tabIndex={0}
         aria-label={label}
-        aria-describedby={isOpen ? tipId : undefined}
-        style={{ ...TRIGGER_BASE_STYLE, color: isOpen ? 'var(--accent)' : 'var(--muted)' }}
+        aria-describedby={shown ? tipId : undefined}
+        style={{ ...TRIGGER_BASE_STYLE, color: shown ? 'var(--accent)' : 'var(--muted)' }}
         onMouseEnter={() => dispatch('mouseenter')}
         onMouseLeave={() => dispatch('mouseleave')}
         onFocus={() => dispatch('focus')}
         onBlur={() => dispatch('blur')}
         onClick={stopInfoTipClick}
-        onKeyDown={onTriggerKeyDown}
+        onKeyDown={(e) => handleInfoTipKeyDown(e, dispatch)}
       >
         ⓘ
-      </button>
+      </span>
       {tooltipEl && (typeof document !== 'undefined' && document.body ? createPortal(tooltipEl, document.body) : tooltipEl)}
     </>
   );

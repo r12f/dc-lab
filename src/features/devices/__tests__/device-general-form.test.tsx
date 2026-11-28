@@ -8,6 +8,8 @@ import {
   INITIAL_INFO_TIP_STATE,
   InfoTip,
   computeInfoTipPosition,
+  handleInfoTipKeyDown,
+  isAnchorInViewport,
   isInfoTipOpen,
   reduceInfoTipState,
   stopInfoTipClick,
@@ -34,12 +36,18 @@ function findElements(
 describe('DeviceGeneralForm Repeatable checkbox and InfoTip', () => {
   const sampleDevice: DeviceDefinition = SHIPPED_CATALOG.devices.find((d) => d.id === 'switch-64x800g-osfp')!;
 
-  it('renders short "Repeatable" label with InfoTip trigger and omits long inline explanation from the form body', () => {
-    const html = renderToStaticMarkup(<DeviceGeneralForm device={sampleDevice} onChange={() => {}} />);
+  it('renders short "Repeatable" label with non-form-control InfoTip trigger unaffected by <fieldset disabled>', () => {
+    const html = renderToStaticMarkup(
+      <fieldset disabled className="plain">
+        <DeviceGeneralForm device={sampleDevice} onChange={() => {}} />
+      </fieldset>,
+    );
 
     expect(html).toContain('<span>Repeatable</span>');
     expect(html).toContain('aria-label="About Repeatable"');
-    expect(html).toContain('>ⓘ</button>');
+    // Must not be a <button>, which HTML <fieldset disabled> would disable on built-in read-only devices.
+    expect(html).not.toContain('>ⓘ</button>');
+    expect(html).toMatch(/<span[^>]*role="button"[^>]*tabindex="0"[^>]*aria-label="About Repeatable"[^>]*>ⓘ<\/span>/);
     expect(html).not.toContain(REPEATABLE_TOOLTIP_TEXT);
     expect(html).not.toContain('Repeatable —');
     expect(html).not.toContain('role="tooltip"');
@@ -63,12 +71,28 @@ describe('DeviceGeneralForm Repeatable checkbox and InfoTip', () => {
     s = reduceInfoTipState(s, 'mouseleave');
     expect(isInfoTipOpen(s)).toBe(true);
 
-    // Escape dismisses while focused; blur + re-focus opens again.
-    s = reduceInfoTipState(s, 'escape');
+    // Escape dismisses while focused; Space/Enter re-opens via keyboard; blur + re-focus opens again.
+    const dispatch = (action: Parameters<typeof reduceInfoTipState>[1]) => {
+      s = reduceInfoTipState(s, action);
+    };
+    const preventDefault = vi.fn();
+    const stopPropagation = vi.fn();
+    handleInfoTipKeyDown({ key: 'Escape', preventDefault, stopPropagation }, dispatch);
     expect(isInfoTipOpen(s)).toBe(false);
-    s = reduceInfoTipState(s, 'blur');
-    s = reduceInfoTipState(s, 'focus');
+    expect(stopPropagation).toHaveBeenCalledTimes(1);
+
+    handleInfoTipKeyDown({ key: ' ', preventDefault, stopPropagation }, dispatch);
     expect(isInfoTipOpen(s)).toBe(true);
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+
+    handleInfoTipKeyDown({ key: 'Escape', preventDefault, stopPropagation }, dispatch);
+    expect(isInfoTipOpen(s)).toBe(false);
+    handleInfoTipKeyDown({ key: 'Enter', preventDefault, stopPropagation }, dispatch);
+    expect(isInfoTipOpen(s)).toBe(true);
+    expect(preventDefault).toHaveBeenCalledTimes(2);
+
+    s = reduceInfoTipState(s, 'blur');
+    expect(isInfoTipOpen(s)).toBe(false);
 
     // 2. Extract the exact InfoTip element rendered by DeviceGeneralForm and render its open state.
     const tree = DeviceGeneralForm({ device: sampleDevice, onChange: () => {} });
@@ -126,7 +150,7 @@ describe('DeviceGeneralForm Repeatable checkbox and InfoTip', () => {
     expect(onChange).toHaveBeenLastCalledWith({ ...sampleDevice, repeatable: false });
   });
 
-  it('clamps tooltip coordinates cleanly within the viewport near right and bottom inspector edges', () => {
+  it('clamps tooltip coordinates across right, bottom, and near-top/negative anchors and detects offscreen scroll', () => {
     const viewport = { width: 1280, height: 720 };
     const tipSize = { width: 280, height: 64 };
 
@@ -141,5 +165,26 @@ describe('DeviceGeneralForm Repeatable checkbox and InfoTip', () => {
     const posAbove = computeInfoTipPosition(bottomRightAnchor, tipSize, viewport);
     expect(posAbove).toEqual({ left: 992, top: 608 });
     expect(posAbove.top).toBeGreaterThanOrEqual(8);
+
+    // Near-top / partially scrolled-above anchor (anchor.bottom + GAP < MARGIN): never returns top < 8.
+    const nearTopAnchor = { left: 1180, top: -18, right: 1196, bottom: -2, width: 16, height: 16 };
+    const posNearTop = computeInfoTipPosition(nearTopAnchor, tipSize, viewport);
+    expect(posNearTop.top).toBeGreaterThanOrEqual(8);
+    expect(posNearTop.left).toBeGreaterThanOrEqual(8);
+    expect(posNearTop.left + tipSize.width).toBeLessThanOrEqual(viewport.width - 8);
+
+    // Narrow viewport where neither left nor right side has full room also clamps top >= 8.
+    const narrowPos = computeInfoTipPosition(
+      { left: 100, top: -20, right: 116, bottom: -4, width: 16, height: 16 },
+      tipSize,
+      { width: 320, height: 720 },
+    );
+    expect(narrowPos.top).toBe(8);
+    expect(narrowPos.left).toBeGreaterThanOrEqual(8);
+
+    // Viewport visibility helper hides the tooltip once the trigger scrolls completely out of view.
+    expect(isAnchorInViewport(rightInspectorAnchor, viewport)).toBe(true);
+    expect(isAnchorInViewport({ left: 1180, top: -20, right: 1196, bottom: 0 }, viewport)).toBe(false);
+    expect(isAnchorInViewport({ left: 1180, top: 720, right: 1196, bottom: 736 }, viewport)).toBe(false);
   });
 });
