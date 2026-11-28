@@ -1,9 +1,10 @@
-import { Fragment, useEffect, useState, type CSSProperties } from 'react';
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { Library } from '../../domain/library/library';
 import { parseInlineYaml, type YamlValue } from '../../domain/topo/yaml';
 import { flowYaml, type EditOptions, type YamlPath } from '../../domain/topo/yaml-edit';
 import { deleteGroup, deleteLink, linksOfGroup, renameGroup, renamePool, setGroupField, setLinkField, topoDoc } from '../../domain/topo/edit';
-import { poolCageGroups, type GroupHardware } from '../../domain/topo/hardware';
+import { buildGroupDevices, DEFAULT_ID_FORMAT, previewGroupIds, supportedIdVariables } from '../../domain/topo/devices';
+import { compatibleLinkCables, poolCageGroups, type GroupHardware } from '../../domain/topo/hardware';
 import { opticFitsCage } from '../../domain/ports/optic-match';
 import { categoryPickerLabel, DEVICE_CATEGORIES } from '../../domain/device/categories';
 import type { DeviceCategory } from '../../domain/device/types';
@@ -51,10 +52,16 @@ interface DraftProps {
   placeholder?: string;
   title?: string;
   style?: CSSProperties;
+  disabled?: boolean;
+}
+
+/** Insert or append a `{variable}` token into an `id_format` template at `[start, end]`. */
+export function insertIdVariable(current: string, token: string, start = current.length, end = start): string {
+  return current.slice(0, start) + token + current.slice(end);
 }
 
 /** A text input that commits on Enter or leaving the field (Esc puts the value back), so typing is not an edit. */
-function Draft({ value, label, onCommit, accept, placeholder, title, style }: DraftProps) {
+export function Draft({ value, label, onCommit, accept, placeholder, title, style, disabled }: DraftProps) {
   const [draft, setDraft] = useState(value);
   useEffect(() => setDraft(value), [value]);
   const commit = () => {
@@ -63,7 +70,7 @@ function Draft({ value, label, onCommit, accept, placeholder, title, style }: Dr
     onCommit(draft);
   };
   return (
-    <input aria-label={label} title={title ?? label} placeholder={placeholder} value={draft} style={style}
+    <input aria-label={label} title={title ?? label} placeholder={placeholder} value={draft} style={style} disabled={disabled}
       onChange={(e) => setDraft(e.target.value)} onBlur={commit}
       onKeyDown={(e) => {
         if (e.key === 'Enter') e.currentTarget.blur();
@@ -157,6 +164,40 @@ function GroupPanel({ lib, source, virtual, hardware, onSource, onSelect, doc, n
     onSelect(undefined);
   };
   const newKey = (base: string, taken: string[]) => { let i = 1; while (taken.includes(`${base}${i}`)) i++; return `${base}${i}`; };
+  const savedIdFormat = text(g.id_format);
+  const [idFormatDraft, setIdFormatDraft] = useState(savedIdFormat);
+  useEffect(() => setIdFormatDraft(savedIdFormat), [savedIdFormat]);
+  const idFormatRef = useRef<HTMLInputElement>(null);
+  const commitIdFormat = () => {
+    if (idFormatDraft === savedIdFormat) return;
+    set(['id_format'], idFormatDraft.trim() || undefined);
+  };
+  const applyIdToken = (token: string) => {
+    const el = idFormatRef.current;
+    const active = el && typeof document !== 'undefined' && document.activeElement === el;
+    const start = active ? (el.selectionStart ?? idFormatDraft.length) : idFormatDraft.length;
+    const end = active ? (el.selectionEnd ?? idFormatDraft.length) : idFormatDraft.length;
+    const next = insertIdVariable(idFormatDraft, token, start, end);
+    setIdFormatDraft(next);
+    set(['id_format'], next.trim() || undefined);
+    if (el && typeof requestAnimationFrame === 'function') {
+      const caret = start + token.length;
+      requestAnimationFrame(() => {
+        el.focus();
+        el.setSelectionRange(caret, caret);
+      });
+    }
+  };
+  const groupForIds = vg
+    ? { ...vg, idFormat: idFormatDraft.trim() || undefined }
+    : undefined;
+  const idHints = groupForIds ? supportedIdVariables(groupForIds, virtual) : [];
+  const idPreview = groupForIds ? previewGroupIds(buildGroupDevices(groupForIds, virtual)) : { count: 0 };
+  const previewText = idPreview.count === 0
+    ? 'No devices generated'
+    : idPreview.count === 1
+      ? `Preview: ${idPreview.first}`
+      : `Preview: ${idPreview.first} … ${idPreview.last}`;
   return (
     <div className="topo-insp">
       <Head title="Device set group" what={`group ${name}`} onDelete={remove} />
@@ -168,6 +209,47 @@ function GroupPanel({ lib, source, virtual, hardware, onSource, onSelect, doc, n
         <Field label="Role"><Draft value={text(g.role)} label="Role" accept={(v) => !!v.trim()} onCommit={(v) => set(['role'], v.trim())} /></Field>
         <Field label="Count"><Draft value={text(g.count)} label="Count" accept={(v) => int(v) !== undefined} onCommit={(v) => set(['count'], int(v)!)} /></Field>
       </div>
+      <Field label="Device ID format">
+        <input
+          ref={idFormatRef}
+          aria-label="Device ID format"
+          title="Device ID format"
+          placeholder={DEFAULT_ID_FORMAT}
+          value={idFormatDraft}
+          onChange={(e) => setIdFormatDraft(e.target.value)}
+          onBlur={commitIdFormat}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+            else if (e.key === 'Escape') setIdFormatDraft(savedIdFormat);
+          }}
+        />
+      </Field>
+      {idHints.length > 0 && (
+        <div className="topo-var-chips" aria-label="Supported device ID variables">
+          {idHints.map((h) => (
+            <button
+              key={h.token}
+              type="button"
+              className="topo-var-chip"
+              title={`${h.description} (e.g. ${h.example})`}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => applyIdToken(h.token)}
+            >
+              {h.token}
+            </button>
+          ))}
+          <button
+            type="button"
+            className="topo-var-chip"
+            title="Zero-pad any numeric index to N digits (e.g. {device.index:2}, {set.index:3})"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => applyIdToken('{set.index:3}')}
+          >
+            {'{set.index:3}'}
+          </button>
+        </div>
+      )}
+      <p className="muted topo-insp-note">{previewText}</p>
       <Field label="Category">
         <select aria-label="Device category" value={category} onChange={(e) => setCategory(e.target.value as DeviceCategory | '')}>
           <option value="">every category</option>
@@ -249,13 +331,18 @@ function GroupPanel({ lib, source, virtual, hardware, onSource, onSelect, doc, n
   );
 }
 
-function LinkPanel({ source, virtual, onSource, onSelect, doc, index, t }: Props & { doc: Obj; index: number; t: Obj }) {
+function LinkPanel({ lib, source, virtual, hardware, onSource, onSelect, doc, index, t }: Props & { doc: Obj; index: number; t: Obj }) {
   const set = (path: YamlPath, v: YamlValue | undefined) => onSource(setLinkField(source, index, path, v));
   const groups = isObj(doc.device_set_groups) ? doc.device_set_groups : {};
   const poolsOf = (group: string) => { const g = groups[group]; return isObj(g) && isObj(g.ports) ? Object.keys(g.ports) : []; };
   const pattern = isObj(t.pattern) ? t.pattern : {};
   const map = Array.isArray(t.map) ? t.map : [];
   const vl = virtual.links.find((l) => l.index === index);
+  const cableId = text(t.cable);
+  const compatible = vl ? compatibleLinkCables(lib, virtual, vl, hardware) : [];
+  const invalidCableLabel = cableId && !compatible.some((c) => c.id === cableId)
+    ? (lib.cableMedia.get(cableId) ? `${lib.cableMedia.get(cableId)!.name} (incompatible)` : `${cableId} (unknown)`)
+    : undefined;
   const name = text(t.name) || `link ${index + 1}`;
   const remove = () => {
     if (!confirm(`Delete link ${name}?`)) return;
@@ -321,6 +408,20 @@ function LinkPanel({ source, virtual, onSource, onSelect, doc, index, t }: Props
             {`Map (edit in code): ${map.map((m) => (isObj(m) ? `${Array.isArray(m.from) ? m.from.map(text).join(', ') : text(m.from)} → ${text(m.to)}` : '')).join('; ')}`}
           </p>
         )}
+      </Section>
+      <Section title="Cable">
+        <Field label="Cable">
+          <select
+            aria-label="Link cable"
+            title={lib.cableMedia.get(cableId || undefined)?.name ?? 'Cable joining both ends of this link'}
+            value={cableId}
+            onChange={(e) => set(['cable'], e.target.value || undefined)}
+          >
+            <option value="">no cable</option>
+            {invalidCableLabel && <option value={cableId}>{invalidCableLabel}</option>}
+            {compatible.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </Field>
       </Section>
     </div>
   );

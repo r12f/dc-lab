@@ -11,14 +11,15 @@ import { TOPOLOGY_SCHEMA, parseVirtual, type Topology } from '../../domain/topo/
 import { DEFAULT_OPTIONS, layoutDiagram, type DiagramOptions, type DiagramView } from '../../domain/topo/diagram';
 import type { TopoBomSettings } from '../../domain/topo/bom';
 import { hardwareProblems, topoHardware } from '../../domain/topo/hardware';
-import { addGroup, addLink, newGroupName, newLinkName, topoDoc } from '../../domain/topo/edit';
+import { deviceIdProblems } from '../../domain/topo/devices';
+import { addGroup, addLink, newGroupName, newLinkName, setDcId, topoDoc } from '../../domain/topo/edit';
 import type { YamlValue } from '../../domain/topo/yaml';
 import { DiagramMenu } from './diagram-menu';
 import { SAMPLE_TOPOLOGY } from '../../domain/topo/sample';
 import { TopoEditor } from './topo-editor';
 import { TopoDiagramView } from './topo-diagram';
 import { TopoBomPane } from './topo-bom';
-import { TopoInspector, type TopoSelection } from './topo-inspector';
+import { Draft, TopoInspector, type TopoSelection } from './topo-inspector';
 import { TopoNewMenu } from './topo-new-menu';
 
 const CODE_W = 560;
@@ -68,7 +69,10 @@ export function TopoModule() {
   const virtual = useMemo(() => parseVirtual(source), [source]);
   // Device types and port maps are checked against the Devices module.
   const hardware = useMemo(() => topoHardware(lib, virtual), [lib, virtual]);
-  const problems = useMemo(() => [...virtual.problems, ...hardwareProblems(lib, virtual, hardware)], [virtual, lib, hardware]);
+  const problems = useMemo(
+    () => [...virtual.problems, ...deviceIdProblems(virtual), ...hardwareProblems(lib, virtual, hardware)],
+    [virtual, lib, hardware],
+  );
   // The file as a map, for adding blocks and links (undefined while it does not parse).
   const doc = useMemo(() => { try { return topoDoc(topo?.source ?? ''); } catch { return undefined; } }, [topo?.source]);
   const groups = doc && isObj(doc.device_set_groups) ? doc.device_set_groups : {};
@@ -130,7 +134,16 @@ export function TopoModule() {
         emptyText="Create a topology."
         header={topo && (
           <div className="pad topo-name">
-            <input aria-label="Topology name" value={topo.name} onChange={(e) => update('topologies', topo.id, (t) => ({ ...t, name: e.target.value }))} />
+            <input aria-label="Topology name" title="Topology name" value={topo.name}
+              onChange={(e) => update('topologies', topo.id, (t) => ({ ...t, name: e.target.value }))} />
+            <Draft
+              label="DC id"
+              title={doc ? 'DC id (dc.id in YAML)' : 'Fix the YAML problems first'}
+              placeholder={virtual.name || topo.name}
+              value={virtual.dc?.id ?? ''}
+              disabled={!doc}
+              onCommit={(v) => { if (doc) setSource(setDcId(topo.source, v)); }}
+            />
           </div>
         )}
         lower={topo && (
@@ -169,7 +182,7 @@ export function TopoModule() {
             </CanvasFrame>
             <Splitter orientation="horizontal" label="BOM height" width={bomH} direction={-1}
               onResize={(px) => setBomH(Math.max(60, Math.min(1200, px)))} onReset={() => setBomH(BOM_H)} />
-            <TopoBomPane lib={lib} topo={virtual} settings={topo.bom ?? NO_BOM} filename={topo.id} height={bomH}
+            <TopoBomPane lib={lib} topo={virtual} hardware={hardware} settings={topo.bom ?? NO_BOM} filename={topo.id} height={bomH}
               onChange={(b) => update('topologies', topo.id, (t) => ({ ...t, bom: b.items ? b : undefined }))} />
           </div>
         </div>

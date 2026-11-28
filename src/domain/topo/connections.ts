@@ -398,36 +398,38 @@ function escapeCsvCell(value: string | number): string {
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-/** Serialize connections to RFC-4180 CSV. */
-export function connectionsToCsv(rows: readonly PortConnection[]): string {
-  const lines: string[] = [CONNECTION_CSV_HEADERS.map(escapeCsvCell).join(',')];
+/** Serialize connections to RFC-4180 CSV; appends a `Cable PN` column when `cablePnByLink` is provided. */
+export function connectionsToCsv(
+  rows: readonly PortConnection[],
+  cablePnByLink?: ReadonlyMap<number, string>,
+): string {
+  const headers = cablePnByLink ? [...CONNECTION_CSV_HEADERS, 'Cable PN'] : CONNECTION_CSV_HEADERS;
+  const lines: string[] = [headers.map(escapeCsvCell).join(',')];
   for (const r of rows) {
-    lines.push(
-      [
-        r.index,
-        r.linkName,
-        r.fromDeviceId,
-        r.fromGroup,
-        r.fromRole,
-        r.fromPool,
-        r.fromPoolPort,
-        r.fromDevicePort,
-        r.fromMode,
-        r.fromOpticName,
-        r.toDeviceId,
-        r.toGroup,
-        r.toRole,
-        r.toPool,
-        r.toPoolPort,
-        r.toDevicePort,
-        r.toMode,
-        r.toOpticName,
-        r.speedGbps !== undefined ? formatGbps(r.speedGbps) : '',
-        r.cableName,
-      ]
-        .map(escapeCsvCell)
-        .join(','),
-    );
+    const cells: (string | number)[] = [
+      r.index,
+      r.linkName,
+      r.fromDeviceId,
+      r.fromGroup,
+      r.fromRole,
+      r.fromPool,
+      r.fromPoolPort,
+      r.fromDevicePort,
+      r.fromMode,
+      r.fromOpticName,
+      r.toDeviceId,
+      r.toGroup,
+      r.toRole,
+      r.toPool,
+      r.toPoolPort,
+      r.toDevicePort,
+      r.toMode,
+      r.toOpticName,
+      r.speedGbps !== undefined ? formatGbps(r.speedGbps) : '',
+      r.cableName,
+    ];
+    if (cablePnByLink) cells.push(cablePnByLink.get(r.linkIndex) ?? '');
+    lines.push(cells.map(escapeCsvCell).join(','));
   }
   return lines.join('\n');
 }
