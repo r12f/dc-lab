@@ -1,0 +1,13 @@
+{
+  "schema": "dc-lab/optic@1",
+  "id": "osfp-800g-dr4",
+  "name": "800G OSFP DR4+ RHS",
+  "packaging": "module",
+  "formFactor": "OSFP",
+  "heatSink": "RHS",
+  "speedGbps": 800,
+  "reach": "DR4+",
+  "fiberConnector": "MPO-12",
+  "reachM": 2000,
+  "powerW": 0
+}

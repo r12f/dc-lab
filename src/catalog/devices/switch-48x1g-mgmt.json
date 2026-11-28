@@ -8,10 +8,10 @@
     "system": "RU"
   },
   "depthMm": 254,
-  "weightKg": 0,
+  "weightKg": 4.2,
   "power": {
-    "typicalW": 0,
-    "maxW": 0
+    "typicalW": 45,
+    "maxW": 90
   },
   "psus": {
     "count": 2,

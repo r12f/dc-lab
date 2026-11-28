@@ -1,0 +1,107 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "switch-72x1600g-osfp",
+  "name": "72x1.6T OSFP Switch (8PSU)",
+  "category": "switch",
+  "height": {
+    "units": 4,
+    "system": "RU"
+  },
+  "depthMm": 850,
+  "weightKg": 75,
+  "power": {
+    "typicalW": 3200,
+    "maxW": 5600
+  },
+  "psus": {
+    "count": 8,
+    "inlet": "C20",
+    "ratedW": 2000
+  },
+  "ports": [
+    {
+      "id": "osfp",
+      "label": "OSFP",
+      "role": "data",
+      "formFactor": "OSFP",
+      "heatSink": "IHS",
+      "count": 72,
+      "speedGbps": 1600,
+      "lanes": 8,
+      "face": "front",
+      "rows": 4,
+      "breakoutModes": [
+        "2x800G",
+        "4x400G"
+      ]
+    },
+    {
+      "id": "service",
+      "label": "SERVICE",
+      "role": "service",
+      "formFactor": "OSFP",
+      "heatSink": "IHS",
+      "count": 1,
+      "speedGbps": 400,
+      "lanes": 4,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 2,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default (max speed, no module)",
+      "groupDefaults": {},
+      "overrides": {}
+    },
+    {
+      "id": "all-2x800g",
+      "name": "All 2x800G, 2xDR4+",
+      "groupDefaults": {
+        "osfp": {
+          "mode": "2x800G",
+          "reach": "2xDR4+"
+        }
+      },
+      "overrides": {}
+    },
+    {
+      "id": "all-4x400g",
+      "name": "All 4x400G, 2xDR4+",
+      "groupDefaults": {
+        "osfp": {
+          "mode": "4x400G",
+          "reach": "2xDR4+"
+        }
+      },
+      "overrides": {}
+    }
+  ],
+  "defaultProfileId": "default"
+}
