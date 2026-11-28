@@ -47,7 +47,6 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
   const power = bom.lines.reduce((w, l) => w + lineTotalW(l), 0);
   const upperBound = bom.groups.some((g) => g.pools.some((p) => p.ports && !p.exact));
   const opticName = (id: string) => lib.optics.get(id)?.name ?? `${id} (unknown)`;
-  const cableName = (id: string) => lib.cableMedia.get(id)?.name ?? `${id} (unknown)`;
 
   return (
     <section className="topo-bom" style={{ height }} aria-label="Estimated BOM From Virtual Topo">
@@ -66,7 +65,7 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
               <thead>
                 <tr>
                   <th>Group</th><th>Role</th><th className="num">Devices</th><th>Device type</th><th>Breakout profile</th><th>Pool</th><th className="num">Speed</th>
-                  <th className="num">Ports / device</th><th className="num">Cages / device</th><th>Optic per cage</th><th className="num">Optics</th><th>Cable</th>
+                  <th className="num">Ports / device</th><th className="num">Cages / device</th><th>Optic per cage</th><th className="num">Optics</th>
                 </tr>
               </thead>
               <tbody>
@@ -94,9 +93,8 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
                           <td className="num">{bound(p, p.cages)}</td>
                           <td className={g.poolOptics[p.pool] ? undefined : 'muted'}>{g.poolOptics[p.pool] ? opticName(g.poolOptics[p.pool]) : 'not set'}</td>
                           <td className="num">{p.optics.length ? p.optics.map((o) => `${p.exact ? '' : '≤ '}${fmt(o.total)}`).join(', ') : ''}</td>
-                          <td className={p.cableId ? undefined : 'muted'}>{p.cableId ? cableName(p.cableId) : 'not set'}</td>
                         </>
-                      ) : <td colSpan={7} className="muted">no port pools</td>}
+                      ) : <td colSpan={6} className="muted">no port pools</td>}
                     </tr>
                   ));
                 })}
@@ -111,9 +109,8 @@ export function TopoBomPane({ lib, topo, settings, onChange, filename, height }:
           <BomTable lines={bom.lines} filename={`${filename}-estimated`} columns={columns}
             itemsOf={(id) => lib.variants.of(id)} onPick={(key, itemId) => onChange({ ...settings, items: withKey(settings.items, key, itemId) })} />
           <p className="muted">
-            Cables: per link spec, the cable its pools take — one joining both ends when they take the same, else one at
-            each end — over the links one cable carries. Cable lengths, fiber housings, trunks, racks and power
-            distribution depend on the DC layout and are not estimated.
+            Cables: per link spec, the cable the link sets — over the links one cable carries. Cable lengths, fiber
+            housings, trunks, racks and power distribution depend on the DC layout and are not estimated.
           </p>
         </Section>
       </div>

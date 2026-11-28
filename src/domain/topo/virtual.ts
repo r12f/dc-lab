@@ -25,6 +25,8 @@ export interface VGroup {
   name: string;
   role: string;
   count: number;
+  /** Optional device ID template (`"{dc.id}-{group.role}-{device.index:3}"`). */
+  idFormat?: string;
   partitions: Partition[];
   /**
    * Device type of every member: an item type id of the Devices module. A pool port's number is its device port:
@@ -34,8 +36,6 @@ export interface VGroup {
   deviceType?: string;
   /** Pool name -> optic type in its ports' cages (Optics module id), when set. */
   poolOptics: Record<string, string>;
-  /** Pool name -> type of the cable plugged into its ports (fiber, or a DAC / AEC / AOC into the cage), when set. */
-  poolCables: Record<string, string>;
   /** Pool name -> number of ports. */
   pools: Record<string, number>;
   /** Pool name -> ports per top-level list entry (a pool listed as several entries, e.g. one per peer slot). */
@@ -53,6 +53,8 @@ export interface VLink {
   pattern: 'mesh' | 'round-robin';
   perPair: number;
   map: { from: string[]; to: string }[];
+  /** Cable type joining both ends of the link (Optics & Cables module id), when set. */
+  cable?: string;
   /** Links the spec generates, from partition sizes (undefined when it cannot be derived). */
   links?: number;
   /** Instance pairs (from instances that find a peer). */
@@ -67,7 +69,13 @@ export interface VLink {
   toPorts?: number;
 }
 export interface Problem { line?: number; message: string }
-export interface VirtualTopo { name: string; groups: VGroup[]; links: VLink[]; problems: Problem[] }
+export interface VirtualTopo {
+  name: string;
+  dc?: { id?: string };
+  groups: VGroup[];
+  links: VLink[];
+  problems: Problem[];
+}
 
 type Obj = { [k: string]: YamlValue };
 const isObj = (v: YamlValue | undefined): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -91,12 +99,16 @@ export function expandPorts(pat: string): string[] {
   return items.flatMap((it) => expandPorts(pat.slice(0, m.index) + it + pat.slice(m.index + m[0].length)));
 }
 
+/** Keys of the optional top-level `dc` map. */
+export const DC_KEYS = ['id'];
 /** Keys of a device set group, in the order the file writes them. */
-export const GROUP_KEYS = ['role', 'count', 'partitions', 'device_type', 'ports'];
+export const GROUP_KEYS = ['role', 'count', 'id_format', 'partitions', 'device_type', 'ports'];
 /** Keys of a partition: equal sets (`count`, a set's size derived) or uneven `sizes`. */
 export const PARTITION_KEYS = ['key', 'count', 'sizes', 'per'];
 /** Keys of a pool written as a map. */
-export const POOL_KEYS = ['ports', 'optic', 'cable'];
+export const POOL_KEYS = ['ports', 'optic'];
+/** Keys of a link spec, in the order the file writes them. */
+export const LINK_KEYS = ['name', 'from', 'to', 'pattern', 'map', 'cable'];
 
 /** The keys of a map its schema does not define, as a problem (`<where> takes a, b, not x`). */
 function extraKeys(where: string, m: Obj, keys: string[]): Problem[] {
@@ -144,6 +156,15 @@ export function parseVirtual(source: string): VirtualTopo {
     return { name: '', groups: [], links: [], problems: [{ line: e instanceof YamlError ? e.line : undefined, message: (e as Error).message }] };
   }
   if (!isObj(doc)) return { name: '', groups: [], links: [], problems: [{ message: 'The file must be a map (topology, device_set_groups, topo, ...).' }] };
+  let dc: { id?: string } | undefined;
+  if (doc.dc !== undefined) {
+    if (!isObj(doc.dc)) problems.push({ message: 'dc: must be a map' });
+    else {
+      problems.push(...extraKeys('dc', doc.dc, DC_KEYS));
+      const dcId = str(doc.dc.id);
+      dc = dcId !== undefined ? { id: dcId } : {};
+    }
+  }
   const groups: VGroup[] = [];
   const dsg = doc.device_set_groups;
   if (!isObj(dsg)) problems.push({ message: 'device_set_groups: missing or not a map' });
@@ -183,26 +204,25 @@ export function parseVirtual(source: string): VirtualTopo {
     const poolSlots: Record<string, number[]> = {};
     const poolNames: Record<string, string[]> = {};
     const poolOptics: Record<string, string> = {};
-    const poolCables: Record<string, string> = {};
     if (isObj(g.ports)) for (const [k, raw] of Object.entries(g.ports)) {
-      // A pool is its ports, or a map of its ports with the optic and cable they take.
+      // A pool is its ports, or a map of its ports with the optic they take.
       let v: YamlValue | undefined = raw;
       if (isObj(raw)) {
         v = raw.ports;
         if (v === undefined) problems.push({ message: `group ${name}: pool ${k} has no ports` });
         problems.push(...extraKeys(`group ${name}: pool ${k}`, raw, POOL_KEYS));
-        const optic = str(raw.optic); const cable = str(raw.cable);
+        const optic = str(raw.optic);
         if (optic) poolOptics[k] = optic;
-        if (cable) poolCables[k] = cable;
       }
       poolNames[k] = poolPorts(v);
       pools[k] = poolNames[k].length;
       if (Array.isArray(v) && v.length > 1) poolSlots[k] = v.map((e) => poolPorts(e).length);
     }
     const deviceType = str(g.device_type);
+    const idFormat = str(g.id_format);
     groups.push({
-      name, role: str(g.role) ?? '', count: count ?? 0, partitions, ...(deviceType ? { deviceType } : {}),
-      poolOptics, poolCables, pools, poolSlots, poolNames,
+      name, role: str(g.role) ?? '', count: count ?? 0, ...(idFormat ? { idFormat } : {}), partitions,
+      ...(deviceType ? { deviceType } : {}), poolOptics, pools, poolSlots, poolNames,
     });
   }
   const byName = new Map(groups.map((g) => [g.name, g]));
@@ -212,6 +232,7 @@ export function parseVirtual(source: string): VirtualTopo {
   for (const [index, t] of (Array.isArray(topo) ? topo : []).entries()) {
     if (!isObj(t)) continue;
     const name = str(t.name) ?? `link ${links.length + 1}`;
+    problems.push(...extraKeys(name, t, LINK_KEYS));
     const end = (v: YamlValue | undefined, side: string): VEnd | undefined => {
       if (!isObj(v)) { problems.push({ message: `${name}: ${side} missing` }); return undefined; }
       const group = str(v.group) ?? '';
@@ -245,7 +266,11 @@ export function parseVirtual(source: string): VirtualTopo {
       }
     }
     if (!from || !to) continue;
-    const link: VLink = { index, name, from, to, pattern: type === 'round-robin' ? 'round-robin' : 'mesh', perPair: num(pt.per_pair) ?? 1, map };
+    const cable = str(t.cable);
+    const link: VLink = {
+      index, name, from, to, pattern: type === 'round-robin' ? 'round-robin' : 'mesh', perPair: num(pt.per_pair) ?? 1, map,
+      ...(cable ? { cable } : {}),
+    };
     Object.assign(link, linkCount(link, byName));
     links.push(link);
   }
@@ -261,7 +286,7 @@ export function parseVirtual(source: string): VirtualTopo {
       if (need > have) problems.push({ message: `${l.name}: each ${g.name} device needs ${need} ports, pool ${e.ports} has ${have}` });
     }
   }
-  return { name: str(doc.topology) ?? '', groups, links, problems };
+  return { name: str(doc.topology) ?? '', ...(dc ? { dc } : {}), groups, links, problems };
 }
 
 /** Instances of an end: how many, devices per instance (mean), and devices in the largest instance. */

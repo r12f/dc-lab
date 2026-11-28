@@ -19,6 +19,7 @@ Design the virtual topology first, then describe the physical facts, then map on
 ```yaml
 topology: <name>
 version: 1
+dc: { id: <dc id> }            # optional
 scope: { ... }                 # optional
 device_set_groups: { ... }
 topo: [ ... ]
@@ -81,9 +82,10 @@ One entry per tier, keyed by group name.
 |---|---|
 | `role` | device role of every member |
 | `count` | number of devices |
+| `id_format` | optional: device ID template (`"{dc.id}-{group.role}-{device.index:3}"`) |
 | `partitions` | list of `{ key, count }` — the group is cut into `count` equal sets by the value of `key`; a set's size is the group's `count` ÷ the partition's, not written; or `{ key, sizes: { "<value>": n, … } }` for uneven sets |
 | `device_type` | optional: the device type of every member — an item type id of the Devices module (`switch-64x800g-osfp`) |
-| `ports` | named port pools, each in the order its ports are used; a pool is its ports, or `{ ports, optic, cable }` (below) |
+| `ports` | named port pools, each in the order its ports are used; a pool is its ports, or `{ ports, optic }` (below) |
 
 Each partition key is a logical property of the member. Its value comes from the mapping, never from the physical
 location. Built in per partition: `<key>.index` = a member's position inside its set (1..size, in member order).
@@ -119,7 +121,6 @@ A pool written as a map also sets what its ports take:
 |---|---|
 | `ports` | the pool's ports, as above |
 | `optic` | optional: the optic in its cages — an optic type id of Optics & Cables (`osfp-800g-2xdr4-ihs`) |
-| `cable` | optional: the cable plugged into its ports — a fiber cable into the optic, or a DAC / AEC / AOC into the cage (no `optic`) |
 
 ```yaml
   dt0:
@@ -130,7 +131,6 @@ A pool written as a map also sets what its ports take:
       down:
         ports: etp{33-64}{a,b}
         optic: osfp-800g-2xdr4-ihs
-        cable: mpo12-smf
       up: { ports: "etp{1-32}{a,b}", optic: osfp-800g-2xdr4-ihs }
 ```
 
@@ -145,13 +145,14 @@ that gives what its pools need, each cage resolved as a Rack Designer placement 
 Among the profiles that fit, the one leaving the fewest used cages at native defaults (no setting for the cage or
 its port group) wins, then the one fitting the fewest modules in cages the group does not use, then the device's
 profile order. In the example the shipped "All 2x400G, 2xDR4" fits. No profile fits: a problem lists, per profile,
-the first need it misses. The profile's own optics are not used: optics and cables come from the pools.
+the first need it misses. The profile's own optics are not used: optics come from the pools and cables from the links.
 
 Also checked: every pool port has a number and names a port the device has; a pool's optic fits its cages (form
-factor, heat sink, no faster than the cage); a fiber cable mates the pool's optic (connector, gender, fiber type)
-and a DAC / AEC / AOC plugs into the cage with no optic; a direct-attach cable on one end of a link faces no optic
-and no other cable at the other end. A key a group, partition or pool does not take is a problem
-(`group a takes role, count, partitions, device_type, ports, not port_map`).
+factor, heat sink, no faster than the cage); a link's `cable` fits both ends of the link (a fiber or breakout cable
+mates both ends' optics or native fiber ports in either A→B or B→A orientation, a copper patch cable mates native
+copper ports, and a DAC / AEC / AOC plugs into both cages at matching speed with no optic on either pool). A key a
+group, partition, pool or link does not take is a problem
+(`group a takes role, count, id_format, partitions, device_type, ports, not port_map`).
 
 ### `topo`
 
@@ -167,6 +168,7 @@ spec is written as several specs.
 | `ports` | the pool both ends take their ports from |
 | `map` | optional: `[ { from: ["1", "5"], to: "1" } ]` — which `from` key values link to which `to` key value. Without it, instances with equal key values link. |
 | `pattern` | `{ type, per_pair }` |
+| `cable` | optional: the cable joining both ends of the link — an item type id of Optics & Cables (`mpo12-smf`, `dac-800g`, `cat6a`) |
 
 Pattern types:
 
@@ -280,11 +282,11 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
   - a device set group: name, role, count, category (switch, server, …: the current device type's, else every
     category) and device type (the Devices module's types of that category with a port that is not power; the
     category only narrows the list, the file keeps `device_type: <id>`; the matched breakout profile under it), partitions (key and count with the set size shown, or `sizes` as `1: 54, 2: 18`) and port pools — ports, port count, and
-    under each the optic (those its cages take) and cable (for the optic, else direct-attach cables for the cage);
-    a pool given an optic or cable is written `{ ports, optic, cable }`, back to its ports when both are cleared;
+    under each the optic (those its cages take);
+    a pool given an optic is written `{ ports, optic }`, back to its ports when cleared;
     + adds a row, ✕ removes it; **Delete** removes the group with the link specs and mapping entries naming it;
   - a link spec: name and its link count, per end the group, port pool and key, the pattern (mesh / round-robin,
-    per pair); filters and `map` are shown and edited in the code. **Delete** removes it.
+    per pair), and the cable; filters and `map` are shown and edited in the code. **Delete** removes it.
 
   A text field commits on Enter or leaving it (Esc restores). Each edit rewrites only the lines (or, in a flow
   `{ }` / `[ ]`, only the value) it changes, so comments and alignment stay; a new key goes where the file's key
@@ -336,20 +338,18 @@ Topology files are kept in the project (`topologies[]`: `{ id, name, source, vie
     and **Reset box positions** (shown when a box is moved or collapsed).
 - **Under the diagram — Estimated BOM From Virtual Topo** (the divider above it is draggable, double-click resets):
   what building the virtual topology takes, from each group's `device_type` at the breakout profile matched to its
-  ports and each pool's optic and cable. Only the item bought per line is picked here, saved with the topology:
+  ports, each pool's optic, and each link's cable. Only the item bought per line is picked here, saved with the topology:
   `bom: { items: { <item type>: <item> } }`.
   - totals: devices, links, optics, cables, typical power (sum of the BOM lines);
   - **Hardware per group**, a row per pool: the group's device type and matched breakout profile, the pool's speed, the
     ports one device uses (the port grid's fill), the device ports (cages) they sit in (a cage shared with an earlier
-    pool of the group counts there), the pool's optic and the optics over the group (devices x cages), the pool's
-    cable. `≤`
+    pool of the group counts there), the pool's optic and the optics over the group (devices x cages). `≤`
     marks an upper bound: when devices of uneven sets or filtered link ends use fewer ports, every device is counted
     at the largest set's need;
   - **BOM**: a line per device type, optic type and cable type, quantities summed over the groups / link specs; a
-    group without a device type is its own line (`<role> (no device type)`). Cables per link spec: a cable type
-    both ends' pools take is one cable joining them, different types (e.g. patch cords to a panel at each end) count
-    at each end; qty = links / the links one cable carries at that end = its connectors there x the lanes each optic
-    connector holds (fanout / connectors per cage: 2x400G on 2xDR4 = 1, 8x100G = 4; a 1 MPO to 4 LC breakout = 4).
+    group without a device type is its own line (`<role> (no device type)`). Cables per link spec: computed directly
+    from `link.cable`; qty = links / the links one cable carries at its oriented end = its connectors there x the lanes
+    each optic connector holds (fanout / connectors per cage: 2x400G on 2xDR4 = 1, 8x100G = 4; a 1 MPO to 4 LC breakout = 4).
     Columns: Item, Category, Vendor / Model (PN) (the item picked per line, Generic by default), custom properties,
     Qty, Derivation (`dt0 512 + t1 256`, `t1 down 256 × 64`, `dt0-t1 131,072 ÷ 4`), Power/pcs (typical power of one
     piece, from the picked item; an active cable per plug), Total W (Qty x Power/pcs). Export CSV;

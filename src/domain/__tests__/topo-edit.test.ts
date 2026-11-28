@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseYaml } from '../topo/yaml';
 import { renameYamlKey, setYamlIn } from '../topo/yaml-edit';
-import { addGroup, addLink, deleteGroup, deleteLink, linksOfGroup, newGroupName, newLinkName, renameGroup, renamePool, setGroupField, setLinkField } from '../topo/edit';
+import { addGroup, addLink, deleteGroup, deleteLink, linksOfGroup, newGroupName, newLinkName, renameGroup, renamePool, setDcId, setGroupField, setLinkField } from '../topo/edit';
 import { parseVirtual } from '../topo/virtual';
 
 const SRC = `topology: demo
@@ -142,8 +142,35 @@ describe('topology edits', () => {
     const fresh = addLink(addGroup('topology: t\n', 'a', { role: 'r', count: 1, ports: { p: 'p1' } }), { ...link, from: { group: 'a', ports: 'p' }, to: { group: 'a', ports: 'p' } }).source;
     expect(fresh).toBe('topology: t\ndevice_set_groups:\n  a:\n    role: r\n    count: 1\n    ports:\n      p: p1\ntopo:\n  - name: link\n    from: { group: a, ports: p }\n    to: { group: a, ports: p }\n    pattern: { type: mesh, per_pair: 1 }\n');
   });
-  it('sets link fields, keeping the item layout', () => {
+  it('sets link fields, dc.id, id_format, and collapses pools back to plain ports when optic is cleared', () => {
     expect(changed(SRC, setLinkField(SRC, 0, ['pattern', 'type'], 'round-robin'))).toEqual(['    pattern: { type: round-robin, per_pair: 1 }']);
     expect(changed(SRC, setLinkField(SRC, 0, ['name'], 'st'))).toEqual(['  - name: st             # each server to its pod\'s tor']);
+
+    // Link `cable` inserts after `pattern`/`map` in block and inline links, and removes cleanly.
+    const cabled0 = setLinkField(SRC, 0, ['cable'], 'mpo12-smf');
+    expect(cabled0).toContain('    pattern: { type: mesh, per_pair: 1 }\n    cable: mpo12-smf\n');
+    expect(setLinkField(cabled0, 0, ['cable'], undefined)).toBe(SRC);
+    const cabled1 = setLinkField(SRC, 1, ['cable'], 'dac-800g');
+    expect(changed(SRC, cabled1)).toEqual([
+      '  - { name: tor-flat, from: { group: tor, ports: up }, to: { group: flat, ports: p }, pattern: { type: mesh, per_pair: 1 }, cable: dac-800g }',
+    ]);
+
+    // Top-level `dc.id` inserts between `version` and `device_set_groups`, updates in place, and removes `dc` when cleared.
+    const withDc = setDcId(SRC, 'us-west-2');
+    expect(parseVirtual(withDc).dc).toEqual({ id: 'us-west-2' });
+    expect(withDc.indexOf('dc:')).toBeGreaterThan(withDc.indexOf('version: 1'));
+    expect(withDc.indexOf('dc:')).toBeLessThan(withDc.indexOf('device_set_groups:'));
+    expect(parseVirtual(setDcId(withDc, 'eu-central-1')).dc).toEqual({ id: 'eu-central-1' });
+    expect(setDcId(withDc, '')).toBe(SRC);
+    expect(setDcId(withDc, undefined)).toBe(SRC);
+
+    // Group `id_format` inserts in GROUP_KEYS order (`count` -> `id_format` -> `partitions`) and clears cleanly.
+    const withFmt = setGroupField(SRC, 'server', ['id_format'], '{dc.id}-{group.role}-{device.index:2}');
+    expect(parseVirtual(withFmt).groups[0].idFormat).toBe('{dc.id}-{group.role}-{device.index:2}');
+    expect(setGroupField(withFmt, 'server', ['id_format'], undefined)).toBe(SRC);
+
+    // Clearing `['ports', pool, 'optic']` collapses `{ ports: X, optic: o1 }` back to `X`.
+    const withOptic = setGroupField(SRC, 'server', ['ports', 'nic'], { ports: 'p{1-2}', optic: 'o1' });
+    expect(setGroupField(withOptic, 'server', ['ports', 'nic', 'optic'], undefined)).toBe(SRC);
   });
 });

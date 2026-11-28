@@ -5,8 +5,8 @@ import { DEFAULT_OPTIONS, groupDevices, layoutDiagram, M, type GroupBox } from '
 import { pick, sliceTopo, withGaps } from '../topo/slice';
 import { portLayout, portUse } from '../topo/ports';
 import { ruleText } from '../topo/rule';
-import { estimateTopoBom, topoBomColumns } from '../topo/bom';
-import { hardwareProblems, topoHardware } from '../topo/hardware';
+import { CABLE_BOM_CSV_HEADERS, cableBomToCsv, estimateTopoBom, topoBomColumns } from '../topo/bom';
+import { compatibleLinkCables, hardwareProblems, topoHardware } from '../topo/hardware';
 import { SAMPLE_TOPOLOGY } from '../topo/sample';
 import { normalizeProject, serializeProject } from '../project/serializer';
 import { emptyProject } from '../project/types';
@@ -250,12 +250,13 @@ describe('diagram', () => {
 describe('device type, pool optics and cables: the breakout profile is matched to the ports', () => {
   // Test-local item (made-up vendor, model and power) and breakout profiles.
   const sw: ItemVariant = { id: 'sw-x', name: 'SW', target: 'device', itemId: 'switch-64x800g-osfp', vendor: 'V', model: 'SW', properties: {}, specs: { typicalW: 100 } };
+  const aecVar: ItemVariant = { id: 'aec-x', name: 'AEC', target: 'cable', itemId: 'aec-800g', vendor: 'Credo', model: 'AEC, "800G"', properties: {}, specs: { typicalW: 7 } };
   const profile = (id: string, name: string, groupDefaults: Record<string, PortSetting>, overrides: Record<string, PortSetting> = {}): BreakoutProfile =>
     ({ id, name, groupDefaults, overrides });
   const O = 'osfp-800g-2xdr4-ihs';
   const Q = 'qsfp112-400g-dr4';
   const cages = (from: number, to: number, s: PortSetting) => Object.fromEntries(Array.from({ length: to - from + 1 }, (_, i) => [`osfp/${from + i}`, s]));
-  const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, { ...emptyProject(), variants: [sw] }, [], {}, {
+  const lib = new Library(BUILTIN_CATALOG_FOR_TESTS, { ...emptyProject(), variants: [sw, aecVar] }, [], {}, {
     'switch-64x800g-osfp': { defaultProfileId: 'default', breakoutProfiles: [
       profile('default', 'Default', {}),
       profile('w2', 'All 2x400G', { osfp: { mode: '2x400G', opticId: O } }),
@@ -278,14 +279,14 @@ describe('device type, pool optics and cables: the breakout profile is matched t
     count: 8
     device_type: server-gpu-8u
     partitions: [ { key: pod, count: 2 } ]
-    ports: { nic: { ports: fe{1-2}{a-b}, optic: ${Q}, cable: mpo12-smf } }
+    ports: { nic: { ports: fe{1-2}{a-b}, optic: ${Q} } }
   t:
     role: tor
     count: 4
     device_type: switch-64x800g-osfp
     partitions: [ { key: pod, count: 2 } ]
     ports:
-      down: { ports: etp{1-4}{a-b}, optic: ${O}, cable: mpo12-smf }
+      down: { ports: etp{1-4}{a-b}, optic: ${O} }
       up:
         ports: etp{5-8}{a-b}
         optic: ${O}
@@ -293,26 +294,45 @@ describe('device type, pool optics and cables: the breakout profile is matched t
     role: spine
     count: 2
     device_type: switch-64x800g-osfp
-    ports: { down: { ports: etp{1-8}a, optic: ${O}, cable: mpo12-4xlc-smf-breakout } }
+    ports: { down: { ports: etp{1-8}a, optic: ${O} } }
 topo:
-  - { name: s-t, from: { group: s, key: "\${pod}", ports: nic }, to: { group: t, key: "\${pod}", ports: down }, pattern: { type: mesh, per_pair: 1 } }
-  - { name: t-u, from: { group: t, ports: up }, to: { group: u, ports: down }, pattern: { type: mesh, per_pair: 1 } }
+  - { name: s-t, from: { group: s, key: "\${pod}", ports: nic }, to: { group: t, key: "\${pod}", ports: down }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-smf }
+  - { name: t-u, from: { group: t, ports: up }, to: { group: u, ports: down }, pattern: { type: mesh, per_pair: 1 }, cable: mpo8-smf }
 `);
 
-  it('parses pools with the optic and cable their ports take; a key a group or pool does not take is a problem', () => {
+  it('parses dc.id, id_format, pool optics, and link cables; rejects pool cable and unknown keys', () => {
     expect(v.problems).toEqual([]);
     const [s, t] = v.groups;
-    expect([s.poolNames.nic, s.poolOptics, s.poolCables, t.poolOptics, t.poolCables])
-      .toEqual([['fe1a', 'fe1b', 'fe2a', 'fe2b'], { nic: Q }, { nic: 'mpo12-smf' }, { down: O, up: O }, { down: 'mpo12-smf' }]);
-    const bad = parseVirtual(`device_set_groups:
+    expect([s.poolNames.nic, s.poolOptics, t.poolOptics, v.links.map((l) => l.cable)])
+      .toEqual([['fe1a', 'fe1b', 'fe2a', 'fe2b'], { nic: Q }, { down: O, up: O }, ['mpo12-smf', 'mpo8-smf']]);
+
+    const withDc = parseVirtual(`topology: cluster-a
+dc: { id: us-east-1 }
+device_set_groups:
+  a: { role: compute, count: 2, id_format: "{dc.id}-{group.role}-{device.index:2}", ports: { p: e1 } }
+`);
+    expect(withDc.problems).toEqual([]);
+    expect(withDc.dc).toEqual({ id: 'us-east-1' });
+    expect(withDc.groups[0].idFormat).toBe('{dc.id}-{group.role}-{device.index:2}');
+
+    const bad = parseVirtual(`dc:
+  id: dc1
+  region: west
+device_set_groups:
   a: { role: w, count: 1, device_type: x, port_map: [ { ports: q1, device_ports: osfp/1 } ], ports: { p: q1 } }
-  b: { role: w, count: 1, ports: { r: { optic: o1 }, s: { ports: q3, mode: 8x100G } } }
+  b: { role: w, count: 1, ports: { r: { optic: o1 }, s: { ports: q3, cable: mpo12-smf } } }
+topo:
+  - { name: ab, from: { group: a, ports: p }, to: { group: b, ports: s }, pattern: { type: mesh, per_pair: 1 }, bogus: 1 }
 `);
     expect(bad.problems.map((p) => p.message)).toEqual([
-      'group a takes role, count, partitions, device_type, ports, not port_map',
+      'dc takes id, not region',
+      'group a takes role, count, id_format, partitions, device_type, ports, not port_map',
       'group b: pool r has no ports',
-      'group b: pool s takes ports, optic, cable, not mode',
+      'group b: pool s takes ports, optic, not cable',
+      'ab takes name, from, to, pattern, map, cable, not bogus',
     ]);
+    expect(parseVirtual('dc: bad\ndevice_set_groups:\n  a: { role: w, count: 1, ports: { p: q1 } }\n').problems.map((p) => p.message))
+      .toEqual(['dc: must be a map']);
   });
   it("puts a pool port on its device port by number: its port group's, else the n-th data port", () => {
     const hw = topoHardware(lib, v);
@@ -344,7 +364,7 @@ topo:
       `group k: pool p: ${lib.optics.get('osfp-1600g-2xdr4-ihs')!.name} is 1.6T, the OSFP cages 800G`,
     ]);
   });
-  it('checks the optic and cable each pool sets, and a direct-attach cable against the other end', () => {
+  it('validates pool optics and two-ended link cables (fiber, DAC/AEC, Cat6A, breakout, and mismatched ends)', () => {
     const w = parseVirtual(`device_set_groups:
   a:
     role: a
@@ -354,35 +374,84 @@ topo:
       p1: { ports: etp1, optic: nope }
       p2: { ports: etp2, optic: ${Q} }
       p3: { ports: etp3, optic: osfp-800g-2xdr4 }
-      p4: { ports: etp4, cable: nope }
-      p5: { ports: etp5, optic: ${O}, cable: dac-800g }
-      p6: { ports: etp6, cable: mpo12-smf }
-      p7: { ports: etp7, optic: ${O}, cable: lc-smf }
-      p8: { ports: etp8, cable: dac-400g-qsfpdd-2x200g }
+      p4: etp4
+      p5: { ports: etp5, optic: ${O} }
+      p6: etp6
+      p7: { ports: etp7, optic: ${O} }
+      p8: etp8
+  b:
+    role: b
+    count: 1
+    device_type: switch-64x800g-osfp
+    ports:
+      p4: etp4
+      p5: etp5
+      p6: { ports: etp6, optic: ${O} }
+      p7: { ports: etp7, optic: ${O} }
+      p8: etp8
+topo:
+  - { name: l-unknown, from: { group: a, ports: p4 }, to: { group: b, ports: p4 }, pattern: { type: mesh, per_pair: 1 }, cable: nope }
+  - { name: l-power,   from: { group: a, ports: p4 }, to: { group: b, ports: p4 }, pattern: { type: mesh, per_pair: 1 }, cable: power-c13-c14 }
+  - { name: l-console, from: { group: a, ports: p4 }, to: { group: b, ports: p4 }, pattern: { type: mesh, per_pair: 1 }, cable: async-octal-68pin-8xrj45 }
+  - { name: l-dac-opt, from: { group: a, ports: p5 }, to: { group: b, ports: p5 }, pattern: { type: mesh, per_pair: 1 }, cable: dac-800g }
+  - { name: l-no-opt,  from: { group: a, ports: p6 }, to: { group: b, ports: p6 }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-smf }
+  - { name: l-bad-con, from: { group: a, ports: p7 }, to: { group: b, ports: p7 }, pattern: { type: mesh, per_pair: 1 }, cable: lc-smf }
+  - { name: l-bad-bo,  from: { group: a, ports: p7 }, to: { group: b, ports: p7 }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-4xlc-smf-breakout }
+  - { name: l-bad-dac, from: { group: a, ports: p8 }, to: { group: b, ports: p8 }, pattern: { type: mesh, per_pair: 1 }, cable: dac-400g-qsfpdd-2x200g }
 `);
     const name = (id: string) => lib.optics.get(id)?.name ?? lib.cableMedia.get(id)!.name;
-    expect(hardwareProblems(lib, w).map((p) => p.message).filter((m) => m.startsWith('group a: pool'))).toEqual([
+    expect(hardwareProblems(lib, w).map((p) => p.message).filter((m) => !m.startsWith('group a: no breakout profile'))).toEqual([
       'group a: pool p1 optic "nope" is not in Optics & Cables',
       `group a: pool p2: ${name(Q)} does not fit the OSFP cages`,
       `group a: pool p3: ${name('osfp-800g-2xdr4')} is RHS, the OSFP cages IHS`,
-      'group a: pool p4 cable "nope" is not in Optics & Cables',
-      `group a: pool p5: ${name('dac-800g')} plugs into the cage itself, so the pool takes no optic`,
-      `group a: pool p6: ${name('mpo12-smf')} needs an optic in the cage`,
-      `group a: pool p7: ${name('lc-smf')} does not fit ${name(O)}`,
-      `group a: pool p8: ${name('dac-400g-qsfpdd-2x200g')} does not plug into the OSFP cages`,
+      'l-unknown: cable "nope" is not in Optics & Cables',
+      `l-power: ${name('power-c13-c14')} is not a data cable`,
+      `l-console: ${name('async-octal-68pin-8xrj45')} is not a data cable`,
+      `l-dac-opt: ${name('dac-800g')} plugs into the cage itself, so a p5 takes no optic`,
+      `l-no-opt: ${name('mpo12-smf')} needs an optic in a p6`,
+      `l-bad-con: ${name('lc-smf')} does not fit ${name(O)} on a p7`,
+      `l-bad-bo: ${name('mpo12-4xlc-smf-breakout')} does not fit ${name(O)} on b p7`,
+      `l-bad-dac: ${name('dac-400g-qsfpdd-2x200g')} does not plug into the OSFP cages of a p8`,
     ]);
-    const x = parseVirtual(`device_set_groups:
-  a: { role: a, count: 1, device_type: switch-64x800g-osfp, ports: { p: { ports: etp{1-2}, cable: dac-800g } } }
-  b: { role: b, count: 1, device_type: switch-64x800g-osfp, ports: { p: { ports: etp1, optic: ${O} } } }
-  c: { role: c, count: 1, device_type: switch-64x800g-osfp, ports: { p: { ports: etp1, cable: aoc-800g } } }
+
+    // Valid two-ended links: DAC/AEC, native RJ45 Cat6A, and asymmetric MPO-to-4xLC breakout in both A->B and B->A orientations.
+    const valid = parseVirtual(`device_set_groups:
+  sw1: { role: leaf, count: 1, device_type: switch-64x800g-osfp, ports: { p: etp1 } }
+  sw2: { role: spine, count: 1, device_type: switch-64x800g-osfp, ports: { p: etp1 } }
+  oob1: { role: oob, count: 1, device_type: switch-48x1g-4x100g-mgmt, ports: { c: copper{1-2} } }
+  oob2: { role: oob, count: 1, device_type: switch-48x1g-4x100g-mgmt, ports: { c: copper{1-2} } }
+  mpo_sw: { role: agg, count: 1, device_type: switch-64x800g-osfp, ports: { d1: { ports: etp1{a-d}, optic: ${O} }, d2: { ports: etp2{a-d}, optic: ${O} } } }
+  lc_sw:  { role: tor, count: 4, device_type: switch-64x100g-qsfp28, ports: { u1: { ports: etp1, optic: qsfp28-100g-dr }, u2: { ports: etp2, optic: qsfp28-100g-dr } } }
 topo:
-  - { name: ab, from: { group: a, ports: p }, to: { group: b, ports: p }, pattern: { type: mesh, per_pair: 1 } }
-  - { name: ac, from: { group: a, ports: p }, to: { group: c, ports: p }, pattern: { type: mesh, per_pair: 1 } }
+  - { name: dac-link, from: { group: sw1, ports: p }, to: { group: sw2, ports: p }, pattern: { type: mesh, per_pair: 1 }, cable: aec-800g }
+  - { name: rj-link,  from: { group: oob1, ports: c }, to: { group: oob2, ports: c }, pattern: { type: round-robin, per_pair: 2 }, cable: cat6a }
+  - { name: bo-ab,    from: { group: mpo_sw, ports: d1 }, to: { group: lc_sw, ports: u1 }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-4xlc-smf-breakout }
+  - { name: bo-ba,    from: { group: lc_sw, ports: u2 }, to: { group: mpo_sw, ports: d2 }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-4xlc-smf-breakout }
 `);
-    expect(hardwareProblems(lib, x).map((p) => p.message)).toEqual([
-      `ab: ${name('dac-800g')} joins both cages, but b p has an optic`,
-      `ac: ${name('dac-800g')} joins both cages, but c p takes ${name('aoc-800g')}`,
+    expect(valid.problems).toEqual([]);
+    expect(hardwareProblems(lib, valid)).toEqual([]);
+    expect(compatibleLinkCables(lib, valid, valid.links[0]).map((c) => c.id).sort()).toEqual(['aec-800g', 'aoc-800g', 'dac-800g']);
+    expect(compatibleLinkCables(lib, valid, valid.links[1]).map((c) => c.id)).toEqual(['cat6a']);
+    expect(compatibleLinkCables(lib, valid, valid.links[2]).map((c) => c.id)).toContain('mpo12-4xlc-smf-breakout');
+    expect(compatibleLinkCables(lib, valid, valid.links[3]).map((c) => c.id)).toContain('mpo12-4xlc-smf-breakout');
+    const validBom = estimateTopoBom(lib, valid, { items: { 'aec-800g': 'aec-x' } });
+    expect(validBom.cables.map((c) => [c.link.name, c.perCable, c.qty])).toEqual([
+      ['dac-link', 1, 1],
+      ['rj-link', 1, 2],
+      ['bo-ab', 4, 1],
+      ['bo-ba', 4, 1],
     ]);
+    // Active AEC cable carries 2 * 7 = 14 W per cable, custom vendor/PN pick, and RFC-4180 CSV escaping.
+    expect(validBom.cableBom[0]).toMatchObject({
+      link: 'dac-link',
+      cableId: 'aec-800g',
+      pickKey: 'aec-800g',
+      itemId: 'aec-x',
+      vendorModel: 'Credo AEC, "800G"',
+      unitW: 14,
+      totalW: 14,
+    });
+    expect(cableBomToCsv(lib, validBom.cableBom)).toContain('"Credo AEC, ""800G""",1,dac-link 1,14,14');
   });
   it('takes a shipped profile (the spec example)', () => {
     const plain = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
@@ -432,13 +501,41 @@ topo:
     });
     expect(bom.groups.map((g) => g.profileName)).toEqual(['All 4x100G', 'All 8x100G', 'All 8x100G']);
   });
-  it('counts the cables of each link spec over the links one cable carries', () => {
-    // s-t: both ends take the MPO patch, one cable joins them; a QSFP112 DR4 at 4x100G holds 4 lanes per MPO.
-    // t-u: only u sets a cable, a 1 MPO to 4 LC breakout on a 2xDR4 module at 8x100G (4 lanes per MPO).
-    expect(bom.cables.map((c) => [c.link.name, c.cableId, c.end, c.perCable, c.qty])).toEqual([
-      ['s-t', 'mpo12-smf', undefined, 4, 4],
-      ['t-u', 'mpo12-4xlc-smf-breakout', 'u', 4, 2],
+  it('counts the cables of each link spec over the links one cable carries, builds CableBomRow entries, and exports CSV', () => {
+    // s-t: MPO-12 patch on 4x100G QSFP112 DR4 -> 4 lanes per MPO (16 ÷ 4 = 4).
+    // t-u: MPO-8 patch on 8x100G 2xDR4 -> 4 lanes per MPO (8 ÷ 4 = 2).
+    expect(bom.cables.map((c) => [c.link.name, c.cableId, c.perCable, c.qty])).toEqual([
+      ['s-t', 'mpo12-smf', 4, 4],
+      ['t-u', 'mpo8-smf', 4, 2],
     ]);
+    expect(bom.cableBom).toHaveLength(2);
+    expect(bom.cableBom[0]).toMatchObject({
+      link: 's-t',
+      fromGroup: 's',
+      fromRole: 'server',
+      fromDeviceType: 'server-gpu-8u',
+      fromPool: 'nic',
+      fromMode: '4x100G',
+      fromOpticId: Q,
+      toGroup: 't',
+      toRole: 'tor',
+      toDeviceType: 'switch-64x800g-osfp',
+      toPool: 'down',
+      toMode: '8x100G',
+      toOpticId: O,
+      links: 16,
+      cableId: 'mpo12-smf',
+      pickKey: 'mpo12-smf',
+      perCable: 4,
+      qty: 4,
+      derivation: 's-t 16 ÷ 4',
+      unitW: 0,
+      totalW: 0,
+    });
+    const csv = cableBomToCsv(lib, bom.cableBom);
+    expect(csv.split('\n')[0]).toBe(CABLE_BOM_CSV_HEADERS.join(','));
+    expect(csv).toContain('s-t,s,server,');
+    expect(csv).toContain(',4,s-t 16 ÷ 4,0,0');
   });
   it('merges lines by item type, with the derivation and the picked item', () => {
     expect(bom.lines.map((l) => [l.key, l.qty, l.notes[0]])).toEqual([
@@ -447,7 +544,7 @@ topo:
       [`optic:${Q}`, 8, 's nic 8 × 1'],
       [`optic:${O}`, 20, 't down 4 × 2 + t up 4 × 1 + u down 2 × 4'],
       ['cable:mpo12-smf', 4, 's-t 16 ÷ 4'],
-      ['cable:mpo12-4xlc-smf-breakout', 2, 't-u (u end) 8 ÷ 4'],
+      ['cable:mpo8-smf', 2, 't-u 8 ÷ 4'],
     ]);
     const swLine = bom.lines[1];
     expect([swLine.vendorModel, swLine.unitW, swLine.pickKey, swLine.itemId]).toEqual(['V SW', 100, 'switch-64x800g-osfp', 'sw-x']);

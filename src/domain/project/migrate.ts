@@ -1,7 +1,8 @@
 import { migrateSideKind } from '../rack/side-elements';
 import { abbrFromName, cleanAbbr } from '../design/abbr';
 import type { PortRole } from '../device/types';
-import { parseYaml, withoutComment } from '../topo/yaml';
+import { LINK_KEYS } from '../topo/virtual';
+import { parseYaml, withoutComment, type YamlValue } from '../topo/yaml';
 import { setYamlIn } from '../topo/yaml-edit';
 
 /**
@@ -475,21 +476,52 @@ function migrateBomItems(p: Json): Json {
   };
 }
 
+const isPlainObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+
 function migrateTopologySource(source: string): string {
   try {
     const doc = parseYaml(source);
-    if (doc && typeof doc === 'object' && !Array.isArray(doc)) {
-      const groups = (doc as Record<string, unknown>).device_set_groups;
-      if (groups && typeof groups === 'object' && !Array.isArray(groups)) {
-        let out = source;
-        for (const [name, g] of Object.entries(groups as Record<string, unknown>)) {
-          if (!g || typeof g !== 'object' || Array.isArray(g)) continue;
-          const dt = (g as Record<string, unknown>).device_type;
+    if (isPlainObj(doc)) {
+      let out = source;
+      const poolCableByRef = new Map<string, string>();
+      const groups = doc.device_set_groups;
+      if (isPlainObj(groups)) {
+        for (const [name, g] of Object.entries(groups)) {
+          if (!isPlainObj(g)) continue;
+          const dt = g.device_type;
           const next = typeof dt === 'string' ? own(RENAMED_IDS, dt) : undefined;
           if (next) out = setYamlIn(out, ['device_set_groups', name, 'device_type'], next);
+          if (isPlainObj(g.ports)) {
+            for (const [poolName, rawPool] of Object.entries(g.ports)) {
+              if (!isPlainObj(rawPool) || !('cable' in rawPool)) continue;
+              if (rawPool.cable !== undefined && rawPool.cable !== null && String(rawPool.cable).trim()) {
+                poolCableByRef.set(`${name}\u0000${poolName}`, String(renameId(rawPool.cable)));
+              }
+              const restKeys = Object.keys(rawPool).filter((k) => k !== 'cable');
+              if (restKeys.length === 1 && restKeys[0] === 'ports' && rawPool.ports !== undefined) {
+                out = setYamlIn(out, ['device_set_groups', name, 'ports', poolName], rawPool.ports as YamlValue);
+              } else {
+                out = setYamlIn(out, ['device_set_groups', name, 'ports', poolName, 'cable'], undefined);
+              }
+            }
+          }
         }
-        return out;
       }
+      if (poolCableByRef.size > 0 && Array.isArray(doc.topo)) {
+        for (const [i, linkItem] of doc.topo.entries()) {
+          if (!isPlainObj(linkItem)) continue;
+          if (typeof linkItem.cable === 'string' && linkItem.cable.trim()) continue;
+          const fromEnd = isPlainObj(linkItem.from) ? linkItem.from : undefined;
+          const toEnd = isPlainObj(linkItem.to) ? linkItem.to : undefined;
+          const fromCable = fromEnd ? poolCableByRef.get(`${String(fromEnd.group ?? '')}\u0000${String(fromEnd.ports ?? '')}`) : undefined;
+          const toCable = toEnd ? poolCableByRef.get(`${String(toEnd.group ?? '')}\u0000${String(toEnd.ports ?? '')}`) : undefined;
+          const cable = fromCable && toCable ? (fromCable === toCable ? fromCable : undefined) : (fromCable ?? toCable);
+          if (cable) {
+            out = setYamlIn(out, ['topo', i, 'cable'], cable, { order: LINK_KEYS });
+          }
+        }
+      }
+      return out;
     }
     return source;
   } catch {

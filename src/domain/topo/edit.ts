@@ -1,7 +1,9 @@
 import { uniqueId } from '../ids';
 import { parseYaml, type YamlValue } from './yaml';
 import { renameYamlKey, setYamlIn, type EditOptions, type YamlPath } from './yaml-edit';
-import { GROUP_KEYS, POOL_KEYS } from './virtual';
+import { GROUP_KEYS, LINK_KEYS, POOL_KEYS } from './virtual';
+
+export { LINK_KEYS };
 
 /**
  * Edits of a topology file the Topo Builder makes for its panels: each rewrites only the lines it changes (see
@@ -12,9 +14,7 @@ type Obj = { [k: string]: YamlValue };
 const isObj = (v: YamlValue | undefined): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);
 
 /** Top-level keys of a topology file, in the order it writes them. */
-export const TOP_KEYS = ['topology', 'version', 'device_set_groups', 'topo', 'device_labels', 'mapping'];
-/** Keys of a link spec, in the order the file writes them. */
-export const LINK_KEYS = ['name', 'from', 'to', 'pattern', 'map'];
+export const TOP_KEYS = ['topology', 'version', 'dc', 'device_set_groups', 'topo', 'device_labels', 'mapping'];
 
 /** The parsed file as a map (empty when it is not one). */
 export function topoDoc(src: string): Obj {
@@ -26,8 +26,32 @@ const linksOf = (d: Obj): YamlValue[] => (Array.isArray(d.topo) ? d.topo : []);
 const mappingOf = (d: Obj): YamlValue[] => (Array.isArray(d.mapping) ? d.mapping : []);
 const SIDES = ['from', 'to'] as const;
 
+/** Sets (or removes when blank/undefined) the top-level `dc.id` of a topology file. */
+export function setDcId(src: string, id: string | undefined): string {
+  const trimmed = id?.trim();
+  if (!trimmed) {
+    const dc = topoDoc(src).dc;
+    if (isObj(dc) && Object.keys(dc).some((k) => k !== 'id')) {
+      return setYamlIn(src, ['dc', 'id'], undefined, { order: TOP_KEYS });
+    }
+    return setYamlIn(src, ['dc'], undefined, { order: TOP_KEYS });
+  }
+  return setYamlIn(src, ['dc', 'id'], trimmed, { order: TOP_KEYS });
+}
+
 /** Sets (undefined: removes) a field of a device set group. */
 export function setGroupField(src: string, group: string, path: YamlPath, value: YamlValue | undefined, opts: EditOptions = {}): string {
+  // Clearing the last extra key of a pool map collapses `{ ports: X }` back to `X`.
+  if (path.length === 3 && path[0] === 'ports' && typeof path[1] === 'string' && value === undefined) {
+    const g = groupsOf(topoDoc(src))[group];
+    const rawPool = isObj(g) && isObj(g.ports) ? g.ports[path[1]] : undefined;
+    if (isObj(rawPool) && rawPool.ports !== undefined) {
+      const restKeys = Object.keys(rawPool).filter((k) => k !== path[2]);
+      if (restKeys.length === 1 && restKeys[0] === 'ports') {
+        return setYamlIn(src, ['device_set_groups', group, 'ports', path[1]], rawPool.ports, { order: [...GROUP_KEYS, ...POOL_KEYS], ...opts });
+      }
+    }
+  }
   return setYamlIn(src, ['device_set_groups', group, ...path], value, { order: [...GROUP_KEYS, ...POOL_KEYS], ...opts });
 }
 
