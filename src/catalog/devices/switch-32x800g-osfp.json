@@ -1,0 +1,95 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "switch-32x800g-osfp",
+  "name": "32x800G OSFP Switch",
+  "category": "switch",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 660,
+  "weightKg": 15,
+  "power": {
+    "typicalW": 750,
+    "maxW": 1500
+  },
+  "psus": {
+    "count": 2,
+    "inlet": "C14",
+    "ratedW": 2000
+  },
+  "ports": [
+    {
+      "id": "osfp",
+      "label": "OSFP",
+      "role": "data",
+      "formFactor": "OSFP",
+      "heatSink": "IHS",
+      "count": 32,
+      "speedGbps": 800,
+      "lanes": 8,
+      "face": "front",
+      "rows": 2,
+      "breakoutModes": [
+        "2x400G",
+        "4x200G",
+        "8x100G"
+      ]
+    },
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default (max speed, no module)",
+      "groupDefaults": {},
+      "overrides": {}
+    },
+    {
+      "id": "all-2x400g",
+      "name": "All 2x400G, 2xDR4+",
+      "groupDefaults": {
+        "osfp": {
+          "mode": "2x400G",
+          "reach": "2xDR4+"
+        }
+      },
+      "overrides": {}
+    },
+    {
+      "id": "all-4x200g",
+      "name": "All 4x200G, 2xDR4+",
+      "groupDefaults": {
+        "osfp": {
+          "mode": "4x200G",
+          "reach": "2xDR4+"
+        }
+      },
+      "overrides": {}
+    }
+  ],
+  "defaultProfileId": "default"
+}
