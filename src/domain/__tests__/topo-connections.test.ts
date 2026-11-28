@@ -301,21 +301,23 @@ describe('expandTopoConnections — SHIPPED_CATALOG hardware, custom deviceIds, 
     count: 2
     device_type: gpu-tray-1ru-lc-4x400g
     ports:
-      be: { ports: be{1-2}, optic: ${optic400}, cable: ${cableMpo} }
+      be: { ports: be{1-2}, optic: ${optic400} }
   leaf:
     role: leaf
     count: 2
     device_type: switch-64x800g-osfp
     ports:
-      down: { ports: "etp1{a,b}", optic: ${optic800}, cable: ${cableMpo} }
+      down: { ports: "etp1{a,b}", optic: ${optic800} }
 topo:
   - name: gpu-leaf
     from: { group: gpu, ports: be }
     to:   { group: leaf, ports: down }
     pattern: { type: mesh, per_pair: 1 }
+    cable: ${cableMpo}
 `);
 
   it('resolves unsplit and breakout cages, modes, optics, speeds, custom deviceIds, and link.cable override', () => {
+    expect(v.problems).toEqual([]);
     const hw = topoHardware(lib, v);
     const customIds = new Map<string, readonly string[]>([
       ['gpu', ['dc1-gpu-01', 'dc1-gpu-02']],
@@ -352,9 +354,9 @@ topo:
     });
     expect(rows[2].toDevicePort).toBe('osfp/1 (lane b)');
 
-    // Post-migration `(link as { cable?: string }).cable` takes precedence over legacy `poolCables`,
+    // Overriding `link.cable` updates `cableId`/`cableName`,
     // and partial `deviceIds` entries fall back to `${group}-${i + 1}` for remaining members.
-    const migratedLink: VLink & { cable?: string } = { ...v.links[0], cable: 'dac-800g' };
+    const migratedLink: VLink = { ...v.links[0], cable: 'dac-800g' };
     const partialIds = new Map<string, readonly string[]>([['gpu', ['dc1-gpu-only-1']]]);
     const migratedRows = expandTopoConnections(lib, { ...v, links: [migratedLink] }, hw, partialIds);
     expect(migratedRows[0].cableId).toBe('dac-800g');

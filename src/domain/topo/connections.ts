@@ -65,9 +65,6 @@ interface GroupMember {
   readonly indices: Readonly<Record<string, number>>;
 }
 
-type LinkWithCable = VLink & { readonly cable?: string };
-type GroupWithLegacyPoolCables = VGroup & { readonly poolCables?: Readonly<Record<string, string>> };
-
 /** Decompose `g.count` members across `g.partitions` into partition values and 1-based within-set indices. */
 function decomposeGroupMembers(g: VGroup): GroupMember[] {
   if (!Number.isInteger(g.count) || g.count <= 0) return [];
@@ -234,14 +231,6 @@ function formatPhysicalPort(poolPort: string, dp: DevicePort | undefined): strin
   return lane ? `${dp.cage} (lane ${lane})` : dp.cage;
 }
 
-function resolveLinkCableId(link: VLink, fromGroup: VGroup, toGroup: VGroup): string {
-  const explicit = (link as LinkWithCable).cable;
-  if (explicit) return explicit;
-  const fromPoolCable = (fromGroup as GroupWithLegacyPoolCables).poolCables?.[link.from.ports];
-  if (fromPoolCable) return fromPoolCable;
-  return (toGroup as GroupWithLegacyPoolCables).poolCables?.[link.to.ports] ?? '';
-}
-
 /**
  * Expand all virtual topology link specs into concrete end-to-end physical port connections.
  */
@@ -295,7 +284,7 @@ export function expandTopoConnections(
     const fromOpticName = fromOpticId ? (lib.optics.get(fromOpticId)?.name ?? fromOpticId) : '';
     const toOpticId = toGroup.poolOptics[link.to.ports] ?? '';
     const toOpticName = toOpticId ? (lib.optics.get(toOpticId)?.name ?? toOpticId) : '';
-    const cableId = resolveLinkCableId(link, fromGroup, toGroup);
+    const cableId = link.cable ?? '';
     const cableName = cableId ? (lib.cableMedia.get(cableId)?.name ?? cableId) : '';
     const sameGroup = fromGroup.name === toGroup.name;
 
