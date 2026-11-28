@@ -258,9 +258,7 @@ button.link { width: auto; background: none; border: none; padding: 0; color: va
 .topo-bom .table td.num { white-space: nowrap; }
 .topo-cable-qty { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25; }
 .topo-cable-qty small { font-size: 10.5px; color: var(--muted); font-weight: 400; }
-.topo-conn-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 4px; }
-.topo-conn-bar input { flex: 1 1 220px; max-width: 340px; }
-.topo-conn-page { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.topo-conn-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; }
 .topo-editor { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--border); background: var(--panel); }
 .topo-code { flex: 1; display: flex; min-height: 0; font-family: ui-monospace, Consolas, "Cascadia Mono", monospace; font-size: 12.5px; line-height: 18px; }
 .topo-gutter { flex: none; min-width: 40px; padding: 8px 6px 8px 0; overflow: hidden; text-align: right; color: var(--muted); background: var(--surface-panel-alt); border-right: 1px solid var(--border); user-select: none; }
@@ -295,7 +293,7 @@ button.link { width: auto; background: none; border: none; padding: 0; color: va
 .topo-insp-grid input { min-width: 0; width: 100%; padding: 3px 5px; font-size: 12px; }
 .topo-insp-grid .btn-icon { min-width: 22px; padding: 2px 4px; font-size: 11px; }
 .topo-insp .num { text-align: right; }
-.topo-insp-gear { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px; margin-bottom: 6px; }
+.topo-insp-gear { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin-bottom: 6px; }
 .topo-insp-gear select { min-width: 0; width: 100%; font-size: 12px; padding: 2px 4px; }
 .topo-menu-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 3px 0; }
 .topo-menu-row select { width: auto; }
