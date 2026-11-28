@@ -18,7 +18,6 @@ function makeGroup(overrides: Partial<DeviceGroupInput> & Pick<VGroup, 'name' | 
   return {
     partitions: [],
     poolOptics: {},
-    poolCables: {},
     pools: {},
     poolSlots: {},
     poolNames: {},
