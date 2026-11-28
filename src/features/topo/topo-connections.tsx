@@ -170,7 +170,7 @@ export function TopoConnectionsSection({
             <span>{showingLabel}</span>
             <Button disabled={start + CONNECTIONS_PAGE_SIZE >= filtered.length} onClick={() => setPage(safePage + 1)}>Next</Button>
           </div>
-          <Button onClick={() => downloadText(`${filename}-connections.csv`, connectionsToCsv(filtered), 'text/csv')}>
+          <Button onClick={() => downloadText(`${filename}-connections.csv`, connectionsToCsv(filtered, cablePnByLink), 'text/csv')}>
             Export Connections CSV
           </Button>
         </div>

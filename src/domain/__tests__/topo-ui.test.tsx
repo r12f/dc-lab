@@ -177,6 +177,51 @@ device_set_groups:
     // Clearing id_format removes `id_format:` from the group in YAML.
     const clearedSrc = setGroupField(src, 't0', ['id_format'], undefined);
     expect(parseVirtual(clearedSrc).groups.find((g) => g.name === 't0')?.idFormat).toBeUndefined();
+
+    // Unbalanced braces/brackets or single quotes in id_format or dc.id are quoted in YAML so parseVirtual succeeds,
+    // GroupPanel stays mounted in TopoInspector, and deviceIdProblems surfaces unclosed/unmatched brace diagnostics in TopoModule.
+    for (const malformed of ['tor-{device.index', 'tor-device.index}', 't0-{{set.index:3}', "pod's-{device.index}"]) {
+      const malformedSrc = setGroupField(setDcId(SAMPLE_TOPOLOGY, "dc's-{1"), 't0', ['id_format'], malformed);
+      const parsed = parseVirtual(malformedSrc);
+      expect(parsed.problems).toEqual([]);
+      expect(parsed.dc).toEqual({ id: "dc's-{1" });
+      expect(parsed.groups.find((g) => g.name === 't0')?.idFormat).toBe(malformed);
+
+      const inspectorHtml = renderToStaticMarkup(
+        <TopoInspector
+          lib={lib}
+          source={malformedSrc}
+          virtual={parsed}
+          hardware={topoHardware(lib, parsed)}
+          selection={{ kind: 'group', name: 't0' }}
+          onSelect={() => {}}
+          onSource={() => {}}
+        />,
+      );
+      expect(inspectorHtml).toContain('aria-label="Device ID format"');
+    }
+
+    const initial = useAppStore.getInitialState();
+    const prevProject = initial.project;
+    const prevSelected = initial.selected;
+    try {
+      const unclosedSrc = setGroupField(SAMPLE_TOPOLOGY, 't0', ['id_format'], 'tor-{device.index');
+      const unmatchedSrc = setGroupField(unclosedSrc, 't1', ['id_format'], 'leaf-device.index}');
+      const nextProject: Project = {
+        ...emptyProject(),
+        topologies: [{ schema: TOPOLOGY_SCHEMA, id: 'topo-malformed', name: 'Malformed', source: unmatchedSrc }],
+      };
+      const nextSelected = { ...prevSelected, topo: 'topo-malformed' };
+      Object.assign(initial, { project: nextProject, selected: nextSelected });
+      useAppStore.setState({ project: nextProject, selected: nextSelected });
+
+      const moduleHtml = renderToStaticMarkup(<TopoModule />);
+      expect(moduleHtml).toContain('unclosed &quot;{&quot;');
+      expect(moduleHtml).toContain('unmatched &quot;}&quot;');
+    } finally {
+      Object.assign(initial, { project: prevProject, selected: prevSelected });
+      useAppStore.setState({ project: prevProject, selected: prevSelected });
+    }
   });
 
   it('renders LinkPanel Cable picker with compatible cables, incompatible/unknown fallbacks, and rewrites YAML in place', () => {
@@ -417,8 +462,12 @@ topo:
     const pnMap = new Map(bom.cableBom.map((r, i) => [v.links[i].index, r.vendorModel]));
     const filteredConns = filterConnectionsWithPn(allConns, 'dc9-spine-02', pnMap);
     expect(filteredConns).toHaveLength(32);
-    const connCsv = connectionsToCsv(filteredConns);
+    const connCsv = connectionsToCsv(filteredConns, pnMap);
+    expect(connCsv.split('\n')[0]).toMatch(/,Cable,Cable PN$/);
     expect(connCsv.split('\n')).toHaveLength(33); // header + 32 filtered rows
     expect(connCsv).toContain('be-spine,dc9-core-leaf-01,core_leaf,core-leaf,up,osfp5,osfp/5,1x800G,,dc9-spine-02');
+    expect(connCsv).toContain(',800G OSFP AEC,Generic Optics Co CAB-AEC-800G-2M');
+    // Omitting `cablePnByLink` keeps the 20-column header backward-compatible.
+    expect(connectionsToCsv(filteredConns).split('\n')[0]).toMatch(/,Speed,Cable$/);
   });
 });

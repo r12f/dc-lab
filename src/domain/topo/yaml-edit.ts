@@ -130,20 +130,35 @@ function replaceRange(lines: string[], r: Range, text: string): void {
 const SPECIAL_START = /^[-?:,[\]{}#&*!|>'"%@`]/;
 const LOOKS_TYPED = /^(true|false|null|~|[-+]?\d+(\.\d+)?)$/;
 
-const quote = (s: string) => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\t/g, '\\t')}"`;
+const quote = (s: string) => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r\n?/g, '\n').replace(/\n/g, '\\n').replace(/\t/g, '\\t')}"`;
 
-/** Whether a string reads back as itself unquoted; in a flow collection braces must nest and hold its commas. */
+/** Whether a string reads back as itself unquoted; braces/brackets must nest cleanly and single quotes are quoted. */
 function plainOk(s: string, inFlow: boolean): boolean {
-  if (s === '' || s.trim() !== s || LOOKS_TYPED.test(s) || SPECIAL_START.test(s) || s.includes(': ') || s.includes(' #')
-    || s.endsWith(':') || /["\n\t]/.test(s)) return false;
-  if (!inFlow) return true;
-  if (/[[\]]/.test(s)) return false;
-  let d = 0;
-  for (const c of s) {
-    if (c === '{') d++;
-    else if (c === '}') { if (!d) return false; d--; } else if (c === ',' && !d) return false;
+  if (
+    s === '' ||
+    s.trim() !== s ||
+    LOOKS_TYPED.test(s) ||
+    SPECIAL_START.test(s) ||
+    s.includes(': ') ||
+    s.includes(' #') ||
+    s.endsWith(':') ||
+    /["'\r\n\t]/.test(s)
+  ) {
+    return false;
   }
-  return d === 0;
+  if (inFlow && /[[\]]/.test(s)) return false;
+  const stack: ('{' | '[')[] = [];
+  for (const c of s) {
+    if (c === '{' || c === '[') {
+      stack.push(c);
+    } else if (c === '}' || c === ']') {
+      const expected = c === '}' ? '{' : '[';
+      if (stack.pop() !== expected) return false;
+    } else if (inFlow && c === ',' && stack.length === 0) {
+      return false;
+    }
+  }
+  return stack.length === 0;
 }
 
 /**
