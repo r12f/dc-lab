@@ -219,7 +219,9 @@ function pairInstances(
   }
 
   const allFrom = fromInstances.get('');
-  const allTo = link.to.key ? [...toInstances.values()].flat() : toInstances.get('');
+  const allTo = link.to.key
+    ? [...toInstances.values()].flat().sort((a, b) => a.memberIdx - b.memberIdx)
+    : toInstances.get('');
   if (allFrom?.length && allTo?.length) pairs.push([allFrom, allTo]);
   return pairs;
 }

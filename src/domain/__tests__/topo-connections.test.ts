@@ -81,6 +81,94 @@ describe('expandTopoConnections — SAMPLE_TOPOLOGY', () => {
     expect(t2Used.has('t2-8')).toBe(false);
     expect([...t2Used].every((id) => /^t2-[123567]$/.test(id))).toBe(true);
   });
+
+  it('advances per-pool cursors across multiple link specs sharing a pool, wraps round-robin modulo, and preserves member order', () => {
+    // 1. Two link specs sharing `(a, up)` advance the pool cursor sequentially and match `portUse(a, v)`.
+    const sharedPool = parseVirtual(`device_set_groups:
+  a: { role: leaf, count: 2, ports: { up: p{1-6} } }
+  b: { role: spine, count: 2, ports: { down: q{1-2} } }
+  c: { role: core, count: 3, ports: { down: r{1-2} } }
+topo:
+  - { name: a-b, from: { group: a, ports: up }, to: { group: b, ports: down }, pattern: { type: mesh, per_pair: 1 } }
+  - { name: a-c, from: { group: a, ports: up }, to: { group: c, ports: down }, pattern: { type: mesh, per_pair: 1 } }
+`);
+    expect(sharedPool.problems).toEqual([]);
+    const sharedRows = expandTopoConnections(lib, sharedPool);
+    const aGroup = sharedPool.groups[0];
+    const expectedUse = portUse(aGroup, sharedPool);
+    for (const devId of ['a-1', 'a-2']) {
+      const owner = new Map<string, number>();
+      for (const r of sharedRows) {
+        if (r.fromDeviceId === devId) owner.set(r.fromPoolPort, r.linkIndex);
+      }
+      expect(owner).toEqual(expectedUse.owner);
+    }
+    expect(sharedRows.filter((r) => r.linkName === 'a-c' && r.fromDeviceId === 'a-1').map((r) => r.fromPoolPort)).toEqual([
+      'p3',
+      'p4',
+      'p5',
+    ]);
+
+    // 2. Round-robin modulo wrap-around (`fromDevs.length = 5 > toDevs.length = 2`) + explicit `map` ordering.
+    const rrWrap = parseVirtual(`device_set_groups:
+  src:
+    role: worker
+    count: 10
+    partitions: [ { key: pod, count: 2 } ]
+    ports: { up: u{1-2} }
+  dst:
+    role: agg
+    count: 4
+    partitions: [ { key: pod, count: 2 } ]
+    ports: { down: d{1-6} }
+topo:
+  - name: rr-mapped
+    from: { group: src, key: "\${pod}", ports: up }
+    to:   { group: dst, key: "\${pod}", ports: down }
+    map:
+      - { from: ["2"], to: "2" }
+      - { from: ["1"], to: "1" }
+    pattern: { type: round-robin, per_pair: 2 }
+`);
+    expect(rrWrap.problems).toEqual([]);
+    const rrRows = expandTopoConnections(lib, rrWrap);
+    // `map` entry 1 (`pod 2` -> `pod 2`) runs before `map` entry 2 (`pod 1` -> `pod 1`).
+    // Within pod 2: `src-6..src-10` (5 devices) wrap over `dst-3, dst-4` (`3, 4, 3, 4, 3`), consuming `d1..d6` on `dst-3`.
+    expect(rrRows.slice(0, 10).map((r) => [r.fromDeviceId, r.toDeviceId, r.toPoolPort])).toEqual([
+      ['src-6', 'dst-3', 'd1'],
+      ['src-6', 'dst-3', 'd2'],
+      ['src-7', 'dst-4', 'd1'],
+      ['src-7', 'dst-4', 'd2'],
+      ['src-8', 'dst-3', 'd3'],
+      ['src-8', 'dst-3', 'd4'],
+      ['src-9', 'dst-4', 'd3'],
+      ['src-9', 'dst-4', 'd4'],
+      ['src-10', 'dst-3', 'd5'],
+      ['src-10', 'dst-3', 'd6'],
+    ]);
+    expect(rrRows[10].fromDeviceId).toBe('src-1');
+
+    // 3. Unkeyed `from` paired with inner-keyed `to` (`plane` inside `su`) preserves destination member order `b-1..b-4`.
+    const unkeyedFrom = parseVirtual(`device_set_groups:
+  a: { role: spine, count: 1, ports: { down: p{1-4} } }
+  b:
+    role: tor
+    count: 4
+    partitions:
+      - { key: su, count: 2 }
+      - { key: plane, count: 2 }
+    ports: { up: q1 }
+topo:
+  - { name: a-to-b, from: { group: a, ports: down }, to: { group: b, key: "\${plane}", ports: up }, pattern: { type: mesh, per_pair: 1 } }
+`);
+    const unkeyedRows = expandTopoConnections(lib, unkeyedFrom);
+    expect(unkeyedRows.map((r) => [r.fromPoolPort, r.toDeviceId])).toEqual([
+      ['p1', 'b-1'],
+      ['p2', 'b-2'],
+      ['p3', 'b-3'],
+      ['p4', 'b-4'],
+    ]);
+  });
 });
 
 describe('expandTopoConnections — partitions, multi-key templates, filters, and same-group mesh', () => {
