@@ -3,19 +3,17 @@ import type { BomLine } from '../bom/types';
 import { bomColumns, SI_HEADER, type BomColumn } from '../bom/columns';
 import type { PropertyDef } from '../properties/types';
 import type { ItemVariant } from '../items/types';
-import type { CableEnd, CableMedia } from '../optics/types';
+import type { CableEnd } from '../optics/types';
 import { traitsOf } from '../device/categories';
 import { cablePowerWPerEnd, opticPowerW, variantLabel, withItemSpecs } from '../items/variants';
-import { connectorsMate } from '../optics/connectors';
-import { moduleFits } from '../ports/form-factors';
 import { cablesPerPort } from '../ports/optic-match';
-import { poolSpeeds, topoHardware, type GroupHardware } from './hardware';
+import { orientLinkCable, poolSpeeds, topoHardware, type GroupHardware } from './hardware';
 import { portUse } from './ports';
-import { portNumber, type VEnd, type VGroup, type VLink, type VirtualTopo } from './virtual';
+import { portNumber, type VGroup, type VLink, type VirtualTopo } from './virtual';
 
 /**
  * Procurement picks of a topology's estimated BOM, saved with the topology (`Topology.bom`). The hardware itself
- * (device types, pool optics and cables) is in the YAML.
+ * (device types, pool optics and link cables) is in the YAML.
  */
 export interface TopoBomSettings {
   /** Item type id -> item (vendor product) bought for it; absent = its Generic item. */
@@ -35,8 +33,6 @@ export interface PoolEstimate {
   exact: boolean;
   /** The pool's optic in those cages: per device, and over the group. */
   optics: { opticId: string; perDevice: number; total: number }[];
-  /** Cable type the pool's ports take, when set. */
-  cableId?: string;
 }
 
 export interface GroupEstimate {
@@ -48,25 +44,74 @@ export interface GroupEstimate {
   pools: PoolEstimate[];
 }
 
-/** Cables of one link spec: one cable type, joining both ends or plugged into one end. */
+/** Cables of one link spec: one cable type joining both ends. */
 export interface CableEstimate {
   link: VLink;
   cableId: string;
-  /** The end the cable is counted at (its group); both ends take it: undefined. */
-  end?: string;
-  /** Links one cable carries (its connectors at that end x lanes each holds); < 1 = a link takes several cables. */
+  /** Links one cable carries (oriented end connectors x lanes each holds); < 1 = a link takes several cables. */
   perCable: number;
   qty: number;
+}
+
+/** One link spec's row in the per-link Cable BOM (one entry per `VLink` in `virtual.links` order). */
+export interface CableBomRow {
+  link: string;
+  fromGroup: string;
+  fromRole: string;
+  fromDeviceType?: string;
+  fromPool: string;
+  fromMode: string;
+  fromOpticId?: string;
+  toGroup: string;
+  toRole: string;
+  toDeviceType?: string;
+  toPool: string;
+  toMode: string;
+  toOpticId?: string;
+  links?: number;
+  cableId?: string;
+  pickKey?: string;
+  itemId?: string;
+  vendorModel: string;
+  perCable?: number;
+  qty: number;
+  derivation: string;
+  unitW: number;
+  totalW: number;
 }
 
 export interface TopoBom {
   groups: GroupEstimate[];
   cables: CableEstimate[];
+  cableBom: CableBomRow[];
   /** One line per device type, optic type and cable type (groups without a device type: one line each). */
   lines: BomLine[];
   /** Links over every link spec whose count is known. */
   links: number;
 }
+
+export const CABLE_BOM_CSV_HEADERS = [
+  'Link',
+  'From Group',
+  'From Role',
+  'From Device Type',
+  'From Pool',
+  'From Mode',
+  'From Optic',
+  'To Group',
+  'To Role',
+  'To Device Type',
+  'To Pool',
+  'To Mode',
+  'To Optic',
+  'Links',
+  'Cable',
+  'Vendor / Model (PN)',
+  'Qty',
+  'Derivation',
+  'Power/pcs',
+  'Total W',
+] as const;
 
 const fmt = (n: number) => n.toLocaleString('en-US');
 
@@ -117,44 +162,55 @@ function estimateGroup(lib: Library, v: VirtualTopo, g: VGroup, hw: GroupHardwar
       pool, ports: used.length, ...(speeds.length === 1 ? { speedGbps: speeds[0] } : {}), cages,
       exact: poolExact(v, g, pool, used.length),
       optics: opticId && lib.optics.get(opticId) && cages ? [{ opticId, perDevice: cages, total: cages * g.count }] : [],
-      ...(g.poolCables[pool] ? { cableId: g.poolCables[pool] } : {}),
     };
   });
   return { group: g, deviceId: hw.device?.id, profileName: hw.profile?.name, pools };
 }
 
-/**
- * Links one cable carries at a link end: the cable's connectors on that side (the end that mates the pool's optic,
- * or plugs into the cage) x the lanes each optic connector holds (cage fanout / connectors per cage: 2x400G on a
- * 2xDR4 module = 1, 8x100G = 4, 1x800G = 1/2). Without a device type, one lane per connector.
- */
-function linksPerCable(lib: Library, g: VGroup, hw: GroupHardware | undefined, pool: string, cable: CableMedia): number {
-  const optic = lib.optics.get(g.poolOptics[pool]);
-  const port = (g.poolNames[pool] ?? []).map((n) => hw?.ports.get(n)).find((p) => !!p);
-  const connector = optic?.fiberConnector.replace(/^\d+x\s*/i, '');
-  const fits = (e: CableEnd) => (connector ? connectorsMate(e.connector, connector) : !!port && moduleFits(port.group.formFactor, e.connector));
-  const end = fits(cable.ends.a) || !fits(cable.ends.b) ? cable.ends.a : cable.ends.b;
-  if (!port) return end.count;
-  return (end.count * port.fanout) / (optic ? cablesPerPort(port.group, optic) : 1);
+function poolMode(g: VGroup | undefined, ghw: GroupHardware | undefined, pool: string): string {
+  if (!g || !ghw) return '';
+  const modes = [...new Set((g.poolNames[pool] ?? []).map((n) => ghw.ports.get(n)?.mode).filter((m): m is string => !!m))];
+  return modes.join('/');
 }
 
 /**
- * Cables per link spec: a cable type both ends take is one cable joining them; different types (patch cords to a
- * panel at each end) count at each end. Qty = links / links per cable at that end.
+ * Links one cable carries at an oriented link end: the cable's connectors on that side x the lanes each connector
+ * holds (cage fanout / connectors per cage: 2x400G on a 2xDR4 module = 1, 8x100G = 4, 1x800G = 1/2).
+ */
+function linksPerOrientedEnd(
+  lib: Library,
+  g: VGroup | undefined,
+  ghw: GroupHardware | undefined,
+  pool: string,
+  cableEnd: CableEnd,
+): number | undefined {
+  const port = g ? (g.poolNames[pool] ?? []).map((n) => ghw?.ports.get(n)).find((p) => !!p) : undefined;
+  if (!port || !g) return undefined;
+  const optic = lib.optics.get(g.poolOptics[pool]);
+  return (cableEnd.count * port.fanout) / cablesPerPort(port.group, optic);
+}
+
+/**
+ * Cables per link spec: computed directly from `link.cable` using the oriented end connector count and `fanout / cablesPerPort`.
  */
 function estimateCables(lib: Library, v: VirtualTopo, hw: Map<string, GroupHardware>): CableEstimate[] {
   const byName = new Map(v.groups.map((g) => [g.name, g]));
   const out: CableEstimate[] = [];
   for (const l of v.links) {
-    if (l.links === undefined) continue;
-    const at = (e: VEnd) => { const g = byName.get(e.group); return g && { g, cable: lib.cableMedia.get(g.poolCables[e.ports]), pool: e.ports }; };
-    const ends = [at(l.from), at(l.to)];
-    const shared = ends[0]?.cable && ends[0].cable.id === ends[1]?.cable?.id;
-    for (const [i, e] of ends.entries()) {
-      if (!e?.cable || (shared && i > 0)) continue;
-      const perCable = linksPerCable(lib, e.g, hw.get(e.g.name), e.pool, e.cable);
-      out.push({ link: l, cableId: e.cable.id, ...(shared ? {} : { end: e.g.name }), perCable, qty: Math.ceil(l.links / perCable) });
-    }
+    if (l.links === undefined || !l.cable) continue;
+    const cable = lib.cableMedia.get(l.cable);
+    if (!cable) continue;
+    const { fromEnd, toEnd, problem } = orientLinkCable(lib, v, l, cable, hw);
+    if (problem) continue;
+    const ga = byName.get(l.from.group);
+    const gb = byName.get(l.to.group);
+    const fromPer = linksPerOrientedEnd(lib, ga, hw.get(l.from.group), l.from.ports, fromEnd);
+    const toPer = linksPerOrientedEnd(lib, gb, hw.get(l.to.group), l.to.ports, toEnd);
+    const perCable =
+      fromPer !== undefined && toPer !== undefined
+        ? Math.min(fromPer, toPer)
+        : (fromPer ?? toPer ?? Math.max(1, Math.min(fromEnd.count, toEnd.count)));
+    out.push({ link: l, cableId: cable.id, perCable, qty: Math.ceil(l.links / perCable) });
   }
   return out;
 }
@@ -162,12 +218,61 @@ function estimateCables(lib: Library, v: VirtualTopo, hw: Map<string, GroupHardw
 /** How a cable quantity follows from the links: `compute-dt0 720`, `dt0-t1 32,768 ÷ 4`, `x 64 × 2`. */
 function cableDerivation(c: CableEstimate): string {
   const per = c.perCable === 1 ? '' : c.perCable > 1 ? ` ÷ ${fmt(c.perCable)}` : ` × ${fmt(1 / c.perCable)}`;
-  return `${c.link.name}${c.end ? ` (${c.end} end)` : ''} ${fmt(c.link.links ?? 0)}${per}`;
+  return `${c.link.name} ${fmt(c.link.links ?? 0)}${per}`;
+}
+
+function buildCableBom(
+  lib: Library,
+  v: VirtualTopo,
+  hw: Map<string, GroupHardware>,
+  cables: readonly CableEstimate[],
+  s: TopoBomSettings,
+): CableBomRow[] {
+  const byName = new Map(v.groups.map((g) => [g.name, g]));
+  const estByLinkIdx = new Map(cables.map((c) => [c.link.index, c]));
+
+  return v.links.map((l): CableBomRow => {
+    const ga = byName.get(l.from.group);
+    const gb = byName.get(l.to.group);
+    const fromOpticId = ga?.poolOptics[l.from.ports];
+    const toOpticId = gb?.poolOptics[l.to.ports];
+    const est = estByLinkIdx.get(l.index);
+    const media = l.cable ? lib.cableMedia.get(l.cable) : undefined;
+    const it = media ? itemFor(lib, s, media.id) : undefined;
+    const unitW = media ? cablePowerWPerEnd(it, media) * (media.ends.a.count + media.ends.b.count) : 0;
+    const qty = est?.qty ?? 0;
+
+    return {
+      link: l.name,
+      fromGroup: l.from.group,
+      fromRole: ga?.role ?? '',
+      ...(ga?.deviceType ? { fromDeviceType: ga.deviceType } : {}),
+      fromPool: l.from.ports,
+      fromMode: poolMode(ga, hw.get(l.from.group), l.from.ports),
+      ...(fromOpticId ? { fromOpticId } : {}),
+      toGroup: l.to.group,
+      toRole: gb?.role ?? '',
+      ...(gb?.deviceType ? { toDeviceType: gb.deviceType } : {}),
+      toPool: l.to.ports,
+      toMode: poolMode(gb, hw.get(l.to.group), l.to.ports),
+      ...(toOpticId ? { toOpticId } : {}),
+      ...(l.links !== undefined ? { links: l.links } : {}),
+      ...(l.cable ? { cableId: l.cable } : {}),
+      ...(media ? { pickKey: media.id } : {}),
+      ...(it ? { itemId: it.id } : {}),
+      vendorModel: media ? variantLabel(it) : '',
+      ...(est ? { perCable: est.perCable } : {}),
+      qty,
+      derivation: est ? cableDerivation(est) : '',
+      unitW,
+      totalW: unitW * qty,
+    };
+  });
 }
 
 /**
  * Estimated BOM of a virtual topology: each group's devices as its `device_type`; per pool, its optic in every cage
- * its used ports sit in (cage = the port's number); per link spec, the cables its pools take. Lines merge by item
+ * its used ports sit in (cage = the port's number); per link spec, the cable the link sets. Lines merge by item
  * type; the line's note is its derivation (`dt0 512 + t1 256`). Housings, trunks, racks and power need the physical
  * layout and are not estimated.
  */
@@ -175,6 +280,7 @@ export function estimateTopoBom(lib: Library, v: VirtualTopo, s: TopoBomSettings
   const hw = topoHardware(lib, v);
   const groups = v.groups.map((g) => estimateGroup(lib, v, g, hw.get(g.name)!));
   const cables = estimateCables(lib, v, hw);
+  const cableBom = buildCableBom(lib, v, hw, cables, s);
   const lines: BomLine[] = [];
   const merged = new Map<string, { line: BomLine; parts: string[] }>();
   const add = (line: BomLine, qty: number, part: string) => {
@@ -215,7 +321,51 @@ export function estimateTopoBom(lib: Library, v: VirtualTopo, s: TopoBomSettings
     c.qty, cableDerivation(c));
   }
   for (const { line, parts } of merged.values()) line.notes = [parts.join(' + ')];
-  return { groups, cables, lines, links: v.links.reduce((n, l) => n + (l.links ?? 0), 0) };
+  return { groups, cables, cableBom, lines, links: v.links.reduce((n, l) => n + (l.links ?? 0), 0) };
+}
+
+function escapeCsvCell(v: string | number): string {
+  const s = String(v);
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+/** Export per-link `CableBomRow` entries as RFC-4180 CSV. */
+export function cableBomToCsv(lib: Library, rows: readonly CableBomRow[]): string {
+  const out: string[] = [CABLE_BOM_CSV_HEADERS.map(escapeCsvCell).join(',')];
+  for (const r of rows) {
+    const fromDevName = r.fromDeviceType ? (lib.devices.get(r.fromDeviceType)?.name ?? r.fromDeviceType) : '';
+    const fromOpticName = r.fromOpticId ? (lib.optics.get(r.fromOpticId)?.name ?? r.fromOpticId) : '';
+    const toDevName = r.toDeviceType ? (lib.devices.get(r.toDeviceType)?.name ?? r.toDeviceType) : '';
+    const toOpticName = r.toOpticId ? (lib.optics.get(r.toOpticId)?.name ?? r.toOpticId) : '';
+    const cableName = r.cableId ? (lib.cableMedia.get(r.cableId)?.name ?? r.cableId) : '';
+    out.push(
+      [
+        r.link,
+        r.fromGroup,
+        r.fromRole,
+        fromDevName,
+        r.fromPool,
+        r.fromMode,
+        fromOpticName,
+        r.toGroup,
+        r.toRole,
+        toDevName,
+        r.toPool,
+        r.toMode,
+        toOpticName,
+        r.links ?? '',
+        cableName,
+        r.vendorModel,
+        r.qty,
+        r.derivation,
+        r.unitW,
+        r.totalW,
+      ]
+        .map(escapeCsvCell)
+        .join(','),
+    );
+  }
+  return out.join('\n');
 }
 
 /** Header of the per-item power column (typical W of one piece, from the picked item). */

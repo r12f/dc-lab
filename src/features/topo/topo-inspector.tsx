@@ -4,10 +4,7 @@ import { parseInlineYaml, type YamlValue } from '../../domain/topo/yaml';
 import { flowYaml, type EditOptions, type YamlPath } from '../../domain/topo/yaml-edit';
 import { deleteGroup, deleteLink, linksOfGroup, renameGroup, renamePool, setGroupField, setLinkField, topoDoc } from '../../domain/topo/edit';
 import { poolCageGroups, type GroupHardware } from '../../domain/topo/hardware';
-import { compatibleCables, opticFitsCage } from '../../domain/ports/optic-match';
-import { moduleFits } from '../../domain/ports/form-factors';
-import { isDirectAttach } from '../../domain/optics/cable-types';
-import { connectorsMate } from '../../domain/optics/connectors';
+import { opticFitsCage } from '../../domain/ports/optic-match';
 import { categoryPickerLabel, DEVICE_CATEGORIES } from '../../domain/device/categories';
 import type { DeviceCategory } from '../../domain/device/types';
 import type { VirtualTopo } from '../../domain/topo/virtual';
@@ -138,35 +135,20 @@ function GroupPanel({ lib, source, virtual, hardware, onSource, onSelect, doc, n
   const categories = DEVICE_CATEGORIES.filter((c) => all.some((d) => d.category === c));
   const devices = all.filter((d) => !category || d.category === category || d.id === deviceType);
   const byName = <T extends { name: string }>(xs: T[]) => xs.slice().sort((a, b) => a.name.localeCompare(b.name));
-  /** A pool's ports, whether it is written as its ports or as a map with its optic and cable. */
+  /** A pool's ports, whether it is written as its ports or as a map with its optic. */
   const portsOf = (v: YamlValue) => (isObj(v) ? v.ports : v);
-  /** Sets a pool's optic or cable; a pool left with only its ports is written as its ports again. */
-  const setGear = (pool: string, key: 'optic' | 'cable', id: string | undefined) => {
+  /** Sets a pool's optic; a pool left with only its ports is written as its ports again. */
+  const setOptic = (pool: string, id: string | undefined) => {
     const raw = pools[pool];
     // Its ports become `ports:` of a block map, like the pools written by hand.
-    if (!isObj(raw)) { if (id) set(['ports', pool], { ports: raw ?? '', [key]: id }, { block: true }); return; }
-    const next: Obj = { ...raw };
-    if (id) next[key] = id; else delete next[key];
-    if (Object.keys(next).every((k) => k === 'ports')) set(['ports', pool], next.ports ?? '');
-    else set(['ports', pool, key], id);
+    if (!isObj(raw)) { if (id) set(['ports', pool], { ports: raw ?? '', optic: id }, { block: true }); return; }
+    set(['ports', pool, 'optic'], id);
   };
-  // Optics the pool's cages take, and cables for its optic (or, without one, direct-attach cables for the cage).
+  // Optics the pool's cages take.
   const cagesOf = (pool: string) => (device && vg ? poolCageGroups(device, vg, pool) : []);
   const opticsFor = (pool: string) => {
     const cg = cagesOf(pool);
     return byName(lib.optics.items().filter((o) => cg.every((c) => opticFitsCage(c, o) && o.speedGbps <= c.speedGbps)));
-  };
-  const cablesFor = (pool: string, opticId: string) => {
-    const cg = cagesOf(pool);
-    const o = lib.optics.get(opticId || undefined);
-    if (o) {
-      if (cg.length) return byName(compatibleCables(lib, cg[0], o));
-      const conn = o.fiberConnector.replace(/^\d+x\s*/i, '');
-      return byName(lib.cableMedia.items().filter((c) => !isDirectAttach(c.type) && c.type !== 'power'
-        && (connectorsMate(c.ends.a.connector, conn) || connectorsMate(c.ends.b.connector, conn))));
-    }
-    return byName(lib.cableMedia.items().filter((c) => isDirectAttach(c.type)
-      && cg.every((x) => moduleFits(x.formFactor, c.ends.a.connector) || moduleFits(x.formFactor, c.ends.b.connector))));
   };
   const remove = () => {
     const n = linksOfGroup(source, name).length;
@@ -240,9 +222,7 @@ function GroupPanel({ lib, source, virtual, hardware, onSource, onSelect, doc, n
             <span className="head">Pool</span><span className="head">Ports</span><span className="head num">#</span><span />
             {Object.entries(pools).map(([pool, v]) => {
               const opticId = isObj(v) ? text(v.optic) : '';
-              const cableId = isObj(v) ? text(v.cable) : '';
               const optics = opticsFor(pool);
-              const cables = cablesFor(pool, opticId);
               return (
                 <Fragment key={pool}>
                   <Draft value={pool} label={`Pool ${pool} name`} accept={(n) => NAME.test(n) && !(n in pools)} onCommit={(n) => onSource(renamePool(source, name, pool, n))} />
@@ -253,17 +233,10 @@ function GroupPanel({ lib, source, virtual, hardware, onSource, onSelect, doc, n
                   <RemoveButton label={`Remove pool ${pool}`} onClick={() => set(['ports', pool], undefined)} />
                   <div className="topo-insp-gear">
                     <select aria-label={`Pool ${pool} optic`} title={lib.optics.get(opticId || undefined)?.name ?? "Optic in the pool's cages"} value={opticId}
-                      onChange={(e) => setGear(pool, 'optic', e.target.value || undefined)}>
+                      onChange={(e) => setOptic(pool, e.target.value || undefined)}>
                       <option value="">no optic</option>
                       {opticId && !optics.some((o) => o.id === opticId) && <option value={opticId}>{lib.optics.get(opticId)?.name ?? `${opticId} (unknown)`}</option>}
                       {optics.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                    </select>
-                    <select aria-label={`Pool ${pool} cable`} value={cableId}
-                      title={lib.cableMedia.get(cableId || undefined)?.name ?? (opticId ? 'Cable plugged into the optic' : 'Direct-attach cable plugged into the cage')}
-                      onChange={(e) => setGear(pool, 'cable', e.target.value || undefined)}>
-                      <option value="">no cable</option>
-                      {cableId && !cables.some((c) => c.id === cableId) && <option value={cableId}>{lib.cableMedia.get(cableId)?.name ?? `${cableId} (unknown)`}</option>}
-                      {cables.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
                 </Fragment>

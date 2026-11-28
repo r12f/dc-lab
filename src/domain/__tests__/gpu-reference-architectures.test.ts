@@ -354,31 +354,31 @@ describe('Management/fabric switches, 800G DR4+ optics, and 4-gen rack/SU refere
     count: 32
     device_type: gpu-server-8ru-4x800g
     ports:
-      be: { ports: "p{1-4}{a,b}", optic: osfp-800g-2xdr4-ihs, cable: mpo12-smf }
-      fe: { ports: "fe{1-2}", optic: qsfp112-400g-dr4-2km, cable: mpo12-smf }
-      ib: { ports: "ibmgmt{1-2}", optic: qsfp28-100g-psm4, cable: mpo12-smf }
+      be: { ports: "p{1-4}{a,b}", optic: osfp-800g-2xdr4-ihs }
+      fe: { ports: "fe{1-2}", optic: qsfp112-400g-dr4-2km }
+      ib: { ports: "ibmgmt{1-2}", optic: qsfp28-100g-psm4 }
   be_leaf:
     role: rail-leaf
     count: 8
     device_type: switch-32x800g-osfp
     ports:
-      down: { ports: "osfp{1-16}{a,b}", optic: osfp-800g-2xdr4-ihs, cable: mpo12-smf }
+      down: { ports: "osfp{1-16}{a,b}", optic: osfp-800g-2xdr4-ihs }
   fe_leaf:
     role: fe-leaf
     count: 2
     device_type: switch-32x800g-osfp
     ports:
-      down: { ports: "osfp{1-16}{a,b}", optic: osfp-800g-2xdr4-ihs, cable: mpo12-smf }
+      down: { ports: "osfp{1-16}{a,b}", optic: osfp-800g-2xdr4-ihs }
   ib_leaf:
     role: ib-mgmt
     count: 2
     device_type: switch-64x100g-qsfp28
     ports:
-      down: { ports: "etp{1-32}", optic: qsfp28-100g-psm4, cable: mpo12-smf }
+      down: { ports: "etp{1-32}", optic: qsfp28-100g-psm4 }
 topo:
-  - { name: compute-be, from: { group: compute, ports: be }, to: { group: be_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 } }
-  - { name: compute-fe, from: { group: compute, ports: fe }, to: { group: fe_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 } }
-  - { name: compute-ib, from: { group: compute, ports: ib }, to: { group: ib_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 } }
+  - { name: compute-be, from: { group: compute, ports: be }, to: { group: be_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-smf }
+  - { name: compute-fe, from: { group: compute, ports: fe }, to: { group: fe_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-smf }
+  - { name: compute-ib, from: { group: compute, ports: ib }, to: { group: ib_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-smf }
 `);
       expect(v.problems).toEqual([]);
       expect(hardwareProblems(lib, v)).toEqual([]);
@@ -405,23 +405,23 @@ topo:
     count: 72
     device_type: gpu-tray-1ru-lc-4x400g
     ports:
-      be: { ports: "p{1-4}", optic: osfp-400g-dr4, cable: mpo12-smf }
-      fe: { ports: "fe{1-2}", optic: qsfp56-200g-fr4, cable: lc-smf }
+      be: { ports: "p{1-4}", optic: osfp-400g-dr4 }
+      fe: { ports: "fe{1-2}", optic: qsfp56-200g-fr4 }
   be_leaf:
     role: rail-leaf
     count: 4
     device_type: switch-64x800g-osfp
     ports:
-      down: { ports: "osfp{1-36}{a,b}", optic: osfp-800g-2xdr4-ihs, cable: mpo12-smf }
+      down: { ports: "osfp{1-36}{a,b}", optic: osfp-800g-2xdr4-ihs }
   fe_leaf:
     role: fe-leaf
     count: 2
     device_type: switch-64x800g-osfp-4psu
     ports:
-      down: { ports: "osfp{1-18}{a-d}", optic: osfp-800g-2xdr4-ihs, cable: mpo12-smf }
+      down: { ports: "osfp{1-18}{a-d}", optic: osfp-800g-2xdr4-ihs }
 topo:
-  - { name: compute-be, from: { group: compute, ports: be }, to: { group: be_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 } }
-  - { name: compute-fe, from: { group: compute, ports: fe }, to: { group: fe_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 } }
+  - { name: compute-be, from: { group: compute, ports: be }, to: { group: be_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-smf }
+  - { name: compute-fe, from: { group: compute, ports: fe }, to: { group: fe_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-4xlc-smf-breakout }
 `);
       expect(v.problems).toEqual([]);
       const hw = topoHardware(lib, v);
@@ -440,8 +440,8 @@ topo:
         'optic:osfp-400g-dr4': 288,
         'optic:qsfp56-200g-fr4': 144,
         'optic:osfp-800g-2xdr4-ihs': 180,
-        'cable:mpo12-smf': 360,
-        'cable:lc-smf': 144,
+        'cable:mpo12-smf': 288,
+        'cable:mpo12-4xlc-smf-breakout': 72,
       });
     });
 
@@ -452,23 +452,23 @@ topo:
     count: 72
     device_type: gpu-tray-1ru-lc-4x800g
     ports:
-      be: { ports: "p{1-4}", optic: osfp-800g-dr4, cable: mpo12-smf }
-      fe: { ports: "fe{1-2}", optic: qsfp112-400g-dr4-2km, cable: mpo12-smf }
+      be: { ports: "p{1-4}", optic: osfp-800g-dr4 }
+      fe: { ports: "fe{1-2}", optic: qsfp112-400g-dr4-2km }
   be_leaf:
     role: rail-leaf
     count: 4
     device_type: switch-72x1600g-osfp
     ports:
-      down: { ports: "osfp{1-36}{a,b}", optic: osfp-1600g-2xdr4-ihs, cable: mpo12-smf }
+      down: { ports: "osfp{1-36}{a,b}", optic: osfp-1600g-2xdr4-ihs }
   fe_leaf:
     role: fe-leaf
     count: 3
     device_type: switch-32x800g-osfp
     ports:
-      down: { ports: "osfp{1-24}{a,b}", optic: osfp-800g-2xdr4-ihs, cable: mpo12-smf }
+      down: { ports: "osfp{1-24}{a,b}", optic: osfp-800g-2xdr4-ihs }
 topo:
-  - { name: compute-be, from: { group: compute, ports: be }, to: { group: be_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 } }
-  - { name: compute-fe, from: { group: compute, ports: fe }, to: { group: fe_leaf, ports: down }, pattern: { type: round-robin, per_pair: 2 } }
+  - { name: compute-be, from: { group: compute, ports: be }, to: { group: be_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-smf }
+  - { name: compute-fe, from: { group: compute, ports: fe }, to: { group: fe_leaf, ports: down }, pattern: { type: round-robin, per_pair: 2 }, cable: mpo12-smf }
 `);
       expect(v.problems).toEqual([]);
       const hw = topoHardware(lib, v);
@@ -498,23 +498,23 @@ topo:
     count: 72
     device_type: gpu-tray-1ru-lc-4x800g
     ports:
-      be: { ports: "p{1-4}{a,b}", optic: osfp-800g-2xdr4, cable: mpo12-smf }
-      fe: { ports: "fe{1-2}", optic: qsfp112-400g-dr4-2km, cable: mpo12-smf }
+      be: { ports: "p{1-4}{a,b}", optic: osfp-800g-2xdr4 }
+      fe: { ports: "fe{1-2}", optic: qsfp112-400g-dr4-2km }
   be_leaf:
     role: rail-leaf
     count: 8
     device_type: switch-64x800g-osfp
     ports:
-      down: { ports: "osfp{1-36}{a,b}", optic: osfp-800g-2xdr4-ihs, cable: mpo12-smf }
+      down: { ports: "osfp{1-36}{a,b}", optic: osfp-800g-2xdr4-ihs }
   fe_leaf:
     role: fe-leaf
     count: 2
     device_type: switch-72x1600g-osfp
     ports:
-      down: { ports: "osfp{1-18}{a-d}", optic: osfp-1600g-2xdr4-ihs, cable: mpo12-smf }
+      down: { ports: "osfp{1-18}{a-d}", optic: osfp-1600g-2xdr4-ihs }
 topo:
-  - { name: compute-be, from: { group: compute, ports: be }, to: { group: be_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 } }
-  - { name: compute-fe, from: { group: compute, ports: fe }, to: { group: fe_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 } }
+  - { name: compute-be, from: { group: compute, ports: be }, to: { group: be_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-smf }
+  - { name: compute-fe, from: { group: compute, ports: fe }, to: { group: fe_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-smf }
 `);
       expect(v.problems).toEqual([]);
       const hw = topoHardware(lib, v);
@@ -545,23 +545,23 @@ topo:
     count: 72
     device_type: gpu-tray-1ru-lc-4x1600g
     ports:
-      be: { ports: "p{1-4}{a,b}", optic: osfp-1600g-2xdr4, cable: mpo12-smf }
-      fe: { ports: "fe{1-2}", optic: qsfp112-400g-dr4-2km, cable: mpo12-smf }
+      be: { ports: "p{1-4}{a,b}", optic: osfp-1600g-2xdr4 }
+      fe: { ports: "fe{1-2}", optic: qsfp112-400g-dr4-2km }
   be_leaf:
     role: rail-leaf
     count: 8
     device_type: switch-72x1600g-osfp-lc
     ports:
-      down: { ports: "osfp{1-36}{a,b}", optic: osfp-1600g-2xdr4, cable: mpo12-smf }
+      down: { ports: "osfp{1-36}{a,b}", optic: osfp-1600g-2xdr4 }
   fe_leaf:
     role: fe-leaf
     count: 3
     device_type: switch-32x800g-osfp
     ports:
-      down: { ports: "osfp{1-24}{a,b}", optic: osfp-800g-2xdr4-ihs, cable: mpo12-smf }
+      down: { ports: "osfp{1-24}{a,b}", optic: osfp-800g-2xdr4-ihs }
 topo:
-  - { name: compute-be, from: { group: compute, ports: be }, to: { group: be_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 } }
-  - { name: compute-fe, from: { group: compute, ports: fe }, to: { group: fe_leaf, ports: down }, pattern: { type: round-robin, per_pair: 2 } }
+  - { name: compute-be, from: { group: compute, ports: be }, to: { group: be_leaf, ports: down }, pattern: { type: mesh, per_pair: 1 }, cable: mpo12-smf }
+  - { name: compute-fe, from: { group: compute, ports: fe }, to: { group: fe_leaf, ports: down }, pattern: { type: round-robin, per_pair: 2 }, cable: mpo12-smf }
 `);
       expect(v.problems).toEqual([]);
       const hw = topoHardware(lib, v);
@@ -590,19 +590,19 @@ topo:
     count: 16
     device_type: gpu-server-8ru-4x800g
     ports:
-      be: { ports: "p{1-4}", optic: osfp-800g-dr4-ihs, cable: mpo12-smf }
+      be: { ports: "p{1-4}", optic: osfp-800g-dr4-ihs }
   tray:
     role: compute-tray
     count: 16
     device_type: gpu-tray-1ru-lc-4x400g
     ports:
-      fe: { ports: "fe{1-2}", optic: qsfp56-200g-dr4, cable: mpo12-smf }
+      fe: { ports: "fe{1-2}", optic: qsfp56-200g-dr4 }
   be_leaf:
     role: rail-leaf
     count: 2
     device_type: switch-72x1600g-osfp
     ports:
-      down: { ports: "osfp{1-16}{a,b}", optic: osfp-1600g-2xdr4-ihs, cable: mpo12-smf }
+      down: { ports: "osfp{1-16}{a,b}", optic: osfp-1600g-2xdr4-ihs }
   fe_leaf:
     role: fe-leaf
     count: 1
@@ -610,8 +610,8 @@ topo:
     ports:
       down: { ports: "osfp{1-8}{a-d}", optic: osfp-800g-2xdr4-ihs }
 topo:
-  - { name: srv-be, from: { group: srv, ports: be }, to: { group: be_leaf, ports: down }, pattern: { type: mesh, per_pair: 2 } }
-  - { name: tray-fe, from: { group: tray, ports: fe }, to: { group: fe_leaf, ports: down }, pattern: { type: mesh, per_pair: 2 } }
+  - { name: srv-be, from: { group: srv, ports: be }, to: { group: be_leaf, ports: down }, pattern: { type: mesh, per_pair: 2 }, cable: mpo12-smf }
+  - { name: tray-fe, from: { group: tray, ports: fe }, to: { group: fe_leaf, ports: down }, pattern: { type: mesh, per_pair: 2 }, cable: mpo12-smf }
 `);
       expect(v.problems).toEqual([]);
       const hw = topoHardware(lib, v);
