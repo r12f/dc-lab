@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { isValidElement, type ReactNode } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { BUILTIN_CATALOG_FOR_TESTS } from './catalog-fixture';
 import { Library } from '../library/library';
@@ -7,15 +8,31 @@ import type { ItemVariant } from '../items/types';
 import { TOPOLOGY_SCHEMA, parseVirtual } from '../topo/virtual';
 import { topoHardware } from '../topo/hardware';
 import { setDcId, setGroupField, setLinkField } from '../topo/edit';
-import { cableBomToCsv, estimateTopoBom } from '../topo/bom';
-import { connectionsToCsv, expandTopoConnections } from '../topo/connections';
-import { topoDeviceIdMap } from '../topo/devices';
+import { estimateTopoBom } from '../topo/bom';
+import * as connectionsMod from '../topo/connections';
 import { SAMPLE_TOPOLOGY } from '../topo/sample';
 import { useAppStore } from '../../state/store';
 import { TopoModule } from '../../features/topo/topo-module';
 import { TopoInspector, insertIdVariable } from '../../features/topo/topo-inspector';
 import { TopoBomPane } from '../../features/topo/topo-bom';
-import { CONNECTIONS_PAGE_SIZE, filterConnectionsWithPn } from '../../features/topo/topo-connections';
+import { TopoConnectionsSection } from '../../features/topo/topo-connections';
+
+function findButtonByText(node: ReactNode, text: string): { disabled?: boolean; onClick?: () => void } | undefined {
+  if (!node || typeof node !== 'object') return undefined;
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const hit = findButtonByText(child, text);
+      if (hit) return hit;
+    }
+    return undefined;
+  }
+  if (!isValidElement(node)) return undefined;
+  const props = node.props as { children?: ReactNode; disabled?: boolean; onClick?: () => void };
+  if (typeof props.onClick === 'function' && props.children === text) {
+    return props;
+  }
+  return findButtonByText(props.children, text);
+}
 
 describe('Topo Builder UI: DC/device ID hints, link cable picker, and 2-tab Port Connections pane', () => {
   const customAec: ItemVariant = {
@@ -300,8 +317,21 @@ topo:
     expect(unknownHtml).toContain('missing-cable-id (unknown)');
   });
 
-  it('renders strictly 2 sub-tabs and populates Cable BOM summary, Cable PN, filtering, >200-row pagination, and CSV exports', () => {
-    // 672 total links (> 3 pages of 200 rows) with DC id, custom id_format, hardware types, optics, and link cables.
+  it('uses a single full-width grid column for .topo-insp-gear pool optic selector', async () => {
+    const fsMod = (await import(/* @vite-ignore */ `${'node:'}fs/promises`)) as {
+      readFile(path: URL, encoding: 'utf8'): Promise<string>;
+    };
+    const appCss = await fsMod.readFile(new URL('../../styles/app.css', import.meta.url), 'utf8');
+    const gearRule = /\.topo-insp-gear\s*\{([^}]*)\}/.exec(appCss)?.[1] ?? '';
+    const gearSelectRule = /\.topo-insp-gear\s+select\s*\{([^}]*)\}/.exec(appCss)?.[1] ?? '';
+    expect(gearRule).toContain('grid-column: 1 / -1');
+    expect(gearRule).toContain('grid-template-columns: minmax(0, 1fr);');
+    expect(gearRule).not.toContain('minmax(0, 1fr) minmax(0, 1fr)');
+    expect(gearSelectRule).toContain('width: 100%');
+  });
+
+  it('renders 2 sub-tabs without eager connection expansion, shows only Cable BOM summary inline, and exports Connections CSV on demand', () => {
+    // 576 total links with DC id, custom id_format, hardware types, optics, and link cables.
     const largeSrc = `topology: cluster-su
 dc:
   id: dc9
@@ -363,111 +393,122 @@ topo:
       },
     };
 
-    // Tab 1: Estimated BOM (default) — verify strictly 2 sub-tabs (Estimated BOM + Port Connections (576), NO 3rd tab).
-    const bomTabHtml = renderToStaticMarkup(
-      <TopoBomPane
-        lib={lib}
-        topo={v}
-        hardware={hw}
-        settings={settings}
-        filename="cluster-su"
-        height={320}
-        onChange={() => {}}
-      />,
-    );
-    const subtabsMatch = /<div class="subtabs">(.*?)<\/div>/.exec(bomTabHtml);
-    expect(subtabsMatch).not.toBeNull();
-    const tabButtons = [...subtabsMatch![1].matchAll(/<button[^>]*>(.*?)<\/button>/g)].map((m) => m[1]);
-    expect(tabButtons).toEqual(['Estimated BOM', 'Port Connections (576)']);
-    expect(bomTabHtml).toContain('Hardware per group');
+    const expandSpy = vi.spyOn(connectionsMod, 'expandTopoConnections');
+    try {
+      // Tab 1: Estimated BOM (default) — 2 sub-tabs using `bom.links` (`Port Connections (576)`), zero eager connection expansion.
+      const bomTabHtml = renderToStaticMarkup(
+        <TopoBomPane
+          lib={lib}
+          topo={v}
+          hardware={hw}
+          settings={settings}
+          filename="cluster-su"
+          height={320}
+          onChange={() => {}}
+        />,
+      );
+      const subtabsMatch = /<div class="subtabs">(.*?)<\/div>/.exec(bomTabHtml);
+      expect(subtabsMatch).not.toBeNull();
+      const tabButtons = [...subtabsMatch![1].matchAll(/<button[^>]*>(.*?)<\/button>/g)].map((m) => m[1]);
+      expect(tabButtons).toEqual(['Estimated BOM', 'Port Connections (576)']);
+      expect(bomTabHtml).toContain('Hardware per group');
+      expect(expandSpy).not.toHaveBeenCalled();
 
-    // Tab 2: Port Connections — Page 0 (Showing 1–200 of 576).
-    const connPage0Html = renderToStaticMarkup(
-      <TopoBomPane
-        lib={lib}
-        topo={v}
-        hardware={hw}
-        settings={settings}
-        filename="cluster-su"
-        height={320}
-        initialTab="connections"
-        onChange={() => {}}
-      />,
-    );
-    expect(connPage0Html).toContain('Connection summary (Cable BOM)');
-    expect(connPage0Html).toContain('End-to-end port connections');
-    expect(connPage0Html).toContain('Export Cable BOM CSV');
-    expect(connPage0Html).toContain('Export Connections CSV');
-    expect(connPage0Html).toContain('aria-label="Filter port connections"');
+      // Tab 2: Port Connections — renders ONLY `Connection summary (Cable BOM)` + CSV export buttons (no inline connections table).
+      const connTabHtml = renderToStaticMarkup(
+        <TopoBomPane
+          lib={lib}
+          topo={v}
+          hardware={hw}
+          settings={settings}
+          filename="cluster-su"
+          height={320}
+          initialTab="connections"
+          onChange={() => {}}
+        />,
+      );
+      expect(expandSpy).not.toHaveBeenCalled();
+      expect(connTabHtml).toContain('Connection summary (Cable BOM)');
+      expect(connTabHtml).toContain('Export Cable BOM CSV');
+      expect(connTabHtml).toContain('Export Connections CSV');
+      expect(connTabHtml).not.toContain('End-to-end port connections');
+      expect(connTabHtml).not.toContain('Filter port connections');
+      expect(connTabHtml).not.toContain('topo-conn-table');
+      expect(connTabHtml).not.toContain('Showing 1–200');
 
-    // Cable BOM summary shows picked PNs, derivation notes, and active AEC power (2 ends * 6W = 12W/pcs, 64 * 12W = 768W).
-    expect(connPage0Html).toContain('aria-label="Cable PN for srv-be"');
-    expect(connPage0Html).toContain('Generic Fiber Co FBR-MPO12-SMF-5M');
-    expect(connPage0Html).toContain('Generic Optics Co CAB-AEC-800G-2M');
-    expect(connPage0Html).toContain('srv-be 256');
-    expect(connPage0Html).toContain('be-spine 64');
+      // Cable BOM summary shows picked PNs, derivation notes, and active AEC power (2 ends * 6W = 12W/pcs, 64 * 12W = 768W).
+      expect(connTabHtml).toContain('aria-label="Cable PN for srv-be"');
+      expect(connTabHtml).toContain('Generic Fiber Co FBR-MPO12-SMF-5M');
+      expect(connTabHtml).toContain('Generic Optics Co CAB-AEC-800G-2M');
+      expect(connTabHtml).toContain('srv-be 256');
+      expect(connTabHtml).toContain('be-spine 64');
 
-    // End-to-end port connections page 0 renders exactly CONNECTIONS_PAGE_SIZE (200) rows with generated {dc.id} IDs & Cable PN.
-    expect(connPage0Html).toContain('Showing 1–200 of 576');
-    const connBody0 = /<table class="table topo-conn-table">[\s\S]*?<tbody>([\s\S]*?)<\/tbody>/.exec(connPage0Html)![1];
-    expect(connBody0.match(/<tr>/g)).toHaveLength(CONNECTIONS_PAGE_SIZE);
-    expect(connBody0).toContain('dc9-gpu-001');
-    expect(connBody0).toContain('dc9-be-sw-01');
-    expect(connBody0).toContain('osfp/1 (lane a)');
-    expect(connBody0).toContain('Generic Fiber Co FBR-MPO12-SMF-5M');
+      // Clicking `Export Connections CSV` expands all 576 connections on demand and downloads `<filename>-connections.csv`.
+      const bom = estimateTopoBom(lib, v, settings);
+      const downloads: { filename: string; text: string; mime?: string }[] = [];
+      const tree = TopoConnectionsSection({
+        lib,
+        topo: v,
+        hardware: hw,
+        totalLinks: bom.links,
+        cableBom: bom.cableBom,
+        filename: 'cluster-su',
+        onPick: () => {},
+        download: (filename, text, mime) => downloads.push({ filename, text, mime }),
+      });
+      const exportCableBtn = findButtonByText(tree, 'Export Cable BOM CSV');
+      const exportConnBtn = findButtonByText(tree, 'Export Connections CSV');
+      expect(exportCableBtn).toBeDefined();
+      expect(exportConnBtn).toBeDefined();
+      expect(exportConnBtn?.disabled).toBe(false);
 
-    // Page 2 (last page, index 2 -> rows 401–576, 176 rows including `be-spine` with `CAB-AEC-800G-2M`).
-    const connPage2Html = renderToStaticMarkup(
-      <TopoBomPane
-        lib={lib}
-        topo={v}
-        hardware={hw}
-        settings={settings}
-        filename="cluster-su"
-        height={320}
-        initialTab="connections"
-        initialPage={2}
-        onChange={() => {}}
-      />,
-    );
-    expect(connPage2Html).toContain('Showing 401–576 of 576');
-    const connBody2 = /<table class="table topo-conn-table">[\s\S]*?<tbody>([\s\S]*?)<\/tbody>/.exec(connPage2Html)![1];
-    expect(connBody2.match(/<tr>/g)).toHaveLength(176);
-    expect(connBody2).toContain('dc9-spine-01');
-    expect(connBody2).toContain('Generic Optics Co CAB-AEC-800G-2M');
+      exportCableBtn!.onClick!();
+      expect(downloads).toHaveLength(1);
+      expect(downloads[0].filename).toBe('cluster-su-cable-bom.csv');
+      expect(downloads[0].mime).toBe('text/csv');
+      expect(downloads[0].text).toContain('Generic Optics Co CAB-AEC-800G-2M,64,be-spine 64,12,768');
 
-    // Filtering by Cable PN (`CAB-AEC-800G-2M`) narrows to the 64 `be-spine` rows and resets to Showing 1–64 of 64.
-    const filteredHtml = renderToStaticMarkup(
-      <TopoBomPane
-        lib={lib}
-        topo={v}
-        hardware={hw}
-        settings={settings}
-        filename="cluster-su"
-        height={320}
-        initialTab="connections"
-        initialFilter="CAB-AEC-800G-2M"
-        onChange={() => {}}
-      />,
-    );
-    expect(filteredHtml).toContain('Showing 1–64 of 64');
+      exportConnBtn!.onClick!();
+      expect(expandSpy).toHaveBeenCalledTimes(1);
+      expect(downloads).toHaveLength(2);
+      expect(downloads[1].filename).toBe('cluster-su-connections.csv');
+      expect(downloads[1].mime).toBe('text/csv');
+      const csvLines = downloads[1].text.split('\n');
+      expect(csvLines[0]).toMatch(/,Cable,Cable PN$/);
+      expect(csvLines).toHaveLength(577); // header + all 576 connections
+      expect(downloads[1].text).toContain('srv-be,dc9-gpu-001,srv,compute,be,be1,be/1,1x400G,');
+      expect(downloads[1].text).toContain(',dc9-be-sw-01,be_sw,rail-leaf,down,osfp1a,osfp/1 (lane a),2x400G,');
+      expect(downloads[1].text).toContain(',Generic Fiber Co FBR-MPO12-SMF-5M');
+      expect(downloads[1].text).toContain('be-spine,dc9-core-leaf-01,core_leaf,core-leaf,up,osfp5,osfp/5,1x800G,,dc9-spine-02');
+      expect(downloads[1].text).toContain(',800G OSFP AEC,Generic Optics Co CAB-AEC-800G-2M');
 
-    // Verify underlying CSV payloads for both Export Cable BOM CSV and Export Connections CSV (filtered).
-    const bom = estimateTopoBom(lib, v, settings);
-    const cableCsv = cableBomToCsv(lib, bom.cableBom);
-    expect(cableCsv).toContain('srv-be,srv,compute,');
-    expect(cableCsv).toContain('Generic Optics Co CAB-AEC-800G-2M,64,be-spine 64,12,768');
-
-    const allConns = expandTopoConnections(lib, v, hw, topoDeviceIdMap(v));
-    const pnMap = new Map(bom.cableBom.map((r, i) => [v.links[i].index, r.vendorModel]));
-    const filteredConns = filterConnectionsWithPn(allConns, 'dc9-spine-02', pnMap);
-    expect(filteredConns).toHaveLength(32);
-    const connCsv = connectionsToCsv(filteredConns, pnMap);
-    expect(connCsv.split('\n')[0]).toMatch(/,Cable,Cable PN$/);
-    expect(connCsv.split('\n')).toHaveLength(33); // header + 32 filtered rows
-    expect(connCsv).toContain('be-spine,dc9-core-leaf-01,core_leaf,core-leaf,up,osfp5,osfp/5,1x800G,,dc9-spine-02');
-    expect(connCsv).toContain(',800G OSFP AEC,Generic Optics Co CAB-AEC-800G-2M');
-    // Omitting `cablePnByLink` keeps the 20-column header backward-compatible.
-    expect(connectionsToCsv(filteredConns).split('\n')[0]).toMatch(/,Speed,Cable$/);
+      // When `bom.links === 0`, `Export Connections CSV` is disabled.
+      const emptyTopo = parseVirtual('topology: empty\ndevice_set_groups:\n  a: { role: compute, count: 2, ports: { p: e1 } }\n');
+      const emptyTree = TopoConnectionsSection({
+        lib,
+        topo: emptyTopo,
+        totalLinks: 0,
+        cableBom: [],
+        filename: 'empty',
+        onPick: () => {},
+        download: (filename, text, mime) => downloads.push({ filename, text, mime }),
+      });
+      const disabledBtn = findButtonByText(emptyTree, 'Export Connections CSV');
+      expect(disabledBtn?.disabled).toBe(true);
+      const emptyHtml = renderToStaticMarkup(
+        <TopoBomPane
+          lib={lib}
+          topo={emptyTopo}
+          settings={{}}
+          filename="empty"
+          height={240}
+          initialTab="connections"
+          onChange={() => {}}
+        />,
+      );
+      expect(emptyHtml).toMatch(/<button[^>]*disabled=""[^>]*>Export Connections CSV<\/button>/);
+    } finally {
+      expandSpy.mockRestore();
+    }
   });
 });
