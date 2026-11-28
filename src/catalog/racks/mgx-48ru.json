@@ -8,8 +8,8 @@
   "depthMm": 1200,
   "heightMm": 2260,
   "emptyWeightKg": 170,
-  "maxLoadKg": 1500,
-  "maxPowerW": 40000,
+  "maxLoadKg": 2500,
+  "maxPowerW": 240000,
   "schema": "dc-lab/rack@1",
   "sideElements": []
 }

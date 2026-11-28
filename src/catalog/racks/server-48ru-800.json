@@ -1,0 +1,44 @@
+{
+  "id": "server-48ru-800",
+  "name": "Server Rack 48RU (800mm, w/ PDU Bays)",
+  "kind": "server",
+  "units": 48,
+  "unitSystem": "RU",
+  "widthMm": 800,
+  "depthMm": 1200,
+  "heightMm": 2260,
+  "emptyWeightKg": 180,
+  "maxLoadKg": 1500,
+  "maxPowerW": 50000,
+  "schema": "dc-lab/rack@1",
+  "sideElements": [
+    {
+      "id": "pdu-bay-l",
+      "name": "PDU bay L",
+      "side": "left",
+      "widthMm": 100,
+      "depthMm": 1200,
+      "slots": 1,
+      "weightKg": 5,
+      "faces": "rear",
+      "inside": true,
+      "accepts": [
+        "pdu"
+      ]
+    },
+    {
+      "id": "pdu-bay-r",
+      "name": "PDU bay R",
+      "side": "right",
+      "widthMm": 100,
+      "depthMm": 1200,
+      "slots": 1,
+      "weightKg": 5,
+      "faces": "rear",
+      "inside": true,
+      "accepts": [
+        "pdu"
+      ]
+    }
+  ]
+}

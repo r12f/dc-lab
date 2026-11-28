@@ -1,0 +1,59 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "power-shelf-mgx-33kw",
+  "name": "1RU 33kW Power Shelf",
+  "category": "power-shelf",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 800,
+  "weightKg": 22,
+  "power": {
+    "typicalW": 0,
+    "maxW": 0,
+    "capacityW": 33000
+  },
+  "psus": {
+    "count": 6,
+    "inlet": "Busbar",
+    "ratedW": 5500,
+    "layout": "row"
+  },
+  "ports": [
+    {
+      "id": "bmc",
+      "label": "BMC",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "sync",
+      "label": "SYNC",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 2,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "rear",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default",
+      "groupDefaults": {},
+      "overrides": {}
+    }
+  ],
+  "defaultProfileId": "default",
+  "notes": "6x 5.5kW PSUs feeding the rack busbar, with front BMC RJ45 and rear shelf-sync RJ45 ports."
+}

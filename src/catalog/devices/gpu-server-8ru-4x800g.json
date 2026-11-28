@@ -1,0 +1,114 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "gpu-server-8ru-4x800g",
+  "name": "8RU 8-GPU Server (4x800G OSFP)",
+  "category": "server",
+  "height": {
+    "units": 8,
+    "system": "RU"
+  },
+  "depthMm": 897,
+  "weightKg": 130,
+  "power": {
+    "typicalW": 8500,
+    "maxW": 10200
+  },
+  "psus": {
+    "count": 6,
+    "inlet": "C20",
+    "ratedW": 3300
+  },
+  "ports": [
+    {
+      "id": "be",
+      "label": "BACKEND",
+      "role": "data",
+      "formFactor": "OSFP",
+      "heatSink": "IHS",
+      "count": 4,
+      "speedGbps": 800,
+      "lanes": 8,
+      "face": "rear",
+      "rows": 1,
+      "breakoutModes": [
+        "2x400G"
+      ]
+    },
+    {
+      "id": "fe",
+      "label": "FRONTEND",
+      "role": "data",
+      "formFactor": "QSFP112",
+      "count": 4,
+      "speedGbps": 400,
+      "lanes": 4,
+      "face": "rear",
+      "rows": 1,
+      "breakoutModes": [
+        "2x200G",
+        "4x100G"
+      ]
+    },
+    {
+      "id": "ibmgmt",
+      "label": "INBAND",
+      "role": "data",
+      "formFactor": "QSFP28",
+      "count": 2,
+      "speedGbps": 100,
+      "lanes": 4,
+      "face": "rear",
+      "rows": 1,
+      "breakoutModes": [
+        "2x50G",
+        "4x25G",
+        "4x10G"
+      ]
+    },
+    {
+      "id": "bmc",
+      "label": "BMC",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "rear",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "lom",
+      "label": "LOM",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 10,
+      "lanes": 1,
+      "face": "rear",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default (max speed, no module)",
+      "groupDefaults": {},
+      "overrides": {}
+    },
+    {
+      "id": "be-2x400g",
+      "name": "Backend 2x400G",
+      "groupDefaults": {
+        "be": {
+          "mode": "2x400G",
+          "reach": "2xDR4+"
+        }
+      },
+      "overrides": {}
+    }
+  ],
+  "defaultProfileId": "default",
+  "notes": "Air-cooled 8RU 8-GPU server with 6x 3.3kW C20 PSUs, 4x 800G IHS OSFP backend, 4x 400G QSFP112 frontend, 2x 100G QSFP28 in-band management, and BMC/LOM RJ45."
+}

@@ -1,0 +1,93 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "gpu-tray-1ru-lc-4x400g",
+  "name": "1RU Liquid-Cooled GPU Compute Tray (4x400G OSFP)",
+  "category": "server",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 800,
+  "weightKg": 32,
+  "power": {
+    "typicalW": 5400,
+    "maxW": 6600
+  },
+  "ports": [
+    {
+      "id": "be",
+      "label": "BACKEND",
+      "role": "data",
+      "formFactor": "OSFP",
+      "count": 4,
+      "speedGbps": 400,
+      "lanes": 4,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": [
+        "2x200G",
+        "4x100G"
+      ]
+    },
+    {
+      "id": "fe",
+      "label": "FRONTEND",
+      "role": "data",
+      "formFactor": "QSFP112",
+      "count": 4,
+      "speedGbps": 400,
+      "lanes": 4,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": [
+        "2x200G",
+        "4x100G"
+      ]
+    },
+    {
+      "id": "bmc",
+      "label": "BMC",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 3,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "lom",
+      "label": "LOM",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default (max speed, no module)",
+      "groupDefaults": {},
+      "overrides": {}
+    },
+    {
+      "id": "fe-200g",
+      "name": "Frontend 1x200G",
+      "groupDefaults": {
+        "fe": {
+          "mode": "1x200G",
+          "reach": "DR4"
+        }
+      },
+      "overrides": {}
+    }
+  ],
+  "defaultProfileId": "default",
+  "notes": "Powered from the rack busbar (no AC PSUs/inlets). 4x 400G backend, 4x 400G frontend, 3x BMC and 1x LOM RJ45; scale-up links over the rack spine."
+}

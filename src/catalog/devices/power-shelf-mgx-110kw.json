@@ -8,7 +8,7 @@
     "system": "RU"
   },
   "depthMm": 800,
-  "weightKg": 0,
+  "weightKg": 55,
   "power": {
     "typicalW": 0,
     "maxW": 0,
@@ -17,10 +17,35 @@
   "psus": {
     "count": 6,
     "inlet": "Busbar",
-    "ratedW": 0,
+    "ratedW": 18300,
     "layout": "row"
   },
-  "ports": [],
+  "ports": [
+    {
+      "id": "bmc",
+      "label": "BMC",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "sync",
+      "label": "SYNC",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 2,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "rear",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
   "breakoutProfiles": [
     {
       "id": "default",
@@ -30,5 +55,5 @@
     }
   ],
   "defaultProfileId": "default",
-  "notes": "6 PSUs with built-in energy storage."
+  "notes": "6x 18.3kW PSUs with built-in energy storage, front BMC RJ45, and rear shelf-sync RJ45 ports."
 }

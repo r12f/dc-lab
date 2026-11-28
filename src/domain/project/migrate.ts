@@ -1,6 +1,8 @@
 import { migrateSideKind } from '../rack/side-elements';
 import { abbrFromName, cleanAbbr } from '../design/abbr';
 import type { PortRole } from '../device/types';
+import { parseYaml, withoutComment } from '../topo/yaml';
+import { setYamlIn } from '../topo/yaml-edit';
 
 /**
  * Upgrades older in-file shapes to the current model, in place on a plain-JSON copy.
@@ -286,9 +288,12 @@ const RENAMED_IDS: Record<string, string> = {
   'network-48ru-800': 'network-48ru-600',
   // 800G OSFP 2xDR4 and its 2 km version are one module (2xDR4+).
   'osfp-800g-2xdr4-2km': 'osfp-800g-2xdr4',
+  // 1RU liquid-cooled GPU compute tray renamed when 4x400G and 4x800G generations were added.
+  'gpu-tray-1ru-lc': 'gpu-tray-1ru-lc-4x1600g',
 };
+const own = <V>(map: Record<string, V>, key: string): V | undefined => (Object.hasOwn(map, key) ? map[key] : undefined);
 const renameFf = (x: Json): Json => {
-  const ff = RENAMED_FORM_FACTORS[String(x.formFactor)];
+  const ff = own(RENAMED_FORM_FACTORS, String(x.formFactor));
   if (!ff) return x;
   return { ...x, formFactor: ff, ...(x.label === x.formFactor ? { label: ff } : {}) };
 };
@@ -304,7 +309,7 @@ const NETWORK_WITH_SIDEPODS: Record<string, string> = {
   'network-42ru-600': 'network-42ru-600-sidepods', 'network-48ru-600': 'network-48ru-600-sidepods',
 };
 function sidepodTemplate(d: Json): Json {
-  const to = NETWORK_WITH_SIDEPODS[String(d.templateId)];
+  const to = own(NETWORK_WITH_SIDEPODS, String(d.templateId));
   const usesPod = ((d.placements as Json[]) ?? []).some((p) => {
     const m = p.mount as Json | undefined;
     // Pre-element side mounts ({ side }) were sidepods.
@@ -312,26 +317,92 @@ function sidepodTemplate(d: Json): Json {
   });
   return to && usesPod ? { ...d, templateId: to } : d;
 }
-const renameId = (id: unknown) => RENAMED_IDS[String(id)] ?? SIZED_FILLERS[String(id)]?.[0] ?? id;
+const renameId = (id: unknown) => own(RENAMED_IDS, String(id)) ?? own(SIZED_FILLERS, String(id))?.[0] ?? id;
+const renameGenericId = (id: unknown) => {
+  const s = String(id);
+  if (!s.endsWith('--generic')) return renameId(id);
+  const base = s.slice(0, -'--generic'.length);
+  const next = own(RENAMED_IDS, base) ?? own(SIZED_FILLERS, base)?.[0];
+  return next ? `${next}--generic` : id;
+};
+function renameMapKeys<V>(
+  obj: unknown,
+  keyFn: (k: string) => string,
+  merge?: (prev: V, next: V) => V,
+): Record<string, V> {
+  const entries = Object.entries((obj as Record<string, V>) ?? {});
+  const out: Record<string, V> = {};
+  // Apply renamed keys first so an already-current key wins on collision.
+  for (const [k, v] of entries) {
+    const nk = keyFn(k);
+    if (nk !== k) out[nk] = Object.hasOwn(out, nk) && merge ? merge(out[nk], v) : v;
+  }
+  for (const [k, v] of entries) {
+    const nk = keyFn(k);
+    if (nk === k) out[nk] = Object.hasOwn(out, nk) && merge ? merge(out[nk], v) : v;
+  }
+  return out;
+}
+function renameBomItemsMap(bomItems: unknown): Record<string, string> {
+  const mapped = renameMapKeys<unknown>(bomItems, (k) => String(renameId(k)));
+  return Object.fromEntries(
+    Object.entries(mapped).map(([k, v]) => [k, String(v).endsWith('--generic') ? String(renameGenericId(v)) : String(v)]),
+  );
+}
 /** Placement of a removed fixed-size filler -> the size-adjustable item with that height. */
 const renamePlacement = (x: Json): Json => {
-  const sized = SIZED_FILLERS[String(x.deviceId)];
-  return sized ? { ...x, deviceId: sized[0], units: x.units ?? sized[1] } : { ...x, deviceId: renameId(x.deviceId) };
+  const withVariant = x.variantId !== undefined ? { ...x, variantId: renameGenericId(x.variantId) } : x;
+  const sized = own(SIZED_FILLERS, String(x.deviceId));
+  return sized
+    ? { ...withVariant, deviceId: sized[0], units: x.units ?? sized[1] }
+    : { ...withVariant, deviceId: renameId(x.deviceId) };
 };
 
 function migrateRenames(p: Json): Json {
-  const props = (p.builtinProperties as Json | undefined) ?? {};
+  const props = renameMapKeys<Json>(
+    p.builtinProperties,
+    (k) => String(renameGenericId(k)),
+    (a, b) => ({ ...(a ?? {}), ...(b ?? {}) }),
+  );
+  const migratedVariants: Json[] = [];
+  const variantById = new Map<string, number>();
+  for (const v0 of ((p.variants as Json[]) ?? [])) {
+    const renamed = String(v0.id).endsWith('--generic') && renameGenericId(v0.id) !== v0.id;
+    const v: Json = {
+      ...v0,
+      id: String(v0.id).endsWith('--generic') ? renameGenericId(v0.id) : v0.id,
+      itemId: renameId(v0.itemId),
+    };
+    const key = String(v.id);
+    const existingIdx = variantById.get(key);
+    if (existingIdx === undefined) {
+      variantById.set(key, migratedVariants.length);
+      migratedVariants.push(v);
+    } else if (!renamed) {
+      const prev = migratedVariants[existingIdx];
+      migratedVariants[existingIdx] = {
+        ...prev,
+        ...v,
+        ...(prev.properties || v.properties ? { properties: { ...(prev.properties as Json), ...(v.properties as Json) } } : {}),
+      };
+    }
+  }
   return {
     ...p,
     devices: ((p.devices as Json[]) ?? []).map((d) => ({ ...d, ports: ((d.ports as Json[]) ?? []).map(renameFf) })),
     optics: ((p.optics as Json[]) ?? []).map(renameFf),
     rackDesigns: ((p.rackDesigns as Json[]) ?? []).map((d) => ({
-      ...d, templateId: renameId(d.templateId),
+      ...d,
+      templateId: renameId(d.templateId),
       placements: ((d.placements as Json[]) ?? []).map(renamePlacement),
+      ...(d.bomItems ? { bomItems: renameBomItemsMap(d.bomItems) } : {}),
+      ...(d.bomSiAdjustable
+        ? { bomSiAdjustable: renameMapKeys<boolean>(d.bomSiAdjustable, (k) => String(renameId(k)), (a, b) => Boolean(a || b)) }
+        : {}),
     })),
-    hiddenBuiltins: [...new Set(((p.hiddenBuiltins as unknown[]) ?? []).map(renameId))],
-    variants: ((p.variants as Json[]) ?? []).map((v) => ({ ...v, itemId: renameId(v.itemId) })),
-    builtinProperties: Object.fromEntries(Object.entries(props).map(([k, v]) => [renameId(k), v])),
+    hiddenBuiltins: [...new Set(((p.hiddenBuiltins as unknown[]) ?? []).map(renameGenericId))],
+    variants: migratedVariants,
+    builtinProperties: props,
   };
 }
 
@@ -404,15 +475,55 @@ function migrateBomItems(p: Json): Json {
   };
 }
 
+function migrateTopologySource(source: string): string {
+  try {
+    const doc = parseYaml(source);
+    if (doc && typeof doc === 'object' && !Array.isArray(doc)) {
+      const groups = (doc as Record<string, unknown>).device_set_groups;
+      if (groups && typeof groups === 'object' && !Array.isArray(groups)) {
+        let out = source;
+        for (const [name, g] of Object.entries(groups as Record<string, unknown>)) {
+          if (!g || typeof g !== 'object' || Array.isArray(g)) continue;
+          const dt = (g as Record<string, unknown>).device_type;
+          const next = typeof dt === 'string' ? own(RENAMED_IDS, dt) : undefined;
+          if (next) out = setYamlIn(out, ['device_set_groups', name, 'device_type'], next);
+        }
+        return out;
+      }
+    }
+    return source;
+  } catch {
+    return source
+      .split('\n')
+      .map((line) => {
+        const code = withoutComment(line);
+        const comment = line.slice(code.length);
+        const updated = code.replace(
+          /((?:^|[{,\s])(?:['"]?device_type['"]?)\s*:\s*)(['"]?)([A-Za-z0-9-]+)\2(?=\s*(?:[,}\]\r]|$))/g,
+          (m, prefix: string, quote: string, id: string) => {
+            const next = own(RENAMED_IDS, id);
+            return next ? `${prefix}${quote}${next}${quote}` : m;
+          },
+        );
+        return updated + comment;
+      })
+      .join('\n');
+  }
+}
+
 /**
  * Topologies: the estimated BOM's device type per group and optic per pool moved into the YAML (`device_type`, a
  * pool's `optic`); only the item picks stay in `bom`.
  */
 function migrateTopology(t: Json): Json {
-  const bom = t.bom as Json | undefined;
-  if (!bom || !('devices' in bom || 'optics' in bom)) return t;
-  const rest = Object.fromEntries(Object.entries(t).filter(([k]) => k !== 'bom'));
-  return bom.items ? { ...rest, bom: { items: bom.items } } : rest;
+  const withSource = typeof t.source === 'string' ? { ...t, source: migrateTopologySource(t.source) } : t;
+  const bom = withSource.bom as Json | undefined;
+  if (!bom) return withSource;
+  const rest = Object.fromEntries(Object.entries(withSource).filter(([k]) => k !== 'bom'));
+  if ('devices' in bom || 'optics' in bom) {
+    return bom.items ? { ...rest, bom: { items: renameBomItemsMap(bom.items) } } : rest;
+  }
+  return bom.items ? { ...rest, bom: { ...bom, items: renameBomItemsMap(bom.items) } } : withSource;
 }
 
 export function migrateProjectJson(raw: Json): Json {
@@ -438,7 +549,7 @@ export function migrateProjectJson(raw: Json): Json {
     })),
     hiddenBuiltins: p.hiddenBuiltins ?? [],
     // Profile edits on built-in devices: same setting migrations as device profiles.
-    builtinProfiles: Object.fromEntries(Object.entries((p.builtinProfiles as Json | undefined) ?? {}).map(([id, bp]) => [id, {
+    builtinProfiles: Object.fromEntries(Object.entries(renameMapKeys<Json>(p.builtinProfiles, (id) => String(renameId(id)))).map(([id, bp]) => [id, {
       ...(bp as Json),
       breakoutProfiles: (((bp as Json).breakoutProfiles as Json[]) ?? []).map((x) => ({
         ...x, groupDefaults: mapValues(x.groupDefaults, toProfileSetting), overrides: mapValues(x.overrides, toProfileSetting),

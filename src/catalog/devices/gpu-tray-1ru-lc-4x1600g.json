@@ -1,0 +1,94 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "gpu-tray-1ru-lc-4x1600g",
+  "name": "1RU Liquid-Cooled GPU Compute Tray (4x1.6T OSFP)",
+  "category": "server",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 800,
+  "weightKg": 36,
+  "power": {
+    "typicalW": 9000,
+    "maxW": 11000
+  },
+  "ports": [
+    {
+      "id": "be",
+      "label": "BACKEND",
+      "role": "data",
+      "formFactor": "OSFP",
+      "count": 4,
+      "speedGbps": 1600,
+      "lanes": 8,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": [
+        "2x800G",
+        "4x400G",
+        "8x200G"
+      ]
+    },
+    {
+      "id": "fe",
+      "label": "FRONTEND",
+      "role": "data",
+      "formFactor": "QSFP112",
+      "count": 2,
+      "speedGbps": 400,
+      "lanes": 4,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": [
+        "2x200G",
+        "4x100G"
+      ]
+    },
+    {
+      "id": "bmc",
+      "label": "BMC",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 2,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "lom",
+      "label": "LOM",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default (max speed, no module)",
+      "groupDefaults": {},
+      "overrides": {}
+    },
+    {
+      "id": "be-2x800g",
+      "name": "Dual-plane 2x800G",
+      "groupDefaults": {
+        "be": {
+          "mode": "2x800G",
+          "reach": "2xDR4+"
+        }
+      },
+      "overrides": {}
+    }
+  ],
+  "defaultProfileId": "default",
+  "notes": "Powered from the rack busbar (no AC PSUs/inlets). 4x 1.6T backend, 2x 400G frontend, 2x BMC and 1x LOM RJ45; scale-up links over the rack spine."
+}
