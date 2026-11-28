@@ -1,0 +1,84 @@
+{
+  "schema": "dc-lab/device@1",
+  "id": "switch-48x1g-4x100g-mgmt",
+  "name": "48x1G RJ45 + 4x100G QSFP28 Management Switch",
+  "category": "switch",
+  "height": {
+    "units": 1,
+    "system": "RU"
+  },
+  "depthMm": 254,
+  "weightKg": 4.5,
+  "power": {
+    "typicalW": 65,
+    "maxW": 120
+  },
+  "psus": {
+    "count": 2,
+    "inlet": "C14",
+    "ratedW": 150
+  },
+  "ports": [
+    {
+      "id": "copper",
+      "label": "RJ45",
+      "role": "data",
+      "formFactor": "RJ45",
+      "count": 48,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 2,
+      "breakoutModes": []
+    },
+    {
+      "id": "uplink",
+      "label": "QSFP28",
+      "role": "data",
+      "formFactor": "QSFP28",
+      "count": 4,
+      "speedGbps": 100,
+      "lanes": 4,
+      "face": "front",
+      "rows": 2,
+      "breakoutModes": [
+        "2x50G",
+        "4x25G",
+        "4x10G"
+      ]
+    },
+    {
+      "id": "mgmt",
+      "label": "MGMT",
+      "role": "mgmt",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 1,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    },
+    {
+      "id": "console",
+      "label": "CONSOLE",
+      "role": "console",
+      "formFactor": "RJ45",
+      "count": 1,
+      "speedGbps": 0,
+      "lanes": 1,
+      "face": "front",
+      "rows": 1,
+      "breakoutModes": []
+    }
+  ],
+  "breakoutProfiles": [
+    {
+      "id": "default",
+      "name": "Default (max speed, no module)",
+      "groupDefaults": {},
+      "overrides": {}
+    }
+  ],
+  "defaultProfileId": "default"
+}

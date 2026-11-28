@@ -8,8 +8,13 @@ describe('switch order', () => {
     const sorted = [...sw].sort((a, b) => deviceSortKey(a)! - deviceSortKey(b)! || a.name.localeCompare(b.name));
     const bw = sorted.map(dataBandwidthGbps);
     expect(bw).toEqual([...bw].sort((a, b) => b - a));
-    expect(sorted[0].id).toBe('switch-cpo-128x800g-mpo');
-    expect(dataBandwidthGbps(sorted[0])).toBe(102400);
+    expect(sorted.slice(0, 3).map((d) => d.id)).toEqual([
+      'switch-72x1600g-osfp-lc',
+      'switch-72x1600g-osfp',
+      'switch-cpo-128x800g-mpo',
+    ]);
+    expect(dataBandwidthGbps(sorted[0])).toBe(115200);
+    expect(dataBandwidthGbps(sorted[2])).toBe(102400);
   });
   it('mgmt/service ports do not count; non-switches have no key', () => {
     const osfp = BUILTIN_CATALOG_FOR_TESTS.devices.find((d) => d.id === 'switch-64x800g-osfp')!;
