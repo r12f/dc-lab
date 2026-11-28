@@ -2,8 +2,6 @@ import { useMemo, useState } from 'react';
 import type { Library } from '../../domain/library/library';
 import type { VirtualTopo } from '../../domain/topo/virtual';
 import { estimateTopoBom, topoBomColumns, type PoolEstimate, type TopoBomSettings } from '../../domain/topo/bom';
-import { expandTopoConnections } from '../../domain/topo/connections';
-import { topoDeviceIdMap } from '../../domain/topo/devices';
 import { topoHardware, type GroupHardware } from '../../domain/topo/hardware';
 import { lineTotalW } from '../../domain/bom/types';
 import { formatGbps, formatPower } from '../../domain/units';
@@ -28,8 +26,6 @@ interface Props {
   height: number;
   /** Optional controlled/initial sub-tab (`'bom'` | `'connections'`). */
   initialTab?: TopoBottomTab;
-  initialFilter?: string;
-  initialPage?: number;
 }
 
 const fmt = (n: number) => n.toLocaleString('en-US');
@@ -47,7 +43,7 @@ function withKey(m: Record<string, string> | undefined, key: string, value: stri
 /**
  * Bottom pane under the virtual topology diagram with 2 sub-tabs:
  * 1. `Estimated BOM`: device/link/optic/cable stats, hardware per group, and full procurement BOM table.
- * 2. `Port Connections (<total>)`: per-link Cable BOM summary and end-to-end point-to-point port connections.
+ * 2. `Port Connections (<total>)`: per-link Cable BOM summary and on-demand CSV export of all port connections.
  */
 export function TopoBomPane({
   lib,
@@ -58,17 +54,11 @@ export function TopoBomPane({
   filename,
   height,
   initialTab = 'bom',
-  initialFilter,
-  initialPage,
 }: Props) {
   const [tab, setTab] = useState<TopoBottomTab>(initialTab);
   const defs = useAppStore((s) => s.project.propertyDefs);
   const resolvedHw = useMemo(() => hardware ?? topoHardware(lib, topo), [hardware, lib, topo]);
   const bom = useMemo(() => estimateTopoBom(lib, topo, settings), [lib, topo, settings]);
-  const connections = useMemo(
-    () => expandTopoConnections(lib, topo, resolvedHw, topoDeviceIdMap(topo)),
-    [lib, topo, resolvedHw],
-  );
   const columns = useMemo(() => topoBomColumns(defs), [defs]);
   const devices = topo.groups.reduce((n, g) => n + g.count, 0);
   const optics = bom.lines.filter((l) => l.kind === 'optic').reduce((n, l) => n + l.qty, 0);
@@ -86,7 +76,7 @@ export function TopoBomPane({
           onChange={setTab}
           tabs={[
             { id: 'bom', label: 'Estimated BOM' },
-            { id: 'connections', label: `Port Connections (${fmt(connections.length)})` },
+            { id: 'connections', label: `Port Connections (${fmt(bom.links)})` },
           ]}
         />
       </div>
@@ -158,13 +148,12 @@ export function TopoBomPane({
         ) : (
           <TopoConnectionsSection
             lib={lib}
-            links={topo.links}
+            topo={topo}
+            hardware={resolvedHw}
+            totalLinks={bom.links}
             cableBom={bom.cableBom}
-            connections={connections}
             filename={filename}
             onPick={onPick}
-            initialQuery={initialFilter}
-            initialPage={initialPage}
           />
         )}
       </div>
