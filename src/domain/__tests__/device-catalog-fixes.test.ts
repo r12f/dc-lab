@@ -16,11 +16,23 @@ describe('device catalog', () => {
   it('110kW power shelf is 3RU', () => {
     expect(dev('power-shelf-mgx-110kw')?.height.units).toBe(3);
   });
-  it('GPU compute tray: 1RU, 2x 200G frontend + 4x 1.6T backend; scale-up switch tray and leak tray have no ports', () => {
-    const g = dev('gpu-tray-1ru-lc')!;
+  it('MGX GPU compute & scale-up switch trays: backend before frontend, compact RJ45 control/sensor ports; leak tray has no ports', () => {
+    expect(dev('gpu-tray-1ru-lc')).toBeUndefined();
+    const g = dev('gpu-tray-1ru-lc-4x1600g')!;
     expect(g.height.units).toBe(1);
-    expect(g.ports.map((p) => [p.id, p.count, p.speedGbps])).toEqual([['fe', 2, 200], ['be', 4, 1600]]);
-    expect(dev('scaleup-switch-tray-1ru-lc')?.ports).toEqual([]);
+    expect(g.ports.map((p) => [p.id, p.role, p.count, p.speedGbps])).toEqual([
+      ['be', 'data', 4, 1600],
+      ['fe', 'data', 2, 400],
+      ['bmc', 'mgmt', 2, 1],
+      ['lom', 'mgmt', 1, 1],
+    ]);
+    const sw = dev('scaleup-switch-tray-1ru-lc')!;
+    expect(sw.ports.map((p) => [p.id, p.role, p.count, p.speedGbps])).toEqual([
+      ['console', 'console', 1, 0],
+      ['bmc', 'mgmt', 1, 1],
+      ['mgmt', 'mgmt', 2, 1],
+      ['leak', 'console', 1, 0],
+    ]);
     expect(dev('leak-tray')?.ports).toEqual([]);
   });
   it('64x1.6T switch: busbar-fed (no PSUs), mgmt + BMC + console RJ45 and a 100G QSFP28', () => {

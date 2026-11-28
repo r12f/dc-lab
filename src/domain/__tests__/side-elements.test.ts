@@ -35,10 +35,12 @@ describe('default side elements', () => {
   });
   it('built-in templates follow the defaults', () => {
     const sides = (els: { side: string; inside?: boolean }[]) => els.map((e) => `${e.side}:${e.inside ? 'pdu-bay' : 'sidepod'}`);
-    // "(PDU+SidePods)" / "(w/ Sidepods)" variants carry network-rack side elements with sidepods (MGX too).
+    // "(PDU+SidePods)" / "(w/ Sidepods)" variants carry network-rack side elements with sidepods (MGX too);
+    // "(w/ PDU Bays)" variants carry network-rack PDU bays without sidepods.
     for (const r of BUILTIN_CATALOG_FOR_TESTS.racks) {
       const pods = /\(PDU\+SidePods\)|\(w\/ Sidepods\)/.test(r.name);
-      const kind = pods ? 'network' : r.kind;
+      const pduBays = /\bw\/ PDU Bays\)/.test(r.name);
+      const kind = pods || pduBays ? 'network' : r.kind;
       expect(sides(r.sideElements), r.id).toEqual(sides(defaultSideElements(kind, r.depthMm, pods)));
     }
   });
