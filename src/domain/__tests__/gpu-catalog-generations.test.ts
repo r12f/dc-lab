@@ -9,6 +9,8 @@ import { parseVirtual } from '../topo/virtual';
 import { layoutFace, SMALL_PORT, type Box } from '../../features/devices/drawing/faceplate-layout';
 import { newDesign } from '../design/factory';
 import { newPlacement } from '../design/placement';
+import { applicableCables, placementConnectors, planAssignments, planCable } from '../design/cable-assign';
+import { PSU_GROUP_ID } from '../device/ports';
 import { computeRackMetrics } from '../design/metrics';
 import { designIssues } from '../design/issues';
 import { footprintTiles } from '../rack/side-elements';
@@ -252,45 +254,39 @@ describe('GPU compute generations, MGX power shelves, 2RU 3-phase PDU, and racks
 
   it('assembles a 4-server 800mm rack with 2x 2RU 3-phase PDUs and 24 C19-C20 cords with zero design issues', () => {
     const design = newDesign('gpu-8ru-rack', '8RU GPU Rack', 'server-48ru-800');
-    design.placements.push(
-      newPlacement('pdu1', 'pdu-horizontal-2ru-3ph', 'PDU1', { kind: 'rack', position: 1, face: 'rear' }),
-      newPlacement('pdu2', 'pdu-horizontal-2ru-3ph', 'PDU2', { kind: 'rack', position: 3, face: 'rear' }),
+    const pdu1 = newPlacement('pdu1', 'pdu-horizontal-2ru-3ph', 'PDU1', { kind: 'rack', position: 1, face: 'front' });
+    const pdu2 = newPlacement('pdu2', 'pdu-horizontal-2ru-3ph', 'PDU2', { kind: 'rack', position: 3, face: 'front' });
+    design.placements.push(pdu1, pdu2);
+    const servers = Array.from({ length: 4 }, (_, s) =>
+      newPlacement(`srv${s + 1}`, 'gpu-server-8ru-4x800g', `GPU${s + 1}`, {
+        kind: 'rack',
+        position: 5 + s * 9,
+        face: 'front',
+      }),
     );
-    for (let s = 0; s < 4; s++) {
-      design.placements.push(
-        newPlacement(`srv${s + 1}`, 'gpu-server-8ru-4x800g', `GPU${s + 1}`, {
-          kind: 'rack',
-          position: 5 + s * 9,
-          face: 'front',
-        }),
-      );
-    }
+    design.placements.push(...servers);
 
-    const banks = ['bank-a-c19', 'bank-b-c19', 'bank-c-c19'] as const;
-    const outlets: { placementId: string; portRef: string; connector: number }[] = [];
-    for (const pduId of ['pdu1', 'pdu2']) {
-      for (const bank of banks) {
-        for (let idx = 1; idx <= 4; idx++) {
-          outlets.push({ placementId: pduId, portRef: `${bank}/${idx}`, connector: 1 });
-        }
-      }
-    }
+    // Rear face exposes all 24 C19 outlets across the two 2RU PDUs and all 24 C20 PSU inlets across the four 8RU servers.
+    const outlets = [pdu1, pdu2].flatMap((pdu) =>
+      placementConnectors(lib, design, pdu, 'rear').filter((e) => e.portRef.startsWith('bank-')),
+    );
+    const inlets = servers.flatMap((srv) =>
+      placementConnectors(lib, design, srv, 'rear').filter((e) => e.portRef.startsWith(`${PSU_GROUP_ID}/`)),
+    );
     expect(outlets).toHaveLength(24);
+    expect(inlets).toHaveLength(24);
+    expect(outlets.every((e) => e.connector === undefined)).toBe(true);
+    expect(inlets.every((e) => e.connector === undefined)).toBe(true);
+    expect(applicableCables(lib, design, [inlets[0]], [outlets[0]]).map((c) => c.id)).toEqual(['power-c19-c20']);
+    expect(planCable(lib, design, [inlets[0]], [outlets[0]], 'power-c19-c20', 'left').reversed).toBeFalsy();
 
-    let cordIdx = 0;
-    for (let s = 1; s <= 4; s++) {
-      for (let psu = 1; psu <= 6; psu++) {
-        const outlet = outlets[cordIdx++];
-        design.cables.push({
-          id: `pwr-${cordIdx}`,
-          mediaId: 'power-c19-c20',
-          from: [outlet],
-          to: [{ placementId: `srv${s}`, portRef: `psu/${psu}`, connector: 1 }],
-          route: cordIdx <= 12 ? 'left' : 'right',
-          quantity: 1,
-        });
-      }
-    }
+    const leftPlan = planAssignments(lib, design, inlets.slice(0, 12), outlets.slice(0, 12), 'power-c19-c20', 'left');
+    expect(leftPlan.error).toBeUndefined();
+    design.cables.push(...leftPlan.runs.map((r, i) => ({ ...r, id: `pwr-l-${i + 1}` })));
+
+    const rightPlan = planAssignments(lib, design, inlets.slice(12), outlets.slice(12), 'power-c19-c20', 'right');
+    expect(rightPlan.error).toBeUndefined();
+    design.cables.push(...rightPlan.runs.map((r, i) => ({ ...r, id: `pwr-r-${i + 1}` })));
 
     expect(design.cables).toHaveLength(24);
     const metrics = computeRackMetrics(lib, design);
@@ -376,6 +372,9 @@ describe('GPU compute generations, MGX power shelves, 2RU 3-phase PDU, and racks
           bomItems: {
             'gpu-tray-1ru-lc': 'gpu-tray-1ru-lc--generic',
           },
+          bomSiAdjustable: {
+            'gpu-tray-1ru-lc': true,
+          },
           cables: [],
         },
       ],
@@ -393,7 +392,7 @@ describe('GPU compute generations, MGX power shelves, 2RU 3-phase PDU, and racks
         {
           id: 'topo-draft',
           name: 'Draft',
-          source: '# comment: device_type: gpu-tray-1ru-lc\ndevice_set_groups:\n  broken: [unclosed\n  c:\n    device_type: "gpu-tray-1ru-lc" # keep comment\n',
+          source: '# comment: device_type: gpu-tray-1ru-lc\ndevice_set_groups:\n  broken: [unclosed\n  c:\n    device_type: "gpu-tray-1ru-lc" # keep comment\n  proto:\n    device_type: constructor\n',
           bom: {
             devices: { c: 'gpu-tray-1ru-lc' },
             items: { 'gpu-tray-1ru-lc': 'custom-tray-v1' },
@@ -402,9 +401,17 @@ describe('GPU compute generations, MGX power shelves, 2RU 3-phase PDU, and racks
       ],
     };
 
-    // Check `hiddenBuiltins` rename directly on `migrateProjectJson` (before `normalizeProject` clears hiddenBuiltins).
-    const migratedRaw = migrateProjectJson(raw);
-    expect(migratedRaw.hiddenBuiltins).toEqual(['gpu-tray-1ru-lc-4x1600g', 'gpu-tray-1ru-lc-4x1600g--generic']);
+    // Check `hiddenBuiltins` rename (and Object.prototype key safety) directly on `migrateProjectJson`.
+    const migratedRaw = migrateProjectJson({
+      ...raw,
+      hiddenBuiltins: [...raw.hiddenBuiltins, 'constructor', 'constructor--generic'],
+    });
+    expect(migratedRaw.hiddenBuiltins).toEqual([
+      'gpu-tray-1ru-lc-4x1600g',
+      'gpu-tray-1ru-lc-4x1600g--generic',
+      'constructor',
+      'constructor--generic',
+    ]);
 
     const project = normalizeProject(raw);
 
@@ -421,9 +428,12 @@ describe('GPU compute generations, MGX power shelves, 2RU 3-phase PDU, and racks
       'gpu-tray-1ru-lc-4x1600g--generic': { sku: 'OLD-GENERIC' },
     });
 
-    // 3. rackDesigns[].bomItems (key & --generic value)
+    // 3. rackDesigns[].bomItems (key & --generic value) & rackDesigns[].bomSiAdjustable
     expect(project.rackDesigns[0].bomItems).toEqual({
       'gpu-tray-1ru-lc-4x1600g': 'gpu-tray-1ru-lc-4x1600g--generic',
+    });
+    expect(project.rackDesigns[0].bomSiAdjustable).toEqual({
+      'gpu-tray-1ru-lc-4x1600g': true,
     });
 
     // 4. builtinProfiles keys (plus reach rename `2xDR4-2` -> `2xDR4+`)
@@ -445,6 +455,7 @@ describe('GPU compute generations, MGX power shelves, 2RU 3-phase PDU, and racks
     expect(migratedSrc).not.toMatch(/gpu-tray-1ru-lc(?!-4x1600g)/);
     expect(project.topologies[1].source).toContain('# comment: device_type: gpu-tray-1ru-lc');
     expect(project.topologies[1].source).toContain('device_type: "gpu-tray-1ru-lc-4x1600g" # keep comment');
+    expect(project.topologies[1].source).toContain('device_type: constructor\n');
 
     // Migrated topology compiles cleanly against the shipped catalog with zero hardware problems.
     const vt = parseVirtual(migratedSrc);

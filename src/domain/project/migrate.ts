@@ -291,8 +291,9 @@ const RENAMED_IDS: Record<string, string> = {
   // 1RU liquid-cooled GPU compute tray renamed when 4x400G and 4x800G generations were added.
   'gpu-tray-1ru-lc': 'gpu-tray-1ru-lc-4x1600g',
 };
+const own = <V>(map: Record<string, V>, key: string): V | undefined => (Object.hasOwn(map, key) ? map[key] : undefined);
 const renameFf = (x: Json): Json => {
-  const ff = RENAMED_FORM_FACTORS[String(x.formFactor)];
+  const ff = own(RENAMED_FORM_FACTORS, String(x.formFactor));
   if (!ff) return x;
   return { ...x, formFactor: ff, ...(x.label === x.formFactor ? { label: ff } : {}) };
 };
@@ -308,7 +309,7 @@ const NETWORK_WITH_SIDEPODS: Record<string, string> = {
   'network-42ru-600': 'network-42ru-600-sidepods', 'network-48ru-600': 'network-48ru-600-sidepods',
 };
 function sidepodTemplate(d: Json): Json {
-  const to = NETWORK_WITH_SIDEPODS[String(d.templateId)];
+  const to = own(NETWORK_WITH_SIDEPODS, String(d.templateId));
   const usesPod = ((d.placements as Json[]) ?? []).some((p) => {
     const m = p.mount as Json | undefined;
     // Pre-element side mounts ({ side }) were sidepods.
@@ -316,12 +317,12 @@ function sidepodTemplate(d: Json): Json {
   });
   return to && usesPod ? { ...d, templateId: to } : d;
 }
-const renameId = (id: unknown) => RENAMED_IDS[String(id)] ?? SIZED_FILLERS[String(id)]?.[0] ?? id;
+const renameId = (id: unknown) => own(RENAMED_IDS, String(id)) ?? own(SIZED_FILLERS, String(id))?.[0] ?? id;
 const renameGenericId = (id: unknown) => {
   const s = String(id);
   if (!s.endsWith('--generic')) return renameId(id);
   const base = s.slice(0, -'--generic'.length);
-  const next = RENAMED_IDS[base] ?? SIZED_FILLERS[base]?.[0];
+  const next = own(RENAMED_IDS, base) ?? own(SIZED_FILLERS, base)?.[0];
   return next ? `${next}--generic` : id;
 };
 function renameMapKeys<V>(
@@ -334,11 +335,11 @@ function renameMapKeys<V>(
   // Apply renamed keys first so an already-current key wins on collision.
   for (const [k, v] of entries) {
     const nk = keyFn(k);
-    if (nk !== k) out[nk] = nk in out && merge ? merge(out[nk], v) : v;
+    if (nk !== k) out[nk] = Object.hasOwn(out, nk) && merge ? merge(out[nk], v) : v;
   }
   for (const [k, v] of entries) {
     const nk = keyFn(k);
-    if (nk === k) out[nk] = nk in out && merge ? merge(out[nk], v) : v;
+    if (nk === k) out[nk] = Object.hasOwn(out, nk) && merge ? merge(out[nk], v) : v;
   }
   return out;
 }
@@ -351,7 +352,7 @@ function renameBomItemsMap(bomItems: unknown): Record<string, string> {
 /** Placement of a removed fixed-size filler -> the size-adjustable item with that height. */
 const renamePlacement = (x: Json): Json => {
   const withVariant = x.variantId !== undefined ? { ...x, variantId: renameGenericId(x.variantId) } : x;
-  const sized = SIZED_FILLERS[String(x.deviceId)];
+  const sized = own(SIZED_FILLERS, String(x.deviceId));
   return sized
     ? { ...withVariant, deviceId: sized[0], units: x.units ?? sized[1] }
     : { ...withVariant, deviceId: renameId(x.deviceId) };
@@ -395,6 +396,9 @@ function migrateRenames(p: Json): Json {
       templateId: renameId(d.templateId),
       placements: ((d.placements as Json[]) ?? []).map(renamePlacement),
       ...(d.bomItems ? { bomItems: renameBomItemsMap(d.bomItems) } : {}),
+      ...(d.bomSiAdjustable
+        ? { bomSiAdjustable: renameMapKeys<boolean>(d.bomSiAdjustable, (k) => String(renameId(k)), (a, b) => Boolean(a || b)) }
+        : {}),
     })),
     hiddenBuiltins: [...new Set(((p.hiddenBuiltins as unknown[]) ?? []).map(renameGenericId))],
     variants: migratedVariants,
@@ -481,7 +485,7 @@ function migrateTopologySource(source: string): string {
         for (const [name, g] of Object.entries(groups as Record<string, unknown>)) {
           if (!g || typeof g !== 'object' || Array.isArray(g)) continue;
           const dt = (g as Record<string, unknown>).device_type;
-          const next = typeof dt === 'string' ? RENAMED_IDS[dt] : undefined;
+          const next = typeof dt === 'string' ? own(RENAMED_IDS, dt) : undefined;
           if (next) out = setYamlIn(out, ['device_set_groups', name, 'device_type'], next);
         }
         return out;
@@ -496,7 +500,10 @@ function migrateTopologySource(source: string): string {
         const comment = line.slice(code.length);
         const updated = code.replace(
           /((?:^|[{,\s])(?:['"]?device_type['"]?)\s*:\s*)(['"]?)([A-Za-z0-9-]+)\2(?=\s*(?:[,}\]\r]|$))/g,
-          (m, prefix: string, quote: string, id: string) => (RENAMED_IDS[id] ? `${prefix}${quote}${RENAMED_IDS[id]}${quote}` : m),
+          (m, prefix: string, quote: string, id: string) => {
+            const next = own(RENAMED_IDS, id);
+            return next ? `${prefix}${quote}${next}${quote}` : m;
+          },
         );
         return updated + comment;
       })
