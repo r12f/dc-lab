@@ -4,6 +4,7 @@ import type { CableEnd, CableMedia, OpticDefinition } from '../optics/types';
 import { parseMode } from '../device/breakout';
 import { resolvePort } from '../device/port-settings';
 import {
+  cablesPerPort,
   compatibleCables,
   directAttachType,
   expectedCableGender,
@@ -228,6 +229,36 @@ function patchEndProblem(
     : `${linkName}: ${c.name} needs an optic in ${side.group.name} ${side.end.ports}`;
 }
 
+function sideLinksPerEnd(side: LinkSideInfo, cableEnd: CableEnd): number | undefined {
+  const port = side.resolvedPorts[0];
+  if (!port) return undefined;
+  return (cableEnd.count * port.fanout) / cablesPerPort(port.group, side.optic);
+}
+
+function orientedLinksPerCable(sideA: LinkSideInfo, sideB: LinkSideInfo, fromEnd: CableEnd, toEnd: CableEnd): number {
+  const fromPer = sideLinksPerEnd(sideA, fromEnd);
+  const toPer = sideLinksPerEnd(sideB, toEnd);
+  return fromPer !== undefined && toPer !== undefined
+    ? Math.min(fromPer, toPer)
+    : (fromPer ?? toPer ?? Math.max(1, Math.min(fromEnd.count, toEnd.count)));
+}
+
+function linkSpeedProblem(
+  link: VLink,
+  ga: VGroup,
+  gb: VGroup,
+  hw: ReadonlyMap<string, GroupHardware>,
+): string | undefined {
+  const ha = hw.get(ga.name);
+  const hb = hw.get(gb.name);
+  const sa = ha ? poolSpeeds(ga, ha, link.from.ports) : [];
+  const sb = hb ? poolSpeeds(gb, hb, link.to.ports) : [];
+  if (sa.length && sb.length && !(sa.length === 1 && sb.length === 1 && sa[0] === sb[0])) {
+    return `${link.name}: ${link.from.group} ${link.from.ports} runs ${sa.map(formatGbps).join('/')}, ${link.to.group} ${link.to.ports} ${sb.map(formatGbps).join('/')}`;
+  }
+  return undefined;
+}
+
 /**
  * Orient `cable` (`ends.a` / `ends.b`) onto `(link.from, link.to)`. Returns `{ fromEnd, toEnd, problem }`,
  * where `problem` is `undefined` iff `cable` validly connects both ends of `link`.
@@ -260,19 +291,35 @@ export function orientLinkCable(
 
   const aFromErr = endErr(cable.ends.a, sideA);
   const bToErr = endErr(cable.ends.b, sideB);
-  if (!aFromErr && !bToErr) {
-    return { fromEnd: cable.ends.a, toEnd: cable.ends.b };
+  const abOk = !aFromErr && !bToErr;
+
+  let chosen: { fromEnd: CableEnd; toEnd: CableEnd };
+  if (abOk && cable.ends.a.count === cable.ends.b.count) {
+    chosen = { fromEnd: cable.ends.a, toEnd: cable.ends.b };
+  } else {
+    const bFromErr = endErr(cable.ends.b, sideA);
+    const aToErr = endErr(cable.ends.a, sideB);
+    const baOk = !bFromErr && !aToErr;
+    if (abOk && baOk) {
+      const abCap = orientedLinksPerCable(sideA, sideB, cable.ends.a, cable.ends.b);
+      const baCap = orientedLinksPerCable(sideA, sideB, cable.ends.b, cable.ends.a);
+      chosen = baCap > abCap
+        ? { fromEnd: cable.ends.b, toEnd: cable.ends.a }
+        : { fromEnd: cable.ends.a, toEnd: cable.ends.b };
+    } else if (abOk) {
+      chosen = { fromEnd: cable.ends.a, toEnd: cable.ends.b };
+    } else if (baOk) {
+      chosen = { fromEnd: cable.ends.b, toEnd: cable.ends.a };
+    } else {
+      if (!aFromErr) return { fromEnd: cable.ends.a, toEnd: cable.ends.b, problem: bToErr };
+      if (!bFromErr) return { fromEnd: cable.ends.b, toEnd: cable.ends.a, problem: aToErr };
+      return { fromEnd: cable.ends.a, toEnd: cable.ends.b, problem: aFromErr ?? bToErr };
+    }
   }
 
-  const bFromErr = endErr(cable.ends.b, sideA);
-  const aToErr = endErr(cable.ends.a, sideB);
-  if (!bFromErr && !aToErr) {
-    return { fromEnd: cable.ends.b, toEnd: cable.ends.a };
-  }
-
-  if (!aFromErr) return { fromEnd: cable.ends.a, toEnd: cable.ends.b, problem: bToErr };
-  if (!bFromErr) return { fromEnd: cable.ends.b, toEnd: cable.ends.a, problem: aToErr };
-  return { fromEnd: cable.ends.a, toEnd: cable.ends.b, problem: aFromErr ?? bToErr };
+  const speedErr = linkSpeedProblem(link, ga, gb, hw);
+  if (speedErr) return { ...chosen, problem: speedErr };
+  return chosen;
 }
 
 /** Validate every `link.cable` across `v.links` against both ends' pools, cages, modes, and optics. */
@@ -305,8 +352,9 @@ function mediaProblems(lib: Library, v: VirtualTopo, hw: ReadonlyMap<string, Gro
         continue;
       }
     }
+    const speedErr = linkSpeedProblem(link, ga, gb, hw);
     const oriented = orientLinkCable(lib, v, link, c, hw);
-    if (oriented.problem) problems.push({ message: oriented.problem });
+    if (oriented.problem && oriented.problem !== speedErr) problems.push({ message: oriented.problem });
   }
   return problems;
 }
@@ -318,6 +366,10 @@ export function compatibleLinkCables(
   link: VLink,
   hw: ReadonlyMap<string, GroupHardware> = topoHardware(lib, v),
 ): CableMedia[] {
+  const byName = new Map(v.groups.map((g) => [g.name, g]));
+  const ga = byName.get(link.from.group);
+  const gb = byName.get(link.to.group);
+  if (!ga || !gb || linkSpeedProblem(link, ga, gb, hw)) return [];
   return lib.cableMedia
     .items()
     .filter((c) => !orientLinkCable(lib, v, link, c, hw).problem)
@@ -468,15 +520,10 @@ export function topoHardware(lib: Library, v: VirtualTopo): Map<string, GroupHar
 export function hardwareProblems(lib: Library, v: VirtualTopo, hw = topoHardware(lib, v)): Problem[] {
   const problems = [...hw.values()].flatMap((h) => h.problems);
   const byName = new Map(v.groups.map((g) => [g.name, g]));
-  const speeds = (group: string, pool: string) => {
-    const g = byName.get(group); const h = hw.get(group);
-    return g && h ? poolSpeeds(g, h, pool) : [];
-  };
   for (const l of v.links) {
-    const a = speeds(l.from.group, l.from.ports); const b = speeds(l.to.group, l.to.ports);
-    if (a.length && b.length && !(a.length === 1 && b.length === 1 && a[0] === b[0])) {
-      problems.push({ message: `${l.name}: ${l.from.group} ${l.from.ports} runs ${a.map(formatGbps).join('/')}, ${l.to.group} ${l.to.ports} ${b.map(formatGbps).join('/')}` });
-    }
+    const ga = byName.get(l.from.group); const gb = byName.get(l.to.group);
+    const err = ga && gb ? linkSpeedProblem(l, ga, gb, hw) : undefined;
+    if (err) problems.push({ message: err });
   }
   problems.push(...mediaProblems(lib, v, hw));
   return problems;

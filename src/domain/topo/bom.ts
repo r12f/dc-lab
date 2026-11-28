@@ -200,7 +200,8 @@ function estimateCables(lib: Library, v: VirtualTopo, hw: Map<string, GroupHardw
     if (l.links === undefined || !l.cable) continue;
     const cable = lib.cableMedia.get(l.cable);
     if (!cable) continue;
-    const { fromEnd, toEnd } = orientLinkCable(lib, v, l, cable, hw);
+    const { fromEnd, toEnd, problem } = orientLinkCable(lib, v, l, cable, hw);
+    if (problem) continue;
     const ga = byName.get(l.from.group);
     const gb = byName.get(l.to.group);
     const fromPer = linksPerOrientedEnd(lib, ga, hw.get(l.from.group), l.from.ports, fromEnd);

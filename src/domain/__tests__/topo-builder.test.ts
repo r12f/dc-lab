@@ -6,7 +6,7 @@ import { pick, sliceTopo, withGaps } from '../topo/slice';
 import { portLayout, portUse } from '../topo/ports';
 import { ruleText } from '../topo/rule';
 import { CABLE_BOM_CSV_HEADERS, cableBomToCsv, estimateTopoBom, topoBomColumns } from '../topo/bom';
-import { compatibleLinkCables, hardwareProblems, topoHardware } from '../topo/hardware';
+import { compatibleLinkCables, hardwareProblems, orientLinkCable, topoHardware } from '../topo/hardware';
 import { SAMPLE_TOPOLOGY } from '../topo/sample';
 import { normalizeProject, serializeProject } from '../project/serializer';
 import { emptyProject } from '../project/types';
@@ -452,6 +452,133 @@ topo:
       totalW: 14,
     });
     expect(cableBomToCsv(lib, validBom.cableBom)).toContain('"Credo AEC, ""800G""",1,dac-link 1,14,14');
+  });
+  it('orients asymmetric-count same-family cables (mpo8-4x2-shuffle-smf) to maximize links per cable in either link order', () => {
+    const plain = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
+    const shuf = plain.cableMedia.get('mpo8-4x2-shuffle-smf')!;
+    const shuffleTopo = parseVirtual(`device_set_groups:
+  tray:
+    role: compute
+    count: 16
+    device_type: gpu-tray-1ru-lc-4x400g
+    ports:
+      fe1: { ports: "fe{1-2}", optic: qsfp56-200g-dr4 }
+      fe2: { ports: "fe{3-4}", optic: qsfp56-200g-dr4 }
+  fe_leaf:
+    role: fe-leaf
+    count: 1
+    device_type: switch-64x800g-osfp
+    ports:
+      d1: { ports: "osfp{1-8}{a-d}", optic: ${O} }
+      d2: { ports: "osfp{9-16}{a-d}", optic: ${O} }
+topo:
+  - { name: tray-to-leaf, from: { group: tray, ports: fe1 }, to: { group: fe_leaf, ports: d1 }, pattern: { type: mesh, per_pair: 2 }, cable: mpo8-4x2-shuffle-smf }
+  - { name: leaf-to-tray, from: { group: fe_leaf, ports: d2 }, to: { group: tray, ports: fe2 }, pattern: { type: mesh, per_pair: 2 }, cable: mpo8-4x2-shuffle-smf }
+`);
+    expect(shuffleTopo.problems).toEqual([]);
+    expect(hardwareProblems(plain, shuffleTopo)).toEqual([]);
+    const oAb = orientLinkCable(plain, shuffleTopo, shuffleTopo.links[0], shuf);
+    const oBa = orientLinkCable(plain, shuffleTopo, shuffleTopo.links[1], shuf);
+    expect([oAb.fromEnd.count, oAb.toEnd.count, oAb.problem]).toEqual([4, 2, undefined]);
+    expect([oBa.fromEnd.count, oBa.toEnd.count, oBa.problem]).toEqual([2, 4, undefined]);
+
+    const shufBom = estimateTopoBom(plain, shuffleTopo, {});
+    expect(shufBom.cables.map((c) => [c.link.name, c.perCable, c.qty])).toEqual([
+      ['tray-to-leaf', 4, 8],
+      ['leaf-to-tray', 4, 8],
+    ]);
+    expect(shufBom.cableBom.map((r) => [r.link, r.perCable, r.qty, r.derivation])).toEqual([
+      ['tray-to-leaf', 4, 8, 'tray-to-leaf 32 ÷ 4'],
+      ['leaf-to-tray', 4, 8, 'leaf-to-tray 32 ÷ 4'],
+    ]);
+  });
+  it('excludes cables from compatibleLinkCables on lane-speed-mismatched links without duplicating speed diagnostics', () => {
+    const mismatch = parseVirtual(`device_set_groups:
+  sw400:
+    role: leaf
+    count: 1
+    device_type: switch-32x800g-osfp
+    ports:
+      dac_p: osfp1{a,b}
+      opt_p: { ports: osfp2{a,b}, optic: ${O} }
+  sw100:
+    role: spine
+    count: 1
+    device_type: switch-64x800g-osfp
+    ports:
+      dac_p: etp1{a-h}
+      opt_p: { ports: etp2{a-h}, optic: ${O} }
+topo:
+  - { name: dac-mis, from: { group: sw400, ports: dac_p }, to: { group: sw100, ports: dac_p }, pattern: { type: round-robin, per_pair: 2 }, cable: aec-800g }
+  - { name: opt-mis, from: { group: sw400, ports: opt_p }, to: { group: sw100, ports: opt_p }, pattern: { type: round-robin, per_pair: 2 }, cable: mpo12-smf }
+`);
+    expect(mismatch.problems).toEqual([]);
+    expect(compatibleLinkCables(lib, mismatch, mismatch.links[0])).toEqual([]);
+    expect(compatibleLinkCables(lib, mismatch, mismatch.links[1])).toEqual([]);
+    expect(orientLinkCable(lib, mismatch, mismatch.links[0], lib.cableMedia.get('aec-800g')!).problem)
+      .toBe('dac-mis: sw400 dac_p runs 400G, sw100 dac_p 100G');
+    expect(hardwareProblems(lib, mismatch).map((p) => p.message)).toEqual([
+      'dac-mis: sw400 dac_p runs 400G, sw100 dac_p 100G',
+      'opt-mis: sw400 opt_p runs 400G, sw100 opt_p 100G',
+    ]);
+  });
+  it('omits rejected link cables from purchase lines while keeping zero-qty CableBomRow entries', () => {
+    const invalidCables = parseVirtual(`device_set_groups:
+  a_raw:
+    role: leaf
+    count: 2
+    device_type: switch-32x800g-osfp
+    ports:
+      raw: osfp{1-2}
+  b_raw:
+    role: spine
+    count: 2
+    device_type: switch-64x800g-osfp
+    ports:
+      raw: etp{1-2}
+  a_brk:
+    role: leaf
+    count: 2
+    device_type: switch-32x800g-osfp
+    ports:
+      opt: { ports: osfp{1-2}{a,b}, optic: ${O} }
+      s400: osfp{3-4}{a,b}
+  b_brk:
+    role: spine
+    count: 2
+    device_type: switch-64x800g-osfp
+    ports:
+      opt: { ports: etp{1-2}{a-h}, optic: ${O} }
+      s100: etp{3-4}{a-h}
+topo:
+  - { name: bad-pwr, from: { group: a_raw, ports: raw }, to: { group: b_raw, ports: raw }, pattern: { type: mesh, per_pair: 1 }, cable: power-c13-c14 }
+  - { name: bad-con, from: { group: a_brk, ports: opt }, to: { group: b_brk, ports: opt }, pattern: { type: mesh, per_pair: 1 }, cable: lc-smf }
+  - { name: bad-spd, from: { group: a_brk, ports: s400 }, to: { group: b_brk, ports: s100 }, pattern: { type: mesh, per_pair: 1 }, cable: aec-800g }
+`);
+    expect(invalidCables.problems).toEqual([]);
+    const name = (id: string) => lib.optics.get(id)?.name ?? lib.cableMedia.get(id)!.name;
+    expect(hardwareProblems(lib, invalidCables).map((p) => p.message)).toEqual([
+      'bad-con: a_brk opt runs 400G, b_brk opt 100G',
+      'bad-spd: a_brk s400 runs 400G, b_brk s100 100G',
+      `bad-pwr: ${name('power-c13-c14')} is not a data cable`,
+      `bad-con: ${name('lc-smf')} does not fit ${name(O)} on a_brk opt`,
+    ]);
+
+    const badBom = estimateTopoBom(lib, invalidCables, { items: { 'aec-800g': 'aec-x' } });
+    expect(badBom.cables).toEqual([]);
+    expect(badBom.lines.filter((l) => l.kind === 'cable')).toEqual([]);
+    expect(badBom.cableBom.map((r) => ({
+      link: r.link,
+      cableId: r.cableId,
+      perCable: r.perCable,
+      qty: r.qty,
+      derivation: r.derivation,
+      totalW: r.totalW,
+    }))).toEqual([
+      { link: 'bad-pwr', cableId: 'power-c13-c14', perCable: undefined, qty: 0, derivation: '', totalW: 0 },
+      { link: 'bad-con', cableId: 'lc-smf', perCable: undefined, qty: 0, derivation: '', totalW: 0 },
+      { link: 'bad-spd', cableId: 'aec-800g', perCable: undefined, qty: 0, derivation: '', totalW: 0 },
+    ]);
   });
   it('takes a shipped profile (the spec example)', () => {
     const plain = new Library(BUILTIN_CATALOG_FOR_TESTS, emptyProject());
