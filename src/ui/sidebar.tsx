@@ -32,15 +32,15 @@ interface TreeProps {
   node: TreeNode;
   depth: number;
   selectedId?: string;
-  /** Folders the user flipped from their default state. */
-  toggled: Set<string>;
+  /** Explicit open/closed overrides for folder keys. */
+  folderOpen: ReadonlyMap<string, boolean>;
   defaultCollapsed: boolean;
   /** Folder keys on the path to the selected item. */
-  selectedPath: Set<string>;
+  selectedPath: ReadonlySet<string>;
   /** Items whose children are shown. */
-  expanded: Set<string>;
+  expanded: ReadonlySet<string>;
   forceOpen: boolean;
-  onToggle(key: string): void;
+  onToggle(key: string, currentlyOpen: boolean): void;
   onExpand(id: string): void;
   onSelect(id: string): void;
 }
@@ -71,16 +71,16 @@ function ItemRow({ item, depth, selectedId, open, onExpand, onSelect }: {
 }
 
 function Tree(props: TreeProps) {
-  const { node, depth, selectedId, toggled, defaultCollapsed, selectedPath, expanded, forceOpen, onExpand, onSelect } = props;
+  const { node, depth, selectedId, folderOpen, defaultCollapsed, selectedPath, expanded, forceOpen, onExpand, onSelect } = props;
   const indent = { paddingLeft: 12 + depth * 12 };
   return (
     <>
       {node.folders.map((f) => {
         const base = defaultCollapsed ? selectedPath.has(f.key) : true;
-        const open = forceOpen || base !== toggled.has(f.key);
+        const open = forceOpen || (folderOpen.get(f.key) ?? base);
         return (
           <div key={f.key}>
-            <div className="tree-folder" style={indent} onClick={() => props.onToggle(f.key)}>
+            <div className="tree-folder" style={indent} onClick={() => props.onToggle(f.key, open)}>
               <span className="caret">{open ? '▾' : '▸'}</span>
               <span className="sidebar-item-name">{f.label}</span>
               <span className="badge">{countItems(f)}</span>
@@ -114,28 +114,47 @@ export function Sidebar(props: Props) {
   const listHeight = usePreferences((s) => s.sidebarListHeight);
   const setListHeight = usePreferences((s) => s.setSidebarListHeight);
   const [filter, setFilter] = useState('');
-  const [toggled, setToggled] = useState<Set<string>>(new Set());
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [folderOpen, setFolderOpen] = useState<ReadonlyMap<string, boolean>>(() => new Map());
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const visible = items.filter((i) => matchesFilter(i, filter));
   const selected = items.flatMap((i) => [i, ...(i.children ?? [])]).find((i) => i.id === selectedId);
   const selectedOwner = items.find((i) => i.id === selectedId || i.children?.some((c) => c.id === selectedId));
-  const selectedPath = new Set((selectedOwner?.path ?? []).map((_, n, p) => `/${p.slice(0, n + 1).join('/')}`));
+  const selectedPathKeys = (selectedOwner?.path ?? []).map((_, n, p) => `/${p.slice(0, n + 1).join('/')}`);
+  const selectedPath = new Set(selectedPathKeys);
+
+  const selectionSig = `${selectedId ?? ''}\u0000${selectedPathKeys.join('\u0000')}`;
+  const [prevSelectionSig, setPrevSelectionSig] = useState(selectionSig);
+  let activeFolderOpen = folderOpen;
+  if (prevSelectionSig !== selectionSig) {
+    setPrevSelectionSig(selectionSig);
+    if (selectedId !== undefined && selectedPathKeys.some((k) => folderOpen.get(k) === false)) {
+      const next = new Map(folderOpen);
+      for (const k of selectedPathKeys) {
+        if (next.get(k) === false) next.delete(k);
+      }
+      activeFolderOpen = next;
+      setFolderOpen(next);
+    }
+  }
+
   const expand = (id: string) => setExpanded((x) => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  const toggle = (key: string) =>
-    setToggled((c) => {
-      const n = new Set(c);
-      if (n.has(key)) n.delete(key);
-      else n.add(key);
-      return n;
+  const toggle = (key: string, currentlyOpen: boolean) =>
+    setFolderOpen((c) => {
+      const next = new Map(c);
+      next.set(key, !currentlyOpen);
+      return next;
     });
 
   const tree = buildTree(visible);
-  const folderKeys: string[] = [];
-  const walk = (n: TreeNode) => n.folders.forEach((f) => { folderKeys.push(f.key); walk(f); });
-  walk(tree);
-  /** Opens (or closes) every folder: toggled holds the keys whose state differs from their default. */
+  const allFolderKeys = new Set<string>();
+  for (const item of items) {
+    for (let n = 0; n < item.path.length; n += 1) {
+      allFolderKeys.add(`/${item.path.slice(0, n + 1).join('/')}`);
+    }
+  }
+  /** Explicitly opens (or closes) every folder in the sidebar. */
   const setAll = (open: boolean) => {
-    setToggled(new Set(folderKeys.filter((k) => (defaultCollapsed ? selectedPath.has(k) : true) !== open)));
+    setFolderOpen(new Map([...allFolderKeys].map((k) => [k, open])));
     if (!open) setExpanded(new Set());
   };
 
@@ -170,7 +189,7 @@ export function Sidebar(props: Props) {
             )}
             <div className="sidebar-list">
               {visible.length === 0 && <p className="muted pad">{items.length ? 'No matches.' : emptyText ?? 'Nothing here yet.'}</p>}
-              <Tree node={tree} depth={0} selectedId={selectedId} toggled={toggled} defaultCollapsed={defaultCollapsed}
+              <Tree node={tree} depth={0} selectedId={selectedId} folderOpen={activeFolderOpen} defaultCollapsed={defaultCollapsed}
                 selectedPath={selectedPath} expanded={expanded} forceOpen={!!filter} onToggle={toggle} onExpand={expand} onSelect={onSelect} />
             </div>
           </>
