@@ -482,4 +482,37 @@ describe('Sidebar defaultCollapsed folder state', () => {
     expect(ui.openFolderLabels()).toEqual(['DAC', 'OSFP', '800G', 'Other', 'RJ45']);
     expect(ui.itemRow('Cat6A patch')?.hasClass('active')).toBe(true);
   });
+
+  it('pins auto-opened ancestor folders open when manually expanding a nested sibling subfolder before selecting another branch', async () => {
+    const itemsWithSibling: SidebarItem[] = [
+      ...SAMPLE_ITEMS,
+      {
+        id: 'optic:osfp-400g-dr4',
+        name: '400G OSFP DR4',
+        path: ['OSFP', '400G'],
+      },
+    ];
+    const ui = await mountSidebar({
+      items: itemsWithSibling,
+      defaultCollapsed: true,
+      initialSelectedId: 'optic:osfp-800g-dr8',
+    });
+
+    // OSFP and 800G start open via `selectedPath`; sibling 400G starts collapsed.
+    expect(ui.openFolderLabels()).toEqual(['OSFP', '800G']);
+
+    // Manually expand sibling `400G` under auto-opened `OSFP` without clicking `OSFP`.
+    await ui.click(ui.folderRow('400G'), '400G subfolder');
+    expect(ui.openFolderLabels()).toEqual(['OSFP', '400G', '800G']);
+    expect(ui.itemRow('400G OSFP DR4')).toBeDefined();
+
+    // Now expand `Other -> RJ45` and select `Cat6A patch`: `OSFP` and `400G` stay pinned open alongside `Other -> RJ45`.
+    await ui.click(ui.folderRow('Other'), 'Other folder');
+    await ui.click(ui.folderRow('RJ45'), 'RJ45 folder');
+    await ui.click(ui.itemRow('Cat6A patch'), 'Cat6A patch item');
+    expect(ui.getSelectedId()).toBe('cable:cat6a-patch');
+    expect(ui.openFolderLabels()).toEqual(['OSFP', '400G', 'Other', 'RJ45']);
+    expect(ui.itemRow('400G OSFP DR4')).toBeDefined();
+    expect(ui.itemRow('Cat6A patch')?.hasClass('active')).toBe(true);
+  });
 });

@@ -31,6 +31,7 @@ interface Props {
 interface TreeProps {
   node: TreeNode;
   depth: number;
+  ancestorKeys: readonly string[];
   selectedId?: string;
   /** Explicit open/closed overrides for folder keys. */
   folderOpen: ReadonlyMap<string, boolean>;
@@ -40,7 +41,7 @@ interface TreeProps {
   /** Items whose children are shown. */
   expanded: ReadonlySet<string>;
   forceOpen: boolean;
-  onToggle(key: string, currentlyOpen: boolean): void;
+  onToggle(key: string, currentlyOpen: boolean, ancestorKeys: readonly string[]): void;
   onExpand(id: string): void;
   onSelect(id: string): void;
 }
@@ -71,7 +72,7 @@ function ItemRow({ item, depth, selectedId, open, onExpand, onSelect }: {
 }
 
 function Tree(props: TreeProps) {
-  const { node, depth, selectedId, folderOpen, defaultCollapsed, selectedPath, expanded, forceOpen, onExpand, onSelect } = props;
+  const { node, depth, ancestorKeys, selectedId, folderOpen, defaultCollapsed, selectedPath, expanded, forceOpen, onExpand, onSelect } = props;
   const indent = { paddingLeft: 12 + depth * 12 };
   return (
     <>
@@ -80,12 +81,12 @@ function Tree(props: TreeProps) {
         const open = forceOpen || (folderOpen.get(f.key) ?? base);
         return (
           <div key={f.key}>
-            <div className="tree-folder" style={indent} onClick={() => props.onToggle(f.key, open)}>
+            <div className="tree-folder" style={indent} onClick={() => props.onToggle(f.key, open, ancestorKeys)}>
               <span className="caret">{open ? '▾' : '▸'}</span>
               <span className="sidebar-item-name">{f.label}</span>
               <span className="badge">{countItems(f)}</span>
             </div>
-            {open && <Tree {...props} node={f} depth={depth + 1} />}
+            {open && <Tree {...props} node={f} depth={depth + 1} ancestorKeys={[...ancestorKeys, f.key]} />}
           </div>
         );
       })}
@@ -138,10 +139,14 @@ export function Sidebar(props: Props) {
   }
 
   const expand = (id: string) => setExpanded((x) => { const n = new Set(x); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  const toggle = (key: string, currentlyOpen: boolean) =>
+  const toggle = (key: string, currentlyOpen: boolean, ancestorKeys: readonly string[]) =>
     setFolderOpen((c) => {
       const next = new Map(c);
-      next.set(key, !currentlyOpen);
+      const nextOpen = !currentlyOpen;
+      if (nextOpen) {
+        for (const ancestor of ancestorKeys) next.set(ancestor, true);
+      }
+      next.set(key, nextOpen);
       return next;
     });
 
@@ -189,7 +194,7 @@ export function Sidebar(props: Props) {
             )}
             <div className="sidebar-list">
               {visible.length === 0 && <p className="muted pad">{items.length ? 'No matches.' : emptyText ?? 'Nothing here yet.'}</p>}
-              <Tree node={tree} depth={0} selectedId={selectedId} folderOpen={activeFolderOpen} defaultCollapsed={defaultCollapsed}
+              <Tree node={tree} depth={0} ancestorKeys={[]} selectedId={selectedId} folderOpen={activeFolderOpen} defaultCollapsed={defaultCollapsed}
                 selectedPath={selectedPath} expanded={expanded} forceOpen={!!filter} onToggle={toggle} onExpand={expand} onSelect={onSelect} />
             </div>
           </>
